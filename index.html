@@ -2547,7 +2547,7 @@ html[data-theme="dark"] #colPubs{ background:var(--bg); }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v1.64</span></div>
+      <div class="brand-name">JW Study <span class="ver">v1.65</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -3583,7 +3583,7 @@ function noteSearchStamp(n){
  * dopiero, gdy notatka się zmieni — inaczej każdy wciśnięty klawisz przeliczałby
  * wszystkie notatki od zera.
  * @param {Note} n
- * @returns {{stamp:string, plain:string, norm:string, squashed:string}}
+ * @returns {Object} pola: stamp, plain, norm, squashed
  */
 function searchTextOf(n){
   const stamp = noteSearchStamp(n);
@@ -4054,7 +4054,7 @@ function applyColors(){
  * Menu kolorów. Dwa tryby, bo trafia się do niego z dwóch miejsc:
  *  - "kolumny" (przycisk palety w pasku górnym) — same kolory poszczególnych kolumn,
  *  - "wszystko" (Ustawienia → Wygląd) — dodatkowo gotowe kompozycje na cały interfejs.
- * @param {{target:HTMLElement}} e  element, przy którym ma się pojawić menu
+ * @param {Object} e  obiekt z polem target — element, przy którym ma się pojawić menu
  * @param {"kolumny"|"wszystko"} [tryb="kolumny"]
  */
 function openColorMenu(e, tryb){
@@ -5279,7 +5279,7 @@ function cloneNote(n){ return deepCopy(n); }
 function cloneTags(){ return deepCopy(tags); }
 /**
  * Odkłada operację na stos cofania (maksymalnie 30 pozycji).
- * @param {{type:string,label:string,before:*}} u
+ * @param {Object} u  pola: type, label, before
  */
 function pushUndo(u){ undoStack.push(u); if(undoStack.length>30) undoStack.shift(); updateUndoBtn(); }
 function updateUndoBtn(){ const b=$("btnUndo"); b.disabled=!undoStack.length; b.style.opacity=undoStack.length?"1":".45"; }
@@ -7196,7 +7196,7 @@ $("expGo").onclick = async ()=>{
  * Notatki nieznane bazie są wstawiane, istniejące aktualizowane, usunięte kasowane.
  * Daty przechodzą przez jwlDate — JW Library wymaga formatu RRRR-MM-DDTGG:MM:SS+00:00.
  * @param {*} db  baza otwarta przez sql.js
- * @returns {{inserted:number,updated:number,deleted:number}}
+ * @returns {Object} pola: inserted, updated, deleted
  */
 function applyChangesToDb(db){
   const one=sql=>{const r=db.exec(sql);return r.length?r[0].values[0][0]:null;};
