@@ -2579,7 +2579,7 @@ html[data-theme="dark"] #colPubs{ background:var(--bg); }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v1.67</span></div>
+      <div class="brand-name">JW Study <span class="ver">v1.68</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -3233,7 +3233,20 @@ async function boot(){
   $("loading").style.display = "none";
   updateBackupBadge();
   if(backupStale()) setTimeout(()=>toast("💾 Warto zrobić kopię danych — kliknij 💾 na górze"), 1500);
-  if(!lsGet(KP+"Onboarded", null)){ setTimeout(()=>openModal("modalHelp"),400); lsSet(KP+"Onboarded","1"); }
+  /* Znacznik „widziano" stawiamy dopiero po ZAMKNIĘCIU okna, nie po otwarciu.
+     Gdyby cokolwiek przerwało pierwsze uruchomienie, powitanie pokaże się ponownie
+     zamiast przepaść bez śladu. */
+  if(!lsGet(KP+"Onboarded", null)) setTimeout(()=>{
+    openModal("modalHelp");
+    const okno = $("modalHelp");
+    const obserwuj = new MutationObserver(()=>{
+      if(!okno.classList.contains("show")){
+        lsSet(KP+"Onboarded","1");
+        obserwuj.disconnect();
+      }
+    });
+    obserwuj.observe(okno, {attributes:true, attributeFilter:["class"]});
+  }, 400);
   // tryb offline: zapamiętaj aplikację w pamięci podręcznej urządzenia
   if(location.protocol.indexOf("http")===0 && "serviceWorker" in navigator) zarejestrujSW();
 }
@@ -3266,14 +3279,26 @@ function zarejestrujSW(){
       });
     });
   }).catch(()=>{});
-  /* Gdy nowa wersja przejmuje stronę, przeładowujemy raz — inaczej w bieżącej
-     sesji zostałyby stare pliki CSS i JS wczytane przed podmianą. */
-  let przeladowano = false;
-  navigator.serviceWorker.addEventListener("controllerchange", ()=>{
-    if(przeladowano) return;
-    przeladowano = true;
-    location.reload();
-  });
+  /* Gdy NOWA wersja zastępuje starą, przeładowujemy raz — inaczej w bieżącej
+     sesji zostałyby stare pliki CSS i JS wczytane przed podmianą.
+
+     Uwaga na pierwsze uruchomienie: obsługa offline dopiero wtedy przejmuje stronę,
+     więc to samo zdarzenie pada, choć niczego nie zastępuje. Bez poniższego warunku
+     aplikacja przeładowywała się sekundę po starcie i zdmuchiwała okno powitalne. */
+  const bylaObsluga = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener("controllerchange", ()=>przejeloObsluge(bylaObsluga));
+}
+/**
+ * Reakcja na przejęcie strony przez obsługę offline.
+ * @param {boolean} bylaObsluga  czy jakaś obsługa działała już przy wczytywaniu strony
+ */
+let _przeladowano = false;
+function przejeloObsluge(bylaObsluga){
+  if(!bylaObsluga) return false;   // pierwsze uruchomienie — nie ma czego odświeżać
+  if(_przeladowano) return false;
+  _przeladowano = true;
+  location.reload();
+  return true;
 }
 /** Pasek z informacją o nowej wersji i przyciskiem odświeżenia. */
 function pokazNowaWersje(nowy){
