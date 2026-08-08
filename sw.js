@@ -1,47 +1,7 @@
-const CACHE = 'jwstudy-v175';
+const CACHE = 'jwstudy-v175s';
 /* Rdzeń: dokument + wszystkie moduły CSS i JS — bez nich aplikacja nie ruszy offline. */
 const CORE = [
-  './', './index.html',
-  './css/01-base.css',
-  './css/02-layout.css',
-  './css/03-notes.css',
-  './css/04-reader.css',
-  './css/05-dialogs.css',
-  './css/06-editor.css',
-  './css/07-forms.css',
-  './css/08-menus.css',
-  './css/09-dark.css',
-  './css/10-redesign.css',
-  './css/11-polish.css',
-  './js/01-core.js',
-  './js/02-storage.js',
-  './js/03-boot.js',
-  './js/04-filters.js',
-  './js/05-publications.js',
-  './js/06-tags.js',
-  './js/07-appearance.js',
-  './js/08-books.js',
-  './js/09-notes.js',
-  './js/10-reader.js',
-  './js/11-theme.js',
-  './js/12-actions.js',
-  './js/13-editor.js',
-  './js/14-images.js',
-  './js/15-highlight.js',
-  './js/16-newnote.js',
-  './js/17-files.js',
-  './js/18-export-jwl.js',
-  './js/19-export-doc.js',
-  './js/20-backup.js',
-  './js/21-ui-helpers.js',
-  './js/22-search.js',
-  './js/23-shortcuts.js',
-  './js/24-reorder.js',
-  './js/25-context-menu.js',
-  './js/26-settings.js',
-  './js/27-pubtabs.js',
-  './js/28-keyboard.js',
-  './js/29-dragorder.js'
+  './', './index.html'
 ];
 /* Dodatki: ikony, manifest i biblioteki importu (jeśli wgrane do lib/).
    Brak któregokolwiek nie może zablokować zapisu offline — stąd osobna lista. */
