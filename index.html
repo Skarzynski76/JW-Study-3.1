@@ -2628,6 +2628,37 @@ html[data-theme="dark"] #colPubs{ background:var(--bg); }
   .spinner{ animation:none!important; border-top-color:currentColor!important; }
 }
 
+/* ============================================================
+   ZAKŁADKI W SEKCJACH (v1.76)
+   ============================================================ */
+.stbItem{
+  margin-left:calc(10px * var(--uiw));
+  position:relative;
+  font-weight:500;
+}
+.stbItem::before{
+  content:""; position:absolute; left:calc(-7px * var(--uiw)); top:-2px; bottom:-2px;
+  width:2px; border-radius:2px;
+  background:var(--secLine, var(--accent2)); opacity:.55;
+}
+.stbIc{
+  width:calc(13px * var(--uiw)); height:calc(11px * var(--uiw));
+  flex:0 0 auto; margin-right:calc(2px * var(--uiw));
+  border:1.4px solid currentColor; border-bottom:0;
+  border-radius:3px 3px 0 0; opacity:.5;
+}
+.stbItem.active .stbIc{ opacity:.9; }
+/* etykieta wrzucona do zakładki stoi pod nią, wcięta o kolejny stopień */
+#colTags .item.wZakladce{ margin-left:calc(26px * var(--uiw)); }
+#colTags .item.wZakladce::before{ left:calc(-9px * var(--uiw)); opacity:.4; }
+.stbItem.dropTarget{ outline:2px dashed var(--accent2); outline-offset:1px; }
+
+/* data utworzenia na karcie, gdy według niej sortujemy */
+.pill.date .dateTag{
+  margin-left:5px; font-size:.82em; opacity:.65; text-transform:none; letter-spacing:0;
+}
+.pill.date.dateCr{ background:var(--sel); }
+
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -2636,7 +2667,7 @@ html[data-theme="dark"] #colPubs{ background:var(--bg); }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v1.75</span></div>
+      <div class="brand-name">JW Study <span class="ver">v1.77</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -3382,6 +3413,7 @@ async function boot(){
   if(idb){ try{ deletedTagNames = (await idbGet("meta","deletedTags")) || []; }catch(e){} }
   if(idb){ try{ sections = (await idbGet("meta","sections")) || []; }catch(e){ sections=[]; } }
   if(typeof loadPubTabs==="function") await loadPubTabs();
+  if(typeof loadSecTabs==="function") await loadSecTabs();
   purgeOldTrash();   // usuń trwale notatki, które są w koszu ponad 30 dni
   buildStatic();
   initViewBar();
@@ -3547,7 +3579,15 @@ async function showStorageInfo(){
     }
   }catch(e){ el.textContent = "Notatek: "+notes.filter(n=>!n.del).length; }
 }
-function noteMatchesTag(n,t){ if(t==="all")return true; if(t==="none")return n.tg.length===0; return n.tg.includes(t); }
+function noteMatchesTag(n,t){
+  if(t==="all") return true;
+  if(t==="none") return n.tg.length===0;
+  /* „stb:<id>" — zakładka wewnątrz sekcji: notatki wrzucone wprost
+     oraz te noszące którąkolwiek z etykiet przypisanych do tej zakładki. */
+  if(typeof t==="string" && t.indexOf("stb:")===0)
+    return typeof notatkaWZakladce==="function" && notatkaWZakladce(n, +t.slice(4));
+  return n.tg.includes(t);
+}
 /* filtr księgi; dodatkowo obsługuje wybór publikacji: "pub:SYMBOL" */
 function noteMatchesBook(n,b){
   if(b==="all") return true;
@@ -4061,8 +4101,19 @@ function renderTags(){
       <span class="secCnt">${inside.length}${sum?" · "+sum:""}</span>
       <span class="secMore" title="Opcje sekcji">${IC_DOTS}</span></div>`;
     if(s.open!==false){
-      if(!inside.length) html += `<div class="secEmpty">Pusta — przenieś tu etykiety przez ⋯ przy etykiecie</div>`;
-      else inside.forEach(t=>{ html += tagItem(t.id,t.name,counts[t.id]||0,true,t.color,true,s.id); });
+      // zakładki sekcji nad etykietami — to one porządkują jej zawartość
+      if(typeof secTabRowsHtml==="function") html += secTabRowsHtml(s.id);
+      const wZakladkach = typeof secTabsFor==="function"
+        ? new Set(secTabsFor(s.id).map(z=>z.id)) : new Set();
+      const luzne = inside.filter(t=>!(t.stb && wZakladkach.has(t.stb)));
+      const przypisane = inside.filter(t=>t.stb && wZakladkach.has(t.stb));
+      if(!inside.length && !(typeof secTabsFor==="function" && secTabsFor(s.id).length))
+        html += `<div class="secEmpty">Pusta — dodaj zakładkę przez ⋯ przy nazwie sekcji albo przenieś tu etykiety</div>`;
+      // etykiety przypisane do zakładek rysujemy pod swoją zakładką, wcięte
+      przypisane.forEach(t=>{
+        html += tagItem(t.id,t.name,counts[t.id]||0,true,t.color,true,s.id).replace('class="item ','class="item wZakladce ');
+      });
+      luzne.forEach(t=>{ html += tagItem(t.id,t.name,counts[t.id]||0,true,t.color,true,s.id); });
     }
   });
   // ——— ETYKIETY POZA SEKCJAMI ———
@@ -4075,7 +4126,15 @@ function renderTags(){
   if(!changed) return;        // ten sam HTML → te same węzły i te same podpięte zdarzenia
   // przenoszenie etykiet palcem albo kursorem
   if(typeof enableDragSort==="function")
-    enableDragSort(el, ".dragOrd", ".item[data-ord]", kol=>applyTagOrder(kol));
+    enableDragSort(el, ".dragOrd", ".item[data-ord]", kol=>{
+      /* Jedna lista zawiera i etykiety, i zakładki sekcji. Przeciąganie odbywa się
+         w obrębie grupy (data-grupa), więc po upuszczeniu wystarczy rozdzielić
+         wynik i zapisać kolejność w odpowiednim miejscu. */
+      const zakladki = kol.filter(id=>el.querySelector('.stbItem[data-ord="'+id+'"]'));
+      const etykiety = kol.filter(id=>!zakladki.includes(id));
+      if(zakladki.length && typeof applySecTabOrder==="function") applySecTabOrder(zakladki);
+      if(etykiety.length) applyTagOrder(etykiety);
+    });
   // obsługa nagłówków sekcji
   el.querySelectorAll(".secHead").forEach(h=>{
     const sid=+h.dataset.sec;
@@ -4088,7 +4147,35 @@ function renderTags(){
     h.ondragleave = ()=> h.classList.remove("dropTarget");
     h.ondrop = e=>{ e.preventDefault(); h.classList.remove("dropTarget"); if(dragTagId!=null){ setTagSection(dragTagId, sid); dragTagId=null; } };
   });
+  // zakładki sekcji: filtrowanie, menu, przeciąganie kolejności
+  el.querySelectorAll(".stbItem").forEach(it=>{
+    const id = +it.dataset.stb;
+    it.onclick = e=>{
+      if(e.target.closest(".more")){
+        const z = secTabs.find(x=>x.id===id);
+        if(z) secTabMenu(e, z);
+        return;
+      }
+      if(e.target.closest(".dragOrd")) return;
+      filt.tag = String(filt.tag)==="stb:"+id ? "all" : "stb:"+id;
+      persistFilt(); renderAll();
+      if(innerWidth<=900) mobileShow("colNotes");
+    };
+    /* Upuszczenie etykiety na zakładkę przypisuje ją do niej — tak samo jak
+       upuszczenie etykiety na nagłówek sekcji przenosi ją do sekcji. */
+    it.ondragover = e=>{ if(dragTagId!=null){ e.preventDefault(); it.classList.add("dropTarget"); } };
+    it.ondragleave = ()=> it.classList.remove("dropTarget");
+    it.ondrop = e=>{
+      e.preventDefault(); it.classList.remove("dropTarget");
+      if(dragTagId!=null){
+        const t = tags.find(x=>x.id===dragTagId);
+        if(t) setTagSecTab(t, id);
+        dragTagId = null;
+      }
+    };
+  });
   el.querySelectorAll(".item").forEach(it=>{
+    if(it.classList.contains("stbItem")) return;   // zakładki mają własną obsługę
     it.onclick = e=>{
       if(e.target.classList.contains("more")){
         const t = tags.find(x=>x.id===+it.dataset.k);
@@ -4171,6 +4258,7 @@ function sectionMenu(e, s){
   dd.innerHTML =
     `<div class="dd-lbl">Sekcja „${esc(s.name)}”${inside?" · "+inside+" etykiet":""}</div>
      <div data-sm="ren">${ICO.edit}Zmień nazwę</div>
+     <div data-sm="tab">${ICO.plus}Nowa zakładka w tej sekcji</div>
      <div class="dd-lbl">Kolor paska sekcji</div>
      <div class="palrow">${spal("")}${SECCOLORS.map(c=>spal(c)).join("")}</div>
      <div class="dd-sep"></div>
@@ -4189,6 +4277,7 @@ function sectionMenu(e, s){
     dd.style.display="none";
     const a=m.dataset.sm;
     if(a==="ren") renameSection(s.id);
+    else if(a==="tab") createSecTab(s.id);
     else if(a==="up") moveSection(s.id,-1);
     else if(a==="down") moveSection(s.id,1);
     else if(a==="del") deleteSection(s.id);
@@ -4421,6 +4510,11 @@ function tagMenu(e, t){
             `<div data-sec2="${s.id}">${t.sec===s.id?"✓ ":"📁 "}${esc(s.name)}</div>`).join("")
           + (t.sec!==undefined ? `<div data-sec2="none">✕ Wyjmij z sekcji</div>` : "")
         : `<div class="dd-note" style="padding:4px 12px 8px">Brak sekcji — utwórz przyciskiem „＋ Nowa sekcja”</div>`}
+     ${(typeof secTabsFor==="function" && t.sec!==undefined && secTabsFor(t.sec).length)
+        ? `<div class="dd-lbl">Zakładka w sekcji</div>`+
+          secTabsFor(t.sec).map(z=>`<div data-stb2="${z.id}">${t.stb===z.id?"✓ ":""}${esc(z.name)}</div>`).join("")+
+          (t.stb!==undefined ? `<div data-stb2="none">✕ Wyjmij z zakładki</div>` : "")
+        : ""}
      <div class="dd-sep"></div>
      <div data-tm="up">${upI}Przesuń w górę</div>
      <div data-tm="down">${downI}Przesuń w dół</div>
@@ -4439,6 +4533,8 @@ function tagMenu(e, t){
       t.color = ev.target.dataset.pc || undefined;
       saveTags(); dd.style.display="none"; renderAll(); return;
     }
+    const z2 = ev.target.closest("[data-stb2]");
+    if(z2){ dd.style.display="none"; setTagSecTab(t, z2.dataset.stb2==="none" ? null : +z2.dataset.stb2); return; }
     const s2 = ev.target.closest("[data-sec2]");
     if(s2){ dd.style.display="none"; setTagSection(t.id, s2.dataset.sec2==="none" ? null : +s2.dataset.sec2); return; }
     const m = ev.target.dataset.tm;
@@ -4762,7 +4858,7 @@ function bumpTagsVer(){ _tagsVer++; }
 /* wszystko, co widać na karcie — gdy to samo, karta może zostać bez zmian */
 function noteCardSig(n){
   return [n.g, n.mo, n.t, (n.h||n.c||"").length, n.pin?1:0, n.fav?1:0, n.ord||0, n.ptb||0, n.tg.join(","), n.b, n.ch, n.v,
-          n.ks, n.itn, n.par, n.ff, n.lh, n.pm, n.la, query, sortMode, _tagsVer].join("\u0001");
+          n.ks, n.itn, n.par, n.ff, n.lh, n.pm, n.la, n.stb, n.cr, query, sortMode, _tagsVer].join("\u0001");
 }
 /**
  * Zwraca kartę notatki: gotową z pamięci podręcznej albo nowo zbudowaną.
@@ -4933,6 +5029,22 @@ function noteCardRef(n, ref, link){
 }
 
 /* pasek metadanych: odnośnik, symbol publikacji, wydanie, akapit, data modyfikacji */
+/**
+ * Data na karcie.
+ *
+ * Karta pokazywała zawsze datę ostatniej zmiany. Po włączeniu sortowania
+ * „według utworzenia" daty wyglądały więc na nieuporządkowane i sortowanie
+ * sprawiało wrażenie zepsutego. Teraz pokazujemy tę datę, według której
+ * aktualnie sortujemy, a w podpowiedzi obie.
+ */
+function noteCardDate(n){
+  const poUtworzeniu = sortMode==="createdNew" || sortMode==="createdOld";
+  const cr = (n.cr||"").substring(0,10), mo = (n.mo||"").substring(0,10);
+  const widoczna = poUtworzeniu ? (cr||mo) : (mo||cr);
+  const podpowiedz = "Utworzono: "+(cr||"—")+" · Ostatnia zmiana: "+(mo||"—");
+  return `<span class="pill date${poUtworzeniu?" dateCr":""}" title="${esc(podpowiedz)}">`+
+         `${IC_CLOCK} ${widoczna}${poUtworzeniu?'<span class="dateTag">utw.</span>':""}</span>`;
+}
 function noteCardMeta(n){
   const ref = refLabel(n), link = finderUrl(n);
   return `<div class="nmeta2">
@@ -4940,7 +5052,7 @@ function noteCardMeta(n){
        ${n.ks?`<span class="pill ks" title="${esc(pubFullName(n.ks))}">${esc(n.ks)}</span>`:""}
        ${n.itn?`<span class="pill issue" title="Wydanie">${esc(issueLabel(n.itn))}</span>`:""}
        ${n.par?`<span class="pill par" title="Akapit w publikacji">¶ ${n.par}</span>`:""}
-       <span class="pill date">${IC_CLOCK} ${(n.mo||"").substring(0,10)}</span>
+       ${noteCardDate(n)}
      </div>`;
 }
 
@@ -5019,6 +5131,7 @@ function noteCard(n){
          <div class="dd-lbl">Werset</div>
          <div data-x="verse">${ICO.bookmark}${n.b?"Zmień":"Przypisz"} werset…</div>
          ${n.ks?`<div data-x="ptb">${ICO.tag}Zakładka publikacji…</div>`:""}
+         ${(typeof secTabs!=="undefined" && secTabs.length)?`<div data-x="stb">${ICO.tag}Zakładka w sekcji…</div>`:""}
          ${link?`<div data-x="open">${ICO.ext}Otwórz w JW Library</div>`:""}
          <div class="dd-sep"></div>
          <div class="dd-lbl">Eksport notatki</div>
@@ -5033,6 +5146,7 @@ function noteCard(n){
         const it=ev.target.closest("[data-x]"); if(!it) return;
         const x=it.dataset.x; dd.style.display="none";
         if(x==="ptb"){ setTimeout(()=>pubTabMenu(n, e.target.closest(".ncard")||document.body), 40); return; }
+        if(x==="stb"){ setTimeout(()=>menuZakladek(e.target.closest(".ncard")||document.body, n, "note"), 40); return; }
         if(x==="fav") toggleFav(n);
         else if(x==="pin") togglePin(n);
         else if(x==="doc") exportNoteWord(n);
@@ -7363,14 +7477,51 @@ async function wczytajBiblioteke(opis, nazwa){
     return true;
   }
   if(!opis.suma){
-    /* Bez sumy kontrolnej nie wykonujemy obcego kodu po cichu — mówimy wprost,
-       czego brakuje. Wpisanie sumy albo wgranie pliku do lib/ załatwia sprawę. */
-    throw new Error("Brak biblioteki "+nazwa+". Wgraj plik do katalogu lib/ obok aplikacji "+
-                    "(instrukcja w lib/README.md) albo uzupełnij sumę kontrolną w kodzie.");
+    /* Bez sumy kontrolnej nie wykonujemy obcego kodu PO CICHU — ale nie zamykamy
+       też drogi na głucho. Pytamy raz, wprost, i zapamiętujemy odpowiedź.
+       Świadoma zgoda jest tu warta więcej niż ściana, przez którą import
+       przestaje działać w ogóle. */
+    if(!(await zgodaNaBiblioteki())){
+      throw new Error("Import wymaga bibliotek do odczytania archiwum. "+
+                      "Możesz je wgrać do katalogu lib/ obok aplikacji (instrukcja w lib/README.md) "+
+                      "albo zgodzić się na pobranie z cdnjs.");
+    }
+    await loadScript(opis.zdalnie);
+    return false;
   }
   await loadScript(opis.zdalnie, opis.suma);
   return false;
 }
+const KLUCZ_ZGODY = "libZgoda";
+/**
+ * Pyta raz o zgodę na pobranie bibliotek z cdnjs i zapamiętuje odpowiedź.
+ * @returns {Promise<boolean>}
+ */
+async function zgodaNaBiblioteki(){
+  if(lsGet(KP+KLUCZ_ZGODY, null)==="1") return true;
+  const ok = await askConfirm("Pobrać biblioteki do odczytania archiwum?",
+    "Plik <b>.jwlibrary</b> to archiwum z bazą w środku. Do jego otwarcia potrzebne są "+
+    "dwie biblioteki (JSZip i sql.js), których nie ma w aplikacji.<br><br>"+
+    "Można je pobrać z <b>cdnjs.cloudflare.com</b> — to duży, powszechnie używany serwer, "+
+    "ale <b>obcy</b>. Pobrany kod działa z dostępem do Twoich notatek, dlatego pytam, "+
+    "zamiast robić to po cichu.<br><br>"+
+    "<b>Bezpieczniej:</b> wgraj trzy pliki do katalogu <code>lib/</code> obok aplikacji — "+
+    "instrukcja w <code>lib/README.md</code>. Wtedy import działa bez internetu i bez "+
+    "zaufania komukolwiek.<br><br>"+
+    "Zgoda zostanie zapamiętana. Możesz ją cofnąć w Ustawieniach.",
+    {okLabel:"Pobierz z cdnjs", cancelLabel:"Nie teraz"});
+  if(ok) lsSet(KP+KLUCZ_ZGODY, "1");
+  return !!ok;
+}
+/** Cofnięcie zgody — z Ustawień. */
+function cofnijZgodeNaBiblioteki(){
+  lsSet(KP+KLUCZ_ZGODY, "");
+  try{ localStorage.removeItem(KP+KLUCZ_ZGODY); }catch(e){}
+  toast("Zgoda cofnięta — przy następnym imporcie zapytam ponownie");
+}
+/** Czy zgoda została udzielona (do pokazania w Ustawieniach). */
+function zgodaNaBibliotekiUdzielona(){ return lsGet(KP+KLUCZ_ZGODY, null)==="1"; }
+
 let SQL=null;
 async function getLibs(){
   await wczytajBiblioteke(BIBLIOTEKI.jszip, "JSZip");
@@ -8116,7 +8267,11 @@ async function nazwaPlikuKopii(){
 function daneKopii(){
   /* Zakładki publikacji też muszą trafić do kopii — bez nich podział na lekcje
      i rozdziały nie odtworzy się na drugim urządzeniu, mimo że same notatki tam dojdą. */
-  return {tags, notes, sections, pubTabs: (typeof pubTabs!=="undefined" ? pubTabs : [])};
+  return {tags, notes, sections,
+          pubTabs: (typeof pubTabs!=="undefined" ? pubTabs : []),
+          /* Zakładki sekcji to własny podział użytkownika — bez nich kopia
+             odtworzy notatki, ale zgubi porządek, który sobie zrobił. */
+          secTabs: (typeof secTabs!=="undefined" ? secTabs : [])};
 }
 
 /**
@@ -8255,6 +8410,8 @@ async function handleJsonFile(e){
     });
     if(Array.isArray(data.pubTabs)) data.pubTabs = data.pubTabs.filter(z=>
       z && typeof z==="object" && typeof z.name==="string" && z.name.trim());
+    if(Array.isArray(data.secTabs)) data.secTabs = data.secTabs.filter(z=>
+      z && typeof z==="object" && typeof z.name==="string" && z.name.trim() && isFinite(Number(z.id)));
     if(data.notes.length > MAX_NOTATEK)
       throw new Error("Plik zawiera "+data.notes.length+" notatek, a dopuszczalne jest do "+MAX_NOTATEK);
     if(data.tags.length > MAX_ETYKIET)
@@ -8289,6 +8446,13 @@ async function handleJsonFile(e){
         if(changed.length) await idbBulkChunked("notes", changed);
         saveSections();
         if(typeof savePubTabs==="function") savePubTabs();   // zakładki publikacji z kopii
+        if(typeof secTabs!=="undefined" && Array.isArray(data.secTabs)){
+          // dokładamy tylko te, których jeszcze nie ma — po nazwie w obrębie sekcji
+          data.secTabs.forEach(z=>{
+            if(!secTabs.some(x=>x.sec===z.sec && x.name===z.name)) secTabs.push(z);
+          });
+          saveSecTabs();
+        }
       }
       const kontrolaM = idb ? await sprawdzZapis(notes.length, tags.length) : null;
       renderAll();
@@ -8321,6 +8485,8 @@ async function handleJsonFile(e){
       .filter(x=>x&&typeof x==="object"&&isFinite(Number(x.id))&&typeof x.name==="string");
     const noweZakladki = (Array.isArray(data.pubTabs)?data.pubTabs:[])
       .filter(x=>x&&typeof x==="object"&&x.ks&&typeof x.name==="string"&&x.name.trim());
+    const noweZakladkiSekcji = (Array.isArray(data.secTabs)?data.secTabs:[])
+      .filter(x=>x&&typeof x==="object"&&typeof x.name==="string"&&x.name.trim());
 
     let kontrola = null;
     if(idb){
@@ -8338,6 +8504,7 @@ async function handleJsonFile(e){
     // dopiero teraz, po potwierdzonym zapisie, podmieniamy to, co widać
     notes = noweNotes; tags = noweTags; sections = noweSekcje;
     if(typeof pubTabs!=="undefined") pubTabs = noweZakladki;
+    if(typeof secTabs!=="undefined"){ secTabs = noweZakladkiSekcji; saveSecTabs(); }
     renderAll();
     showInfo("Zastąpiono dane",
       `Zapisano i sprawdzono w bazie urządzenia:<br>`+
@@ -9084,12 +9251,19 @@ function openSettings(){
        <div class="st-hint">Zamiast pobierać co dzień nowy plik, aplikacja może <b>nadpisywać jeden wskazany</b> — na dysku nie przybywa kopii. Wskazujesz go raz. Wymaga przeglądarki Chrome, Edge, Brave lub Arc na komputerze; w Safari pozostaje zwykłe pobieranie.</div>
      </div>
      <div class="st-sec">
+       <div class="st-lbl">Import z JW Library</div>
+       <div class="st-ver" id="stLib"></div>
+       <button class="st-opt st-wide" id="stLibOff" data-act="libOff" style="display:none">Cofnij zgodę na pobieranie z cdnjs</button>
+       <div class="st-hint">Odczytanie pliku <b>.jwlibrary</b> wymaga dwóch bibliotek. Aplikacja szuka ich najpierw w katalogu <code>lib/</code> obok siebie — wtedy import działa bez internetu. Gdy ich tam nie ma, pyta o zgodę na pobranie z cdnjs.</div>
+     </div>
+     <div class="st-sec">
        <div class="st-lbl">Wersja aplikacji</div>
        <div class="st-ver" id="stWersja"></div>
        <button class="st-opt st-wide" data-act="odswiez">Pobierz najnowszą wersję</button>
        <div class="st-hint">Kasuje zapisaną kopię plików aplikacji i wczytuje ją od nowa z serwera. Przydatne, gdy po wgraniu nowej wersji na GitHub wciąż widzisz starą. <b>Notatki zostają nietknięte</b> — są w osobnej bazie na urządzeniu.</div>
      </div>`;
   pokazPlikKopii();
+  pokazStanBibliotek();
   const pole = $("stWersja");
   if(pole){
     const znak = document.querySelector(".brand-name .ver");
@@ -9113,6 +9287,11 @@ function openSettings(){
       return;
     }
     const act = e.target.closest("[data-act]");
+    if(act && act.dataset.act==="libOff"){
+      cofnijZgodeNaBiblioteki();
+      pokazStanBibliotek();
+      return;
+    }
     if(act && act.dataset.act==="plikKopii"){
       wskazPlikKopii().then(ok=>{ if(ok) pokazPlikKopii(); });
       return;
@@ -9153,6 +9332,24 @@ async function pokazPlikKopii(){
   const nazwa = await nazwaPlikuKopii();
   opis.textContent = nazwa ? "Nadpisywany plik: " + nazwa : "Każda kopia to nowy plik z datą w nazwie.";
   if(wyl) wyl.style.display = nazwa ? "" : "none";
+}
+/** Skąd aplikacja bierze biblioteki do importu — widoczne w Ustawieniach. */
+async function pokazStanBibliotek(){
+  const opis = document.getElementById("stLib");
+  const wyl = document.getElementById("stLibOff");
+  if(!opis) return;
+  let lokalne = false;
+  try{ lokalne = await plikObok("./lib/jszip.min.js"); }catch(e){}
+  if(lokalne){
+    opis.textContent = "Biblioteki są obok aplikacji — import działa bez internetu.";
+    if(wyl) wyl.style.display = "none";
+    return;
+  }
+  const zgoda = typeof zgodaNaBibliotekiUdzielona==="function" && zgodaNaBibliotekiUdzielona();
+  opis.textContent = zgoda
+    ? "Pobierane z cdnjs za Twoją zgodą."
+    : "Brak w katalogu lib/ — przy imporcie zapytam o zgodę na pobranie z cdnjs.";
+  if(wyl) wyl.style.display = zgoda ? "" : "none";
 }
 $("btnSettings").onclick = openSettings;
 
@@ -9672,6 +9869,195 @@ function applyPubTabOrder(kolejnosc){
   });
   savePubTabs(); renderTags();
   toastOk("Zapisano kolejność zakładek");
+}
+
+</script>
+<script>
+/* ==========================================================================
+   JW Study — sekcje-zakladki.js
+   ZAKŁADKI WEWNĄTRZ SEKCJI
+
+   Sekcja grupowała dotąd wyłącznie etykiety. Zakładka to poziom niżej:
+   nazwane miejsce wewnątrz sekcji, do którego wrzuca się notatki ALBO etykiety,
+   według uznania. Przykład: sekcja „Kongres 2026", a w niej zakładki
+   „Wykłady", „Punkty do przemyślenia", „Materiały".
+
+   Model danych:
+     secTabs  = [{id, sec, name, ord}]     — przechowywane w meta pod "secTabs"
+     note.stb = id zakładki                — notatka wrzucona wprost
+     tag.stb  = id zakładki                — etykieta przypisana do zakładki
+
+   Zakładka pokazuje notatki wrzucone wprost ORAZ wszystkie notatki noszące
+   którąkolwiek z jej etykiet — dzięki temu da się jej używać na oba sposoby
+   naraz, bez wybierania jednego podejścia na starcie.
+   ========================================================================== */
+"use strict";
+
+let secTabs = [];
+
+function saveSecTabs(){
+  if(idb) idbPut("meta", secTabs, "secTabs").catch(e=>reportSaveError(e,"zakładki sekcji"));
+}
+async function loadSecTabs(){
+  try{
+    const dane = await idbGet("meta","secTabs");
+    secTabs = Array.isArray(dane) ? dane.filter(z=>z && typeof z==="object" && z.id && typeof z.name==="string") : [];
+  }catch(e){ secTabs = []; }
+}
+function nextSecTabId(){ return secTabs.reduce((m,z)=>Math.max(m,z.id||0),0)+1; }
+
+/** Zakładki danej sekcji, w kolejności ustawionej przez użytkownika. */
+function secTabsFor(secId){
+  return secTabs.filter(z=>z.sec===secId).sort((a,b)=>(a.ord??0)-(b.ord??0));
+}
+/** Ile notatek trafia do zakładki — wrzuconych wprost i przez etykiety. */
+function secTabCount(id){
+  const etykiety = tags.filter(t=>t.stb===id).map(t=>t.id);
+  let ile = 0;
+  for(const n of notes){
+    if(n.del) continue;
+    if(n.stb===id || (etykiety.length && n.tg.some(t=>etykiety.includes(t)))) ile++;
+  }
+  return ile;
+}
+/** Czy notatka należy do zakładki — wprost albo przez którąś ze swoich etykiet. */
+function notatkaWZakladce(n, id){
+  if(n.stb===id) return true;
+  if(!n.tg || !n.tg.length) return false;
+  return tags.some(t=>t.stb===id && n.tg.includes(t.id));
+}
+
+/* ===== TWORZENIE I ZARZĄDZANIE ===== */
+async function createSecTab(secId){
+  const s = sections.find(x=>x.id===secId); if(!s) return;
+  const nazwa = await askText({title:"Nowa zakładka w sekcji „"+s.name+"”",
+    placeholder:"np. Wykłady", okLabel:"Utwórz",
+    hint:"Do zakładki wrzucisz notatki albo etykiety — jak wolisz."});
+  if(!nazwa || !nazwa.trim()) return;
+  const nm = nazwa.trim();
+  if(secTabsFor(secId).some(z=>z.name===nm)){ toast("Taka zakładka już tu jest"); return; }
+  secTabs.push({id:nextSecTabId(), sec:secId, name:nm, ord:secTabsFor(secId).length});
+  saveSecTabs(); renderTags();
+  toastOk("Utworzono zakładkę „"+nm+"”");
+}
+async function renameSecTab(id){
+  const z = secTabs.find(x=>x.id===id); if(!z) return;
+  const nazwa = await askText({title:"Zmień nazwę zakładki", value:z.name, okLabel:"Zapisz"});
+  if(!nazwa || !nazwa.trim()) return;
+  z.name = nazwa.trim(); saveSecTabs(); renderTags();
+}
+async function deleteSecTab(id){
+  const z = secTabs.find(x=>x.id===id); if(!z) return;
+  const ile = secTabCount(id);
+  const etyk = tags.filter(t=>t.stb===id).length;
+  if(!(await askConfirm("Usunąć zakładkę?",
+      "Zakładka „"+esc(z.name)+"”."+
+      (ile||etyk ? "<br><br><b>Notatki i etykiety NIE zostaną usunięte</b> — wrócą do sekcji." : ""),
+      {okLabel:"Usuń zakładkę", danger:true}))) return;
+  notes.forEach(n=>{ if(n.stb===id){ delete n.stb; markDirty(n); } });
+  tags.forEach(t=>{ if(t.stb===id) delete t.stb; });
+  secTabs = secTabs.filter(x=>x.id!==id);
+  saveSecTabs(); saveTags();
+  if(String(filt.tag)==="stb:"+id) filt.tag="all";
+  renderAll();
+  toast("Usunięto zakładkę");
+}
+/** Wrzuca notatkę do zakładki albo ją stamtąd zdejmuje (id === null). */
+function setNoteSecTab(n, id){
+  if(id===null || id===undefined) delete n.stb; else n.stb = id;
+  markDirty(n); renderAll();
+  const z = secTabs.find(x=>x.id===id);
+  toast(z ? "Notatka w zakładce „"+z.name+"”" : "Notatka zdjęta z zakładki");
+}
+/** Przypisuje etykietę do zakładki albo zdejmuje. */
+function setTagSecTab(t, id){
+  if(id===null || id===undefined) delete t.stb;
+  else { t.stb = id; const z=secTabs.find(x=>x.id===id); if(z) t.sec = z.sec; }
+  saveTags(); renderAll();
+}
+
+/* ===== MENU ===== */
+/** Lista zakładek do wyboru — dla notatki albo dla etykiety. */
+function menuZakladek(el, obiekt, rodzaj){
+  const dd = $("dropdown");
+  const teraz = obiekt.stb;
+  const grupy = sections.slice().sort((a,b)=>(a.ord??0)-(b.ord??0))
+    .map(s=>{
+      const lista = secTabsFor(s.id);
+      if(!lista.length) return "";
+      return `<div class="dd-lbl">${esc(s.name)}</div>` +
+        lista.map(z=>`<div data-stb="${z.id}">${teraz===z.id?"✓ ":""}${esc(z.name)}`+
+                     `<span class="dd-hint">${secTabCount(z.id)}</span></div>`).join("");
+    }).join("");
+  dd.innerHTML = grupy
+    ? `<div class="dd-lbl">Wrzuć do zakładki</div>`+grupy+
+      `<div class="dd-sep"></div><div data-stb="none">Zdejmij z zakładki</div>`
+    : `<div class="dd-lbl">Brak zakładek</div>`+
+      `<div class="dd-hint" style="padding:6px 12px">Utwórz zakładkę w sekcji: menu ⋯ przy nazwie sekcji.</div>`;
+  dd.style.display="block";
+  if(typeof oznaczPozycjeMenu==="function") oznaczPozycjeMenu(dd);
+  placeDropdown(dd, el);
+  dd.onclick = ev=>{
+    const w = ev.target.closest("[data-stb]"); if(!w) return;
+    dd.style.display="none";
+    const id = w.dataset.stb==="none" ? null : +w.dataset.stb;
+    if(rodzaj==="tag") setTagSecTab(obiekt, id); else setNoteSecTab(obiekt, id);
+  };
+}
+/** Menu samej zakładki: nazwa, kolejność, usunięcie. */
+function secTabMenu(e, z){
+  const dd = $("dropdown");
+  const gora=_svg('<path d="M12 19V5M6 11l6-6 6 6"/>'), dol=_svg('<path d="M12 5v14M6 13l6 6 6-6"/>');
+  dd.innerHTML =
+    `<div class="dd-lbl">Zakładka „${esc(z.name)}” · ${secTabCount(z.id)} notatek</div>
+     <div data-zm="ren">${ICO.edit}Zmień nazwę</div>
+     <div class="dd-sep"></div>
+     <div data-zm="up">${gora}Przesuń w górę</div>
+     <div data-zm="down">${dol}Przesuń w dół</div>
+     <div class="dd-sep"></div>
+     <div data-zm="del" class="dd-danger">${ICO.trash}Usuń zakładkę</div>`;
+  dd.style.display="block";
+  if(typeof oznaczPozycjeMenu==="function") oznaczPozycjeMenu(dd);
+  placeDropdown(dd, e.target);
+  dd.onclick = ev=>{
+    const m = ev.target.closest("[data-zm]"); if(!m) return;
+    dd.style.display="none";
+    const a = m.dataset.zm;
+    if(a==="ren") renameSecTab(z.id);
+    else if(a==="del") deleteSecTab(z.id);
+    else przesunSecTab(z.id, a==="up" ? -1 : 1);
+  };
+}
+function przesunSecTab(id, kier){
+  const z = secTabs.find(x=>x.id===id); if(!z) return;
+  const lista = secTabsFor(z.sec);
+  const i = lista.findIndex(x=>x.id===id);
+  const j = i + kier;
+  if(j<0 || j>=lista.length) return;
+  const tmp = lista[i].ord ?? i; lista[i].ord = lista[j].ord ?? j; lista[j].ord = tmp;
+  saveSecTabs(); renderTags();
+}
+/** Po przeciągnięciu zakładek zapisujemy nową kolejność. */
+function applySecTabOrder(kolejnosc){
+  kolejnosc.forEach((id,i)=>{ const z=secTabs.find(x=>x.id===+id); if(z) z.ord=i; });
+  saveSecTabs();
+}
+
+/** Wiersze zakładek pod nagłówkiem sekcji. */
+function secTabRowsHtml(secId){
+  const lista = secTabsFor(secId);
+  if(!lista.length) return "";
+  return lista.map(z=>{
+    const akt = String(filt.tag)==="stb:"+z.id;
+    const ile = secTabCount(z.id);
+    return `<div class="item stbItem${akt?" active":""}${ile?"":" zero"}" data-stb="${z.id}" `+
+           `data-ord="${z.id}" data-grupa="stb${secId}">`+
+           `<span class="dragOrd" title="Przeciągnij, aby zmienić kolejność">${IC_GRIP}</span>`+
+           `<span class="stbIc" aria-hidden="true"></span>`+
+           `<span class="nm">${esc(z.name)}</span>`+
+           `<span class="more" title="Opcje zakładki">${IC_DOTS}</span>`+
+           `<span class="cnt">${ile}</span></div>`;
+  }).join("");
 }
 
 </script>
