@@ -2667,7 +2667,7 @@ html[data-theme="dark"] #colPubs{ background:var(--bg); }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v1.77</span></div>
+      <div class="brand-name">JW Study <span class="ver">v1.78</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -5867,6 +5867,50 @@ const FONT_GRUPY = [
 ];
 /** Płaska lista wszystkich krojów — do wyszukania nazwy po zapisie CSS. */
 const EDIT_FONTS = [["","Domyślna"]].concat(...FONT_GRUPY.map(g=>g[1]));
+
+/* ==========================================================================
+   DOSTĘPNOŚĆ KROJU NA TYM URZĄDZENIU
+
+   Lista krojów jest z natury zależna od systemu: Iowan Old Style czy Optima
+   są na Macu i iPadzie, ale nie na Windowsie ani Androidzie. Bez sprawdzenia
+   użytkownik wybierał „Optimę", dostawał po cichu coś innego i nie wiedział,
+   dlaczego notatka wygląda inaczej niż na drugim urządzeniu.
+
+   Sprawdzamy szerokością tekstu: jeśli napis w danym kroju ma inną szerokość
+   niż w kroju zapasowym, krój istnieje. Wynik zapamiętujemy — pomiar jest tani,
+   ale robiony dla 26 krojów przy każdym otwarciu paska byłby marnotrawstwem.
+   ========================================================================== */
+const _dostepneKroje = new Map();
+let _pomiarKrojow;          // undefined = jeszcze nie próbowaliśmy, null = się nie da
+
+/** Przygotowuje narzędzie pomiaru RAZ. Gdy środowisko go nie ma, więcej nie próbujemy. */
+function przygotujPomiarKrojow(){
+  if(_pomiarKrojow !== undefined) return _pomiarKrojow;
+  try{
+    const p = document.createElement("canvas").getContext("2d");
+    _pomiarKrojow = (p && typeof p.measureText==="function") ? p : null;
+  }catch(e){ _pomiarKrojow = null; }
+  return _pomiarKrojow;
+}
+function czcionkaDostepna(zapisCss){
+  if(!zapisCss) return true;                       // „Domyślna" jest zawsze
+  if(_dostepneKroje.has(zapisCss)) return _dostepneKroje.get(zapisCss);
+  const p = przygotujPomiarKrojow();
+  if(!p){ _dostepneKroje.set(zapisCss, true); return true; }   // nie umiemy zmierzyć — nie strasz użytkownika
+  const nazwa = zapisCss.split(",")[0].replace(/['"]/g,"").trim();
+  let wynik = true;
+  try{
+    const probka = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    wynik = ["monospace","serif","sans-serif"].some(zapas=>{
+      p.font = '72px ' + zapas;
+      const bez = p.measureText(probka).width;
+      p.font = '72px "' + nazwa + '", ' + zapas;
+      return Math.abs(p.measureText(probka).width - bez) > 0.5;
+    });
+  }catch(e){ wynik = true; }
+  _dostepneKroje.set(zapisCss, wynik);
+  return wynik;
+}
 /* Ikony kreskowe menu edytora — emoji wyglądały obco na tle reszty ikon,
    miały różną szerokość i rozjeżdżały wyrównanie pozycji. */
 const IE_CYTAT  = svgIc('<path d="M9.5 6.5C7 7.6 5.5 9.8 5.5 12.4h2.9v5H4v-5c0-3.9 1.9-6.9 5.5-8.2z"/><path d="M19 6.5c-2.5 1.1-4 3.3-4 5.9h2.9v5H13.5v-5c0-3.9 1.9-6.9 5.5-8.2z"/>');
@@ -5907,7 +5951,14 @@ function buildEditbar(n){
   const bar = document.createElement("div");
   bar.className = "editbar";
   const wybrana = (n && n.ff) || "";
-  const opcja = ([v,nm])=>`<option value="${esc(v)}" style="font-family:${v||"inherit"}"${wybrana===v?" selected":""}>${esc(nm)}</option>`;
+  /* Krój nieobecny w systemie zostaje na liście — notatka mogła powstać na innym
+     urządzeniu i wybór trzeba uszanować — ale jest oznaczony, żeby było wiadomo,
+     że tutaj zobaczysz zastępczy. */
+  const opcja = ([v,nm])=>{
+    const jest = czcionkaDostepna(v);
+    return `<option value="${esc(v)}" style="font-family:${v||"inherit"}"${wybrana===v?" selected":""}`+
+           `${jest?"":' data-brak="1"'}>${esc(nm)}${jest?"":" (zastępcza)"}</option>`;
+  };
   const fontOpts = opcja(["","Domyślna"]) +
     FONT_GRUPY.map(([grupa,kroje])=>`<optgroup label="${esc(grupa)}">${kroje.map(opcja).join("")}</optgroup>`).join("");
   bar.innerHTML = `
