@@ -2641,13 +2641,26 @@ html[data-theme="dark"] #colPubs{ background:var(--bg); }
   width:2px; border-radius:2px;
   background:var(--secLine, var(--accent2)); opacity:.55;
 }
+/* Ikona zakładki — zamknięty kształt, nie rysowany krawędziami elementu.
+   Kolor bierze z --stbKol, gdy użytkownik go wybrał. */
 .stbIc{
-  width:calc(13px * var(--uiw)); height:calc(11px * var(--uiw));
-  flex:0 0 auto; margin-right:calc(2px * var(--uiw));
-  border:1.4px solid currentColor; border-bottom:0;
-  border-radius:3px 3px 0 0; opacity:.5;
+  display:inline-flex; align-items:center; flex:0 0 auto;
+  margin-right:calc(2px * var(--uiw));
+  color:var(--stbKol, var(--muted));
 }
-.stbItem.active .stbIc{ opacity:.9; }
+.stbIc .ic{
+  width:calc(14px * var(--uiw)); height:calc(14px * var(--uiw));
+  fill:currentColor; stroke:none;
+}
+.stbItem.zero .stbIc{ opacity:.55; }
+.stbItem.active .stbIc{ color:#fff; }
+/* Wybrany kolor niesie ikona i lewa krawędź; tło zostaje jasne, żeby napis
+   pozostał czytelny przy każdym odcieniu. */
+.stbItem.zKolorem::before{ background:var(--stbKol); opacity:.9; width:3px; }
+.stbItem.zKolorem{ border-color:var(--stbKol); }
+.stbItem.active.zKolorem{ background:var(--stbKol); border-color:var(--stbKol); }
+.stbItem.active.zKolorem .nm,
+.stbItem.active.zKolorem .cnt{ color:#fff; }
 /* etykieta wrzucona do zakładki stoi pod nią, wcięta o kolejny stopień */
 #colTags .item.wZakladce{ margin-left:calc(26px * var(--uiw)); }
 #colTags .item.wZakladce::before{ left:calc(-9px * var(--uiw)); opacity:.4; }
@@ -2667,7 +2680,7 @@ html[data-theme="dark"] #colPubs{ background:var(--bg); }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v1.78</span></div>
+      <div class="brand-name">JW Study <span class="ver">v1.79</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -8461,8 +8474,12 @@ async function handleJsonFile(e){
     });
     if(Array.isArray(data.pubTabs)) data.pubTabs = data.pubTabs.filter(z=>
       z && typeof z==="object" && typeof z.name==="string" && z.name.trim());
-    if(Array.isArray(data.secTabs)) data.secTabs = data.secTabs.filter(z=>
-      z && typeof z==="object" && typeof z.name==="string" && z.name.trim() && isFinite(Number(z.id)));
+    if(Array.isArray(data.secTabs)) data.secTabs = data.secTabs.filter(z=>{
+      if(!z || typeof z!=="object" || typeof z.name!=="string" || !z.name.trim()) return false;
+      if(!isFinite(Number(z.id))) return false;
+      if(z.color!=null && !kolorBezpieczny(z.color)) delete z.color;
+      return true;
+    });
     if(data.notes.length > MAX_NOTATEK)
       throw new Error("Plik zawiera "+data.notes.length+" notatek, a dopuszczalne jest do "+MAX_NOTATEK);
     if(data.tags.length > MAX_ETYKIET)
@@ -9946,6 +9963,10 @@ function applyPubTabOrder(kolejnosc){
 
 let secTabs = [];
 
+/* Ikona zakładki. Wcześniej rysowana samymi krawędziami elementu (ramka bez dolnej
+   krawędzi) — wyglądała jak niedokończony kwadrat. Teraz zwykły, zamknięty kształt. */
+const IC_ZAKLADKA = svgIc('<path d="M6 4h12a1 1 0 0 1 1 1v15l-7-4-7 4V5a1 1 0 0 1 1-1z"/>');
+
 function saveSecTabs(){
   if(idb) idbPut("meta", secTabs, "secTabs").catch(e=>reportSaveError(e,"zakładki sekcji"));
 }
@@ -9958,6 +9979,10 @@ async function loadSecTabs(){
 function nextSecTabId(){ return secTabs.reduce((m,z)=>Math.max(m,z.id||0),0)+1; }
 
 /** Zakładki danej sekcji, w kolejności ustawionej przez użytkownika. */
+/** Kolor zakładki, wyłącznie w bezpiecznym zapisie. */
+function kolorZakladki(z){
+  return (z && typeof kolorBezpieczny==="function" && kolorBezpieczny(z.color)) ? z.color : "";
+}
 function secTabsFor(secId){
   return secTabs.filter(z=>z.sec===secId).sort((a,b)=>(a.ord??0)-(b.ord??0));
 }
@@ -10059,9 +10084,16 @@ function menuZakladek(el, obiekt, rodzaj){
 function secTabMenu(e, z){
   const dd = $("dropdown");
   const gora=_svg('<path d="M12 19V5M6 11l6-6 6 6"/>'), dol=_svg('<path d="M12 5v14M6 13l6 6 6-6"/>');
+  const pal = c => {
+    const wybrany = (c||"") === (kolorZakladki(z)||"");
+    return `<span class="pal ${c?"":"pal-none"} ${wybrany?"sel":""}" data-zc="${c||""}" `+
+           `style="${c?`background:${c}`:""}" title="${c||"Bez koloru"}">${c?"":"✕"}</span>`;
+  };
   dd.innerHTML =
     `<div class="dd-lbl">Zakładka „${esc(z.name)}” · ${secTabCount(z.id)} notatek</div>
      <div data-zm="ren">${ICO.edit}Zmień nazwę</div>
+     <div class="dd-lbl">Kolor zakładki</div>
+     <div class="palrow">${pal("")}${TAGCOLORS.map(c=>pal(c)).join("")}</div>
      <div class="dd-sep"></div>
      <div data-zm="up">${gora}Przesuń w górę</div>
      <div data-zm="down">${dol}Przesuń w dół</div>
@@ -10071,6 +10103,10 @@ function secTabMenu(e, z){
   if(typeof oznaczPozycjeMenu==="function") oznaczPozycjeMenu(dd);
   placeDropdown(dd, e.target);
   dd.onclick = ev=>{
+    if(ev.target.dataset.zc!==undefined){
+      z.color = ev.target.dataset.zc || undefined;
+      saveSecTabs(); dd.style.display="none"; renderTags(); return;
+    }
     const m = ev.target.closest("[data-zm]"); if(!m) return;
     dd.style.display="none";
     const a = m.dataset.zm;
@@ -10101,10 +10137,14 @@ function secTabRowsHtml(secId){
   return lista.map(z=>{
     const akt = String(filt.tag)==="stb:"+z.id;
     const ile = secTabCount(z.id);
-    return `<div class="item stbItem${akt?" active":""}${ile?"":" zero"}" data-stb="${z.id}" `+
-           `data-ord="${z.id}" data-grupa="stb${secId}">`+
+    const kol = kolorZakladki(z);
+    /* Kolor niesie ikona i lewa krawędź wiersza — tło zostaje jasne, żeby napis
+       był czytelny przy każdym odcieniu z palety. */
+    const styl = kol ? ` style="--stbKol:${kol}"` : "";
+    return `<div class="item stbItem${akt?" active":""}${ile?"":" zero"}${kol?" zKolorem":""}" `+
+           `data-stb="${z.id}" data-ord="${z.id}" data-grupa="stb${secId}"${styl}>`+
            `<span class="dragOrd" title="Przeciągnij, aby zmienić kolejność">${IC_GRIP}</span>`+
-           `<span class="stbIc" aria-hidden="true"></span>`+
+           `<span class="stbIc" aria-hidden="true">${IC_ZAKLADKA}</span>`+
            `<span class="nm">${esc(z.name)}</span>`+
            `<span class="more" title="Opcje zakładki">${IC_DOTS}</span>`+
            `<span class="cnt">${ile}</span></div>`;
