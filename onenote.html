@@ -179,18 +179,70 @@ async function pobierz(url, binarne){
   }
   return binarne ? {blob: await o.blob(), typ: o.headers.get("content-type")||"image/png"} : o.text();
 }
-/* Interfejs OneNote bywa wybredny co do parametrów zapytania i odrzuca niektóre
-   ich połączenia błędem 400 — zależnie od rodzaju konta. Zamiast upierać się przy
-   jednym zapisie, próbujemy po kolei od najbogatszego do najprostszego. Ostatni
-   wariant nie ma żadnych dodatków i zadziała zawsze; wtedy nazwy notesów i sekcji
-   uzupełniamy osobnym zapytaniem. */
+/* ==========================================================================
+   POBIERANIE SPISU STRON
+
+   Zapytanie o wszystkie strony naraz (~/onenote/pages) działa tylko na kontach
+   z niewielką liczbą sekcji. Przy większej liczbie Microsoft odpowiada:
+   „Przekroczono maksymalną liczbę sekcji dla tego żądania" i sam zaleca
+   pobieranie sekcja po sekcji.
+
+   Dlatego drogą podstawową jest przejście po sekcjach — działa niezależnie od
+   wielkości konta i przy okazji daje nazwy notesu i sekcji bez dodatkowych
+   parametrów, na które ten interfejs bywa wybredny. Zapytanie zbiorcze zostaje
+   jako droga zapasowa, gdyby spis sekcji był niedostępny.
+   ========================================================================== */
+async function spis(){
+  try{
+    return await spisPoSekcjach();
+  }catch(e){
+    postep("Nie udało się przejść po sekcjach — próbuję pobrać wszystko naraz…");
+    return await spisZbiorczy();
+  }
+}
+
+/** Droga podstawowa: sekcja po sekcji. */
+async function spisPoSekcjach(){
+  postep("Pobieram spis sekcji…");
+  const sekcje = [];
+  let url = "https://graph.microsoft.com/v1.0/me/onenote/sections?$top=100&$expand=parentNotebook";
+  while(url){
+    const odp = JSON.parse(await pobierz(url));
+    sekcje.push(...(odp.value||[]));
+    url = odp["@odata.nextLink"] || null;
+  }
+  if(!sekcje.length) throw new Error("Konto nie zwróciło żadnych sekcji.");
+
+  const strony = [];
+  for(let i=0;i<sekcje.length;i++){
+    const sek = sekcje[i];
+    const nazwaSekcji = sek.displayName || "(bez nazwy)";
+    const nazwaNotesu = (sek.parentNotebook && sek.parentNotebook.displayName) || "OneNote";
+    postep("Sekcja "+(i+1)+" z "+sekcje.length+": "+esc(nazwaSekcji)+" — notatek dotąd: "+strony.length, i+1, sekcje.length);
+    let u = "https://graph.microsoft.com/v1.0/me/onenote/sections/"+sek.id+"/pages?$top=100";
+    while(u){
+      let odp;
+      try{ odp = JSON.parse(await pobierz(u)); }
+      catch(e){ break; }        // jedna sekcja się nie udała — reszta ma się przenieść
+      (odp.value||[]).forEach(st=>{
+        st.parentSection = {id: sek.id, displayName: nazwaSekcji};
+        st.parentNotebook = {displayName: nazwaNotesu};
+        strony.push(st);
+      });
+      u = odp["@odata.nextLink"] || null;
+    }
+  }
+  return strony;
+}
+
+/** Droga zapasowa: wszystkie strony jednym zapytaniem, w kilku wariantach. */
 const WARIANTY_SPISU = [
   "?$top=100&$expand=parentSection,parentNotebook",
   "?$top=100&$expand=parentSection",
   "?$top=100",
   ""
 ];
-async function spis(){
+async function spisZbiorczy(){
   let ostatniBlad = null;
   for(const wariant of WARIANTY_SPISU){
     try{
@@ -202,15 +254,11 @@ async function spis(){
         url = odp["@odata.nextLink"] || null;
       }
       if(!strony.length) return strony;
-      /* Gdy zapytanie nie zwróciło nazw notesu i sekcji, dobieramy je osobno:
-         spis sekcji zawiera i jedno, i drugie. */
-      if(!strony[0].parentNotebook || !strony[0].parentSection){
-        await uzupelnijNazwy(strony);
-      }
+      if(!strony[0].parentNotebook || !strony[0].parentSection) await uzupelnijNazwy(strony);
       return strony;
     }catch(e){
       ostatniBlad = e;
-      if(!/błędem 400/.test(e.message)) throw e;   // inny błąd niż odrzucone zapytanie
+      if(!/błędem 400/.test(e.message)) throw e;
       postep("Serwer nie przyjął zapytania — próbuję prostszym sposobem…");
     }
   }
@@ -230,11 +278,10 @@ async function uzupelnijNazwy(strony){
       }));
       url = odp["@odata.nextLink"] || null;
     }
-  }catch(e){ return; }   // bez nazw też damy radę — wszystko trafi do jednej sekcji
+  }catch(e){ return; }
   strony.forEach(s=>{
     const idSekcji = (s.parentSection && s.parentSection.id) ||
-      (typeof s.parentSection === "string" ? s.parentSection : null) ||
-      ((s.links && s.links.oneNoteWebUrl) ? null : null);
+      (typeof s.parentSection === "string" ? s.parentSection : null);
     const dane = idSekcji ? poId.get(idSekcji) : null;
     if(dane){
       s.parentSection = {displayName: dane.sekcja, id: idSekcji};
