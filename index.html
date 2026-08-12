@@ -2672,6 +2672,15 @@ html[data-theme="dark"] #colPubs{ background:var(--bg); }
 }
 .pill.date.dateCr{ background:var(--sel); }
 
+/* Pole wyboru zakładki w oknie nowej notatki */
+#nnZakladka{
+  width:100%;
+  font-size:calc(13.5px * var(--uiw));
+  padding:calc(9px * var(--uiw)) calc(11px * var(--uiw));
+  border:1px solid var(--border); border-radius:calc(10px * var(--uiw));
+  background:var(--panel); color:var(--text);
+}
+
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -2680,7 +2689,7 @@ html[data-theme="dark"] #colPubs{ background:var(--bg); }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v1.90</span></div>
+      <div class="brand-name">JW Study <span class="ver">v1.92</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -2870,6 +2879,14 @@ html[data-theme="dark"] #colPubs{ background:var(--bg); }
         <input type="text" id="nnNewTagName" placeholder="Nowa etykieta — wpisz nazwę" autocomplete="off">
         <button type="button" id="nnAddTag" class="btn">＋ Dodaj</button>
       </div>
+    </div>
+
+    <div class="nn-card" id="nnZakladkaKarta">
+      <div class="nn-card-hd">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12a1 1 0 0 1 1 1v15l-7-4-7 4V5a1 1 0 0 1 1-1z"/></svg>
+        <span>Zakładka w sekcji</span><span class="nn-opt">notatka pojawi się od razu w tym miejscu</span>
+      </div>
+      <select id="nnZakladka" aria-label="Zakładka w sekcji"></select>
     </div>
 
     <div class="actions">
@@ -7407,10 +7424,41 @@ function renderNnTags(keepChecked){
     return `<label><input type="checkbox" value="${t.id}" ${chk}> ${dot}${esc(t.name)}</label>`;
   }).join("");
 }
+/**
+ * Lista zakładek w oknie nowej notatki, pogrupowana po sekcjach.
+ *
+ * Bez tego notatka utworzona „w sekcji" lądowała poza nią i trzeba jej było
+ * szukać wśród wszystkich. Gdy w kolumnie etykiet masz właśnie otwartą zakładkę,
+ * jest ona podpowiadana od razu — bo najczęściej właśnie tam ma trafić.
+ */
+function renderNnZakladki(){
+  const sel = $("nnZakladka"), karta = $("nnZakladkaKarta");
+  if(!sel) return;
+  const sekcje = (typeof sections!=="undefined" ? sections : []).slice()
+    .sort((a,b)=>(a.ord??0)-(b.ord??0));
+  const grupy = sekcje.map(s=>{
+    const lista = (typeof secTabsFor==="function") ? secTabsFor(s.id) : [];
+    if(!lista.length) return "";
+    return `<optgroup label="${esc(s.name)}">`+
+      lista.map(z=>`<option value="${z.id}">${esc(z.name)}</option>`).join("")+
+      `</optgroup>`;
+  }).join("");
+  if(!grupy){                       // nie ma żadnych zakładek — pole tylko myli
+    if(karta) karta.style.display = "none";
+    sel.innerHTML = '<option value="">— brak —</option>';
+    return;
+  }
+  if(karta) karta.style.display = "";
+  sel.innerHTML = '<option value="">— brak (notatka poza zakładkami) —</option>' + grupy;
+  /* Podpowiedź: gdy lista jest właśnie zawężona do zakładki, to w niej pracujesz. */
+  const teraz = String(filt.tag||"");
+  if(teraz.indexOf("stb:")===0) sel.value = teraz.slice(4);
+}
 $("btnNew").onclick = ()=>{
   $("nnTitle").value=""; $("nnContent").value=""; $("nnBook").value="0"; $("nnCh").value=""; $("nnV").value="";
   $("nnNewTagName").value="";
   renderNnTags(typeof filt.tag==="number" ? [filt.tag] : []);
+  renderNnZakladki();
   if(typeof filt.book==="number"&&filt.book>0) $("nnBook").value=String(filt.book);
   openModal("modalNew");
 };
@@ -7440,9 +7488,14 @@ $("nnSave").onclick = ()=>{
     pub:"", ks:"", doc:0, itn:0, col:0, cr:now, mo:now,
     tg:[...$("nnTags").querySelectorAll("input:checked")].map(i=>+i.value),
     nw:true, tgd:true };
+  const zak = $("nnZakladka") ? $("nnZakladka").value : "";
+  if(zak) n.stb = +zak;
   notes.unshift(n); saveNote(n);
   pushUndo({type:"newNote", g:n.g, label:"dodanie notatki"});
-  closeModal("modalNew"); renderAll(); toast("Notatka dodana");
+  closeModal("modalNew"); renderAll();
+  const nazwaZak = n.stb && typeof secTabs!=="undefined"
+    ? (secTabs.find(z=>z.id===n.stb)||{}).name : "";
+  toast(nazwaZak ? "Notatka dodana do zakładki „"+nazwaZak+"”" : "Notatka dodana");
 };
 
 </script>
@@ -9365,6 +9418,11 @@ function openSettings(){
        <div class="st-hint">Zamiast pobierać co dzień nowy plik, aplikacja może <b>nadpisywać jeden wskazany</b> — na dysku nie przybywa kopii. Wskazujesz go raz. Wymaga przeglądarki Chrome, Edge, Brave lub Arc na komputerze; w Safari pozostaje zwykłe pobieranie.</div>
      </div>
      <div class="st-sec">
+       <div class="st-lbl">Porządki w notatkach</div>
+       <button class="st-opt st-wide" data-act="odstepy">Uporządkuj odstępy w treści</button>
+       <div class="st-hint">Treść notatki jest wyświetlana z zachowaniem spacji, żeby Twoje własne wcięcia wyglądały tak, jak je wpisałeś. Notatki przeniesione z innego programu niosą jednak wcięcia i podziały wierszy z <b>pliku źródłowego</b> — one też są widoczne, choć nikt ich nie pisał. To narzędzie je usuwa; tekst, listy, tabele i zdjęcia zostają nietknięte.</div>
+     </div>
+     <div class="st-sec">
        <div class="st-lbl">Import z JW Library</div>
        <div class="st-ver" id="stLib"></div>
        <button class="st-opt st-wide" id="stLibOff" data-act="libOff" style="display:none">Cofnij zgodę na pobieranie z cdnjs</button>
@@ -9401,6 +9459,11 @@ function openSettings(){
       return;
     }
     const act = e.target.closest("[data-act]");
+    if(act && act.dataset.act==="odstepy"){
+      closeModal("modalSettings");
+      setTimeout(()=>uporzadkujOdstepyNotatek(), 80);
+      return;
+    }
     if(act && act.dataset.act==="libOff"){
       cofnijZgodeNaBiblioteki();
       pokazStanBibliotek();
@@ -10195,6 +10258,140 @@ function secTabRowsHtml(secId){
            `<span class="more" title="Opcje zakładki">${IC_DOTS}</span>`+
            `<span class="cnt">${ile}</span></div>`;
   }).join("");
+}
+
+</script>
+<script>
+/* ==========================================================================
+   JW Study — porzadki.js
+   UPORZĄDKOWANIE ODSTĘPÓW W NOTATKACH
+
+   Treść notatki jest wyświetlana z zachowaniem spacji (white-space:pre-wrap),
+   żeby ręcznie wpisane wcięcia i puste wiersze wyglądały tak, jak je napisałeś.
+   Ma to jednak drugą stronę: treść przeniesiona z innego programu niesie ze sobą
+   wcięcia i podziały wierszy z SAMEGO PLIKU źródłowego — i one także są widoczne,
+   choć nikt ich nie pisał. Stąd wrażenie tekstu porozrzucanego po całej karcie.
+
+   Ten moduł czyści to w notatkach JUŻ WCZYTANYCH, bez powtarzania importu.
+   ========================================================================== */
+"use strict";
+
+/**
+ * Porządkuje odstępy w treści jednej notatki.
+ * @param {string} html
+ * @returns {string} treść bez odstępów z pliku źródłowego
+ */
+function oczyscOdstepy(html){
+  if(typeof html!=="string" || !html.trim()) return html;
+  const korzen = document.createElement("div");
+  korzen.innerHTML = html;
+
+  /* 1. Odstępy między znacznikami — wcięcia i podziały wierszy z pliku źródłowego.
+        To one odpowiadają za większość pustych miejsc. */
+  (function odstepy(el){
+    [...el.childNodes].forEach(w=>{
+      if(w.nodeType===3){
+        if(!w.textContent.replace(/[\s ]/g,"")) w.remove();
+        else w.textContent = w.textContent.replace(/[\s ]+/g," ");
+      }else if(w.nodeType===1) odstepy(w);
+    });
+  })(korzen);
+
+  /* 2. Puste akapity. */
+  const pusty = el => !(el.querySelector && el.querySelector("img,hr,table")) &&
+                      !(el.textContent||"").replace(/[\s ]/g,"");
+  korzen.querySelectorAll("div,p").forEach(el=>{ if(pusty(el)) el.remove(); });
+
+  /* 3. Kontener, który zawiera wyłącznie inny blok, nic nie wnosi. */
+  let zmiana = true, obieg = 0;
+  while(zmiana && obieg++ < 12){
+    zmiana = false;
+    korzen.querySelectorAll("div").forEach(el=>{
+      const dzieci = [...el.childNodes].filter(w=>w.nodeType!==3 || w.textContent.trim());
+      if(dzieci.length===1 && dzieci[0].nodeType===1 &&
+         /^(DIV|UL|OL|TABLE|BLOCKQUOTE|H2|H3)$/.test(dzieci[0].tagName)){
+        el.replaceWith(dzieci[0]); zmiana = true;
+      }
+    });
+  }
+
+  /* 4. Więcej niż jedna przerwa z rzędu to ślad po układzie, nie po treści. */
+  korzen.querySelectorAll("br").forEach(br=>{
+    let n = br.nextSibling;
+    while(n && ((n.nodeType===3 && !n.textContent.trim()) || (n.nodeType===1 && n.tagName==="BR"))){
+      const dalej = n.nextSibling; n.remove(); n = dalej;
+    }
+  });
+  /* 4b. Przerwa POMIĘDZY blokami jest zbędna: każdy blok i tak zaczyna nowy wiersz.
+         Zostawiona daje pustą linię — dokładnie to, co widać jako rozstrzelony tekst. */
+  const blok = w => w && w.nodeType===1 && /^(DIV|P|UL|OL|TABLE|BLOCKQUOTE|H2|H3|HR)$/.test(w.tagName);
+  korzen.querySelectorAll("br").forEach(br=>{
+    if(blok(br.previousElementSibling) || blok(br.nextElementSibling)) br.remove();
+  });
+  while(korzen.firstChild && korzen.firstChild.nodeType===1 && korzen.firstChild.tagName==="BR") korzen.firstChild.remove();
+  while(korzen.lastChild && korzen.lastChild.nodeType===1 && korzen.lastChild.tagName==="BR") korzen.lastChild.remove();
+
+  /* 5. Sztywne szerokości tabel — nie mieszczą się w kolumnie notatek. */
+  korzen.querySelectorAll("table,td,th").forEach(el=>{
+    el.removeAttribute("width"); el.removeAttribute("height"); el.removeAttribute("style");
+  });
+
+  return korzen.innerHTML.trim();
+}
+
+/** Ile notatek zyskałoby na uporządkowaniu — bez ruszania czegokolwiek. */
+function policzDoUporzadkowania(){
+  let ile = 0, zaoszczedzone = 0;
+  notes.forEach(n=>{
+    if(n.del || !n.h) return;
+    const po = oczyscOdstepy(n.h);
+    if(po !== n.h){ ile++; zaoszczedzone += (n.h.length - po.length); }
+  });
+  return {ile, zaoszczedzone};
+}
+
+/**
+ * Porządkuje odstępy we wszystkich notatkach.
+ * Pyta przed wykonaniem, bo zmiana dotyczy treści i jest nieodwracalna
+ * bez kopii zapasowej.
+ */
+async function uporzadkujOdstepyNotatek(){
+  const {ile, zaoszczedzone} = policzDoUporzadkowania();
+  if(!ile){
+    showInfo("Nie ma czego porządkować",
+      "Żadna notatka nie zawiera zbędnych odstępów. Jeśli mimo to widzisz duże przerwy, "+
+      "mogą pochodzić z tekstu wpisanego ręcznie — te zostają nietknięte.");
+    return;
+  }
+  const kb = Math.max(1, Math.round(zaoszczedzone/1024));
+  const ok = await askConfirm("Uporządkować odstępy?",
+    `Zbędne odstępy znaleziono w <b>${ile}</b> notatkach.<br><br>`+
+    `Zostaną usunięte: wcięcia i podziały wierszy pochodzące z pliku źródłowego, `+
+    `puste akapity oraz zbitki przerw. <b>Tekst, listy, tabele, wyróżnienia i zdjęcia `+
+    `zostają nietknięte.</b><br><br>`+
+    `Ubędzie około ${kb} kB. Zmiany nie da się cofnąć — jeśli nie masz świeżej kopii `+
+    `zapasowej, zrób ją najpierw.`,
+    {okLabel:"Uporządkuj "+ile+" notatek"});
+  if(!ok) return;
+
+  let zmienione = 0;
+  const doZapisu = [];
+  notes.forEach(n=>{
+    if(n.del || !n.h) return;
+    const po = oczyscOdstepy(n.h);
+    if(po === n.h) return;
+    n.h = po;
+    n.c = (typeof htmlToPlain==="function") ? htmlToPlain(po) : n.c;
+    n.mo = new Date().toISOString();
+    doZapisu.push(n); zmienione++;
+  });
+  try{
+    if(idb && doZapisu.length) await idbBulkChunked("notes", doZapisu);
+  }catch(e){ reportSaveError(e, "uporządkowane notatki"); }
+  renderAll();
+  showInfo("Uporządkowano", `Poprawiono <b>${zmienione}</b> notatek.<br><br>`+
+    `Jeśli któraś nadal wygląda na rozstrzeloną, jej przerwy pochodzą z tekstu `+
+    `wpisanego ręcznie — takich nie ruszamy.`);
 }
 
 </script>

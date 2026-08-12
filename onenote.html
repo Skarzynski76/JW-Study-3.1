@@ -556,6 +556,11 @@ function uporzadkujUklad(korzen){
       n = dalej;
     }
   });
+  /* 3b. Przerwa POMIĘDZY blokami — każdy blok i tak zaczyna nowy wiersz. */
+  const blok = w => w && w.nodeType===1 && /^(DIV|P|UL|OL|TABLE|BLOCKQUOTE|H2|H3|HR)$/.test(w.tagName);
+  korzen.querySelectorAll("br").forEach(br=>{
+    if(blok(br.previousElementSibling) || blok(br.nextElementSibling)) br.remove();
+  });
   /* 4. Przerwy na samym początku i końcu notatki. */
   while(korzen.firstChild && korzen.firstChild.nodeType===1 && korzen.firstChild.tagName==="BR") korzen.firstChild.remove();
   while(korzen.lastChild && korzen.lastChild.nodeType===1 && korzen.lastChild.tagName==="BR") korzen.lastChild.remove();
