@@ -2680,7 +2680,7 @@ html[data-theme="dark"] #colPubs{ background:var(--bg); }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v1.79</span></div>
+      <div class="brand-name">JW Study <span class="ver">v1.82</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -4088,6 +4088,29 @@ function renderQuickFilters(base){
   });
 }
 
+/**
+ * Podpis licznika przy nagłówku sekcji.
+ *
+ * Liczył wyłącznie etykiety. Sekcja złożona z samych zakładek — a taka powstaje
+ * po przeniesieniu notatek z OneNote — pokazywała „0", mimo że miała w środku
+ * kilkadziesiąt notatek. Teraz liczymy to, co w niej faktycznie jest.
+ *
+ * @param {Object} s  sekcja
+ * @param {number} ileEtykiet
+ * @param {number} sumaZEtykiet  notatki widoczne przez etykiety tej sekcji
+ */
+function licznikSekcji(s, ileEtykiet, sumaZEtykiet){
+  const zakladki = (typeof secTabsFor==="function") ? secTabsFor(s.id) : [];
+  const zZakladek = (typeof secTabCount==="function")
+    ? zakladki.reduce((a,z)=>a+secTabCount(z.id), 0) : 0;
+  const czesci = [];
+  if(zakladki.length) czesci.push(zakladki.length + (zakladki.length===1 ? " zakładka" : " zakł."));
+  if(ileEtykiet) czesci.push(ileEtykiet + (ileEtykiet===1 ? " etykieta" : " etyk."));
+  const razem = Math.max(sumaZEtykiet, zZakladek);
+  if(!czesci.length) return String(razem || 0);
+  return czesci.join(" · ") + (razem ? " · " + razem : "");
+}
+
 /* ================= KOLUMNA 1: ZAKŁADKI ================= */
 function renderTags(){
   const base = notes.filter(n=>!n.del && noteMatchesBook(n,filt.book) && noteMatchesCh(n) && noteMatchesQuery(n));
@@ -4111,7 +4134,7 @@ function renderTags(){
     html += `<div class="secHead${s.open===false?" closed":""}" data-sec="${s.id}"${sc}>
       <span class="secArr">${s.open===false?"▸":"▾"}</span>
       <span class="secName">${esc(s.name)}</span>
-      <span class="secCnt">${inside.length}${sum?" · "+sum:""}</span>
+      <span class="secCnt">${licznikSekcji(s, inside.length, sum)}</span>
       <span class="secMore" title="Opcje sekcji">${IC_DOTS}</span></div>`;
     if(s.open!==false){
       // zakładki sekcji nad etykietami — to one porządkują jej zawartość
@@ -5219,6 +5242,10 @@ function renderAll(){
   visibleCount=60;
   renderTags(); renderBooks(); renderNotes();
   if(fsGuid) renderFs();
+  /* Nazwy dla czytnika ekranu nadajemy od razu po przerysowaniu. Obserwator
+     zmian też je nada, ale dopiero po oddaniu sterowania — a wtedy przez chwilę
+     istnieją przyciski bez nazwy. */
+  if(typeof nazwijPrzyciskiIkonowe==="function") nazwijPrzyciskiIkonowe();
 }
 
 </script>
@@ -7601,10 +7628,14 @@ function openFilePicker(mode){
   $("mfTitle").textContent = mode==="jwl" ? "📥 Import backupu JW Library" : "📂 Wczytanie kopii danych";
   $("mfDesc").textContent = mode==="jwl"
     ? "Wybierz plik .jwlibrary (kopię zapasową z aplikacji JW Library). Aplikacja doda tylko nowe notatki — Twoje zmiany zostaną."
-    : "Wybierz zapisany wcześniej plik kopii (.json). W następnym kroku wybierzesz, czy dołączyć brakujące notatki (scalanie), czy zastąpić wszystko.";
+    : "Wybierz zapisany wcześniej plik kopii (.json). W następnym kroku wybierzesz, czy dołączyć brakujące notatki (scalanie), czy zastąpić wszystko.\n\nPrzenosisz notatki z OneNote? Otwórz stronę onenote.html obok aplikacji.";
   const inp = $("mfInput");
   inp.value = "";
-  inp.accept = mode==="jwl" ? ".jwlibrary" : ".json,application/json";
+  /* Bez ograniczenia rozszerzeń. Android i część systemów Windows nie zna
+     rozszerzenia .jwlibrary i przy ustawionym „accept" po prostu ukrywa plik —
+     użytkownik widzi pusty wybór i nie wie dlaczego. Zawartość i tak sprawdzamy
+     po otwarciu: archiwum, obecność userData.db i nagłówek bazy SQLite. */
+  inp.accept = "";
   inp.dataset.mode = mode;
   openModal("modalFile");
 }
