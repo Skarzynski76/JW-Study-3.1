@@ -2680,7 +2680,7 @@ html[data-theme="dark"] #colPubs{ background:var(--bg); }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v1.89</span></div>
+      <div class="brand-name">JW Study <span class="ver">v1.90</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -8403,7 +8403,15 @@ async function exportJson(){
    po nazwie i przenumerowujemy w wczytywanych notatkach. */
 /* takeLayout=true → przenosi też UKŁAD: przypisanie etykiet do sekcji, kolory i kolejność.
    Dzięki temu porządek zrobiony na jednym urządzeniu pojawia się na pozostałych. */
-function mergeBackup(data, takeLayout){
+/**
+ * @param {Object} data  wczytana kopia
+ * @param {boolean} takeLayout  przenieś też układ etykiet
+ * @param {boolean} [nadpisuj]  nadpisz notatki o tym samym identyfikatorze
+ *   NIEZALEŻNIE od dat. Potrzebne, gdy powtarzasz przenoszenie z innego programu:
+ *   data zmiany pochodzi wtedy ze źródła i się nie zmienia, więc bez tego
+ *   poprawiona treść nigdy by nie weszła.
+ */
+function mergeBackup(data, takeLayout, nadpisuj){
   const st={notesAdded:0, notesUpdated:0, notesKept:0, tagsAdded:0, secAdded:0, tabsAdded:0, organized:0};
   // 1) sekcje — dopasuj po nazwie
   const secMap={};
@@ -8463,7 +8471,7 @@ function mergeBackup(data, takeLayout){
     const mine=byG[inc.g];
     if(!mine){ notes.push(mapped); changed.push(mapped); st.notesAdded++; return; }
     const a=(mapped.mo||""), b=(mine.mo||"");
-    if(a>b){ Object.assign(mine, mapped); changed.push(mine); st.notesUpdated++; }
+    if(nadpisuj || a>b){ Object.assign(mine, mapped); changed.push(mine); st.notesUpdated++; }
     else st.notesKept++;
   });
   return {st, changed};
@@ -8526,19 +8534,21 @@ async function handleJsonFile(e){
     `<dl class="ch-opts">`+
     `<dt>Dołącz + układ</dt><dd>Dokłada notatki i przenosi porządek etykiet: sekcje, przypisania, kolory oraz zakładki publikacji. Wybierz, żeby na wszystkich urządzeniach było tak samo.</dd>`+
     `<dt>Dołącz (same notatki)</dt><dd>Dokłada tylko treść. Układ etykiet na tym urządzeniu zostaje bez zmian.</dd>`+
+    `<dt>Dołącz + nadpisz istniejące</dt><dd>Jak wyżej, ale notatki, które już masz, dostają treść z pliku — nawet gdy daty są takie same. Wybierz, gdy <b>powtarzasz przenoszenie z innego programu</b> i chcesz poprawioną wersję.</dd>`+
     `<dt class="ch-danger">Zastąp wszystko</dt><dd>Usuwa obecne dane i wstawia zawartość pliku. <b>Tego nie da się cofnąć.</b></dd>`+
     `</dl>`,
     /* Kolejność od tego, co wybiera się najczęściej, po działanie nieodwracalne.
        Przyciski układają się w pionie, więc kolejność w tablicy = kolejność na ekranie. */
     [{label:"Dołącz + układ", value:"mergeLayout", style:"primary"},
+     {label:"Dołącz + nadpisz istniejące", value:"mergeNadpisz"},
      {label:"Dołącz (same notatki)", value:"merge"},
      {label:"Zastąp wszystko", value:"replace", style:"danger"},
      {label:"Anuluj", value:"cancel"}]);
   if(choice==="cancel" || !choice) return;
 
   try{
-    if(choice==="merge" || choice==="mergeLayout"){
-      const {st, changed} = mergeBackup(data, choice==="mergeLayout");
+    if(choice==="merge" || choice==="mergeLayout" || choice==="mergeNadpisz"){
+      const {st, changed} = mergeBackup(data, choice!=="merge", choice==="mergeNadpisz");
       sortTags();
       if(idb){
         await idbBulkChunked("tags", tags);
@@ -8564,6 +8574,11 @@ async function handleJsonFile(e){
         `• Nowych notatek: <b>${st.notesAdded}</b><br>`+
         `• Zaktualizowanych (nowsza wersja z pliku): <b>${st.notesUpdated}</b><br>`+
         `• Zachowanych bez zmian (Twoja wersja nowsza lub taka sama): <b>${st.notesKept}</b><br>`+
+        (st.notesKept && !st.notesUpdated
+          ? `<br><b>Nic się nie zmieniło?</b> Notatki z pliku miały tę samą datę co Twoje, `+
+            `więc zostały pominięte. Jeśli chcesz wersję z pliku, wczytaj go ponownie `+
+            `i wybierz <b>„Dołącz + nadpisz istniejące"</b>.<br>`
+          : "")+
         `• Nowych etykiet: <b>${st.tagsAdded}</b>${st.secAdded?` · sekcji: <b>${st.secAdded}</b>`:""}`+
         (st.tabsAdded?`<br>• Nowych zakładek w publikacjach: <b>${st.tabsAdded}</b>`:"")+
         (choice==="mergeLayout" ? `<br>• Etykiet uporządkowanych wg układu z pliku: <b>${st.organized}</b>` : ""));
