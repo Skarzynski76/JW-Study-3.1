@@ -42,6 +42,7 @@ code{background:#eceef1;padding:2px 6px;border-radius:5px;font-size:13px}
 .prywatnosc summary{cursor:pointer;font-size:14px;font-weight:500;color:var(--zielen)}
 .prywatnosc p{font-size:13.5px;margin:10px 0 0;line-height:1.55}
 .prywatnosc p.uwaga{color:var(--szary);border-top:1px solid var(--ramka);padding-top:10px}
+.uwagaKrok{display:block;margin-top:5px;font-size:13px;color:var(--szary);line-height:1.5}
 </style>
 </head>
 <body>
@@ -55,12 +56,51 @@ code{background:#eceef1;padding:2px 6px;border-radius:5px;font-size:13px}
   <h2><span class="nr">1</span> Zaloguj się do OneNote w przeglądarce</h2>
   <ol>
     <li>Otwórz <a href="https://developer.microsoft.com/graph/graph-explorer" target="_blank" rel="noopener">tę stronę Microsoftu</a> (otworzy się w nowej karcie)</li>
-    <li>Kliknij <b>Sign in</b> w lewym górnym rogu i zaloguj się swoim kontem Microsoft</li>
-    <li>W białym polu na górze wklej ten adres i naciśnij <b>Run query</b>:<br>
+    <li><b>Zaloguj się.</b> Kliknij okrągły awatar w <b>prawym górnym rogu</b> → <b>Sign in</b>,
+      kontem Microsoft, na którym masz notatki OneNote.<br>
+      <span class="uwagaKrok">Sprawdź napis obok ikony globusa u góry: ma być
+      <b>Tenant: Personal</b>. Jeśli widnieje <b>Sample</b>, nie jesteś zalogowany —
+      sesja Graph Explorera potrafi wygasnąć w trakcie.</span></li>
+    <li><b>Wpisz adres notatek</b> w <b>wąski pasek u góry</b> (ten obok „GET" i „v1.0",
+      <b>nie</b> w duże białe pole poniżej):<br>
       <code>https://graph.microsoft.com/v1.0/me/onenote/notebooks</code></li>
-    <li>Jeśli pojawi się prośba o zgodę — potwierdź. To nadaje prawo do <b>odczytu</b> notatek</li>
-    <li>Kliknij zakładkę <b>Access token</b> i skopiuj cały długi ciąg znaków</li>
+    <li><b>Nadaj prawo do odczytu notatek.</b> Dopiero teraz kliknij <b>Modify Permissions</b> →
+      na liście znajdź <b><code>Notes.Read</code></b> → <b>Consent</b> → w oknie Microsoftu
+      <b>Accept</b>.<br>
+      <span class="uwagaKrok">Kolejność jest istotna: ta lista pokazuje uprawnienia
+      <b>do zapytania wpisanego w pasku</b>. Przy adresie <code>/me</code> zobaczysz
+      wyłącznie <code>User.Read</code> i będziesz szukał <code>Notes.Read</code> na próżno.<br>
+      Wybierz dokładnie <code>Notes.Read</code>, <b>bez</b> końcówki <code>.All</code> —
+      konta osobiste (outlook, hotmail, icloud) nie mogą korzystać z uprawnień
+      <code>.All</code>.</span></li>
+    <li>Naciśnij <b>Run query</b>. Musisz zobaczyć zielone <b>200 OK</b> i listę swoich
+      notesów — ich nazwy będą te same, co w OneNote.</li>
+    <li>Dopiero wtedy kliknij zakładkę <b>Access token</b> i skopiuj cały długi ciąg znaków.</li>
   </ol>
+  <details class="prywatnosc" style="background:#fdf6e9;border-color:#f0dcb8">
+    <summary style="color:#8a5a10">Widzę czerwone „Unauthorized 401"</summary>
+    <p>Ten błąd (kod <code>40001</code>) znaczy jedno: zapytanie poszło <b>bez zalogowania</b>.
+    Napis „Tenant: Personal" u góry pojawia się także wtedy, gdy sesja już wygasła,
+    więc nie jest dowodem, że jesteś zalogowany.</p>
+    <p>Kliknij awatar w prawym górnym rogu. Jeśli jest tam <b>Sign out</b> — wyloguj się
+    i zaloguj ponownie. Potem powtórz <b>Run query</b>.</p>
+    <p><b>Zalogowany, a i tak 401?</b> OneNote — inaczej niż reszta Microsoft Graph —
+    zgłasza 401 także wtedy, gdy token nie zawiera prawa do odczytu notatek.
+    Wróć do kroku z <b>Modify Permissions</b> i nadaj <code>Notes.Read</code>.</p>
+    <p>Jeśli na liście uprawnień widzisz tylko <code>Notes.Read.All</code>, poszukaj
+    w polu wyszukiwania samego <code>Notes.Read</code>. Konta osobiste nie mogą
+    korzystać z uprawnień z końcówką <code>.All</code> — token zostanie wydany,
+    ale Graph go nie przyjmie.</p>
+    <p>Sprawdź też, czy adres wpisałeś w <b>wąski pasek u góry</b>, a nie w duże białe pole
+    „Request Body" poniżej — to pole ma zostać puste.</p>
+    <p><b>Na liście uprawnień nie ma w ogóle <code>Notes.Read</code>?</b> To znaczy, że
+    w pasku adresu masz inne zapytanie. Lista pokazuje uprawnienia <b>do bieżącego
+    zapytania</b>: przy <code>/me</code> zobaczysz tylko <code>User.Read</code>.
+    Wpisz najpierw adres notatek, dopiero potem otwórz <b>Modify Permissions</b>.</p>
+    <p><b>U góry widnieje „Tenant: Sample"?</b> Nie jesteś zalogowany — sesja Graph
+    Explorera wygasa po jakimś czasie. Zaloguj się ponownie; ma być
+    <b>Tenant: Personal</b>.</p>
+  </details>
 </div>
 
 <div class="krok">
@@ -118,18 +158,89 @@ function postep(t, ile, z){
 }
 async function pobierz(url, binarne){
   const o = await fetch(url, {headers:{Authorization:"Bearer "+token()}});
-  if(!o.ok) throw new Error("Serwer odpowiedział błędem "+o.status+(o.status===401?" — ciąg wygasł, weź nowy w kroku 1":""));
+  if(!o.ok){
+    if(o.status===401) throw new Error("Ciąg nie daje prawa do odczytu notatek albo wygasł. "+
+      "Dwie najczęstsze przyczyny: (1) w Graph Explorer nie nadano uprawnienia — zakładka "+
+      "Modify Permissions → Notes.Read (bez .All) → Consent; (2) ciąg wygasł, weź nowy. "+
+      "OneNote zgłasza 401 także wtedy, gdy jesteś zalogowany, ale brakuje tego uprawnienia.");
+    if(o.status===403) throw new Error("Brakuje zgody na odczyt notatek. W Graph Explorer: "+
+      "zakładka Modify Permissions → Notes.Read → Consent. Potem weź nowy ciąg.");
+    if(o.status===404) throw new Error("Microsoft nie znalazł notatek na tym koncie. "+
+      "Sprawdź, czy zalogowałeś się kontem, na którym faktycznie masz OneNote.");
+    /* Numer sam w sobie nic nie mówi. Microsoft podaje w treści, co dokładnie
+       mu się nie spodobało — pokazujemy to, zamiast kazać zgadywać. */
+    let szczegol = "";
+    try{
+      const t = await o.text();
+      const j = JSON.parse(t);
+      szczegol = (j && j.error && j.error.message) ? " — " + j.error.message : (t ? " — " + t.slice(0,200) : "");
+    }catch(e){}
+    throw new Error("Serwer Microsoftu odpowiedział błędem "+o.status+szczegol);
+  }
   return binarne ? {blob: await o.blob(), typ: o.headers.get("content-type")||"image/png"} : o.text();
 }
+/* Interfejs OneNote bywa wybredny co do parametrów zapytania i odrzuca niektóre
+   ich połączenia błędem 400 — zależnie od rodzaju konta. Zamiast upierać się przy
+   jednym zapisie, próbujemy po kolei od najbogatszego do najprostszego. Ostatni
+   wariant nie ma żadnych dodatków i zadziała zawsze; wtedy nazwy notesów i sekcji
+   uzupełniamy osobnym zapytaniem. */
+const WARIANTY_SPISU = [
+  "?$top=100&$expand=parentSection,parentNotebook",
+  "?$top=100&$expand=parentSection",
+  "?$top=100",
+  ""
+];
 async function spis(){
-  let strony = [], url = "https://graph.microsoft.com/v1.0/me/onenote/pages?$top=100&$select=id,title,createdDateTime,lastModifiedDateTime&$expand=parentSection,parentNotebook";
-  while(url){
-    const odp = JSON.parse(await pobierz(url));
-    strony = strony.concat(odp.value||[]);
-    postep("Zbieram spis… znaleziono "+strony.length+" notatek");
-    url = odp["@odata.nextLink"] || null;
+  let ostatniBlad = null;
+  for(const wariant of WARIANTY_SPISU){
+    try{
+      let strony = [], url = "https://graph.microsoft.com/v1.0/me/onenote/pages" + wariant;
+      while(url){
+        const odp = JSON.parse(await pobierz(url));
+        strony = strony.concat(odp.value||[]);
+        postep("Zbieram spis… znaleziono "+strony.length+" notatek");
+        url = odp["@odata.nextLink"] || null;
+      }
+      if(!strony.length) return strony;
+      /* Gdy zapytanie nie zwróciło nazw notesu i sekcji, dobieramy je osobno:
+         spis sekcji zawiera i jedno, i drugie. */
+      if(!strony[0].parentNotebook || !strony[0].parentSection){
+        await uzupelnijNazwy(strony);
+      }
+      return strony;
+    }catch(e){
+      ostatniBlad = e;
+      if(!/błędem 400/.test(e.message)) throw e;   // inny błąd niż odrzucone zapytanie
+      postep("Serwer nie przyjął zapytania — próbuję prostszym sposobem…");
+    }
   }
-  return strony;
+  throw ostatniBlad || new Error("Nie udało się pobrać spisu notatek.");
+}
+/** Dobiera nazwy notesu i sekcji, gdy nie przyszły razem ze stronami. */
+async function uzupelnijNazwy(strony){
+  postep("Dobieram nazwy notesów i sekcji…");
+  const poId = new Map();
+  try{
+    let url = "https://graph.microsoft.com/v1.0/me/onenote/sections?$top=100&$expand=parentNotebook";
+    while(url){
+      const odp = JSON.parse(await pobierz(url));
+      (odp.value||[]).forEach(sek=>poId.set(sek.id, {
+        sekcja: sek.displayName || "",
+        notes: (sek.parentNotebook && sek.parentNotebook.displayName) || "OneNote"
+      }));
+      url = odp["@odata.nextLink"] || null;
+    }
+  }catch(e){ return; }   // bez nazw też damy radę — wszystko trafi do jednej sekcji
+  strony.forEach(s=>{
+    const idSekcji = (s.parentSection && s.parentSection.id) ||
+      (typeof s.parentSection === "string" ? s.parentSection : null) ||
+      ((s.links && s.links.oneNoteWebUrl) ? null : null);
+    const dane = idSekcji ? poId.get(idSekcji) : null;
+    if(dane){
+      s.parentSection = {displayName: dane.sekcja, id: idSekcji};
+      s.parentNotebook = {displayName: dane.notes};
+    }
+  });
 }
 function drzewoHtml(strony){
   const m = new Map();
