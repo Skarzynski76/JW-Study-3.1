@@ -2734,6 +2734,14 @@ body.przenoszenieNotatki{ cursor:grabbing; user-select:none; }
   display:inline-flex; align-items:center; justify-content:center;
 }
 
+/* Karta notatki w drodze — ta sama zasada co przy etykietach. */
+#noteList .ncard.chwytany{
+  opacity:.35;
+  outline:2px dashed var(--ui, #2e7d5b);
+  outline-offset:-2px;
+}
+#noteList .ncard .drag{ touch-action:none; }
+
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -2742,7 +2750,7 @@ body.przenoszenieNotatki{ cursor:grabbing; user-select:none; }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v1.96</span></div>
+      <div class="brand-name">JW Study <span class="ver">v1.97</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -9098,81 +9106,6 @@ $("sortSel").addEventListener("change",e=>{
 </script>
 <script>
 /* ==========================================================================
-   JW Study — reorder.js
-   Własna kolejność notatek: przeciąganie kart, gdy wybrano sortowanie „Własna kolejność"
-   ========================================================================== */
-"use strict";
-
-/* Uchwyt ⠿ w nagłówku cards ma dwa zadania: normalnie służy do przeciągania notatki
-   na etykietę, a w trybie własnej kolejności — do przestawiania kart na liście.
-   Rozróżniamy je after trybie sortowania, żeby nie mnożyć elementów na karcie. */
-function reorderActive(){ return sortMode === "custom"; }
-
-/* Po każdym przestawieniu zapisujemy numery porządkowe wszystkich widocznych kart.
-   Numerujemy co 10, więc wstawienie notatki w środek nie wymaga przenumerowania reszty. */
-function saveNoteOrder(){
-  const cards = [...$("noteList").querySelectorAll(".ncard")];
-  const changed = [];
-  cards.forEach((el, i)=>{
-    const n = notes.find(x=>x.g===el.dataset.g);
-    if(n && n.ord !== i*10){ n.ord = i*10; changed.push(n); }
-  });
-  if(!changed.length) return;
-  // zapisujemy same pozycje — daty modyfikacji nie ruszamy, bo treść się nie zmieniła
-  if(idb) idbBulkChunked("notes", changed).catch(e=>reportSaveError(e,"kolejność notatek"));
-  bumpDirty();
-  toastOk("Zapisano kolejność");
-}
-
-/* Przeciąganie działa na zdarzeniach wskaźnika, więc obsługuje mysz, rysik i palec. */
-let _dragCard = null;
-document.addEventListener("pointerdown", e=>{
-  if(!reorderActive()) return;
-  const handle = e.target.closest && e.target.closest(".ncard .drag");
-  if(!handle) return;
-  const card = handle.closest(".ncard");
-  const list = $("noteList");
-  if(!card || !list.contains(card)) return;
-  e.preventDefault(); e.stopPropagation();
-  _dragCard = card;
-  try{ handle.setPointerCapture(e.pointerId); }catch(_){}
-  card.classList.add("dragging");
-  list.classList.add("reordering");
-
-  const onMove = ev=>{
-    const y = ev.clientY;
-    const others = [...list.querySelectorAll(".ncard")].filter(x=>x!==card);
-    let after = null;
-    for(const it of others){
-      const r = it.getBoundingClientRect();
-      if(y > r.top + r.height/2) after = it;
-    }
-    if(after){ if(after.nextSibling !== card) after.after(card); }
-    else { const first = list.querySelector(".ncard"); if(first && first !== card) list.insertBefore(card, first); }
-  };
-  const onEnd = ()=>{
-    handle.removeEventListener("pointermove", onMove);
-    handle.removeEventListener("pointerup", onEnd);
-    handle.removeEventListener("pointercancel", onEnd);
-    card.classList.remove("dragging");
-    list.classList.remove("reordering");
-    _dragCard = null;
-    saveNoteOrder();
-  };
-  handle.addEventListener("pointermove", onMove);
-  handle.addEventListener("pointerup", onEnd);
-  handle.addEventListener("pointercancel", onEnd);
-}, true);
-
-/* W trybie własnej kolejności wyłączamy natywne przeciąganie na etykietę,
-   żeby jedno nie przeszkadzało drugiemu. */
-document.addEventListener("dragstart", e=>{
-  if(reorderActive() && e.target.closest && e.target.closest(".ncard .drag")) e.preventDefault();
-});
-
-</script>
-<script>
-/* ==========================================================================
    JW Study — context-menu.js
    Szybkie akcje: prawy przycisk myszy na komputerze, długie przytrzymanie na dotyku
    ========================================================================== */
@@ -10298,15 +10231,13 @@ async function uporzadkujOdstepyNotatek(){
    przeglądarki, który NIE DZIAŁA DOTYKIEM. Na iPadzie i telefonie nie dało się
    przeciągnąć nic — zostawało menu ⋯ i przenoszenie „o jeden krok".
 
-   Ten moduł obsługuje wskaźnik: palec, rysik i mysz tak samo. Notatkę łapiesz
-   za uchwyt ⠿ w jej belce i upuszczasz tam, gdzie ma trafić:
+   Notatkę łapiesz za uchwyt ⠿ w jej belce i upuszczasz tam, gdzie ma trafić:
      • na etykietę        → notatka dostaje tę etykietę
      • na zakładkę sekcji → notatka trafia do tej zakładki
      • na zakładkę publikacji → notatka trafia do tamtej zakładki
    ========================================================================== */
 "use strict";
 
-let _przenoszona = null;      // notatka w ruchu
 let _celPrzenoszenia = null;  // podświetlony cel
 
 /** Cele, na które wolno upuścić notatkę, wraz z opisem działania. */
@@ -10351,40 +10282,10 @@ function upusc(n, cel){
   }
 }
 
-/* Jeden nasłuch na całym dokumencie — karty notatek powstają i znikają przy
-   każdym przerysowaniu, więc podpinanie się do każdej z osobna byłoby marnotrawstwem. */
-document.addEventListener("pointerdown", ev=>{
-  const uchwyt = ev.target.closest && ev.target.closest("#noteList .ncard .drag");
-  if(!uchwyt) return;
-  const karta = uchwyt.closest(".ncard");
-  const n = karta && notes.find(x=>x.g===karta.dataset.g);
-  if(!n) return;
-
-  ev.preventDefault();
-  try{ uchwyt.setPointerCapture(ev.pointerId); }catch(e){}
-  _przenoszona = n;
-  karta.classList.add("wRuchu");
-  document.body.classList.add("przenoszenieNotatki");
-
-  const ruch = e=>{
-    const pod = document.elementFromPoint(e.clientX, e.clientY);
-    podswietlCel(celDlaNotatki(pod));
-  };
-  const koniec = e=>{
-    uchwyt.removeEventListener("pointermove", ruch);
-    uchwyt.removeEventListener("pointerup", koniec);
-    uchwyt.removeEventListener("pointercancel", koniec);
-    karta.classList.remove("wRuchu");
-    document.body.classList.remove("przenoszenieNotatki");
-    const cel = _celPrzenoszenia;
-    zakonczPodswietlenie();
-    const notatka = _przenoszona; _przenoszona = null;
-    if(cel) upusc(notatka, cel);
-  };
-  uchwyt.addEventListener("pointermove", ruch);
-  uchwyt.addEventListener("pointerup", koniec);
-  uchwyt.addEventListener("pointercancel", koniec);
-}, true);
+/* Sam gest — chwycenie karty i prowadzenie jej palcem — obsługuje
+   34-chwytanie.js. Tutaj zostaje to, CO wolno zrobić z upuszczoną notatką:
+   rozpoznanie celu (celDlaNotatki), podświetlenie go i samo przypisanie.
+   Jeden gest, jedno miejsce obsługi — inaczej dwa nasłuchy biją się o palec. */
 
 /* ===== PRZENIESIENIE ZAKŁADKI DO INNEJ SEKCJI =====
    Przeciąganie porządkuje zakładki w obrębie jednej sekcji. Przeniesienie do
@@ -10574,6 +10475,7 @@ let _chwyt = null;   // {el, rodzaj, id, duszek, wskaznik, sekcjaCel, indeks}
 /** Rozpoznaje, co użytkownik chwycił. */
 function rodzajPozycji(el){
   if(!el) return null;
+  if(el.classList.contains("ncard")) return {rodzaj:"notatka", id:el.dataset.g};
   if(el.classList.contains("stbItem")) return {rodzaj:"zakladka", id:+el.dataset.stb};
   if(el.classList.contains("ptbItem")) return {rodzaj:"zakladkaPub", id:+el.dataset.ptb};
   if(el.classList.contains("item") && el.dataset.k && !isNaN(+el.dataset.k))
@@ -10620,7 +10522,8 @@ function ustawWskaznik(w, cel, przed){
 
 /** Pozycje, obok których wolno upuścić — tego samego rodzaju co chwycona. */
 function pozycjeDoUpuszczenia(rodzaj){
-  const sel = rodzaj==="zakladkaPub" ? "#pubList .ptbItem"
+  const sel = rodzaj==="notatka"     ? "#noteList .ncard"
+            : rodzaj==="zakladkaPub" ? "#pubList .ptbItem"
             : rodzaj==="zakladka"    ? "#tagList .stbItem"
             : "#tagList .item[data-k]:not(.stbItem)";
   return [...document.querySelectorAll(sel)]
@@ -10633,14 +10536,21 @@ function pozycjeDoUpuszczenia(rodzaj){
 
 function zakonczChwyt(zapisz){
   if(!_chwyt) return;
-  const {el, duszek, wskaznik, cel, przed, rodzaj, id} = _chwyt;
+  const {el, duszek, wskaznik, cel, przed, rodzaj, id, celObcy} = _chwyt;
   if(duszek) duszek.remove();
   if(wskaznik) wskaznik.remove();
   el.classList.remove("chwytany");
   document.body.classList.remove("wTrakcieChwytu");
   const dane = _chwyt;
   _chwyt = null;
-  if(!zapisz || !cel) return;
+  if(typeof zakonczPodswietlenie==="function") zakonczPodswietlenie();
+  if(!zapisz) return;
+  /* Notatka upuszczona na etykietę albo zakładkę — przypisanie, nie kolejność. */
+  if(celObcy && rodzaj==="notatka" && typeof upusc==="function"){
+    upusc(notes.find(x=>x.g===id), celObcy);
+    return;
+  }
+  if(!cel) return;
   upuscPozycje(rodzaj, id, cel, przed, dane.sekcjaCel);
 }
 
@@ -10677,6 +10587,12 @@ function upuscPozycje(rodzaj, id, cel, przed, sekcjaCel){
     toastOk("Przeniesiono zakładkę „"+z.name+"”");
     return;
   }
+  if(rodzaj==="notatka"){
+    const n = notes.find(x=>x.g===id); if(!n) return;
+    const sasiad = notes.find(x=>x.g===info.id);
+    przeniesNotatke(n, sasiad, przed);
+    return;
+  }
   if(rodzaj==="zakladkaPub"){
     const z = pubTabs.find(x=>x.id===id); if(!z) return;
     const sasiad = pubTabs.find(x=>x.id===info.id);
@@ -10695,14 +10611,86 @@ function przenumeruj(grupa, element, sasiad, przed){
   lista.forEach((x,k)=>{ x.ord = k*10; });
 }
 
-/* ===== OBSŁUGA WSKAŹNIKA — palec, rysik i mysz tak samo ===== */
+
+/* ==========================================================================
+   NOTATKI — WŁASNA KOLEJNOŚĆ, KTÓRA SIĘ NIE GUBI
+
+   Poprzednio numery porządkowe nadawało się po tym, co widać na ekranie:
+       cards.forEach((el,i)=>{ n.ord = i*10; })
+   Lista notatek pokazuje jednak tylko pierwszą porcję („Pokaż więcej") i tylko
+   te, które przechodzą przez bieżący filtr. Numerowanie widoku nadawało więc
+   numery 0,10,20… garstce notatek, a cała reszta zostawała ze starymi — te same
+   liczby lądowały u kilku notatek naraz. Po zmianie sortowania i powrocie do
+   „Własnej kolejności" układ był w rozsypce i trzeba go było robić od nowa.
+
+   Teraz przestawienie działa na PEŁNEJ liście notatek, nie na widoku:
+   wyjmujemy przenoszoną, wstawiamy obok sąsiada i numerujemy wszystko od nowa.
+   Dzięki temu kolejność jest jedna, globalna i przeżywa każdą zmianę sortowania.
+   ========================================================================== */
+
+/** Wszystkie żywe notatki w bieżącej własnej kolejności. */
+function notatkiWKolejnosci(){
+  return notes.filter(n=>!n.del)
+              .sort((a,b)=>{
+                 const oa = typeof a.ord==="number" ? a.ord : Infinity;
+                 const ob = typeof b.ord==="number" ? b.ord : Infinity;
+                 if(oa!==ob) return oa-ob;
+                 return (b.mo||b.cr||"").localeCompare(a.mo||a.cr||"");
+              });
+}
+/** Pierwsze wejście we własną kolejność: każda notatka dostaje numer. */
+function ustalKolejnoscNotatek(){
+  const lista = notatkiWKolejnosci();
+  const brakuje = lista.some(n=>typeof n.ord!=="number");
+  if(!brakuje) return [];
+  lista.forEach((n,i)=>{ n.ord = i*10; });
+  return lista;
+}
+/** Przenosi notatkę obok sąsiada i przenumerowuje CAŁĄ listę. */
+function przeniesNotatke(n, sasiad, przed){
+  if(sortMode!=="custom"){
+    /* Przeciągnięcie w innym sortowaniu byłoby bez skutku — lista i tak
+       ułoży się według daty. Przełączamy więc i mówimy o tym wprost. */
+    sortMode = "custom";
+    const sel = $("sortSel"); if(sel) sel.value = "custom";
+    if(typeof lsSet==="function") lsSet(KP+"Sort", "custom");
+    ustalKolejnoscNotatek();
+    toast("Włączono „Własną kolejność” — teraz układ zostaje taki, jak go ustawisz");
+  } else ustalKolejnoscNotatek();
+
+  const lista = notatkiWKolejnosci().filter(x=>x!==n);
+  let i = sasiad ? lista.indexOf(sasiad) : lista.length;
+  if(i<0) i = lista.length; else if(!przed) i++;
+  lista.splice(i, 0, n);
+
+  const zmienione = [];
+  lista.forEach((x,k)=>{ if(x.ord !== k*10){ x.ord = k*10; zmienione.push(x); } });
+  if(zmienione.length){
+    /* Daty modyfikacji nie ruszamy — zmieniło się miejsce, nie treść. */
+    if(idb) idbBulkChunked("notes", zmienione).catch(e=>reportSaveError(e,"kolejność notatek"));
+    bumpDirty();
+  }
+  renderAll();
+  toastOk("Zapisano kolejność notatek");
+}
+
+/* ===== OBSŁUGA WSKAŹNIKA — palec, rysik i mysz tak samo =====
+   Jeden gest robi dwie rzeczy, zależnie od tego, gdzie puścisz:
+     • nad listą notatek  → zmiana kolejności (linia pokazuje miejsce),
+     • nad etykietą lub zakładką → notatka dostaje tę etykietę / zakładkę.  */
 document.addEventListener("pointerdown", ev=>{
-  const el = ev.target.closest && ev.target.closest("#tagList .item, #pubList .item");
+  const el = ev.target.closest &&
+             ev.target.closest("#tagList .item, #pubList .item, #noteList .ncard");
   if(!el) return;
   const info = rodzajPozycji(el);
   if(!info) return;
-  const zUchwytu = !!(ev.target.closest && ev.target.closest(".dragOrd"));
-  if(ev.target.closest(".more")) return;      // menu ⋯ ma swoje zadanie
+  if(ev.target.closest(".more") || ev.target.closest(".menu")) return;   // menu ⋯ ma swoje zadanie
+
+  const notatka = info.rodzaj==="notatka";
+  const zUchwytu = !!(ev.target.closest && ev.target.closest(notatka ? ".drag" : ".dragOrd"));
+  /* Kartę notatki wolno chwycić TYLKO za uchwyt — inaczej każde przytrzymanie
+     przy czytaniu albo zaznaczaniu tekstu zabierałoby notatkę w podróż. */
+  if(notatka && !zUchwytu) return;
 
   const startX = ev.clientX, startY = ev.clientY;
   let odklejone = false, licznik = 0;
@@ -10714,7 +10702,7 @@ document.addEventListener("pointerdown", ev=>{
     document.body.classList.add("wTrakcieChwytu");
     _chwyt = {el, rodzaj:info.rodzaj, id:info.id,
               duszek: zrobDuszka(el, startX, startY), wskaznik: zrobWskaznik(),
-              cel:null, przed:false, sekcjaCel:undefined};
+              cel:null, przed:false, sekcjaCel:undefined, celObcy:null};
     if(navigator.vibrate) try{ navigator.vibrate(12); }catch(e){}
   };
   /* Z uchwytu chwytamy od razu; z samego wiersza dopiero po przytrzymaniu,
@@ -10730,6 +10718,16 @@ document.addEventListener("pointerdown", ev=>{
     }
     e.preventDefault();
     przesunDuszka(_chwyt.duszek, e.clientX, e.clientY);
+
+    /* Notatka nad kolumną etykiet? Wtedy nie porządkujemy, tylko przypisujemy. */
+    if(notatka && typeof celDlaNotatki==="function"){
+      const pod = document.elementFromPoint(e.clientX, e.clientY);
+      const obcy = celDlaNotatki(pod);
+      if(typeof podswietlCel==="function") podswietlCel(obcy);
+      _chwyt.celObcy = obcy;
+      if(obcy){ _chwyt.cel = null; _chwyt.wskaznik.style.display = "none"; return; }
+    }
+
     /* Szukamy najbliższej pozycji tego samego rodzaju — także w innych sekcjach. */
     let najbl = null, najmniej = Infinity, przed = false;
     pozycjeDoUpuszczenia(info.rodzaj).forEach(x=>{
@@ -10740,7 +10738,8 @@ document.addEventListener("pointerdown", ev=>{
     });
     if(najbl){
       _chwyt.cel = najbl; _chwyt.przed = przed;
-      _chwyt.sekcjaCel = (info.rodzaj==="zakladkaPub") ? undefined : sekcjaElementu(najbl);
+      _chwyt.sekcjaCel = (info.rodzaj==="etykieta" || info.rodzaj==="zakladka")
+                         ? sekcjaElementu(najbl) : undefined;
       ustawWskaznik(_chwyt.wskaznik, najbl, przed);
     }else{
       _chwyt.cel = null;
