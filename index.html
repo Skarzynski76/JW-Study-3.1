@@ -6,7 +6,8 @@
 
      Nie zastępuje filtrowania treści notatek — jest drugą warstwą na wypadek,
      gdyby coś się przez filtr przedostało. Najważniejsze skutki:
-       • skrypt z JAKIEGOKOLWIEK obcego serwera poza cdnjs nie zostanie wykonany,
+       • skrypt z JAKIEGOKOLWIEK obcego serwera nie zostanie wykonany — aplikacja
+         nie łączy się z niczym poza własnym adresem,
        • object-src 'none' — brak wtyczek i osadzonych obiektów,
        • base-uri 'self' — nie da się podmienić adresu bazowego strony,
        • form-action 'none' — wstrzyknięty formularz nie wyśle nigdzie danych,
@@ -15,8 +16,9 @@
      'unsafe-inline' dla skryptów jest konieczne w wersji jednoplikowej, gdzie
      cały kod siedzi w znacznikach <script> wewnątrz strony.
      'wasm-unsafe-eval' jest potrzebne bibliotece sql.js, która czyta bazę
-     SQLite z kopii JW Library. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://cdnjs.cloudflare.com; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-src 'none'">
+     SQLite z kopii JW Library — biblioteka leży w katalogu lib/ obok aplikacji,
+     nie na obcym serwerze. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-src 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2681,6 +2683,23 @@ html[data-theme="dark"] #colPubs{ background:var(--bg); }
   background:var(--panel); color:var(--text);
 }
 
+/* ============================================================
+   PRZECIĄGANIE NOTATKI NA ETYKIETĘ LUB ZAKŁADKĘ (v1.93)
+   ============================================================ */
+.ncard .drag{ cursor:grab; touch-action:none; }
+.ncard.wRuchu{ opacity:.55; }
+.ncard.wRuchu .drag{ cursor:grabbing; }
+/* podczas przenoszenia cała kolumna po lewej ma zapraszać do upuszczenia */
+body.przenoszenieNotatki #tagList .item,
+body.przenoszenieNotatki #pubList .item{ transition:none; }
+body.przenoszenieNotatki{ cursor:grabbing; user-select:none; }
+#tagList .item.dropTarget,
+#pubList .item.dropTarget{
+  outline:2px solid var(--accent);
+  outline-offset:1px;
+  background:var(--sel);
+}
+
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -2689,7 +2708,7 @@ html[data-theme="dark"] #colPubs{ background:var(--bg); }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v1.92</span></div>
+      <div class="brand-name">JW Study <span class="ver">v1.95</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -4574,6 +4593,7 @@ function tagMenu(e, t){
      <div data-tm="top">${topI}Na samą górę</div>
      <div class="dd-sep"></div>
      <div class="dd-lbl">Eksport całej zakładki${cnt?" ("+cnt+" notatek)":""}</div>
+     <div data-tm="wyslij">${ICO.copy}Wyślij na inne urządzenie…</div>
      <div data-tm="expw">${ICO.file}Zapisz do Word</div>
      <div data-tm="expp">${printI}Zapisz / drukuj do PDF</div>
      <div class="dd-sep"></div>
@@ -4593,7 +4613,8 @@ function tagMenu(e, t){
     const m = ev.target.dataset.tm;
     if(!m) return;
     dd.style.display = "none";
-    if(m==="ren") renameTag(t.id);
+    if(m==="wyslij") wyslijEtykiete(t.id);
+    else if(m==="ren") renameTag(t.id);
     else if(m==="up") moveTag(t.id,-1);
     else if(m==="down") moveTag(t.id,1);
     else if(m==="top") moveTag(t.id,"top");
@@ -7563,117 +7584,49 @@ document.addEventListener("click", e=>{
    Plik .jwlibrary to archiwum ZIP z bazą SQLite w środku. Do jego otwarcia
    potrzebne są dwie biblioteki: JSZip i sql.js.
 
-   Domyślnie szukamy ich OBOK aplikacji, w katalogu lib/. Jeśli ich tam nie ma,
-   sięgamy do cdnjs — ale wtedy z sumą kontrolną (SRI), więc przeglądarka
-   wykona plik tylko wtedy, gdy zgadza się co do bajta. Podmieniony plik
-   na serwerze pośredniczącym po prostu się nie uruchomi.
+   Leżą OBOK APLIKACJI, w katalogu lib/, i są wgrywane razem z nią. Aplikacja
+   nie sięga po nie do żadnego obcego serwera — nie potrafi tego zrobić, bo
+   polityka bezpieczeństwa treści w kodzie strony dopuszcza wyłącznie adresy
+   z tego samego miejsca.
 
-   Katalog lib/ ma pierwszeństwo, bo pozwala pozbyć się zależności od obcego
-   serwera: import działa wtedy bez internetu i bez zaufania komukolwiek.
-   Jak go wypełnić — patrz lib/README.md.
+   Wcześniej pobierały się z cdnjs. Działało to od pierwszej wersji, po cichu.
+   Ryzyko było teoretyczne, ale realne: obcy kod wykonuje się z dostępem do
+   wszystkich notatek, więc jego podmiana na serwerze albo po drodze
+   oznaczałaby dostęp do nich. Zamiast pytać użytkownika za każdym razem,
+   biblioteki są po prostu częścią aplikacji.
    ===================================================================== */
 const BIBLIOTEKI = {
-  jszip: {
-    lokalnie: "./lib/jszip.min.js",
-    zdalnie:  "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js",
-    /* Sumę kontrolną wpisz z lib/README.md — bez niej plik z sieci nie zostanie
-       użyty wcale, zamiast zostać użyty bez sprawdzenia. */
-    suma: ""
-  },
-  sqljs: {
-    lokalnie: "./lib/sql-wasm.js",
-    zdalnie:  "https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js",
-    suma: ""
-  }
+  jszip: {plik: "./lib/jszip.min.js", nazwa: "JSZip"},
+  sqljs: {plik: "./lib/sql-wasm.js",  nazwa: "sql.js"}
 };
-const KAT_SQL_ZDALNY = "https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/";
-let sqlZLokalnego = false;
 
-/**
- * Wczytuje skrypt. Gdy podano sumę kontrolną, przeglądarka sprawdza plik
- * przed wykonaniem; niezgodność = plik nie zostanie uruchomiony.
- */
-function loadScript(src, suma){
-  return new Promise((res,rej)=>{
+/** Wczytuje skrypt z katalogu obok aplikacji. */
+function loadScript(src){
+  return new Promise((res, rej)=>{
     if(document.querySelector(`script[src="${src}"]`)) return res();
-    const s=document.createElement("script");
-    s.src=src;
-    if(suma){ s.integrity=suma; s.crossOrigin="anonymous"; }
-    s.onload=res;
-    s.onerror=()=>rej(new Error("Nie można wczytać: "+src));
+    const s = document.createElement("script");
+    s.src = src;
+    s.onload = res;
+    s.onerror = ()=>rej(new Error("Nie można wczytać: "+src));
     document.head.appendChild(s);
   });
 }
-/** Czy plik leży obok aplikacji. Sprawdzamy przed próbą wykonania. */
+/** Czy plik leży obok aplikacji. */
 async function plikObok(url){
-  try{
-    const r = await fetch(url, {method:"HEAD", cache:"no-store"});
-    return r.ok;
-  }catch(e){ return false; }
+  try{ const r = await fetch(url, {method:"HEAD", cache:"no-store"}); return r.ok; }
+  catch(e){ return false; }
 }
-/**
- * Wczytuje bibliotekę: najpierw z katalogu lib/, w razie braku z cdnjs z SRI.
- * @returns {Promise<boolean>} czy udało się z pliku lokalnego
- */
-async function wczytajBiblioteke(opis, nazwa){
-  if(await plikObok(opis.lokalnie)){
-    await loadScript(opis.lokalnie);
-    return true;
-  }
-  if(!opis.suma){
-    /* Bez sumy kontrolnej nie wykonujemy obcego kodu PO CICHU — ale nie zamykamy
-       też drogi na głucho. Pytamy raz, wprost, i zapamiętujemy odpowiedź.
-       Świadoma zgoda jest tu warta więcej niż ściana, przez którą import
-       przestaje działać w ogóle. */
-    if(!(await zgodaNaBiblioteki())){
-      throw new Error("Import wymaga bibliotek do odczytania archiwum. "+
-                      "Możesz je wgrać do katalogu lib/ obok aplikacji (instrukcja w lib/README.md) "+
-                      "albo zgodzić się na pobranie z cdnjs.");
-    }
-    await loadScript(opis.zdalnie);
-    return false;
-  }
-  await loadScript(opis.zdalnie, opis.suma);
-  return false;
-}
-const KLUCZ_ZGODY = "libZgoda";
-/**
- * Pyta raz o zgodę na pobranie bibliotek z cdnjs i zapamiętuje odpowiedź.
- * @returns {Promise<boolean>}
- */
-async function zgodaNaBiblioteki(){
-  if(lsGet(KP+KLUCZ_ZGODY, null)==="1") return true;
-  const ok = await askConfirm("Pobrać biblioteki do odczytania archiwum?",
-    "Plik <b>.jwlibrary</b> to archiwum z bazą w środku. Do jego otwarcia potrzebne są "+
-    "dwie biblioteki (JSZip i sql.js), których nie ma w aplikacji.<br><br>"+
-    "Można je pobrać z <b>cdnjs.cloudflare.com</b> — to duży, powszechnie używany serwer, "+
-    "ale <b>obcy</b>. Pobrany kod działa z dostępem do Twoich notatek, dlatego pytam, "+
-    "zamiast robić to po cichu.<br><br>"+
-    "<b>Bezpieczniej:</b> wgraj trzy pliki do katalogu <code>lib/</code> obok aplikacji — "+
-    "instrukcja w <code>lib/README.md</code>. Wtedy import działa bez internetu i bez "+
-    "zaufania komukolwiek.<br><br>"+
-    "Zgoda zostanie zapamiętana. Możesz ją cofnąć w Ustawieniach.",
-    {okLabel:"Pobierz z cdnjs", cancelLabel:"Nie teraz"});
-  if(ok) lsSet(KP+KLUCZ_ZGODY, "1");
-  return !!ok;
-}
-/** Cofnięcie zgody — z Ustawień. */
-function cofnijZgodeNaBiblioteki(){
-  lsSet(KP+KLUCZ_ZGODY, "");
-  try{ localStorage.removeItem(KP+KLUCZ_ZGODY); }catch(e){}
-  toast("Zgoda cofnięta — przy następnym imporcie zapytam ponownie");
-}
-/** Czy zgoda została udzielona (do pokazania w Ustawieniach). */
-function zgodaNaBibliotekiUdzielona(){ return lsGet(KP+KLUCZ_ZGODY, null)==="1"; }
-
-let SQL=null;
+let SQL = null;
 async function getLibs(){
-  await wczytajBiblioteke(BIBLIOTEKI.jszip, "JSZip");
-  sqlZLokalnego = await wczytajBiblioteke(BIBLIOTEKI.sqljs, "sql.js");
-  if(!SQL){
-    const katalog = sqlZLokalnego ? "./lib/" : KAT_SQL_ZDALNY;
-    SQL = await initSqlJs({locateFile: f => katalog + f});
+  for(const klucz of ["jszip","sqljs"]){
+    const opis = BIBLIOTEKI[klucz];
+    if(!(await plikObok(opis.plik)))
+      throw new Error("Brakuje biblioteki "+opis.nazwa+" ("+opis.plik+"). "+
+        "Wgraj katalog lib/ razem z aplikacją — jego zawartość jest w paczce, "+
+        "obok index.html. Bez tych plików nie da się otworzyć archiwum .jwlibrary.");
+    await loadScript(opis.plik);
   }
+  if(!SQL) SQL = await initSqlJs({locateFile: f => "./lib/" + f});
 }
 
 /* ================= WYBÓR PLIKU (import / kopia JSON) ================= */
@@ -8510,6 +8463,35 @@ function mergeBackup(data, takeLayout, nadpisuj){
       tabMap[t.id]=mine.id;
     });
   }
+  /* 3b) zakładki SEKCJI — dopasowanie po parze (sekcja, nazwa) i przenumerowanie.
+     Bez tego numer zakładki z drugiego urządzenia mógł trafić w zupełnie inną
+     zakładkę u odbiorcy — notatki lądowałyby nie tam, gdzie miały. */
+  const zakMap={};
+  if(typeof secTabs!=="undefined"){
+    (Array.isArray(data.secTabs)?data.secTabs:[]).forEach(z=>{
+      if(!z || !z.name) return;
+      const docelowaSekcja = (z.sec!==undefined && secMap[z.sec]!==undefined) ? secMap[z.sec] : z.sec;
+      let mine = secTabs.find(x=>x.sec===docelowaSekcja && norm(x.name)===norm(z.name));
+      if(!mine){
+        mine = {id: Math.max(0,...secTabs.map(x=>+x.id||0))+1, sec: docelowaSekcja, name: z.name,
+                ord: (z.ord!==undefined ? z.ord : secTabs.filter(x=>x.sec===docelowaSekcja).length)};
+        if(z.color) mine.color = z.color;
+        secTabs.push(mine); st.zakSekAdded = (st.zakSekAdded||0)+1;
+      } else if(takeLayout){
+        if(z.ord!==undefined) mine.ord = z.ord;
+        if(takeLayout && z.color) mine.color = z.color;
+      }
+      zakMap[z.id] = mine.id;
+    });
+    if(st.zakSekAdded) saveSecTabs();
+    /* Etykiety przypisane do zakładek też muszą wskazywać właściwą. */
+    (Array.isArray(data.tags)?data.tags:[]).forEach(t=>{
+      if(t.stb===undefined || tagMap[t.id]===undefined) return;
+      const moja = tags.find(x=>x.id===tagMap[t.id]);
+      if(moja && zakMap[t.stb]!==undefined) moja.stb = zakMap[t.stb];
+    });
+  }
+
   // 4) notatki — po identyfikatorze; przy konflikcie wygrywa NOWSZA data zmiany
   const byG={}; notes.forEach(n=>byG[n.g]=n);
   const changed=[];
@@ -8520,6 +8502,11 @@ function mergeBackup(data, takeLayout, nadpisuj){
     if(mapped.ptb!==undefined){
       if(tabMap[mapped.ptb]!==undefined) mapped.ptb=tabMap[mapped.ptb];
       else delete mapped.ptb;
+    }
+    // to samo dla zakładki sekcji
+    if(mapped.stb!==undefined){
+      if(zakMap[mapped.stb]!==undefined) mapped.stb=zakMap[mapped.stb];
+      else delete mapped.stb;
     }
     const mine=byG[inc.g];
     if(!mine){ notes.push(mapped); changed.push(mapped); st.notesAdded++; return; }
@@ -8608,13 +8595,6 @@ async function handleJsonFile(e){
         if(changed.length) await idbBulkChunked("notes", changed);
         saveSections();
         if(typeof savePubTabs==="function") savePubTabs();   // zakładki publikacji z kopii
-        if(typeof secTabs!=="undefined" && Array.isArray(data.secTabs)){
-          // dokładamy tylko te, których jeszcze nie ma — po nazwie w obrębie sekcji
-          data.secTabs.forEach(z=>{
-            if(!secTabs.some(x=>x.sec===z.sec && x.name===z.name)) secTabs.push(z);
-          });
-          saveSecTabs();
-        }
       }
       const kontrolaM = idb ? await sprawdzZapis(notes.length, tags.length) : null;
       renderAll();
@@ -8634,6 +8614,7 @@ async function handleJsonFile(e){
           : "")+
         `• Nowych etykiet: <b>${st.tagsAdded}</b>${st.secAdded?` · sekcji: <b>${st.secAdded}</b>`:""}`+
         (st.tabsAdded?`<br>• Nowych zakładek w publikacjach: <b>${st.tabsAdded}</b>`:"")+
+        (st.zakSekAdded?`<br>• Nowych zakładek w sekcjach: <b>${st.zakSekAdded}</b>`:"")+
         (choice==="mergeLayout" ? `<br>• Etykiet uporządkowanych wg układu z pliku: <b>${st.organized}</b>` : ""));
       return;
     }
@@ -9425,8 +9406,7 @@ function openSettings(){
      <div class="st-sec">
        <div class="st-lbl">Import z JW Library</div>
        <div class="st-ver" id="stLib"></div>
-       <button class="st-opt st-wide" id="stLibOff" data-act="libOff" style="display:none">Cofnij zgodę na pobieranie z cdnjs</button>
-       <div class="st-hint">Odczytanie pliku <b>.jwlibrary</b> wymaga dwóch bibliotek. Aplikacja szuka ich najpierw w katalogu <code>lib/</code> obok siebie — wtedy import działa bez internetu. Gdy ich tam nie ma, pyta o zgodę na pobranie z cdnjs.</div>
+       <div class="st-hint">Odczytanie pliku <b>.jwlibrary</b> wymaga dwóch bibliotek. Leżą w katalogu <code>lib/</code> obok aplikacji i są wgrywane razem z nią. Aplikacja <b>nie pobiera niczego z obcych serwerów</b> — nie potrafi tego zrobić.</div>
      </div>
      <div class="st-sec">
        <div class="st-lbl">Wersja aplikacji</div>
@@ -9462,11 +9442,6 @@ function openSettings(){
     if(act && act.dataset.act==="odstepy"){
       closeModal("modalSettings");
       setTimeout(()=>uporzadkujOdstepyNotatek(), 80);
-      return;
-    }
-    if(act && act.dataset.act==="libOff"){
-      cofnijZgodeNaBiblioteki();
-      pokazStanBibliotek();
       return;
     }
     if(act && act.dataset.act==="plikKopii"){
@@ -9513,20 +9488,12 @@ async function pokazPlikKopii(){
 /** Skąd aplikacja bierze biblioteki do importu — widoczne w Ustawieniach. */
 async function pokazStanBibliotek(){
   const opis = document.getElementById("stLib");
-  const wyl = document.getElementById("stLibOff");
   if(!opis) return;
   let lokalne = false;
   try{ lokalne = await plikObok("./lib/jszip.min.js"); }catch(e){}
-  if(lokalne){
-    opis.textContent = "Biblioteki są obok aplikacji — import działa bez internetu.";
-    if(wyl) wyl.style.display = "none";
-    return;
-  }
-  const zgoda = typeof zgodaNaBibliotekiUdzielona==="function" && zgodaNaBibliotekiUdzielona();
-  opis.textContent = zgoda
-    ? "Pobierane z cdnjs za Twoją zgodą."
-    : "Brak w katalogu lib/ — przy imporcie zapytam o zgodę na pobranie z cdnjs.";
-  if(wyl) wyl.style.display = zgoda ? "" : "none";
+  opis.textContent = lokalne
+    ? "Biblioteki obok aplikacji — import działa bez internetu."
+    : "Brak katalogu lib/ — import z JW Library nie zadziała. Wgraj go razem z aplikacją.";
 }
 $("btnSettings").onclick = openSettings;
 
@@ -9747,12 +9714,15 @@ function pubTabOptions(id, anchor){
     `<div data-pto="up">Wyżej</div>`+
     `<div data-pto="down">Niżej</div>`+
     `<div class="dd-sep"></div>`+
+    `<div data-pto="wyslij">Wyślij na inne urządzenie…</div>`+
+    `<div class="dd-sep"></div>`+
     `<div data-pto="del" class="dd-danger">Usuń zakładkę</div>`;
   dd.style.display="block"; placeDropdown(dd, anchor);
   dd.onclick = ev=>{
     const it = ev.target.closest("[data-pto]"); if(!it) return;
     dd.style.display="none";
     const v = it.dataset.pto;
+    if(v==="wyslij"){ wyslijZakladkePub(id); return; }
     if(v==="rename"){ renamePubTab(id); return; }
     if(v==="del"){ deletePubTab(id); return; }
     const lista = pubTabsFor(t.ks);
@@ -10206,6 +10176,9 @@ function secTabMenu(e, z){
      <div class="dd-sep"></div>
      <div data-zm="up">${gora}Przesuń w górę</div>
      <div data-zm="down">${dol}Przesuń w dół</div>
+     <div data-zm="sek">${ICO.file}Przenieś do innej sekcji…</div>
+     <div class="dd-sep"></div>
+     <div data-zm="wyslij">${ICO.copy}Wyślij na inne urządzenie…</div>
      <div class="dd-sep"></div>
      <div data-zm="del" class="dd-danger">${ICO.trash}Usuń zakładkę</div>`;
   dd.style.display="block";
@@ -10219,7 +10192,9 @@ function secTabMenu(e, z){
     const m = ev.target.closest("[data-zm]"); if(!m) return;
     dd.style.display="none";
     const a = m.dataset.zm;
-    if(a==="ren") renameSecTab(z.id);
+    if(a==="wyslij") wyslijZakladke(z.id);
+    else if(a==="ren") renameSecTab(z.id);
+    else if(a==="sek") przeniesZakladkeDoSekcji(z.id);
     else if(a==="del") deleteSecTab(z.id);
     else przesunSecTab(z.id, a==="up" ? -1 : 1);
   };
@@ -10392,6 +10367,263 @@ async function uporzadkujOdstepyNotatek(){
   showInfo("Uporządkowano", `Poprawiono <b>${zmienione}</b> notatek.<br><br>`+
     `Jeśli któraś nadal wygląda na rozstrzeloną, jej przerwy pochodzą z tekstu `+
     `wpisanego ręcznie — takich nie ruszamy.`);
+}
+
+</script>
+<script>
+/* ==========================================================================
+   JW Study — przenoszenie.js
+   PRZECIĄGANIE NOTATEK NA ETYKIETY I ZAKŁADKI
+
+   Karta notatki miała uchwyt do przeciągania, ale oparty na mechanizmie
+   przeglądarki, który NIE DZIAŁA DOTYKIEM. Na iPadzie i telefonie nie dało się
+   przeciągnąć nic — zostawało menu ⋯ i przenoszenie „o jeden krok".
+
+   Ten moduł obsługuje wskaźnik: palec, rysik i mysz tak samo. Notatkę łapiesz
+   za uchwyt ⠿ w jej belce i upuszczasz tam, gdzie ma trafić:
+     • na etykietę        → notatka dostaje tę etykietę
+     • na zakładkę sekcji → notatka trafia do tej zakładki
+     • na zakładkę publikacji → notatka trafia do tamtej zakładki
+   ========================================================================== */
+"use strict";
+
+let _przenoszona = null;      // notatka w ruchu
+let _celPrzenoszenia = null;  // podświetlony cel
+
+/** Cele, na które wolno upuścić notatkę, wraz z opisem działania. */
+function celDlaNotatki(el){
+  if(!el || !el.closest) return null;
+  const zakSek = el.closest("#tagList .stbItem[data-stb]");
+  if(zakSek) return {el:zakSek, rodzaj:"stb", id:+zakSek.dataset.stb,
+                     nazwa:(zakSek.querySelector(".nm")||{}).textContent||""};
+  const zakPub = el.closest("#pubList .ptbItem[data-ptb]");
+  if(zakPub) return {el:zakPub, rodzaj:"ptb", id:+zakPub.dataset.ptb,
+                     nazwa:(zakPub.querySelector(".nm")||{}).textContent||""};
+  const etykieta = el.closest("#tagList .item[data-k]");
+  if(etykieta){
+    const k = etykieta.dataset.k;
+    if(k==="all" || k==="none") return null;          // to nie są miejsca do wrzucania
+    return {el:etykieta, rodzaj:"tag", id:+k,
+            nazwa:(etykieta.querySelector(".nm")||{}).textContent||""};
+  }
+  return null;
+}
+function podswietlCel(cel){
+  if(_celPrzenoszenia && _celPrzenoszenia.el!==((cel||{}).el))
+    _celPrzenoszenia.el.classList.remove("dropTarget");
+  if(cel) cel.el.classList.add("dropTarget");
+  _celPrzenoszenia = cel;
+}
+function zakonczPodswietlenie(){
+  if(_celPrzenoszenia) _celPrzenoszenia.el.classList.remove("dropTarget");
+  _celPrzenoszenia = null;
+}
+
+/** Wykonuje upuszczenie notatki na wskazanym celu. */
+function upusc(n, cel){
+  if(!n || !cel) return;
+  if(cel.rodzaj==="stb" && typeof setNoteSecTab==="function"){ setNoteSecTab(n, cel.id); return; }
+  if(cel.rodzaj==="ptb" && typeof setNotePubTab==="function"){ setNotePubTab(n, cel.id); return; }
+  if(cel.rodzaj==="tag"){
+    if(n.tg.includes(cel.id)){ toast("Notatka już ma etykietę „"+cel.nazwa.trim()+"”"); return; }
+    n.tg.push(cel.id); n.tgd = true;
+    markDirty(n); renderAll();
+    toastOk("Dodano etykietę „"+cel.nazwa.trim()+"”");
+  }
+}
+
+/* Jeden nasłuch na całym dokumencie — karty notatek powstają i znikają przy
+   każdym przerysowaniu, więc podpinanie się do każdej z osobna byłoby marnotrawstwem. */
+document.addEventListener("pointerdown", ev=>{
+  const uchwyt = ev.target.closest && ev.target.closest("#noteList .ncard .drag");
+  if(!uchwyt) return;
+  const karta = uchwyt.closest(".ncard");
+  const n = karta && notes.find(x=>x.g===karta.dataset.g);
+  if(!n) return;
+
+  ev.preventDefault();
+  try{ uchwyt.setPointerCapture(ev.pointerId); }catch(e){}
+  _przenoszona = n;
+  karta.classList.add("wRuchu");
+  document.body.classList.add("przenoszenieNotatki");
+
+  const ruch = e=>{
+    const pod = document.elementFromPoint(e.clientX, e.clientY);
+    podswietlCel(celDlaNotatki(pod));
+  };
+  const koniec = e=>{
+    uchwyt.removeEventListener("pointermove", ruch);
+    uchwyt.removeEventListener("pointerup", koniec);
+    uchwyt.removeEventListener("pointercancel", koniec);
+    karta.classList.remove("wRuchu");
+    document.body.classList.remove("przenoszenieNotatki");
+    const cel = _celPrzenoszenia;
+    zakonczPodswietlenie();
+    const notatka = _przenoszona; _przenoszona = null;
+    if(cel) upusc(notatka, cel);
+  };
+  uchwyt.addEventListener("pointermove", ruch);
+  uchwyt.addEventListener("pointerup", koniec);
+  uchwyt.addEventListener("pointercancel", koniec);
+}, true);
+
+/* ===== PRZENIESIENIE ZAKŁADKI DO INNEJ SEKCJI =====
+   Przeciąganie porządkuje zakładki w obrębie jednej sekcji. Przeniesienie do
+   INNEJ sekcji przez przeciąganie byłoby niepewne (sekcja bywa zwinięta albo
+   poza ekranem), więc jest osobną pozycją w menu — działa zawsze i wszędzie. */
+async function przeniesZakladkeDoSekcji(id){
+  const z = secTabs.find(x=>x.id===id); if(!z) return;
+  const inne = sections.filter(s=>s.id!==z.sec).sort((a,b)=>(a.ord??0)-(b.ord??0));
+  if(!inne.length){ toast("Nie ma innej sekcji, do której można przenieść"); return; }
+  const wybor = await askChoice("Przenieś zakładkę „"+z.name+"”",
+    "<p class=\"ch-lead\">Do której sekcji?</p>",
+    inne.map(s=>({label:s.name, value:String(s.id)})).concat([{label:"Anuluj", value:""}]));
+  if(!wybor) return;
+  z.sec = +wybor;
+  z.ord = secTabsFor(z.sec).length;      // na koniec listy w nowej sekcji
+  /* Etykiety przypisane do tej zakładki idą razem z nią — inaczej zostałyby
+     w starej sekcji, wskazując zakładkę, której tam już nie ma. */
+  tags.forEach(t=>{ if(t.stb===id) t.sec = z.sec; });
+  saveSecTabs(); saveTags(); renderAll();
+  const s = sections.find(x=>x.id===z.sec);
+  toastOk("Zakładka „"+z.name+"” w sekcji „"+(s?s.name:"")+"”");
+}
+
+</script>
+<script>
+/* ==========================================================================
+   JW Study — udostepnianie.js
+   WYSŁANIE POJEDYNCZEJ ETYKIETY ALBO ZAKŁADKI NA INNE URZĄDZENIE
+
+   Kopia zapasowa przenosi wszystko. Czasem trzeba przenieść jedną rzecz:
+   etykietę „Kongres 2026" razem z jej sześćdziesięcioma notatkami, bez
+   ruszania reszty.
+
+   Powstający plik ma DOKŁADNIE TEN SAM kształt co pełna kopia — jest po prostu
+   jej wycinkiem. Dzięki temu po drugiej stronie nie trzeba niczego nowego:
+   wczytujesz go zwykłym „Dołącz + układ", a notatki trafiają na swoje miejsce
+   razem z etykietą, sekcją i zakładką.
+
+   Na iPadzie i iPhonie zapis otwiera okno udostępniania, więc plik da się
+   wysłać przez AirDrop wprost na drugie urządzenie.
+   ========================================================================== */
+"use strict";
+
+/** Niezależna kopia danych — bez odniesień do tego, co siedzi w aplikacji. */
+function kopiaGleboka(co){
+  if(typeof structuredClone === "function"){
+    try{ return structuredClone(co); }catch(e){}
+  }
+  return co.map(x=>Object.assign({}, x));
+}
+
+/** Bezpieczna nazwa pliku z nazwy etykiety albo zakładki. */
+function nazwaPliku(rodzaj, nazwa){
+  const czysta = String(nazwa||"").trim()
+    .replace(/[\\/:*?"<>|]/g, "")
+    .replace(/\s+/g, "-")
+    .slice(0, 40) || "wycinek";
+  return "jw-" + rodzaj + "-" + czysta + ".json";
+}
+
+/**
+ * Buduje wycinek danych do wysłania.
+ * @param {Note[]} notatki  notatki, które mają pojechać
+ * @param {number[]} idEtykiet  etykiety do dołączenia
+ * @param {number[]} idZakladek  zakładki sekcji do dołączenia
+ */
+function zbudujWycinek(notatki, idEtykiet, idZakladek){
+  const etykiety = tags.filter(t=>idEtykiet.includes(t.id));
+  const zakladki = (typeof secTabs!=="undefined")
+    ? secTabs.filter(z=>idZakladek.includes(z.id)) : [];
+
+  /* Sekcje, do których należą wysyłane etykiety i zakładki — bez nich
+     po drugiej stronie wszystko wylądowałoby luzem. */
+  const idSekcji = new Set();
+  etykiety.forEach(t=>{ if(t.sec!=null) idSekcji.add(t.sec); });
+  zakladki.forEach(z=>{ if(z.sec!=null) idSekcji.add(z.sec); });
+  const sekcje = sections.filter(s=>idSekcji.has(s.id));
+
+  /* Zakładki publikacji, do których przypisano wysyłane notatki — inaczej
+     przypisanie zostałoby odrzucone jako wskazujące na nieznaną zakładkę. */
+  const idPub = new Set();
+  notatki.forEach(n=>{ if(n.ptb) idPub.add(n.ptb); });
+  const zakladkiPub = (typeof pubTabs!=="undefined")
+    ? pubTabs.filter(z=>idPub.has(z.id)) : [];
+
+  /* Kopiujemy, żeby wysyłany plik nie trzymał odniesień do danych aplikacji —
+     inaczej późniejsza zmiana notatki zmieniłaby też to, co „już wysłane". */
+  return {
+    tags: kopiaGleboka(etykiety),
+    notes: kopiaGleboka(notatki),
+    sections: kopiaGleboka(sekcje),
+    pubTabs: kopiaGleboka(zakladkiPub),
+    secTabs: kopiaGleboka(zakladki)
+  };
+}
+
+/** Ile miejsca zajmą zdjęcia — warto wiedzieć przed wysłaniem przez AirDrop. */
+function opisWycinka(dane){
+  const tekst = JSON.stringify(dane);
+  const zdjec = dane.notes.reduce((s,n)=>s+((n.h||"").match(/<img/gi)||[]).length, 0);
+  const mb = tekst.length >= 1048576
+    ? (tekst.length/1048576).toFixed(1)+" MB"
+    : Math.round(tekst.length/1024)+" kB";
+  return {tekst, zdjec, rozmiar: mb};
+}
+
+/** Wspólne zakończenie: pytanie, zapis, potwierdzenie. */
+async function wyslijWycinek(dane, rodzaj, nazwa){
+  if(!dane.notes.length){
+    showInfo("Nie ma czego wysłać", "Pod tą pozycją nie ma jeszcze żadnej notatki.");
+    return;
+  }
+  const {tekst, zdjec, rozmiar} = opisWycinka(dane);
+  const ok = await askConfirm("Wysłać „"+nazwa+"”?",
+    `Do pliku trafi:<br>`+
+    `• Notatek: <b>${dane.notes.length}</b>`+
+    (zdjec ? ` (w tym zdjęć: ${zdjec})` : "")+`<br>`+
+    (dane.tags.length ? `• Etykiet: <b>${dane.tags.length}</b><br>` : "")+
+    (dane.secTabs.length ? `• Zakładek: <b>${dane.secTabs.length}</b><br>` : "")+
+    (dane.sections.length ? `• Sekcji: <b>${dane.sections.length}</b><br>` : "")+
+    `• Rozmiar: <b>${rozmiar}</b><br><br>`+
+    `Na drugim urządzeniu otwórz kopię zapasową, wskaż ten plik i wybierz `+
+    `<b>„Dołącz + układ"</b>. Nic tam nie zostanie skasowane — dojdą tylko `+
+    `te notatki.`,
+    {okLabel:"Zapisz plik"});
+  if(!ok) return;
+
+  const plik = nazwaPliku(rodzaj, nazwa);
+  await saveFile(new Blob([tekst], {type:"application/json"}), plik, "JW Study — "+nazwa);
+  toastOk("Zapisano: "+plik);
+}
+
+/** Wysyła etykietę razem ze wszystkimi jej notatkami. */
+async function wyslijEtykiete(idEtykiety){
+  const t = tags.find(x=>x.id===idEtykiety);
+  if(!t) return;
+  const notatki = notes.filter(n=>!n.del && n.tg.includes(t.id));
+  await wyslijWycinek(zbudujWycinek(notatki, [t.id], []), "etykieta", t.name);
+}
+
+/**
+ * Wysyła zakładkę sekcji: notatki wrzucone do niej wprost ORAZ te, które
+ * należą do niej przez swoje etykiety — tak samo, jak pokazuje ją aplikacja.
+ */
+async function wyslijZakladke(idZakladki){
+  const z = secTabs.find(x=>x.id===idZakladki);
+  if(!z) return;
+  const etykietyZakladki = tags.filter(t=>t.stb===z.id).map(t=>t.id);
+  const notatki = notes.filter(n=>!n.del && notatkaWZakladce(n, z.id));
+  await wyslijWycinek(zbudujWycinek(notatki, etykietyZakladki, [z.id]), "zakladka", z.name);
+}
+
+/** Wysyła zakładkę publikacji razem z jej notatkami. */
+async function wyslijZakladkePub(idZakladki){
+  const z = (typeof pubTabs!=="undefined") ? pubTabs.find(x=>x.id===idZakladki) : null;
+  if(!z) return;
+  const notatki = notes.filter(n=>!n.del && n.ptb===z.id);
+  await wyslijWycinek(zbudujWycinek(notatki, [], []), "zakladka", z.name);
 }
 
 </script>
