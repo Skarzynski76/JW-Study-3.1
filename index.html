@@ -2815,7 +2815,7 @@ body.przenoszenieNotatki{ cursor:grabbing; user-select:none; }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v1.99</span></div>
+      <div class="brand-name">JW Study <span class="ver">v2.01</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -4863,17 +4863,32 @@ const SORTERS = {
     createdOld:(a,b)=>crOf(a).localeCompare(crOf(b)),             // utworzone — najstarsze
     edited:(a,b)=>((b.ed?1:0)-(a.ed?1:0)) || moOf(b).localeCompare(moOf(a)),  // edytowane najpierw
     bible:(a,b)=>(a.b||99)-(b.b||99)||(a.ch||0)-(b.ch||0)||(a.v||0)-(b.v||0)||crOf(a).localeCompare(crOf(b)),   // jak wyżej: stała kolejność mimo edycji
-    /* Kolejność w publikacji: najpierw notatki z publikacji (wg symbolu, numeru wydania,
-       artykułu i akapitu), na końcu notatki biblijne i ogólne. */
+    /* KOLEJNOŚĆ W PUBLIKACJI — ta sama, którą widać w JW Library.
+       Decydują cztery liczby, w tej kolejności:
+         1. symbol publikacji (KeySymbol),
+         2. numer wydania (IssueTagNumber) — rosnąco, więc starsze numery wyżej,
+         3. numer dokumentu (DocumentId) — czyli miejsce artykułu w wydaniu,
+         4. numer akapitu (BlockIdentifier).
+
+       Tytuł artykułu NIE jest kryterium. Wcześniej był — i to on psuł całość:
+       porównywany przed numerem dokumentu, ustawiał artykuły w jednym wydaniu
+       ALFABETYCZNIE. „Bądź odważny" trafiało przed „Zachowuj czujność" bez
+       względu na to, co było wcześniej w Strażnicy. Tytuł to etykieta, nie
+       pozycja. Został wyłącznie jako rozstrzygnięcie remisu, gdy numeru
+       dokumentu brak w obu notatkach. */
     pub:(a,b)=>{
       const pa=a.b?1:0, pb=b.b?1:0;                       // biblijne na koniec
       if(pa!==pb) return pa-pb;
       if(!a.b && !b.b){
         const ks=(a.ks||"").localeCompare(b.ks||"","pl");  if(ks) return ks;
         const it=(a.itn||0)-(b.itn||0);                    if(it) return it;
-        const tt=(a.pub||"").localeCompare(b.pub||"","pl");if(tt) return tt;
-        const dc=(a.doc||0)-(b.doc||0);                    if(dc) return dc;
+        /* Notatki bez numeru dokumentu (pisane ręcznie w aplikacji, nie
+           przeniesione z JW Library) idą na koniec swojej publikacji, a nie na
+           początek — zero nie znaczy „pierwszy", tylko „nie wiadomo gdzie". */
+        const da=a.doc||Infinity, db2=b.doc||Infinity;
+        if(da!==db2) return da-db2;
         const pr=(a.par||0)-(b.par||0);                    if(pr) return pr;
+        const tt=(a.pub||"").localeCompare(b.pub||"","pl");if(tt) return tt;
         /* Ostatnie kryterium: data UTWORZENIA, nie modyfikacji.
            Wcześniej wystarczyło coś w notatce podkreślić, żeby dostała świeżą datę zmiany
            i zjechała na koniec grupy. Miejsce notatki w publikacji nie zależy od tego,
@@ -7827,7 +7842,9 @@ async function handleImportFile(e){
     showInfo("Import zakończony", `Kopia z JW Library została <b>dołączona</b> (bez kasowania Twoich danych).<br><br>`+
       `• Nowych notatek: <b>${res.added}</b><br>`+
       `• Zaktualizowanych: <b>${res.updated}</b><br>`+
-      `• Pominięto (bez zmian lub Twoje edycje): ${res.skipped}`);
+      `• Pominięto (bez zmian lub Twoje edycje): ${res.skipped}`+
+      (res.polozenia ? `<br><br>Poprawiono położenie w publikacji u <b>${res.polozenia}</b> notatek — `+
+                       `to naprawia sortowanie „Kolejność w publikacji”.` : ""));
   }catch(err){
     console.warn("Import z JW Library nie powiódł się", err);
     showInfo("Nie wczytano kopii",
@@ -7857,7 +7874,7 @@ function importFromDb(db){
     l.BookNumber, l.ChapterNumber, l.Title, l.KeySymbol, l.DocumentId, l.IssueTagNumber, u.ColorIndex
     FROM Note n LEFT JOIN Location l ON n.LocationId=l.LocationId LEFT JOIN UserMark u ON n.UserMarkId=u.UserMarkId`;
   const rows=db.exec(q);
-  let added=0,updated=0,skipped=0;
+  let added=0,updated=0,skipped=0,polozenia=0;
   const byG={}; notes.forEach(n=>byG[n.g]=n);
   const changed=[];
   if(rows.length) rows[0].values.forEach(r=>{
@@ -7871,9 +7888,24 @@ function importFromDb(db){
     const ex=byG[g];
     if(!ex){ notes.push(inc); changed.push(inc); added++; }
     else if(ex.del){ skipped++; }
-    else if(ex.ed||ex.tgd){ skipped++; }
-    else if((inc.mo||"")>(ex.mo||"")){ const keepCol=ex.col; Object.assign(ex,inc); ex.h=null; if(!inc.col)ex.col=keepCol; changed.push(ex); updated++; }
-    else skipped++;
+    else {
+      /* POŁOŻENIE ODŚWIEŻAMY ZAWSZE.
+         To nie jest treść użytkownika, tylko fakt z JW Library: w której
+         publikacji, w którym wydaniu, artykule i akapicie leży notatka.
+         Wcześniej notatka raz zmieniona w aplikacji (ex.ed) była pomijana
+         w całości — razem z położeniem. Kto poprawił u siebie choćby literówkę,
+         zostawał ze starymi albo pustymi numerami i sortowanie „jak
+         w publikacji" ustawiało mu takie notatki byle gdzie. Nadpisanie tych
+         pól nie może niczego zgubić, bo użytkownik ich nie tworzy. */
+      const polozenie = ["b","ch","v","pub","ks","doc","itn","par"];
+      let ruszone = false;
+      polozenie.forEach(k=>{ if(ex[k]!==inc[k]){ ex[k]=inc[k]; ruszone=true; } });
+
+      if(ruszone) polozenia++;
+      if(ex.ed||ex.tgd){ if(ruszone) changed.push(ex); skipped++; }
+      else if((inc.mo||"")>(ex.mo||"")){ const keepCol=ex.col; Object.assign(ex,inc); ex.h=null; if(!inc.col)ex.col=keepCol; changed.push(ex); updated++; }
+      else { if(ruszone) changed.push(ex); skipped++; }
+    }
   });
   if(idb&&changed.length) idbBulk("notes",changed).catch(e=>reportSaveError(e,"import"));
   // wykryj symbol Biblii używany na tym urządzeniu (nwt / nwtsty / inne), do budowania linków do wersetów
@@ -7881,7 +7913,7 @@ function importFromDb(db){
     const bk=db.exec("SELECT KeySymbol, COUNT(*) c FROM Location WHERE BookNumber IS NOT NULL AND KeySymbol IS NOT NULL GROUP BY KeySymbol ORDER BY c DESC LIMIT 1");
     if(bk.length && bk[0].values[0][0]){ bibleKs = bk[0].values[0][0]; try{ localStorage.setItem(KP+"BibleKs", bibleKs); }catch(e){} }
   }catch(e){}
-  return {added,updated,skipped};
+  return {added,updated,skipped,polozenia};
 }
 /* ===== podkreślenia: kolory, etykieta, link ===== */
 function openUrlJWL(url){
@@ -10640,6 +10672,7 @@ function pozycjeDoUpuszczenia(rodzaj){
 function zakonczChwyt(zapisz){
   if(!_chwyt) return;
   const {el, duszek, wskaznik, cel, przed, rodzaj, id, celObcy} = _chwyt;
+  if(_chwyt.klatka) cancelAnimationFrame(_chwyt.klatka);
   if(duszek) duszek.remove();
   if(wskaznik) wskaznik.remove();
   el.classList.remove("chwytany");
@@ -10714,6 +10747,61 @@ function przenumeruj(grupa, element, sasiad, przed){
   lista.forEach((x,k)=>{ x.ord = k*10; });
 }
 
+
+
+/* ==========================================================================
+   PRZEWIJANIE PODCZAS PRZENOSZENIA
+
+   Przeniesienie notatki o dwadzieścia wierszy było niewykonalne: cel leżał poza
+   ekranem, a lista nie przewijała się, bo palec trzymał element, nie listę.
+   Zostawało puszczenie w połowie drogi, przewinięcie i chwytanie od nowa.
+
+   Teraz przy zbliżeniu do górnej albo dolnej krawędzi lista jedzie sama — tym
+   szybciej, im bliżej krawędzi. Po każdym przesunięciu przeliczamy miejsce
+   wstawienia, żeby linia szła za treścią, która właśnie wjechała na ekran.
+   ========================================================================== */
+const CHWYT_STREFA   = 64;    // px od krawędzi, w których zaczyna się przewijanie
+const CHWYT_MAX_KROK = 18;    // px na klatkę tuż przy krawędzi
+
+/** Najbliższy przodek, który faktycznie da się przewinąć. */
+function przewijalny(el){
+  let w = el;
+  while(w && w !== document.body){
+    if(w.scrollHeight > w.clientHeight + 4){
+      const st = getComputedStyle(w).overflowY;
+      if(st==="auto" || st==="scroll") return w;
+    }
+    w = w.parentElement;
+  }
+  return null;
+}
+/** Ile przewinąć w tej klatce: 0 poza strefą, do ±CHWYT_MAX_KROK przy krawędzi. */
+function silaPrzewijania(y, gora, dol){
+  if(y < gora + CHWYT_STREFA)
+    return -Math.ceil(CHWYT_MAX_KROK * (1 - Math.max(0, y - gora) / CHWYT_STREFA));
+  if(y > dol - CHWYT_STREFA)
+    return  Math.ceil(CHWYT_MAX_KROK * (1 - Math.max(0, dol - y) / CHWYT_STREFA));
+  return 0;
+}
+/** Jedna klatka przewijania; zwraca true, gdy coś się przesunęło. */
+function krokPrzewijania(y){
+  const box = _chwyt && _chwyt.przewijak;
+  if(!box){
+    /* Nic przewijalnego nad elementem — na wąskim ekranie przewija się sama
+       strona, więc ruszamy oknem. */
+    const krok = silaPrzewijania(y, 0, innerHeight);
+    if(!krok) return false;
+    const przed = (document.scrollingElement||document.documentElement).scrollTop;
+    scrollBy(0, krok);
+    return (document.scrollingElement||document.documentElement).scrollTop !== przed;
+  }
+  const r = box.getBoundingClientRect();
+  const krok = silaPrzewijania(y, r.top, r.bottom);
+  if(!krok) return false;
+  const przed = box.scrollTop;
+  box.scrollTop = przed + krok;
+  return box.scrollTop !== przed;
+}
 
 /* ==========================================================================
    NOTATKI — WŁASNA KOLEJNOŚĆ, KTÓRA SIĘ NIE GUBI
@@ -10805,26 +10893,20 @@ document.addEventListener("pointerdown", ev=>{
     document.body.classList.add("wTrakcieChwytu");
     _chwyt = {el, rodzaj:info.rodzaj, id:info.id,
               duszek: zrobDuszka(el, startX, startY), wskaznik: zrobWskaznik(),
-              cel:null, przed:false, sekcjaCel:undefined, celObcy:null};
+              cel:null, przed:false, sekcjaCel:undefined, celObcy:null,
+              przewijak: przewijalny(el), x:startX, y:startY, klatka:0};
+    petlaPrzewijania();
     if(navigator.vibrate) try{ navigator.vibrate(12); }catch(e){}
   };
-  /* Z uchwytu chwytamy od razu; z samego wiersza dopiero po przytrzymaniu,
-     żeby zwykłe kliknięcie filtrujące działało jak dotąd. */
-  if(zUchwytu){ ev.preventDefault(); odklej(); }
-  else licznik = setTimeout(odklej, CHWYT_PRZYTRZYMANIE);
-
-  const ruch = e=>{
-    if(!odklejone){
-      if(Math.abs(e.clientX-startX) > CHWYT_PROG_RUCHU ||
-         Math.abs(e.clientY-startY) > CHWYT_PROG_RUCHU) clearTimeout(licznik);
-      return;
-    }
-    e.preventDefault();
-    przesunDuszka(_chwyt.duszek, e.clientX, e.clientY);
+  /* Przeliczenie miejsca wstawienia — wołane i przy ruchu palca, i po każdym
+     przesunięciu listy, bo wtedy pod nieruchomym palcem jest już inna treść. */
+  const przelicz = (x, y)=>{
+    if(!_chwyt) return;
+    przesunDuszka(_chwyt.duszek, x, y);
 
     /* Notatka nad kolumną etykiet? Wtedy nie porządkujemy, tylko przypisujemy. */
     if(notatka && typeof celDlaNotatki==="function"){
-      const pod = document.elementFromPoint(e.clientX, e.clientY);
+      const pod = document.elementFromPoint(x, y);
       const obcy = celDlaNotatki(pod);
       if(typeof podswietlCel==="function") podswietlCel(obcy);
       _chwyt.celObcy = obcy;
@@ -10833,11 +10915,11 @@ document.addEventListener("pointerdown", ev=>{
 
     /* Szukamy najbliższej pozycji tego samego rodzaju — także w innych sekcjach. */
     let najbl = null, najmniej = Infinity, przed = false;
-    pozycjeDoUpuszczenia(info.rodzaj).forEach(x=>{
-      const r = x.getBoundingClientRect();
+    pozycjeDoUpuszczenia(info.rodzaj).forEach(x2=>{
+      const r = x2.getBoundingClientRect();
       const srodek = r.top + r.height/2;
-      const d = Math.abs(e.clientY - srodek);
-      if(d < najmniej){ najmniej = d; najbl = x; przed = e.clientY < srodek; }
+      const d = Math.abs(y - srodek);
+      if(d < najmniej){ najmniej = d; najbl = x2; przed = y < srodek; }
     });
     if(najbl){
       _chwyt.cel = najbl; _chwyt.przed = przed;
@@ -10848,6 +10930,30 @@ document.addEventListener("pointerdown", ev=>{
       _chwyt.cel = null;
       _chwyt.wskaznik.style.display = "none";
     }
+  };
+  /* Pętla chodzi przez cały czas trzymania: gdy palec stoi przy krawędzi,
+     lista jedzie sama, choć nie przychodzi żadne pointermove. */
+  const petlaPrzewijania = ()=>{
+    if(!_chwyt) return;
+    if(krokPrzewijania(_chwyt.y)) przelicz(_chwyt.x, _chwyt.y);
+    _chwyt.klatka = requestAnimationFrame(petlaPrzewijania);
+  };
+
+  /* Z uchwytu chwytamy od razu; z samego wiersza dopiero po przytrzymaniu,
+     żeby zwykłe kliknięcie filtrujące działało jak dotąd. */
+  if(zUchwytu){ ev.preventDefault(); odklej(); }
+  else licznik = setTimeout(odklej, CHWYT_PRZYTRZYMANIE);
+
+
+  const ruch = e=>{
+    if(!odklejone){
+      if(Math.abs(e.clientX-startX) > CHWYT_PROG_RUCHU ||
+         Math.abs(e.clientY-startY) > CHWYT_PROG_RUCHU) clearTimeout(licznik);
+      return;
+    }
+    e.preventDefault();
+    _chwyt.x = e.clientX; _chwyt.y = e.clientY;
+    przelicz(e.clientX, e.clientY);
   };
   const koniec = e=>{
     clearTimeout(licznik);
