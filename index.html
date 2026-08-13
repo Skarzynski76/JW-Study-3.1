@@ -2742,6 +2742,48 @@ body.przenoszenieNotatki{ cursor:grabbing; user-select:none; }
 }
 #noteList .ncard .drag{ touch-action:none; }
 
+/* ============================================================
+   ZWINIĘTE KOLUMNY ZNIKAJĄ (v1.98)
+   Wcześniej zostawał po nich pasek 42 px z obróconym napisem —
+   przy trzech zwiniętych ekran zaczynał się od trzech szarych
+   słupków bez treści. Teraz nie zostaje nic, a powrót jest
+   jedną cienką linijką nad notatkami.
+   ============================================================ */
+@media (min-width:901px){
+  .col.collapsed{ display:none!important; }
+  /* uchwyt szerokości nieistniejącej kolumny byłby pułapką na kursor */
+  .col.collapsed + .colResizer{ display:none!important; }
+}
+
+#ukryteKolumny{
+  display:flex; flex-wrap:wrap; align-items:center; gap:6px;
+  padding:8px 12px 0;
+}
+#ukryteKolumny[hidden]{ display:none; }
+.ukLbl{
+  font-size:calc(11px * var(--uiw));
+  text-transform:uppercase; letter-spacing:.07em;
+  color:var(--muted); opacity:.65; margin-right:2px;
+}
+.ukChip{
+  display:inline-flex; align-items:center; gap:4px;
+  padding:3px 9px 3px 6px;
+  border:1px solid var(--border); border-radius:999px;
+  background:transparent; color:var(--muted);
+  font-size:calc(12px * var(--uiw)); line-height:1.5;
+  cursor:pointer; opacity:.7;
+  transition:opacity .15s, color .15s, border-color .15s, background .15s;
+}
+.ukChip .ic{ width:12px; height:12px; opacity:.8; }
+.ukChip:hover{
+  opacity:1; color:var(--text);
+  border-color:var(--accent2); background:var(--sel);
+}
+.ukChip.ukAll{ border-style:dashed; }
+@media (hover:none){ .ukChip{ opacity:.85; padding:5px 11px 5px 8px; } }
+/* Na wąskim ekranie kolumny przełącza pasek zakładek, więc linijka jest zbędna. */
+@media (max-width:900px){ #ukryteKolumny{ display:none!important; } }
+
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -2750,7 +2792,7 @@ body.przenoszenieNotatki{ cursor:grabbing; user-select:none; }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v1.97</span></div>
+      <div class="brand-name">JW Study <span class="ver">v1.98</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -2823,6 +2865,7 @@ body.przenoszenieNotatki{ cursor:grabbing; user-select:none; }
   </div>
   <div class="colResizer" data-c="colPubs" title="Przeciągnij, aby zmienić szerokość"></div>
   <div class="col mshow" id="colNotes">
+    <div id="ukryteKolumny" hidden></div>
     <div id="viewBar">
       <span class="vb-lbl">Widok</span>
       <div class="vb-group">
@@ -8873,7 +8916,43 @@ function setCollapsed(id, on){
     p: $("colPubs") ? $("colPubs").classList.contains("collapsed") : false
   }));
   odswiezMenuKolumn();
+  odswiezUkryteKolumny();
 }
+
+/* ==========================================================================
+   ZWINIĘTE KOLUMNY — BEZ SZARYCH PASKÓW
+
+   Zwinięta kolumna zostawiała po sobie pasek 42 px z obróconym napisem.
+   Przy trzech zwiniętych ekran zaczynał się od trzech szarych słupków, które
+   nie niosły żadnej treści — sam koszt miejsca i hałas dla oka.
+
+   Teraz kolumna znika zupełnie, a nad listą notatek pojawia się jedna cienka
+   linijka bladych pastylek z nazwami ukrytych kolumn. Dotknięcie przywraca
+   kolumnę. Gdy nic nie jest ukryte, linijki nie ma wcale.
+   ========================================================================== */
+function odswiezUkryteKolumny(){
+  const pas = $("ukryteKolumny"); if(!pas) return;
+  const ukryte = KOLUMNY_BOCZNE.filter(([id])=>{
+    const c = $(id); return c && c.classList.contains("collapsed");
+  });
+  if(!ukryte.length){ pas.hidden = true; setHtml(pas, ""); return; }
+  pas.hidden = false;
+  setHtml(pas,
+    '<span class="ukLbl">Ukryte:</span>' +
+    ukryte.map(([id,nm])=>
+      `<button class="ukChip" data-pokaz="${id}" title="Pokaż kolumnę ${esc(nm)}">`+
+      `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" `+
+      `stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">`+
+      `<path d="M9 6l6 6-6 6"/></svg>${esc(nm)}</button>`).join("") +
+    (ukryte.length>1 ? '<button class="ukChip ukAll" data-pokaz="*">Pokaż wszystkie</button>' : ""));
+}
+document.addEventListener("click", e=>{
+  const b = e.target.closest && e.target.closest("#ukryteKolumny [data-pokaz]");
+  if(!b) return;
+  e.preventDefault(); e.stopPropagation();
+  if(b.dataset.pokaz==="*") KOLUMNY_BOCZNE.forEach(([id])=>setCollapsed(id, false));
+  else setCollapsed(b.dataset.pokaz, false);
+});
 /** Zaznaczenia w menu „Kolumny" muszą nadążać za stanem kolumn. */
 function odswiezMenuKolumn(){
   const dd = document.getElementById("dropdown");
@@ -8920,17 +8999,15 @@ document.querySelectorAll(".colToggle").forEach(btn=>{
     setCollapsed(id, !$(id).classList.contains("collapsed"));
   });
 });
-["colTags","colBooks","colPubs"].forEach(id=>{
-  $(id).addEventListener("click", ()=>{
-    if($(id).classList.contains("collapsed") && innerWidth>900) setCollapsed(id, false);
-  });
-});
+/* Dawniej kliknięcie w szary pasek rozwijało kolumnę. Paska już nie ma —
+   powrót odbywa się przez pastylkę nad notatkami albo menu „Kolumny". */
 try{
   const cs = JSON.parse(localStorage.getItem(KP+"Cols")||"{}");
   if(cs.t) $("colTags").classList.add("collapsed");
   if(cs.b) $("colBooks").classList.add("collapsed");
   if(cs.p) $("colPubs").classList.add("collapsed");
 }catch(e){}
+odswiezUkryteKolumny();     // pasek musi znać stan zapamiętany z poprzedniej wizyty
 /* ===== regulacja szerokości kolumn (przeciąganie uchwytu) ===== */
 function applyColWidths(){
   try{
