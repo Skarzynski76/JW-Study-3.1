@@ -2784,6 +2784,29 @@ body.przenoszenieNotatki{ cursor:grabbing; user-select:none; }
 /* Na wąskim ekranie kolumny przełącza pasek zakładek, więc linijka jest zbędna. */
 @media (max-width:900px){ #ukryteKolumny{ display:none!important; } }
 
+/* ============================================================
+   POWRÓT DO WSZYSTKICH NOTATEK (v1.99)
+   Przycisk pojawia się tylko wtedy, gdy coś zawęża listę —
+   przy pełnej liście nie zabiera miejsca w pasku.
+   ============================================================ */
+#btnWszystkie{
+  display:inline-flex; align-items:center; gap:6px;
+  flex:0 0 auto; white-space:nowrap;
+  border-color:var(--accent2);
+  animation:bwPokaz .18s ease-out;
+}
+#btnWszystkie[hidden]{ display:none!important; }
+#btnWszystkie .ic{ width:15px; height:15px; }
+#btnWszystkie .bwN{
+  min-width:18px; padding:0 5px; border-radius:999px;
+  background:var(--sel); color:var(--muted);
+  font-size:calc(11px * var(--uiw)); line-height:17px; text-align:center;
+}
+#btnWszystkie:hover .bwN{ background:rgba(255,255,255,.22); color:inherit; }
+@keyframes bwPokaz{ from{ opacity:0; transform:translateY(-3px); } to{ opacity:1; transform:none; } }
+/* Na wąskim pasku zostaje sama strzałka z liczbą — napis by się nie zmieścił. */
+@media (max-width:1100px){ #btnWszystkie .bwTxt{ display:none; } }
+
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -2792,7 +2815,7 @@ body.przenoszenieNotatki{ cursor:grabbing; user-select:none; }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v1.98</span></div>
+      <div class="brand-name">JW Study <span class="ver">v1.99</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -2801,6 +2824,7 @@ body.przenoszenieNotatki{ cursor:grabbing; user-select:none; }
     <div id="searchSug"></div>
     <input id="search" type="search" autocomplete="off" aria-label="Szukaj w notatkach" placeholder='Szukaj w notatkach…' title='Wyszukiwanie rozszerzone:&#10;• bez ogonków też działa: milosc znajdzie miłość&#10;• kilka słów — wszystkie muszą wystąpić&#10;• gwiazdka: miłos* znajdzie miłość, miłosierdzie…&#10;• "w cudzysłowie" — dokładna fraza&#10;• (słowo|inne) — którekolwiek z nich&#10;• tytuł:pokora · etykieta:studium · werset:Jan'>
   </div>
+  <button class="btn" id="btnWszystkie" hidden title="Wróć do wszystkich notatek — czyści szukanie, etykietę, księgę i szybki filtr (0)"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5L4 12l5 7"/><path d="M4 12h9a6 6 0 0 1 0 12"/></svg> <span class="bwTxt">Wszystkie notatki</span><span class="bwN"></span></button>
   <select id="sortSel" aria-label="Kolejność notatek na liście" title="Kolejność notatek na liście">
     <optgroup label="Według zmiany">
       <option value="new">Ostatnio zmienione</option>
@@ -5065,6 +5089,7 @@ function renderNotes(){
   }
   let countsTxt = sortMode==="recent" ? (arr.length ? "Ostatnio otwierane ("+arr.length+")" : "Nie otwierałeś jeszcze żadnej notatki") : arr.length + (arr.length===1?" notatka":(arr.length%10>=2&&arr.length%10<=4&&(arr.length%100<12||arr.length%100>14))?" notatki":" notatek");
   renderQuickFilters(_base);
+  if(typeof odswiezPrzyciskWszystkie==="function") odswiezPrzyciskWszystkie();
   setText($("counts"), countsTxt);
   let _alive=0; for(let i=0;i<notes.length;i++) if(!notes[i].del) _alive++;
   setText($("hCount"), _alive + " notatek · " + tags.length + " etykiet");
@@ -9418,6 +9443,7 @@ function openSettings(){
          <div><kbd>E</kbd><span>edytuj zaznaczoną / otwartą</span></div>
          <div><kbd>F</kbd><span>ulubione</span></div>
          <div><kbd>P</kbd><span>przypnij na górze</span></div>
+         <div><kbd>0</kbd><span>wszystkie notatki — zdejmuje szukanie i filtry</span></div>
          <div><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd><span>chowanie kolumn: Biblia / Etykiety / Publikacje</span></div>
          <div><kbd>,</kbd><span>ustawienia</span></div>
          <div><kbd>?</kbd><span>ta lista</span></div>
@@ -10850,6 +10876,65 @@ document.addEventListener("click", e=>{
 </script>
 <script>
 /* ==========================================================================
+   JW Study — wszystkie.js
+   POWRÓT DO WSZYSTKICH NOTATEK — JEDNYM PRZYCISKIEM
+
+   Po wyszukaniu czegoś albo wejściu w etykietę powrót do pełnej listy wymagał
+   wędrówki: wyczyść pole szukania, wróć do kolumny etykiet, znajdź „Wszystkie",
+   kliknij. Cztery ruchy po całym ekranie, żeby wrócić do punktu wyjścia.
+
+   Teraz jest jeden przycisk w górnym pasku. Pokazuje się TYLKO wtedy, gdy coś
+   faktycznie zawęża listę — przy pełnej liście nie zabiera miejsca ani uwagi.
+   Podaje też, ile notatek wróci, żeby było widać, co się zaraz stanie.
+   ========================================================================== */
+"use strict";
+
+/** Co dokładnie zawęża w tej chwili listę. Pusta lista = widać wszystko. */
+function czynneZawezenia(){
+  const co = [];
+  if(query) co.push("szukanie");
+  if(filt.tag && filt.tag!=="all") co.push("etykieta");
+  if(filt.book && filt.book!=="all") co.push("księga");
+  if(filt.ch) co.push("rozdział");
+  if(typeof quickFilter!=="undefined" && quickFilter!=="all") co.push("szybki filtr");
+  return co;
+}
+/** Czyści wszystkie zawężenia naraz i wraca do pełnej listy. */
+function pokazWszystkieNotatki(){
+  if(!czynneZawezenia().length) return;
+  query = "";
+  const pole = $("search");
+  if(pole) pole.value = "";
+  const sug = $("searchSug");
+  if(sug){ sug.style.display = "none"; setHtml(sug, ""); }
+  filt.tag = "all"; filt.book = "all"; filt.ch = null;
+  if(typeof quickFilter!=="undefined") quickFilter = "all";
+  renderAll();
+  const ile = notes.filter(n=>!n.del).length;
+  toastOk("Wszystkie notatki (" + ile + ")");
+}
+/** Pokazuje przycisk tylko wtedy, gdy jest z czego wracać. */
+function odswiezPrzyciskWszystkie(){
+  const b = $("btnWszystkie"); if(!b) return;
+  const zaw = czynneZawezenia();
+  b.hidden = !zaw.length;
+  if(!zaw.length) return;
+  const ile = notes.filter(n=>!n.del).length;
+  const licznik = b.querySelector(".bwN");
+  if(licznik) setText(licznik, String(ile));
+  /* W tytule wypisujemy, co zostanie zdjęte — inaczej przycisk kasujący kilka
+     rzeczy naraz bywa niespodzianką. */
+  b.title = "Wróć do wszystkich notatek (" + ile + ") — zdejmie: " + zaw.join(", ") + "   [0]";
+}
+document.addEventListener("click", e=>{
+  if(e.target.closest && e.target.closest("#btnWszystkie")){
+    e.preventDefault(); pokazWszystkieNotatki();
+  }
+});
+
+</script>
+<script>
+/* ==========================================================================
    JW Study — shortcuts.js
    Skróty klawiszowe
    ========================================================================== */
@@ -10876,6 +10961,10 @@ document.addEventListener("keydown", e=>{
   if(typing) return;
   if((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==="f"){ e.preventDefault(); $("search").focus(); $("search").select(); return; }
   if(e.metaKey||e.ctrlKey||e.altKey) return;
+  /* 0 — powrót do wszystkich notatek; sąsiaduje z 1/2/3 od kolumn */
+  if(e.key==="0" && typeof pokazWszystkieNotatki==="function"){
+    e.preventDefault(); pokazWszystkieNotatki(); return;
+  }
   /* 1 / 2 / 3 — szybkie chowanie kolumn bocznych na dużym ekranie */
   if(e.key>="1" && e.key<="3" && innerWidth>900 && typeof KOLUMNY_BOCZNE!=="undefined"){
     const wpis = KOLUMNY_BOCZNE[+e.key - 1];
