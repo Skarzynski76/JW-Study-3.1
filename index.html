@@ -2807,6 +2807,12 @@ body.przenoszenieNotatki{ cursor:grabbing; user-select:none; }
 /* Na wąskim pasku zostaje sama strzałka z liczbą — napis by się nie zmieścił. */
 @media (max-width:1100px){ #btnWszystkie .bwTxt{ display:none; } }
 
+/* Znaczek przy pozycji menu, której miejsce ustawiono ręcznie (v2.03). */
+#dropdown .ddZnak{
+  margin-left:auto; padding-left:8px;
+  color:var(--accent); font-weight:700;
+}
+
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -2815,7 +2821,7 @@ body.przenoszenieNotatki{ cursor:grabbing; user-select:none; }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.01</span></div>
+      <div class="brand-name">JW Study <span class="ver">v2.03</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -5167,6 +5173,9 @@ const ICO = {
   trash:_svg('<path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/><path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/>'),
   image:_svg('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 15l-5-5L5 20"/>'),
   pin:_svg('<path d="M9 3h6l-1 6 3 3v2H7v-2l3-3-1-6z"/><path d="M12 14v7"/>'),
+  /* strzałka w górę nad podstawką — ten sam znak, którym systemy oznaczają
+     „udostępnij", więc nie trzeba go tłumaczyć */
+  send:_svg('<path d="M12 16V4"/><path d="M8 8l4-4 4 4"/><path d="M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/>'),
   tag:_svg('<path d="M3 12l9-9 8 8-9 9-8-8z"/><circle cx="8" cy="8" r="1.4" fill="currentColor" stroke="none"/>'),
   book:_svg('<path d="M4 5a2 2 0 0 1 2-2h5v16H6a2 2 0 0 0-2 2z"/><path d="M20 5a2 2 0 0 0-2-2h-5v16h5a2 2 0 0 1 2 2z"/>'),
   width:_svg('<path d="M4 12h16"/><path d="M7 8l-4 4 4 4"/><path d="M17 8l4 4-4 4"/><path d="M8 4v16M16 4v16" stroke-opacity=".45"/>'),
@@ -5320,11 +5329,13 @@ function noteCard(n){
          <div class="dd-sep"></div>
          <div class="dd-lbl">Werset</div>
          <div data-x="verse">${ICO.bookmark}${n.b?"Zmień":"Przypisz"} werset…</div>
+         <div data-x="miejsce">${ICO.book}Miejsce w publikacji…${n.pw?' <span class="ddZnak">✓</span>':""}</div>
          ${n.ks?`<div data-x="ptb">${ICO.tag}Zakładka publikacji…</div>`:""}
          ${(typeof secTabs!=="undefined" && secTabs.length)?`<div data-x="stb">${ICO.tag}Zakładka w sekcji…</div>`:""}
          ${link?`<div data-x="open">${ICO.ext}Otwórz w JW Library</div>`:""}
          <div class="dd-sep"></div>
          <div class="dd-lbl">Eksport notatki</div>
+         <div data-x="wyslij">${ICO.send}Wyślij na inne urządzenie…</div>
          <div data-x="doc">${ICO.doc}Word (.doc)</div>
          <div data-x="pdf">${ICO.printer}PDF / Drukuj</div>
          <div data-x="jwl">${ICO.book}JW Library (.jwlibrary)</div>
@@ -5342,7 +5353,9 @@ function noteCard(n){
         else if(x==="doc") exportNoteWord(n);
         else if(x==="pdf") exportNotePdf(n);
         else if(x==="jwl") exportOneNoteJwl(n);
+        else if(x==="wyslij" && typeof wyslijNotatke==="function") wyslijNotatke(n.g);
         else if(x==="verse") assignVerse(n);
+        else if(x==="miejsce" && typeof ustawMiejsceWPublikacji==="function") ustawMiejsceWPublikacji(n.g);
         else if(x==="copy") copyNote(n);
         else if(x==="link") navigator.clipboard.writeText(finderUrl(n)).then(()=>toast("Skopiowano odnośnik"));
         else if(x==="read") toggleReading(d);
@@ -7843,6 +7856,7 @@ async function handleImportFile(e){
       `• Nowych notatek: <b>${res.added}</b><br>`+
       `• Zaktualizowanych: <b>${res.updated}</b><br>`+
       `• Pominięto (bez zmian lub Twoje edycje): ${res.skipped}`+
+      (res.wlasne ? `<br>• Nietknięte miejsca ustawione ręcznie: <b>${res.wlasne}</b>` : "")+
       (res.polozenia ? `<br><br>Poprawiono położenie w publikacji u <b>${res.polozenia}</b> notatek — `+
                        `to naprawia sortowanie „Kolejność w publikacji”.` : ""));
   }catch(err){
@@ -7874,7 +7888,7 @@ function importFromDb(db){
     l.BookNumber, l.ChapterNumber, l.Title, l.KeySymbol, l.DocumentId, l.IssueTagNumber, u.ColorIndex
     FROM Note n LEFT JOIN Location l ON n.LocationId=l.LocationId LEFT JOIN UserMark u ON n.UserMarkId=u.UserMarkId`;
   const rows=db.exec(q);
-  let added=0,updated=0,skipped=0,polozenia=0;
+  let added=0,updated=0,skipped=0,polozenia=0,wlasne=0;
   const byG={}; notes.forEach(n=>byG[n.g]=n);
   const changed=[];
   if(rows.length) rows[0].values.forEach(r=>{
@@ -7899,8 +7913,13 @@ function importFromDb(db){
          pól nie może niczego zgubić, bo użytkownik ich nie tworzy. */
       const polozenie = ["b","ch","v","pub","ks","doc","itn","par"];
       let ruszone = false;
-      polozenie.forEach(k=>{ if(ex[k]!==inc[k]){ ex[k]=inc[k]; ruszone=true; } });
+      /* Jedyny wyjątek: miejsce wskazane ręcznie (pw) albo werset przypisany
+         przez użytkownika. To JEST jego decyzja, nie fakt z biblioteki, więc
+         import jej nie unieważnia — inaczej przypisanie znikałoby przy
+         najbliższym wczytaniu kopii i wracalibyśmy do punktu wyjścia. */
+      if(!ex.pw) polozenie.forEach(k=>{ if(ex[k]!==inc[k]){ ex[k]=inc[k]; ruszone=true; } });
 
+      if(ex.pw) wlasne++;
       if(ruszone) polozenia++;
       if(ex.ed||ex.tgd){ if(ruszone) changed.push(ex); skipped++; }
       else if((inc.mo||"")>(ex.mo||"")){ const keepCol=ex.col; Object.assign(ex,inc); ex.h=null; if(!inc.col)ex.col=keepCol; changed.push(ex); updated++; }
@@ -7913,7 +7932,7 @@ function importFromDb(db){
     const bk=db.exec("SELECT KeySymbol, COUNT(*) c FROM Location WHERE BookNumber IS NOT NULL AND KeySymbol IS NOT NULL GROUP BY KeySymbol ORDER BY c DESC LIMIT 1");
     if(bk.length && bk[0].values[0][0]){ bibleKs = bk[0].values[0][0]; try{ localStorage.setItem(KP+"BibleKs", bibleKs); }catch(e){} }
   }catch(e){}
-  return {added,updated,skipped,polozenia};
+  return {added,updated,skipped,polozenia,wlasne};
 }
 /* ===== podkreślenia: kolory, etykieta, link ===== */
 function openUrlJWL(url){
@@ -8200,8 +8219,10 @@ async function assignVerse(n){
   const txt = await askText({title:"Przypisz werset do notatki", value:cur, placeholder:"np. Jan 3:16  (puste = usuń)", okLabel:"Przypisz", hint:"Notatka pojawi się w JW Library przy tym wersecie."});
   if(txt===null) return;
   pushUndo({type:"note", label:"przypisanie wersetu", before:cloneNote(n)});
-  if(txt===""){ n.b=0; n.ch=null; n.v=null; }
-  else { const ref=parseRef(txt); if(!ref){ toast("Nie rozpoznano — np. Jan 3:16"); return; } n.b=ref.b; n.ch=ref.ch||1; n.v=ref.v||null; n.doc=0; n.ks=""; n.pub=""; n.itn=0; }
+  /* Przypisanie wersetu to decyzja użytkownika, a nie fakt z JW Library —
+     znacznik pw chroni je przed nadpisaniem przy kolejnym imporcie. */
+  if(txt===""){ n.b=0; n.ch=null; n.v=null; n.pw=false; }
+  else { const ref=parseRef(txt); if(!ref){ toast("Nie rozpoznano — np. Jan 3:16"); return; } n.b=ref.b; n.ch=ref.ch||1; n.v=ref.v||null; n.doc=0; n.ks=""; n.pub=""; n.itn=0; n.pw=true; }
   n.ed=true; markDirty(n); renderAll();
   toast(n.b ? ("Przypisano: "+refText({b:n.b,ch:n.ch,v:n.v})) : "Usunięto przypisanie wersetu");
 }
@@ -9262,6 +9283,7 @@ function noteContextMenu(n, card, x, y){
     `<div data-c="copy">${ICO.copy}Kopiuj treść</div>` +
     (link?`<div data-c="link">${ICO.link}Kopiuj odnośnik</div>`:``) +
     (link?`<div data-c="open">${ICO.ext}Otwórz w JW Library</div>`:``) +
+    `<div data-c="wyslij">${ICO.send}Wyślij na inne urządzenie…</div>` +
     `<div class="dd-sep"></div>` +
     `<div data-c="del" class="dd-danger">${ICO.trash}Usuń notatkę</div>`;
   placeMenuAt(dd, x, y);
@@ -9277,6 +9299,7 @@ function noteContextMenu(n, card, x, y){
     else if(c==="copy") copyNote(n);
     else if(c==="link") navigator.clipboard.writeText(finderUrl(n)).then(()=>toastOk("Skopiowano odnośnik"));
     else if(c==="open") openUrlJWL(finderUrl(n));
+    else if(c==="wyslij" && typeof wyslijNotatke==="function") wyslijNotatke(n.g);
     else if(c==="del") delNote(n);
   };
 }
@@ -10573,6 +10596,26 @@ async function wyslijZakladke(idZakladki){
   await wyslijWycinek(zbudujWycinek(notatki, etykietyZakladki, [z.id]), "zakladka", z.name);
 }
 
+/**
+ * Wysyła JEDNĄ notatkę.
+ *
+ * Zabiera ze sobą swoje etykiety, a przez nie sekcje i zakładki — inaczej po
+ * drugiej stronie notatka wylądowałaby luzem w ogólnym zbiorze, a przypisania
+ * zostałyby odrzucone jako wskazujące na nieznane etykiety.
+ */
+async function wyslijNotatke(guid){
+  const n = notes.find(x=>x.g===guid && !x.del);
+  if(!n) return;
+  const idEtykiet = (n.tg||[]).filter(id=>tags.some(t=>t.id===id));
+  /* Zakładka sekcji notatki oraz zakładki jej etykiet — komplet, żeby układ
+     po drugiej stronie odtworzył się tak, jak wygląda tutaj. */
+  const idZakladek = new Set();
+  if(n.stb) idZakladek.add(n.stb);
+  tags.forEach(t=>{ if(idEtykiet.includes(t.id) && t.stb) idZakladek.add(t.stb); });
+  const nazwa = (n.t||"").trim() || (typeof refLabel==="function" ? refLabel(n) : "") || "Notatka";
+  await wyslijWycinek(zbudujWycinek([n], idEtykiet, [...idZakladek]), "notatka", nazwa);
+}
+
 /** Wysyła zakładkę publikacji razem z jej notatkami. */
 async function wyslijZakladkePub(idZakladki){
   const z = (typeof pubTabs!=="undefined") ? pubTabs.find(x=>x.id===idZakladki) : null;
@@ -11037,6 +11080,127 @@ document.addEventListener("click", e=>{
     e.preventDefault(); pokazWszystkieNotatki();
   }
 });
+
+</script>
+<script>
+/* ==========================================================================
+   JW Study — miejsce.js
+   MIEJSCE NOTATKI W PUBLIKACJI — USTAWIONE RĘCZNIE I NIENARUSZALNE
+
+   Notatka przysłana z innego urządzenia albo napisana od zera nie ma numerów
+   z JW Library, więc w sortowaniu „Kolejność w publikacji" lądowała na końcu
+   swojej publikacji i nie dało się z tym nic zrobić.
+
+   Tutaj wskazujesz jej miejsce sam: publikację, artykuł i akapit. Wybór jest
+   ZNACZONY (pole `pw`) i od tej chwili nietykalny — kolejne wczytanie kopii
+   z JW Library go nie ruszy. Bez tego znacznika import, który od v2.01
+   odświeża położenie każdej notatki, skasowałby Twój wybór przy najbliższej
+   okazji i wszystko wróciłoby do punktu wyjścia.
+   ========================================================================== */
+"use strict";
+
+/** Publikacje obecne w notatkach: klucz „ks|itn" → czytelna nazwa. */
+function dostepnePublikacje(){
+  const mapa = new Map();
+  notes.forEach(n=>{
+    if(n.del || n.b) return;                 // biblijne mają własne przypisanie wersetu
+    if(!n.ks) return;
+    const k = pubKeyOf(n);
+    if(!mapa.has(k)) mapa.set(k, pubKeyLabel(k));
+  });
+  return [...mapa.entries()].sort((a,b)=>a[1].localeCompare(b[1],"pl"));
+}
+/** Artykuły znane w danej publikacji: numer dokumentu → tytuł. */
+function artykulyPublikacji(klucz){
+  const mapa = new Map();
+  notes.forEach(n=>{
+    if(n.del || n.b || !n.doc) return;
+    if(pubKeyOf(n)!==klucz) return;
+    if(!mapa.has(n.doc)) mapa.set(n.doc, (n.pub||"").trim() || ("Dokument "+n.doc));
+  });
+  return [...mapa.entries()].sort((a,b)=>a[0]-b[0]);
+}
+
+/** Krótki opis bieżącego miejsca notatki — do pokazania w oknie. */
+function opisMiejsca(n){
+  if(n.b) return "werset — " + (typeof refText==="function" ? refText({b:n.b,ch:n.ch,v:n.v}) : "");
+  if(!n.ks) return "brak — notatka ogólna";
+  const art = (n.pub||"").trim();
+  return pubKeyLabel(pubKeyOf(n)) + (art ? " · "+art : "") + (n.par ? " · akapit "+n.par : "");
+}
+
+/**
+ * Ustawia miejsce notatki w publikacji. Trzy kroki, każdy z możliwością wyjścia.
+ * @param {string} guid
+ */
+async function ustawMiejsceWPublikacji(guid){
+  const n = notes.find(x=>x.g===guid && !x.del);
+  if(!n) return;
+
+  const publikacje = dostepnePublikacje();
+  if(!publikacje.length){
+    showInfo("Nie ma jeszcze publikacji",
+      "Miejsce można wskazać dopiero wtedy, gdy w aplikacji jest choć jedna notatka "+
+      "z publikacji — z niej bierzemy listę wydań i artykułów.<br><br>"+
+      "Wczytaj kopię z JW Library, a lista się pojawi.");
+    return;
+  }
+
+  /* 1. Publikacja i wydanie. */
+  const wybPub = await askChoice("Miejsce notatki — publikacja",
+    `<p class="ch-lead">Teraz: <b>${esc(opisMiejsca(n))}</b></p>`+
+    `<p>W której publikacji ma stać ta notatka?</p>`,
+    publikacje.map(([k,nazwa])=>({label:nazwa, value:k}))
+      .concat([{label:"Usuń przypisanie", value:"—usun—"}, {label:"Anuluj", value:""}]));
+  if(!wybPub) return;
+
+  pushUndo({type:"note", label:"miejsce w publikacji", before:cloneNote(n)});
+
+  if(wybPub==="—usun—"){
+    n.ks=""; n.pub=""; n.itn=0; n.doc=0; n.par=0; n.pw=false;
+    n.ed=true; markDirty(n); renderAll();
+    toastOk("Usunięto przypisanie do publikacji");
+    return;
+  }
+
+  const [ks, itn] = wybPub.split("|");
+
+  /* 2. Artykuł. Lista bierze się z notatek, które już tam są — dzięki temu
+        wskazujesz realny artykuł, a nie wymyślony numer dokumentu. */
+  const artykuly = artykulyPublikacji(wybPub);
+  let doc = 0, tytul = "";
+  if(artykuly.length){
+    const wybArt = await askChoice("Miejsce notatki — artykuł",
+      `<p class="ch-lead">${esc(pubKeyLabel(wybPub))}</p><p>Przy którym artykule?</p>`,
+      artykuly.map(([d,t])=>({label:t, value:String(d)}))
+        .concat([{label:"Na końcu publikacji", value:"0"}, {label:"Anuluj", value:""}]));
+    if(!wybArt) return;
+    doc = +wybArt || 0;
+    const znaleziony = artykuly.find(([d])=>d===doc);
+    tytul = znaleziony ? znaleziony[1] : "";
+  }
+
+  /* 3. Akapit. */
+  const wpis = await askText({
+    title:"Miejsce notatki — akapit",
+    value: n.par ? String(n.par) : "",
+    placeholder:"np. 12  (puste = początek artykułu)",
+    okLabel:"Zapisz miejsce",
+    hint:"Numer akapitu ustawia kolejność wewnątrz artykułu."});
+  if(wpis===null) return;
+  const par = Math.max(0, parseInt(wpis, 10) || 0);
+
+  n.ks = ks==="—" ? "" : ks;
+  n.itn = +itn || 0;
+  n.doc = doc;
+  n.par = par;
+  if(tytul) n.pub = tytul;
+  n.b = 0; n.ch = null; n.v = null;      // publikacja albo werset, nie oba naraz
+  n.pw = true;                            // od teraz import tego nie rusza
+  n.ed = true;
+  markDirty(n); renderAll();
+  toastOk("Miejsce zapisane: " + opisMiejsca(n));
+}
 
 </script>
 <script>
