@@ -2700,6 +2700,40 @@ body.przenoszenieNotatki{ cursor:grabbing; user-select:none; }
   background:var(--sel);
 }
 
+/* ===== PRZENOSZENIE „PRZYKLEJONE DO PALCA" (34-chwytanie.js) =====
+   Element chwycony blednie w liście, a za palcem leci etykietka z nazwą.
+   Gruba linia pokazuje, gdzie dokładnie stanie po puszczeniu. */
+.wTrakcieChwytu, .wTrakcieChwytu *{
+  user-select:none; -webkit-user-select:none;
+  cursor:grabbing !important;
+}
+#tagList .item.chwytany, #pubList .item.chwytany{
+  opacity:.35;
+  outline:2px dashed var(--stbKol, #2e7d5b);
+  outline-offset:-2px;
+}
+.chwytDuszek{
+  position:fixed; z-index:99999; pointer-events:none;
+  transform:translate(12px, -50%);
+  max-width:60vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  padding:6px 12px; border-radius:8px;
+  background:var(--ui, #2e7d5b); color:#fff;
+  font-size:14px; font-weight:600;
+  box-shadow:0 6px 18px rgba(0,0,0,.35);
+}
+.chwytWskaznik{
+  position:fixed; z-index:99998; pointer-events:none; display:none;
+  height:4px; border-radius:2px;
+  background:var(--ui, #2e7d5b);
+  box-shadow:0 0 0 1px #fff, 0 0 8px rgba(0,0,0,.4);
+}
+/* Uchwyt ma być na tyle duży, żeby dało się w niego trafić palcem. */
+#tagList .dragOrd, #pubList .dragOrd{
+  touch-action:none;
+  min-width:22px; min-height:28px;
+  display:inline-flex; align-items:center; justify-content:center;
+}
+
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -2708,7 +2742,7 @@ body.przenoszenieNotatki{ cursor:grabbing; user-select:none; }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v1.95</span></div>
+      <div class="brand-name">JW Study <span class="ver">v1.96</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -4196,17 +4230,8 @@ function renderTags(){
   const changed = setHtml(el, html);
   renderPubPanel();
   if(!changed) return;        // ten sam HTML → te same węzły i te same podpięte zdarzenia
-  // przenoszenie etykiet palcem albo kursorem
-  if(typeof enableDragSort==="function")
-    enableDragSort(el, ".dragOrd", ".item[data-ord]", kol=>{
-      /* Jedna lista zawiera i etykiety, i zakładki sekcji. Przeciąganie odbywa się
-         w obrębie grupy (data-grupa), więc po upuszczeniu wystarczy rozdzielić
-         wynik i zapisać kolejność w odpowiednim miejscu. */
-      const zakladki = kol.filter(id=>el.querySelector('.stbItem[data-ord="'+id+'"]'));
-      const etykiety = kol.filter(id=>!zakladki.includes(id));
-      if(zakladki.length && typeof applySecTabOrder==="function") applySecTabOrder(zakladki);
-      if(etykiety.length) applyTagOrder(etykiety);
-    });
+  /* Przenoszenie etykiet i zakładek obsługuje 34-chwytanie.js — nasłuchuje na
+     dokumencie, więc nie trzeba niczego podpinać po przerysowaniu listy. */
   // obsługa nagłówków sekcji
   el.querySelectorAll(".secHead").forEach(h=>{
     const sid=+h.dataset.sec;
@@ -4533,9 +4558,9 @@ function tagItem(key,name,cnt,user,color,inSection,secId){
   const dot = bezpieczny ? `<span class="tgdot" style="background:${bezpieczny}"></span>`
             : (key==="all" ? `<span class="tgdot all"></span>` : `<span class="tgdot none"></span>`);
   /* Uchwyt tylko przy etykietach użytkownika — „Wszystkie" i „Bez etykiety" stoją
-     na stałych miejscach. data-grupa pilnuje, żeby etykieta nie wyskoczyła z sekcji. */
+     na stałych miejscach. Przenoszeniem zajmuje się 34-chwytanie.js. */
   const uchwyt = user ? '<span class="dragOrd" title="Przeciągnij, aby zmienić kolejność">'+IC_GRIP+'</span>' : "";
-  const atryb = user ? ` data-droppable="1" data-ord="${key}" data-grupa="sec${secId!==undefined?secId:"none"}"` : "";
+  const atryb = user ? ` data-droppable="1" data-ord="${key}"` : "";
   return `<div class="item ${active?"active":""} ${cnt?"":"zero"}${inSection?" inSec":""}" data-k="${key}"${atryb}>
     ${uchwyt}${dot}<span class="nm">${esc(name)}</span>${user?'<span class="more" title="Opcje etykiety">'+IC_DOTS+'</span>':""}<span class="cnt">${cnt}</span></div>`;
 }
@@ -9669,7 +9694,7 @@ function pubTabRowsHtml(ks){
   let h = "";
   lista.forEach(t=>{
     const act = String(filt.book)==="ptb:"+t.id;
-    h += `<div class="item ptbItem${act?" active":""}" data-ptb="${t.id}" data-ord="${t.id}" data-grupa="pt${esc(ks)}">`+
+    h += `<div class="item ptbItem${act?" active":""}" data-ptb="${t.id}" data-ord="${t.id}">`+
          `<span class="dragOrd" title="Przeciągnij, aby zmienić kolejność">${IC_GRIP}</span>`+
          `<span class="nm">${esc(t.name)}</span>`+
          `<span class="more" data-ptmore="${t.id}" title="Opcje zakładki">${IC_DOTS}</span>`+
@@ -9686,9 +9711,7 @@ function pubTabRowsHtml(ks){
 }
 /** Podpięcie zdarzeń — wołane po każdym przerysowaniu panelu. */
 function bindPubTabs(el){
-  // przenoszenie zakładek palcem albo kursorem
-  if(typeof enableDragSort==="function")
-    enableDragSort(el, ".dragOrd", ".item[data-ord]", kol=>applyPubTabOrder(kol));
+  /* Przenoszenie zakładek obsługuje 34-chwytanie.js (nasłuch na dokumencie). */
   el.querySelectorAll("[data-ptadd]").forEach(b=>{
     b.onclick = e=>{ e.stopPropagation(); createPubTab(b.dataset.ptadd); };
   });
@@ -9923,104 +9946,6 @@ kbOdswiez();
 </script>
 <script>
 /* ==========================================================================
-   JW Study — dragorder.js
-   Przenoszenie pozycji palcem albo kursorem
-   --------------------------------------------------------------------------
-   Wspólny mechanizm dla etykiet w kolumnie i zakładek w publikacjach. Do tej pory
-   kolejność zmieniało się przez menu ⋯ → wyżej / niżej, co przy dłuższej liście
-   oznaczało wiele kliknięć. Teraz każda pozycja ma uchwyt ⠿: łapiesz go palcem,
-   rysikiem albo myszą i przeciągasz tam, gdzie ma stanąć.
-
-   Uchwyt jest osobnym elementem, więc przeciąganie nie koliduje z klikaniem pozycji
-   ani z przeciąganiem etykiety do sekcji (to nadal działa jak dotąd).
-   ========================================================================== */
-"use strict";
-
-/**
- * Włącza przenoszenie pozycji w podanym pojemniku.
- * @param {HTMLElement} pojemnik   element z listą
- * @param {string} uchwytSel       selektor uchwytów, np. ".dragOrd"
- * @param {string} pozycjaSel      selektor przenoszonych pozycji
- * @param {(kolejnosc:string[], pozycja:HTMLElement)=>void} poUpuszczeniu
- *        dostaje kolejność wartości data-ord po przestawieniu
- */
-function enableDragSort(pojemnik, uchwytSel, pozycjaSel, poUpuszczeniu){
-  if(!pojemnik) return;
-  pojemnik.querySelectorAll(uchwytSel).forEach(uchwyt=>{
-    uchwyt.addEventListener("pointerdown", ev=>{
-      const poz = uchwyt.closest(pozycjaSel);
-      if(!poz) return;
-      ev.preventDefault(); ev.stopPropagation();
-      try{ uchwyt.setPointerCapture(ev.pointerId); }catch(e){}
-
-      /* Przenosimy tylko w obrębie jednej grupy — etykieta z sekcji nie wskoczy
-         przypadkiem między etykiety luzem, a zakładka jednej publikacji nie trafi
-         do innej. Grupę wyznacza atrybut data-grupa. */
-      const grupa = poz.dataset.grupa || "";
-      const wGrupie = () => [...pojemnik.querySelectorAll(pozycjaSel)]
-                              .filter(x=>(x.dataset.grupa||"")===grupa);
-
-      poz.classList.add("dragging");
-      pojemnik.classList.add("reordering");
-
-      const ruch = e=>{
-        const y = e.clientY;
-        let po = null;
-        for(const it of wGrupie()){
-          if(it===poz) continue;
-          const r = it.getBoundingClientRect();
-          if(y > r.top + r.height/2) po = it;
-        }
-        if(po){ if(po.nextSibling !== poz) po.after(poz); }
-        else {
-          const pierwsza = wGrupie().find(x=>x!==poz);
-          if(pierwsza && pierwsza !== poz) pojemnik.insertBefore(poz, pierwsza);
-        }
-      };
-      const koniec = ()=>{
-        uchwyt.removeEventListener("pointermove", ruch);
-        uchwyt.removeEventListener("pointerup", koniec);
-        uchwyt.removeEventListener("pointercancel", koniec);
-        poz.classList.remove("dragging");
-        pojemnik.classList.remove("reordering");
-        const kolejnosc = wGrupie().map(x=>x.dataset.ord);
-        try{ poUpuszczeniu(kolejnosc, poz); }catch(e){ console.warn("Nie udało się zapisać kolejności", e); }
-      };
-      uchwyt.addEventListener("pointermove", ruch);
-      uchwyt.addEventListener("pointerup", koniec);
-      uchwyt.addEventListener("pointercancel", koniec);
-    });
-  });
-}
-
-/** Zapisuje nową kolejność etykiet. Numerujemy co 10, żeby dało się wstawiać między. */
-function applyTagOrder(kolejnosc){
-  ensureOrd();
-  const bazowe = tags.filter(t=>kolejnosc.includes(String(t.id)));
-  if(!bazowe.length) return;
-  const najnizsze = Math.min(...bazowe.map(t=>t.ord||0));
-  pushUndo({type:"tags", label:"zmianę kolejności etykiet", tags:cloneTags()});
-  kolejnosc.forEach((id,i)=>{
-    const t = tags.find(x=>String(x.id)===String(id));
-    if(t) t.ord = najnizsze + i*10;
-  });
-  sortTags(); saveTags(); renderTags();
-  toastOk("Zapisano kolejność etykiet");
-}
-
-/** Zapisuje nową kolejność zakładek w publikacji. */
-function applyPubTabOrder(kolejnosc){
-  kolejnosc.forEach((id,i)=>{
-    const t = pubTabs.find(x=>String(x.id)===String(id));
-    if(t) t.ord = i;
-  });
-  savePubTabs(); renderTags();
-  toastOk("Zapisano kolejność zakładek");
-}
-
-</script>
-<script>
-/* ==========================================================================
    JW Study — sekcje-zakladki.js
    ZAKŁADKI WEWNĄTRZ SEKCJI
 
@@ -10208,12 +10133,6 @@ function przesunSecTab(id, kier){
   const tmp = lista[i].ord ?? i; lista[i].ord = lista[j].ord ?? j; lista[j].ord = tmp;
   saveSecTabs(); renderTags();
 }
-/** Po przeciągnięciu zakładek zapisujemy nową kolejność. */
-function applySecTabOrder(kolejnosc){
-  kolejnosc.forEach((id,i)=>{ const z=secTabs.find(x=>x.id===+id); if(z) z.ord=i; });
-  saveSecTabs();
-}
-
 /** Wiersze zakładek pod nagłówkiem sekcji. */
 function secTabRowsHtml(secId){
   const lista = secTabsFor(secId);
@@ -10226,7 +10145,7 @@ function secTabRowsHtml(secId){
        był czytelny przy każdym odcieniu z palety. */
     const styl = kol ? ` style="--stbKol:${kol}"` : "";
     return `<div class="item stbItem${akt?" active":""}${ile?"":" zero"}${kol?" zKolorem":""}" `+
-           `data-stb="${z.id}" data-ord="${z.id}" data-grupa="stb${secId}"${styl}>`+
+           `data-stb="${z.id}" data-ord="${z.id}"${styl}>`+
            `<span class="dragOrd" title="Przeciągnij, aby zmienić kolejność">${IC_GRIP}</span>`+
            `<span class="stbIc" aria-hidden="true">${IC_ZAKLADKA}</span>`+
            `<span class="nm">${esc(z.name)}</span>`+
@@ -10625,6 +10544,232 @@ async function wyslijZakladkePub(idZakladki){
   const notatki = notes.filter(n=>!n.del && n.ptb===z.id);
   await wyslijWycinek(zbudujWycinek(notatki, [], []), "zakladka", z.name);
 }
+
+</script>
+<script>
+/* ==========================================================================
+   JW Study — chwytanie.js
+   PRZENOSZENIE ETYKIET I ZAKŁADEK — GDZIEKOLWIEK
+
+   Poprzedni mechanizm przestawiał pozycje tylko w obrębie jednej sekcji
+   i nie dawał żadnego znaku, że w ogóle zadziałał. Zostawało menu ⋯ z ruchem
+   „o jedno miejsce", co przy dłuższej liście jest udręką.
+
+   Tutaj jest inaczej i widać to na ekranie:
+     1. przytrzymujesz pozycję (albo od razu łapiesz uchwyt ⠿),
+     2. pozycja „przykleja się" do palca — leci za nim jako etykietka,
+     3. między wierszami pojawia się GRUBA LINIA pokazująca, gdzie stanie,
+     4. puszczasz — pozycja ląduje dokładnie tam.
+
+   Można przenosić przez granice sekcji: upuszczenie w obrębie innej sekcji
+   przenosi tam etykietę albo zakładkę na stałe.
+   ========================================================================== */
+"use strict";
+
+const CHWYT_PRZYTRZYMANIE = 320;   // ms przytrzymania, po których pozycja się „odkleja"
+const CHWYT_PROG_RUCHU   = 8;      // px — poniżej tego traktujemy dotyk jak zwykłe kliknięcie
+
+let _chwyt = null;   // {el, rodzaj, id, duszek, wskaznik, sekcjaCel, indeks}
+
+/** Rozpoznaje, co użytkownik chwycił. */
+function rodzajPozycji(el){
+  if(!el) return null;
+  if(el.classList.contains("stbItem")) return {rodzaj:"zakladka", id:+el.dataset.stb};
+  if(el.classList.contains("ptbItem")) return {rodzaj:"zakladkaPub", id:+el.dataset.ptb};
+  if(el.classList.contains("item") && el.dataset.k && !isNaN(+el.dataset.k))
+    return {rodzaj:"etykieta", id:+el.dataset.k};
+  return null;
+}
+/** Sekcja, w której obszarze znajduje się dany element listy. */
+function sekcjaElementu(el){
+  let w = el;
+  while(w){
+    if(w.classList && w.classList.contains("secHead")) return +w.dataset.sec;
+    w = w.previousElementSibling;
+  }
+  return null;   // poza sekcjami — „Moje etykiety"
+}
+
+/** Etykietka lecąca za palcem. */
+function zrobDuszka(el, x, y){
+  const d = document.createElement("div");
+  d.className = "chwytDuszek";
+  d.textContent = (el.querySelector(".nm")||el).textContent.trim().slice(0, 30);
+  document.body.appendChild(d);
+  przesunDuszka(d, x, y);
+  return d;
+}
+function przesunDuszka(d, x, y){
+  d.style.left = x + "px";
+  d.style.top  = y + "px";
+}
+/** Gruba linia pokazująca miejsce wstawienia. */
+function zrobWskaznik(){
+  const w = document.createElement("div");
+  w.className = "chwytWskaznik";
+  document.body.appendChild(w);
+  return w;
+}
+function ustawWskaznik(w, cel, przed){
+  const r = cel.getBoundingClientRect();
+  w.style.left  = r.left + "px";
+  w.style.width = r.width + "px";
+  w.style.top   = (przed ? r.top - 2 : r.bottom - 2) + "px";
+  w.style.display = "block";
+}
+
+/** Pozycje, obok których wolno upuścić — tego samego rodzaju co chwycona. */
+function pozycjeDoUpuszczenia(rodzaj){
+  const sel = rodzaj==="zakladkaPub" ? "#pubList .ptbItem"
+            : rodzaj==="zakladka"    ? "#tagList .stbItem"
+            : "#tagList .item[data-k]:not(.stbItem)";
+  return [...document.querySelectorAll(sel)]
+    .filter(x=>!x.classList.contains("chwytany"))
+    .filter(x=>{
+      if(rodzaj!=="etykieta") return true;
+      return x.dataset.k && !isNaN(+x.dataset.k);   // „Wszystkie" i „Bez etykiety" to nie miejsca
+    });
+}
+
+function zakonczChwyt(zapisz){
+  if(!_chwyt) return;
+  const {el, duszek, wskaznik, cel, przed, rodzaj, id} = _chwyt;
+  if(duszek) duszek.remove();
+  if(wskaznik) wskaznik.remove();
+  el.classList.remove("chwytany");
+  document.body.classList.remove("wTrakcieChwytu");
+  const dane = _chwyt;
+  _chwyt = null;
+  if(!zapisz || !cel) return;
+  upuscPozycje(rodzaj, id, cel, przed, dane.sekcjaCel);
+}
+
+/**
+ * Zapisuje nowe położenie.
+ * @param {string} rodzaj   etykieta | zakladka | zakladkaPub
+ * @param {number} id
+ * @param {HTMLElement} cel element, obok którego upuszczono
+ * @param {boolean} przed   przed nim czy za nim
+ * @param {?number} sekcjaCel  sekcja, w której obszarze upuszczono
+ */
+function upuscPozycje(rodzaj, id, cel, przed, sekcjaCel){
+  const info = rodzajPozycji(cel);
+  if(!info) return;
+
+  if(rodzaj==="etykieta"){
+    const t = tags.find(x=>x.id===id); if(!t) return;
+    const sasiad = tags.find(x=>x.id===info.id);
+    if(sekcjaCel !== undefined) t.sec = (sekcjaCel===null ? undefined : sekcjaCel);
+    przenumeruj(tags.filter(x=>(x.sec??null)===(t.sec??null)), t, sasiad, przed);
+    sortTags(); saveTags(); renderAll();
+    toastOk("Przeniesiono etykietę „"+t.name+"”");
+    return;
+  }
+  if(rodzaj==="zakladka"){
+    const z = secTabs.find(x=>x.id===id); if(!z) return;
+    const sasiad = secTabs.find(x=>x.id===info.id);
+    if(sekcjaCel!=null) z.sec = sekcjaCel;
+    else if(sasiad) z.sec = sasiad.sec;
+    przenumeruj(secTabs.filter(x=>x.sec===z.sec), z, sasiad, przed);
+    /* Etykiety przypisane do zakładki idą razem z nią. */
+    tags.forEach(t=>{ if(t.stb===z.id) t.sec = z.sec; });
+    saveSecTabs(); saveTags(); renderAll();
+    toastOk("Przeniesiono zakładkę „"+z.name+"”");
+    return;
+  }
+  if(rodzaj==="zakladkaPub"){
+    const z = pubTabs.find(x=>x.id===id); if(!z) return;
+    const sasiad = pubTabs.find(x=>x.id===info.id);
+    if(!sasiad || sasiad.ks!==z.ks) return;       // między publikacjami nie przenosimy
+    przenumeruj(pubTabs.filter(x=>x.ks===z.ks), z, sasiad, przed);
+    savePubTabs(); renderAll();
+    toastOk("Przeniesiono zakładkę „"+z.name+"”");
+  }
+}
+/** Wstawia element obok sąsiada i numeruje całą grupę od nowa. */
+function przenumeruj(grupa, element, sasiad, przed){
+  const lista = grupa.slice().sort((a,b)=>(a.ord??0)-(b.ord??0)).filter(x=>x!==element);
+  let i = sasiad ? lista.indexOf(sasiad) : lista.length;
+  if(i<0) i = lista.length; else if(!przed) i++;
+  lista.splice(i, 0, element);
+  lista.forEach((x,k)=>{ x.ord = k*10; });
+}
+
+/* ===== OBSŁUGA WSKAŹNIKA — palec, rysik i mysz tak samo ===== */
+document.addEventListener("pointerdown", ev=>{
+  const el = ev.target.closest && ev.target.closest("#tagList .item, #pubList .item");
+  if(!el) return;
+  const info = rodzajPozycji(el);
+  if(!info) return;
+  const zUchwytu = !!(ev.target.closest && ev.target.closest(".dragOrd"));
+  if(ev.target.closest(".more")) return;      // menu ⋯ ma swoje zadanie
+
+  const startX = ev.clientX, startY = ev.clientY;
+  let odklejone = false, licznik = 0;
+
+  const odklej = ()=>{
+    if(odklejone) return;
+    odklejone = true;
+    el.classList.add("chwytany");
+    document.body.classList.add("wTrakcieChwytu");
+    _chwyt = {el, rodzaj:info.rodzaj, id:info.id,
+              duszek: zrobDuszka(el, startX, startY), wskaznik: zrobWskaznik(),
+              cel:null, przed:false, sekcjaCel:undefined};
+    if(navigator.vibrate) try{ navigator.vibrate(12); }catch(e){}
+  };
+  /* Z uchwytu chwytamy od razu; z samego wiersza dopiero po przytrzymaniu,
+     żeby zwykłe kliknięcie filtrujące działało jak dotąd. */
+  if(zUchwytu){ ev.preventDefault(); odklej(); }
+  else licznik = setTimeout(odklej, CHWYT_PRZYTRZYMANIE);
+
+  const ruch = e=>{
+    if(!odklejone){
+      if(Math.abs(e.clientX-startX) > CHWYT_PROG_RUCHU ||
+         Math.abs(e.clientY-startY) > CHWYT_PROG_RUCHU) clearTimeout(licznik);
+      return;
+    }
+    e.preventDefault();
+    przesunDuszka(_chwyt.duszek, e.clientX, e.clientY);
+    /* Szukamy najbliższej pozycji tego samego rodzaju — także w innych sekcjach. */
+    let najbl = null, najmniej = Infinity, przed = false;
+    pozycjeDoUpuszczenia(info.rodzaj).forEach(x=>{
+      const r = x.getBoundingClientRect();
+      const srodek = r.top + r.height/2;
+      const d = Math.abs(e.clientY - srodek);
+      if(d < najmniej){ najmniej = d; najbl = x; przed = e.clientY < srodek; }
+    });
+    if(najbl){
+      _chwyt.cel = najbl; _chwyt.przed = przed;
+      _chwyt.sekcjaCel = (info.rodzaj==="zakladkaPub") ? undefined : sekcjaElementu(najbl);
+      ustawWskaznik(_chwyt.wskaznik, najbl, przed);
+    }else{
+      _chwyt.cel = null;
+      _chwyt.wskaznik.style.display = "none";
+    }
+  };
+  const koniec = e=>{
+    clearTimeout(licznik);
+    document.removeEventListener("pointermove", ruch, true);
+    document.removeEventListener("pointerup", koniec, true);
+    document.removeEventListener("pointercancel", przerwij, true);
+    if(odklejone){ e.preventDefault(); e.stopPropagation(); zakonczChwyt(true); }
+  };
+  const przerwij = ()=>{
+    clearTimeout(licznik);
+    document.removeEventListener("pointermove", ruch, true);
+    document.removeEventListener("pointerup", koniec, true);
+    document.removeEventListener("pointercancel", przerwij, true);
+    zakonczChwyt(false);
+  };
+  document.addEventListener("pointermove", ruch, true);
+  document.addEventListener("pointerup", koniec, true);
+  document.addEventListener("pointercancel", przerwij, true);
+}, true);
+
+/* Po przeniesieniu nie chcemy, żeby zwykłe kliknięcie zmieniło jeszcze filtr. */
+document.addEventListener("click", e=>{
+  if(document.body.classList.contains("wTrakcieChwytu")){ e.preventDefault(); e.stopPropagation(); }
+}, true);
 
 </script>
 <script>

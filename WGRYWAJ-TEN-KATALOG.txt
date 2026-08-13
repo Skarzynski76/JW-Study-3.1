@@ -1,0 +1,7 @@
+TAK, TEN KATALOG.
+
+index.html ma tu ~557 kB — cała aplikacja w jednym pliku.
+Wgrywaj index.html ZAWSZE razem z sw.js.
+
+Jeśli widzisz gdzieś drugi index.html o rozmiarze ~27 kB,
+to wersja robocza — na GitHub się nie nadaje.
