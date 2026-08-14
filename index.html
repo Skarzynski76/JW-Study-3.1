@@ -2849,7 +2849,7 @@ body.przenoszenieNotatki{ cursor:grabbing; user-select:none; }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.06</span></div>
+      <div class="brand-name">JW Study <span class="ver">v2.07</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -5440,13 +5440,24 @@ function noteCard(n){
  */
 function renderAll(){
   resetQueryCache();        // wyniki wyszukiwania liczymy raz na przerysowanie, nie cztery razy
+  if(typeof resetLicznikowZakladek==="function") resetLicznikowZakladek();
   visibleCount=60;
   renderTags(); renderBooks(); renderNotes();
   if(fsGuid) renderFs();
   /* Nazwy dla czytnika ekranu nadajemy od razu po przerysowaniu. Obserwator
      zmian też je nada, ale dopiero po oddaniu sterowania — a wtedy przez chwilę
-     istnieją przyciski bez nazwy. */
-  if(typeof nazwijPrzyciskiIkonowe==="function") nazwijPrzyciskiIkonowe();
+     istnieją przyciski bez nazwy.
+
+     Przeglądamy TYLKO kolumny, które właśnie odrysowaliśmy. Wcześniej szło się
+     po całym dokumencie przy każdym przerysowaniu — kilka tysięcy elementów,
+     z których zmieniła się garstka. To był najdroższy pojedynczy krok całego
+     odświeżania. */
+  if(typeof nazwijPrzyciskiIkonowe==="function"){
+    ["tagList","bookList","noteList","pubList"].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) nazwijPrzyciskiIkonowe(el);
+    });
+  }
 }
 
 </script>
@@ -7797,7 +7808,7 @@ function openFilePicker(mode){
   $("mfTitle").textContent = mode==="jwl" ? "📥 Import backupu JW Library" : "📂 Wczytanie kopii danych";
   $("mfDesc").textContent = mode==="jwl"
     ? "Wybierz plik .jwlibrary (kopię zapasową z aplikacji JW Library). Aplikacja doda tylko nowe notatki — Twoje zmiany zostaną."
-    : "Wybierz zapisany wcześniej plik kopii (.json). W następnym kroku wybierzesz, czy dołączyć brakujące notatki (scalanie), czy zastąpić wszystko.\n\nPrzenosisz notatki z OneNote? Otwórz stronę onenote.html obok aplikacji.";
+    : "Wybierz zapisany wcześniej plik kopii (.json). W następnym kroku wybierzesz, czy dołączyć brakujące notatki (scalanie), czy zastąpić wszystko.\n\nPrzenosisz notatki z OneNote? Otwórz stronę onenote.html obok aplikacji. Na telefonie skopiuj tam kopię do schowka i użyj poniżej „Wklej treść”.";
   const inp = $("mfInput");
   inp.value = "";
   /* Bez ograniczenia rozszerzeń. Android i część systemów Windows nie zna
@@ -9031,9 +9042,21 @@ document.addEventListener("keydown", e=>{
  * i dla dokładanych później (menu, paski narzędzi, karty notatek).
  */
 function nazwijPrzyciskiIkonowe(korzen){
-  (korzen||document).querySelectorAll("button[title], label[title], [role=button][title]").forEach(b=>{
-    if(b.getAttribute("aria-label")) return;
-    if(b.textContent.trim()) return;              // ma widoczny napis — wystarczy
+  /* Odsiew robi przeglądarka, nie my — i robi go RAZ na element.
+     Wcześniej selektor zwracał wszystkie przyciski z podpowiedzią, a pętla przy
+     każdym z nich sięgała po textContent, żeby sprawdzić, czy ma widoczny napis.
+     Przyciski Z napisem nigdy nie dostają aria-label, więc wracały do tej pętli
+     przy KAŻDYM przerysowaniu — sześćset elementów, sześćset odczytów tekstu,
+     po kilkanaście razy na minutę. To był najdroższy krok odświeżania.
+
+     Teraz element rozpatrzony dostaje znacznik i wypada z selektora na dobre:
+     albo ma aria-label, albo ma data-opisany. Zbiór drenuje się do pustego. */
+  const sel = "button[title], label[title], [role=button][title]";
+  const nieopisane = ":not([aria-label]):not([data-opisany])";
+  (korzen||document).querySelectorAll(
+      sel.split(", ").map(x=>x+nieopisane).join(", ")
+    ).forEach(b=>{
+    if(b.textContent.trim()){ b.setAttribute("data-opisany","txt"); return; }  // ma widoczny napis
     b.setAttribute("aria-label", b.getAttribute("title"));
   });
 }
@@ -10247,14 +10270,48 @@ function secTabsFor(secId){
   return secTabs.filter(z=>z.sec===secId).sort((a,b)=>(a.ord??0)-(b.ord??0));
 }
 /** Ile notatek trafia do zakładki — wrzuconych wprost i przez etykiety. */
-function secTabCount(id){
-  const etykiety = tags.filter(t=>t.stb===id).map(t=>t.id);
-  let ile = 0;
+/* ==========================================================================
+   LICZNIKI ZAKŁADEK — JEDEN PRZEBIEG ZAMIAST JEDNEGO NA ZAKŁADKĘ
+
+   secTabCount przelatywał CAŁĄ listę notatek osobno dla każdej zakładki, a przy
+   każdej notatce jeszcze raz po jej etykietach. Przy trzech tysiącach notatek
+   i dwudziestu zakładkach dawało to grubo ponad sto tysięcy porównań przy KAŻDYM
+   przerysowaniu kolumny — a przerysowanie zdarza się po każdej zmianie filtra,
+   każdej edycji i każdym przeniesieniu. Na telefonie było to odczuwalne.
+
+   Teraz liczymy wszystkie zakładki naraz, jednym przebiegiem, i trzymamy wynik
+   do końca bieżącego przerysowania. */
+let _licznikiZakladek = null;
+
+/** Unieważnia policzone liczniki — wołane na starcie każdego przerysowania. */
+function resetLicznikowZakladek(){ _licznikiZakladek = null; }
+
+/** Mapa: id zakładki → ile notatek do niej należy. Liczona raz. */
+function licznikiZakladek(){
+  if(_licznikiZakladek) return _licznikiZakladek;
+  const wynik = new Map();
+  /* Etykieta → zakładka, żeby przy notatce nie przeszukiwać listy etykiet. */
+  const zakladkaEtykiety = new Map();
+  for(const t of tags) if(t.stb) zakladkaEtykiety.set(t.id, t.stb);
+  for(const z of secTabs) wynik.set(z.id, 0);
   for(const n of notes){
     if(n.del) continue;
-    if(n.stb===id || (etykiety.length && n.tg.some(t=>etykiety.includes(t)))) ile++;
+    /* Notatka liczy się do zakładki raz, nawet gdy trafia do niej i wprost,
+       i przez kilka swoich etykiet. */
+    const trafione = new Set();
+    if(n.stb!=null) trafione.add(n.stb);
+    if(n.tg) for(const idE of n.tg){
+      const z = zakladkaEtykiety.get(idE);
+      if(z!=null) trafione.add(z);
+    }
+    trafione.forEach(z=>{ if(wynik.has(z)) wynik.set(z, wynik.get(z)+1); });
   }
-  return ile;
+  _licznikiZakladek = wynik;
+  return wynik;
+}
+function secTabCount(id){
+  const m = licznikiZakladek();
+  return m.has(id) ? m.get(id) : 0;
 }
 /** Czy notatka należy do zakładki — wprost albo przez którąś ze swoich etykiet. */
 function notatkaWZakladce(n, id){
