@@ -2821,7 +2821,7 @@ body.przenoszenieNotatki{ cursor:grabbing; user-select:none; }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.03</span></div>
+      <div class="brand-name">JW Study <span class="ver">v2.05</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -3705,6 +3705,11 @@ function offlineReady(){ return !!(navigator.serviceWorker && navigator.serviceW
    dobiera stronę (pod/nad przyciskiem), przycina wysokość i dodaje przewijanie. */
 function placeDropdown(dd, anchor){
   const M = 10;                                   // margines od krawędzi ekranu
+  /* Menu #dropdown jest JEDNO na całą aplikację i bywa przewijane (max-height
+     76vh). Przewinięcie zostawało po poprzednim menu: następne otwierało się
+     w połowie listy, więc pod palcem była inna pozycja, niż się wydawało.
+     Na komputerze nigdy nie było tego widać, bo menu mieści się na ekranie. */
+  dd.scrollTop = 0;
   const r = anchor.getBoundingClientRect();
   const vw = innerWidth, vh = innerHeight;
   const safeTop = 0, safeBottom = vh;
@@ -5326,6 +5331,7 @@ function noteCard(n){
          <div data-x="read">${ICO.book}Tryb czytania</div>
          <div data-x="copy">${ICO.copy}Kopiuj treść</div>
          ${link?`<div data-x="link">${ICO.link}Kopiuj odnośnik</div>`:""}
+         <div data-x="wyslij">${ICO.send}Wyślij na inne urządzenie…</div>
          <div class="dd-sep"></div>
          <div class="dd-lbl">Werset</div>
          <div data-x="verse">${ICO.bookmark}${n.b?"Zmień":"Przypisz"} werset…</div>
@@ -5335,7 +5341,6 @@ function noteCard(n){
          ${link?`<div data-x="open">${ICO.ext}Otwórz w JW Library</div>`:""}
          <div class="dd-sep"></div>
          <div class="dd-lbl">Eksport notatki</div>
-         <div data-x="wyslij">${ICO.send}Wyślij na inne urządzenie…</div>
          <div data-x="doc">${ICO.doc}Word (.doc)</div>
          <div data-x="pdf">${ICO.printer}PDF / Drukuj</div>
          <div data-x="jwl">${ICO.book}JW Library (.jwlibrary)</div>
@@ -9386,6 +9391,43 @@ document.addEventListener("selectionchange", ()=>{
   if(sel && !sel.isCollapsed) _lpStop();
 }, true);
 
+
+/* ==========================================================================
+   TRAFIENIE W POZYCJĘ, KTÓRĄ NAPRAWDĘ DOTKNIĘTO
+
+   Na telefonie zdarzało się, że po dotknięciu „Wyślij na inne urządzenie…"
+   otwierało się „Miejsce w publikacji…". Menu jest długie i przewijane, więc
+   między dotknięciem a puszczeniem palca lista potrafi drgnąć — przez odruchowe
+   przewinięcie albo przez to, że przeglądarka dosuwa menu do krawędzi. Wtedy
+   `click` trafia w wiersz, który dopiero co wjechał pod palec.
+
+   Pilnujemy więc, żeby zadziałała ta pozycja, na której palec WYLĄDOWAŁ.
+   Jeśli przy puszczeniu jest pod nim inna — nie robimy nic. Lepiej, żeby
+   dotknięcie przepadło, niż żeby wykonało cudze polecenie.
+   ========================================================================== */
+let _ddNacisniete = null;
+document.addEventListener("pointerdown", e=>{
+  const dd = document.getElementById("dropdown");
+  if(!dd || !e.target.closest || !e.target.closest("#dropdown")){ _ddNacisniete = null; return; }
+  _ddNacisniete = e.target.closest("[data-x],[data-c],[data-kol],[data-zm],[data-pokaz]") || null;
+}, true);
+document.addEventListener("click", e=>{
+  if(!e.target.closest || !e.target.closest("#dropdown")) return;
+  const teraz = e.target.closest("[data-x],[data-c],[data-kol],[data-zm],[data-pokaz]");
+  /* Brak zapamiętanego nacisku = kliknięcie bez dotyku (mysz programowa,
+     klawiatura, testy) — tam nie ma czego pilnować. */
+  /* Porównujemy nie tylko tożsamość węzła, ale i jego polecenie: menu bywa
+     przerysowywane między dotknięciem a puszczeniem palca, a wtedy ten sam
+     wiersz jest już innym węzłem. Blokowanie go byłoby zwykłą uciążliwością. */
+  const opis = el => el ? JSON.stringify([el.dataset.x, el.dataset.c, el.dataset.kol,
+                                          el.dataset.zm, el.dataset.pokaz]) : "";
+  if(!_ddNacisniete || !teraz || _ddNacisniete === teraz
+     || opis(_ddNacisniete) === opis(teraz)){ _ddNacisniete = null; return; }
+  e.preventDefault(); e.stopPropagation();
+  _ddNacisniete = null;
+  if(typeof toast==="function") toast("Lista drgnęła — dotknij jeszcze raz");
+}, true);
+
 </script>
 <script>
 /* ==========================================================================
@@ -10720,6 +10762,10 @@ function zakonczChwyt(zapisz){
   if(wskaznik) wskaznik.remove();
   el.classList.remove("chwytany");
   document.body.classList.remove("wTrakcieChwytu");
+  /* Po ZAKOŃCZONYM przeniesieniu przeglądarka wyśle jeszcze kliknięcie — nie
+     chcemy, żeby przy okazji zmieniło filtr. Połykamy tylko je i tylko przez
+     chwilę. Po przerwanym geście nie blokujemy nic. */
+  if(zapisz) _polkniecieDo = Date.now() + 400;
   const dane = _chwyt;
   _chwyt = null;
   if(typeof zakonczPodswietlenie==="function") zakonczPodswietlenie();
@@ -10937,7 +10983,8 @@ document.addEventListener("pointerdown", ev=>{
     _chwyt = {el, rodzaj:info.rodzaj, id:info.id,
               duszek: zrobDuszka(el, startX, startY), wskaznik: zrobWskaznik(),
               cel:null, przed:false, sekcjaCel:undefined, celObcy:null,
-              przewijak: przewijalny(el), x:startX, y:startY, klatka:0};
+              przewijak: przewijalny(el), x:startX, y:startY, klatka:0,
+              ostatniRuch: Date.now()};
     petlaPrzewijania();
     if(navigator.vibrate) try{ navigator.vibrate(12); }catch(e){}
   };
@@ -10995,7 +11042,7 @@ document.addEventListener("pointerdown", ev=>{
       return;
     }
     e.preventDefault();
-    _chwyt.x = e.clientX; _chwyt.y = e.clientY;
+    _chwyt.x = e.clientX; _chwyt.y = e.clientY; _chwyt.ostatniRuch = Date.now();
     przelicz(e.clientX, e.clientY);
   };
   const koniec = e=>{
@@ -11017,10 +11064,44 @@ document.addEventListener("pointerdown", ev=>{
   document.addEventListener("pointercancel", przerwij, true);
 }, true);
 
-/* Po przeniesieniu nie chcemy, żeby zwykłe kliknięcie zmieniło jeszcze filtr. */
+/* ==========================================================================
+   BLOKADA KLIKNIĘĆ MUSI BYĆ CHWILOWA
+
+   Poprzednio po każdym kliknięciu sprawdzaliśmy klasę `wTrakcieChwytu` na
+   <body> i póki tam była, POŁYKALIŚMY KAŻDE kliknięcie w całej aplikacji.
+   Wystarczyło, żeby raz nie doszło `pointerup` — a na telefonie zdarza się to
+   często: przerysowanie listy zabiera element spod palca, gest przejmuje system,
+   przeglądarka odbiera zdarzenie karcie — i klasa zostawała na zawsze. Aplikacja
+   wyglądała wtedy na żywą, ale nie reagowała na nic: ani ustawienia, ani wybór
+   pliku z kopią, ani żaden przycisk.
+
+   Teraz blokujemy DOKŁADNIE JEDNO kliknięcie, i to tylko przez chwilę po
+   zakończonym przenoszeniu. Nawet gdyby coś poszło nie tak, po 400 ms wszystko
+   działa normalnie. Do tego kilka niezależnych dróg sprzątania, żeby stan
+   „trzymam element" nie mógł się zablokować. */
+let _polkniecieDo = 0;
 document.addEventListener("click", e=>{
-  if(document.body.classList.contains("wTrakcieChwytu")){ e.preventDefault(); e.stopPropagation(); }
+  if(Date.now() > _polkniecieDo) return;
+  _polkniecieDo = 0;                       // jedno kliknięcie, nie strumień
+  e.preventDefault(); e.stopPropagation();
 }, true);
+
+/** Awaryjne sprzątanie: cokolwiek się stanie, nie zostawiamy zablokowanej strony. */
+function posprzatajChwyt(){
+  if(_chwyt) zakonczChwyt(false);
+  _polkniecieDo = 0;                       // kasujemy PO zakończeniu gestu
+  document.body.classList.remove("wTrakcieChwytu");
+  document.querySelectorAll(".chwytDuszek, .chwytWskaznik").forEach(x=>x.remove());
+  document.querySelectorAll(".chwytany").forEach(x=>x.classList.remove("chwytany"));
+}
+window.addEventListener("blur", posprzatajChwyt);
+window.addEventListener("pointercancel", posprzatajChwyt);
+document.addEventListener("visibilitychange", ()=>{ if(document.hidden) posprzatajChwyt(); });
+/* Ostatnia linia obrony: gdy przez 5 s nie przyszło nic od wskaźnika, a my wciąż
+   „trzymamy" element, znaczy że puszczenie przepadło. Odpuszczamy. */
+setInterval(()=>{
+  if(_chwyt && Date.now() - (_chwyt.ostatniRuch || 0) > 5000) posprzatajChwyt();
+}, 2000);
 
 </script>
 <script>
