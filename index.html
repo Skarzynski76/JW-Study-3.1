@@ -2841,6 +2841,111 @@ body.przenoszenieNotatki{ cursor:grabbing; user-select:none; }
 #pasekBledu button:active{ background:rgba(255,255,255,.28); }
 #pasekBledu .pbZam{ padding:5px 9px; }
 
+/* ============================================================
+   WŁASNA WYSOKOŚĆ NOTATKI (v2.08)
+   Uchwyt siedzi na dolnej krawędzi karty. Normalnie ledwo
+   widoczny — pokazuje się pod kursorem i przy dotyku.
+   ============================================================ */
+.ncard{ position:relative; }
+.ncard .wysUchwyt{
+  height:12px; margin:2px -4px -6px;
+  cursor:ns-resize; touch-action:none;
+  display:flex; align-items:center; justify-content:center;
+  opacity:0; transition:opacity .15s;
+}
+.ncard .wysUchwyt::before{
+  content:""; width:44px; height:4px; border-radius:3px;
+  background:var(--border);
+}
+.ncard:hover .wysUchwyt{ opacity:.75; }
+.ncard .wysUchwyt:hover::before{ background:var(--accent); }
+.ncard.zmienianaWys .wysUchwyt{ opacity:1; }
+.ncard.zmienianaWys .wysUchwyt::before{ background:var(--accent); width:64px; }
+/* Dotyk nie ma najechania — uchwyt musi być widoczny od razu. */
+@media (hover:none){ .ncard .wysUchwyt{ opacity:.45; height:16px; } }
+
+/* Karta z własną wysokością: treść przewija się w środku, a nie rozpycha karty. */
+.ncard.wlasnaWys .ncontent{ -webkit-overflow-scrolling:touch; overscroll-behavior:contain; }
+.ncard.wlasnaWys .ncontent::-webkit-scrollbar{ width:5px; }
+.ncard.wlasnaWys .ncontent::-webkit-scrollbar-thumb{ background:var(--border); border-radius:3px; }
+/* Delikatny znak, że treść jest ucięta — bez niego nie wiadomo, że jest więcej. */
+.ncard.wlasnaWys:not(.pelnaWys) .ncontent{
+  -webkit-mask-image:linear-gradient(180deg,#000 calc(100% - 14px),transparent);
+  mask-image:linear-gradient(180deg,#000 calc(100% - 14px),transparent);
+}
+/* Wybór „cała notatka" przebija także widok zwarty, który przycina wszystko. */
+#noteList.v-compact .ncard.pelnaWys .ncontent{ max-height:none!important; overflow:visible!important; }
+#noteList.v-compact .ncard.pelnaWys .ncontent img{ display:block; }
+#noteList.v-compact .ncard.wlasnaWys .ncontent img{ display:block; }
+
+/* ============================================================
+   JEDEN PASEK NAD LISTĄ ZAMIAST CZTERECH (v2.09)
+
+   Nad listą notatek stały jeden pod drugim: ukryte kolumny,
+   „Widok", szybkie filtry i licznik. Na iPadzie zjadały ponad
+   połowę wysokości ekranu — widać było trzy notatki. Teraz
+   wszystko siedzi w jednym wierszu i zawija się dopiero wtedy,
+   gdy naprawdę brakuje miejsca.
+   ============================================================ */
+#pasekListy{
+  display:flex; flex-wrap:wrap; align-items:center;
+  gap:8px 10px;
+  padding:8px 14px 6px;
+}
+/* Składowe tracą własne marginesy — odstępy daje teraz wspólny pasek. */
+#pasekListy > #ukryteKolumny,
+#pasekListy > #viewBar,
+#pasekListy > #quickFilters,
+#pasekListy > #counts{ padding:0; margin:0; }
+#pasekListy > #quickFilters{ flex:1 1 auto; }
+#pasekListy > #counts{ margin-left:auto; white-space:nowrap; }
+#pasekListy .vb-lbl{ display:none; }          /* ikony mówią same za siebie */
+#pasekListy #ukryteKolumny{ gap:6px; }
+#pasekListy .qf{ padding:4px 11px; }
+/* Na wąskim ekranie licznik schodzi do własnej linii, żeby filtry miały miejsce. */
+@media (max-width:600px){
+  #pasekListy{ gap:6px 8px; padding:6px 10px 5px; }
+  #pasekListy > #counts{ margin-left:0; }
+}
+
+/* ——— KARTA NOTATKI: MNIEJ POWIETRZA, WIĘCEJ TREŚCI ——— */
+.ncard{ margin-bottom:8px; }
+.nhead{ padding-top:4px; padding-bottom:3px; }
+.ntools{ padding:1px 8px 2px; }
+.ntools .sbtn.ico{ padding:5px 7px; }
+.ntools .sbtn.ico .ic{ width:16px; height:16px; }
+
+/* ——— GÓRNY PASEK: JEDEN WIERSZ TAM, GDZIE SIĘ MIEŚCI ———
+   „Nowa notatka" i „Plik" spadały do drugiego wiersza, bo pole szukania
+   i lista sortowania nie chciały ustąpić ani piksela. Drugi wiersz to
+   kolejne ~60 px zabrane notatkom. Teraz oba pola ustępują pierwsze. */
+header{ padding-top:calc(7px + env(safe-area-inset-top, 0px)); padding-bottom:7px; row-gap:6px; }
+header .searchwrap{ flex:1 1 200px; min-width:150px; }
+header #sortSel{ flex:0 1 auto; max-width:210px; }
+header #btnWszystkie{ flex:0 1 auto; max-width:230px; overflow:hidden; }
+@media (min-width:1000px){
+  header .brand-sub{ font-size:11px; }
+  header .btn{ padding:7px 12px; }
+  header .fontctl button{ padding:6px 10px; }
+}
+
+/* ——— WIDOK ŚREDNI (v2.09) ———
+   Pełna treść dawała trzy notatki na ekranie, widok zwarty ucinał je tak mocno,
+   że trzeba było otwierać każdą. Średni pokazuje kilka pierwszych linijek —
+   dość, by rozpoznać notatkę — i mieści ich kilkanaście. */
+#noteList.v-medium .ncontent{
+  max-height:7.5em; overflow:hidden; line-height:1.5;
+  -webkit-mask-image:linear-gradient(180deg,#000 calc(100% - 18px),transparent);
+  mask-image:linear-gradient(180deg,#000 calc(100% - 18px),transparent);
+}
+#noteList.v-medium .ncontent img{ max-height:110px; width:auto; }
+#noteList.v-medium .ncard{ margin-bottom:7px; }
+/* Własna wysokość notatki przebija widok — to wybór dotyczący tej jednej karty. */
+#noteList.v-medium .ncard.wlasnaWys .ncontent{
+  -webkit-mask-image:none; mask-image:none;
+}
+#noteList.v-medium .ncard.pelnaWys .ncontent{ max-height:none; overflow:visible; }
+
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -2849,7 +2954,7 @@ body.przenoszenieNotatki{ cursor:grabbing; user-select:none; }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.07</span></div>
+      <div class="brand-name">JW Study <span class="ver">v2.09</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -2923,23 +3028,32 @@ body.przenoszenieNotatki{ cursor:grabbing; user-select:none; }
   </div>
   <div class="colResizer" data-c="colPubs" title="Przeciągnij, aby zmienić szerokość"></div>
   <div class="col mshow" id="colNotes">
-    <div id="ukryteKolumny" hidden></div>
-    <div id="viewBar">
-      <span class="vb-lbl">Widok</span>
-      <div class="vb-group">
-        <button class="vb" data-view="list" title="Lista — pełne karty">${''}</button>
-        <button class="vb" data-view="compact" title="Zwarta lista — tytuł i początek treści">${''}</button>
+    <!-- Jeden pasek zamiast czterech.
+         Wcześniej nad listą stały jeden pod drugim: ukryte kolumny, „Widok",
+         szybkie filtry i licznik notatek. Na iPadzie zjadały ponad połowę
+         wysokości ekranu, zanim pokazała się pierwsza notatka. Teraz siedzą
+         w jednym wierszu i zawijają się dopiero wtedy, gdy naprawdę brakuje
+         miejsca. -->
+    <div id="pasekListy">
+      <div id="ukryteKolumny" hidden></div>
+      <div id="viewBar">
+        <span class="vb-lbl">Widok</span>
+        <div class="vb-group">
+          <button class="vb" data-view="list" title="Lista — cała treść notatki">${''}</button>
+          <button class="vb" data-view="medium" title="Średni — pierwsze linijki treści, najwięcej notatek na ekranie">${''}</button>
+          <button class="vb" data-view="compact" title="Zwarty — tytuł i początek treści">${''}</button>
+        </div>
       </div>
-    </div>
-    <div id="quickFilters">
+      <div id="quickFilters">
       <button class="qf" data-qf="all">Wszystkie</button>
       <button class="qf" data-qf="pin">Przypięte</button>
       <button class="qf" data-qf="fav">Ulubione</button>
       <button class="qf" data-qf="untagged">Bez etykiety</button>
       <button class="qf" data-qf="img">Ze zdjęciem</button>
-      <button class="qf" data-qf="week">Ostatni tydzień</button>
+        <button class="qf" data-qf="week">Ostatni tydzień</button>
+      </div>
+      <div id="counts"></div>
     </div>
-    <div id="counts"></div>
     <div class="list" id="noteList"></div>
   </div>
 </main>
@@ -4178,13 +4292,20 @@ function dopasujZapytanie(n){
    Układ listy, kolumna Etykiety, sekcje etykiet
    ========================================================================== */
 "use strict";
-/* ===== UKŁAD LISTY NOTATEK: lista / zwarta / kafelki 2 / kafelki 3 ===== */
+/* ===== UKŁAD LISTY NOTATEK =====
+   Trzy widoki, bo dwa okazały się skokiem z jednej skrajności w drugą:
+     • lista  — cała treść każdej notatki,
+     • średni — pierwsze kilka linijek (nowość, v2.09),
+     • zwarty — sam tytuł i początek treści.
+   Przy pełnej treści na iPadzie mieściły się trzy notatki, a widok zwarty
+   ucinał je tak mocno, że trzeba było otwierać każdą. Widok średni pokazuje
+   dość, żeby rozpoznać notatkę, i mieści ich na ekranie kilkanaście. */
 let noteView = "list";
 const savedView = lsGet(KP+"View", null);
-if(["list","compact"].includes(savedView)) noteView = savedView;
+if(["list","medium","compact"].includes(savedView)) noteView = savedView;
 function applyNoteView(){
   const el=$("noteList"); if(!el) return;
-  el.classList.remove("v-list","v-compact");
+  el.classList.remove("v-list","v-medium","v-compact");
   el.classList.add("v-"+noteView);
   document.querySelectorAll("#viewBar .vb").forEach(b=>{
     const wlaczony = b.dataset.view===noteView;
@@ -4200,6 +4321,7 @@ function setNoteView(v){
 function initViewBar(){
   const ic={
     list:_svg('<path d="M4 6h16M4 12h16M4 18h16"/>'),
+    medium:_svg('<path d="M4 5h16M4 9h16M4 15h16M4 19h16"/>'),
     compact:_svg('<path d="M4 5h16M4 9h16M4 13h16M4 17h16M4 21h16"/>')
   };
   document.querySelectorAll("#viewBar .vb").forEach(b=>{
@@ -5087,7 +5209,8 @@ function bumpTagsVer(){ _tagsVer++; }
 /* wszystko, co widać na karcie — gdy to samo, karta może zostać bez zmian */
 function noteCardSig(n){
   return [n.g, n.mo, n.t, (n.h||n.c||"").length, n.pin?1:0, n.fav?1:0, n.ord||0, n.ptb||0, n.tg.join(","), n.b, n.ch, n.v,
-          n.ks, n.itn, n.par, n.ff, n.lh, n.pm, n.la, n.stb, n.cr, query, sortMode, _tagsVer].join("\u0001");
+          n.ks, n.itn, n.par, n.ff, n.lh, n.pm, n.la, n.stb, n.cr, n.wys,
+          query, sortMode, _tagsVer].join("\u0001");
 }
 /**
  * Zwraca kartę notatki: gotową z pamięci podręcznej albo nowo zbudowaną.
@@ -5341,8 +5464,11 @@ function noteCard(n){
   if(n.pm) d.style.setProperty("--nPm", n.pm);        // własny odstęp akapitów
   const link = finderUrl(n);        // gotowy adres do JW Library — używany też przez menu „Więcej"
   d.innerHTML = noteCardHead(n) + noteCardMeta(n) + noteCardChips(n) +
-                `<div class="ncontent">${contentHtml(n)}</div>` + noteCardTools(n);
+                `<div class="ncontent">${contentHtml(n)}</div>` +
+                `<div class="wysUchwyt" title="Przeciągnij, aby zmienić wysokość notatki (dwuklik = jak w widoku)"></div>` +
+                noteCardTools(n);
   autolinkRefs(d.querySelector(".ncontent"));
+  if(typeof zastosujWysokosc==="function") zastosujWysokosc(d, n);
   d.addEventListener("click", e=>{
     if(e.target.dataset.untag){ untag(n, +e.target.dataset.untag); return; }
     if(e.target.closest(".ntitle") && !e.target.isContentEditable){ touchAccess(n); if(!fsGuid) openFs(n); return; }
@@ -5365,6 +5491,7 @@ function noteCard(n){
          <div class="dd-lbl">Werset</div>
          <div data-x="verse">${ICO.bookmark}${n.b?"Zmień":"Przypisz"} werset…</div>
          <div data-x="miejsce">${ICO.book}Miejsce w publikacji…${n.pw?' <span class="ddZnak">✓</span>':""}</div>
+         <div data-x="wysokosc">${ICO.fs}Wysokość notatki…${(n.wys!==undefined)?' <span class="ddZnak">✓</span>':""}</div>
          ${n.ks?`<div data-x="ptb">${ICO.tag}Zakładka publikacji…</div>`:""}
          ${(typeof secTabs!=="undefined" && secTabs.length)?`<div data-x="stb">${ICO.tag}Zakładka w sekcji…</div>`:""}
          ${link?`<div data-x="open">${ICO.ext}Otwórz w JW Library</div>`:""}
@@ -5382,6 +5509,8 @@ function noteCard(n){
         const x=it.dataset.x; dd.style.display="none";
         if(x==="ptb"){ setTimeout(()=>pubTabMenu(n, e.target.closest(".ncard")||document.body), 40); return; }
         if(x==="stb"){ setTimeout(()=>menuZakladek(e.target.closest(".ncard")||document.body, n, "note"), 40); return; }
+        if(x==="wysokosc" && typeof menuWysokosci==="function"){
+          setTimeout(()=>menuWysokosci(n, e.target.closest(".ncard")||document.body), 40); return; }
         if(x==="fav") toggleFav(n);
         else if(x==="pin") togglePin(n);
         else if(x==="doc") exportNoteWord(n);
@@ -11553,6 +11682,158 @@ window.addEventListener("error", e=>{
 window.addEventListener("unhandledrejection", e=>{
   const p = e && e.reason;
   zapiszBlad((p && (p.message || p)) || "odrzucona obietnica", (p && p.stack) || "");
+});
+
+</script>
+<script>
+/* ==========================================================================
+   JW Study — wysokosc.js
+   WŁASNA WYSOKOŚĆ KAŻDEJ NOTATKI
+
+   Widok listy pokazywał każdą kartę w całości, widok zwarty przycinał wszystkie
+   do trzech linijek. Jedno i drugie dotyczyło CAŁEJ listy naraz, a notatki są
+   różne: jedna ma dwa zdania i zajmuje pół ekranu na darmo, druga ma dwie
+   strony i chce się ją mieć w całości pod ręką.
+
+   Tutaj każda karta ma swoją wysokość. Ustawiasz ją dwoma sposobami:
+     • chwytasz dolną krawędź karty i przeciągasz — tak jak okno,
+     • albo wybierasz gotowy rozmiar z menu ⋯ przy notatce.
+
+   Wysokość zapisuje się przy notatce (pole `wys`), więc przeżywa zamknięcie
+   aplikacji i jedzie razem z kopią zapasową na inne urządzenie.
+   ========================================================================== */
+"use strict";
+
+const WYS_MIN = 60;      // niżej karta przestaje cokolwiek pokazywać
+const WYS_MAX = 4000;    // wyżej nie ma sensu — to już cała notatka
+
+/** Gotowe rozmiary z menu. 0 = bez ograniczenia (cała treść). */
+const WYS_GOTOWE = [
+  ["Bardzo mała",  80],
+  ["Mała",        140],
+  ["Średnia",     260],
+  ["Duża",        420],
+  ["Cała notatka",  0]
+];
+
+/** Nakłada zapisaną wysokość na kartę. Wołane przy budowaniu karty. */
+function zastosujWysokosc(karta, n){
+  if(!karta) return;
+  const tresc = karta.querySelector(".ncontent");
+  if(!tresc) return;
+  const w = Number(n.wys);
+  if(isFinite(w) && w > 0){
+    tresc.style.maxHeight = w + "px";
+    tresc.style.overflowY = "auto";
+    karta.classList.add("wlasnaWys");
+  }else if(n.wys === 0){
+    /* Zero znaczy „cała treść" — świadomy wybór, nie brak ustawienia.
+       Musi przebić także widok zwarty, który przycina wszystko do trzech linijek. */
+    tresc.style.maxHeight = "none";
+    tresc.style.overflowY = "visible";
+    karta.classList.add("wlasnaWys", "pelnaWys");
+  }else{
+    tresc.style.maxHeight = "";
+    tresc.style.overflowY = "";
+    karta.classList.remove("wlasnaWys", "pelnaWys");
+  }
+}
+
+/** Zapisuje wysokość notatki. `null` przywraca ustawienie domyślne widoku. */
+function ustawWysokosc(n, px){
+  if(!n) return;
+  if(px === null || px === undefined) delete n.wys;
+  else n.wys = px === 0 ? 0 : Math.round(Math.min(WYS_MAX, Math.max(WYS_MIN, px)));
+  /* Zmieniło się miejsce na ekranie, a nie treść — data modyfikacji zostaje.
+     Inaczej samo zmniejszenie karty przestawiałoby notatkę w sortowaniu
+     „ostatnio zmienione", co byłoby niespodzianką. */
+  if(typeof idb!=="undefined" && idb)
+    idbBulk("notes", [n]).catch(e=>reportSaveError(e,"wysokość notatki"));
+  if(typeof bumpDirty==="function") bumpDirty();
+}
+
+/** Menu z gotowymi rozmiarami — dla tych, którzy nie chcą przeciągać. */
+function menuWysokosci(n, kotwica){
+  const dd = $("dropdown");
+  const teraz = (n.wys===0) ? 0 : (isFinite(Number(n.wys)) ? Number(n.wys) : null);
+  dd.innerHTML = `<div class="dd-lbl">Wysokość notatki</div>` +
+    WYS_GOTOWE.map(([nazwa,px])=>
+      `<div data-wys="${px}">${nazwa}${teraz===px?' <span class="ddZnak">✓</span>':""}</div>`).join("") +
+    `<div class="dd-sep"></div>` +
+    `<div data-wys="auto">Jak w widoku${teraz===null?' <span class="ddZnak">✓</span>':""}</div>`;
+  dd.style.display = "block";
+  if(typeof oznaczPozycjeMenu==="function") oznaczPozycjeMenu(dd);
+  placeDropdown(dd, kotwica);
+  dd.onclick = e=>{
+    const it = e.target.closest("[data-wys]"); if(!it) return;
+    dd.style.display = "none";
+    const v = it.dataset.wys;
+    ustawWysokosc(n, v==="auto" ? null : Number(v));
+    renderNotes();
+    toastOk(v==="auto" ? "Wysokość jak w widoku" : "Zmieniono wysokość notatki");
+  };
+}
+
+/* ===== PRZECIĄGANIE DOLNEJ KRAWĘDZI =====
+   Wskaźnik, nie mechanizm przeglądarki — palec, rysik i mysz działają tak samo. */
+let _zmianaWys = null;
+document.addEventListener("pointerdown", e=>{
+  const uchwyt = e.target.closest && e.target.closest("#noteList .ncard .wysUchwyt");
+  if(!uchwyt) return;
+  const karta = uchwyt.closest(".ncard");
+  const n = karta && notes.find(x=>x.g===karta.dataset.g);
+  const tresc = karta && karta.querySelector(".ncontent");
+  if(!n || !tresc) return;
+  e.preventDefault(); e.stopPropagation();
+  try{ uchwyt.setPointerCapture(e.pointerId); }catch(_){}
+  _zmianaWys = {n, karta, tresc, startY:e.clientY, startH:tresc.getBoundingClientRect().height};
+  karta.classList.add("zmienianaWys");
+
+  const ruch = ev=>{
+    if(!_zmianaWys) return;
+    ev.preventDefault();
+    const nowa = Math.min(WYS_MAX, Math.max(WYS_MIN,
+                  _zmianaWys.startH + (ev.clientY - _zmianaWys.startY)));
+    _zmianaWys.tresc.style.maxHeight = nowa + "px";
+    _zmianaWys.tresc.style.overflowY = "auto";
+    _zmianaWys.biezaca = nowa;
+  };
+  const koniec = ()=>{
+    uchwyt.removeEventListener("pointermove", ruch);
+    uchwyt.removeEventListener("pointerup", koniec);
+    uchwyt.removeEventListener("pointercancel", przerwij);
+    if(!_zmianaWys) return;
+    const {n:nota, karta:k, biezaca} = _zmianaWys;
+    k.classList.remove("zmienianaWys");
+    _zmianaWys = null;
+    if(biezaca!==undefined){
+      ustawWysokosc(nota, biezaca);
+      k.classList.add("wlasnaWys");
+      toastOk("Wysokość: " + Math.round(biezaca) + " px");
+    }
+  };
+  const przerwij = ()=>{
+    uchwyt.removeEventListener("pointermove", ruch);
+    uchwyt.removeEventListener("pointerup", koniec);
+    uchwyt.removeEventListener("pointercancel", przerwij);
+    if(_zmianaWys){ _zmianaWys.karta.classList.remove("zmienianaWys"); _zmianaWys = null; }
+  };
+  uchwyt.addEventListener("pointermove", ruch);
+  uchwyt.addEventListener("pointerup", koniec);
+  uchwyt.addEventListener("pointercancel", przerwij);
+}, true);
+
+/* Dwukrotne dotknięcie uchwytu przywraca ustawienie widoku — szybkie cofnięcie
+   nieudanej próby bez wchodzenia w menu. */
+document.addEventListener("dblclick", e=>{
+  const uchwyt = e.target.closest && e.target.closest("#noteList .ncard .wysUchwyt");
+  if(!uchwyt) return;
+  const karta = uchwyt.closest(".ncard");
+  const n = karta && notes.find(x=>x.g===karta.dataset.g);
+  if(!n) return;
+  ustawWysokosc(n, null);
+  renderNotes();
+  toastOk("Przywrócono wysokość z widoku");
 });
 
 </script>
