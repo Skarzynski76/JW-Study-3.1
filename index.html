@@ -2934,10 +2934,11 @@ header #btnWszystkie{ flex:0 1 auto; max-width:230px; overflow:hidden; }
    że trzeba było otwierać każdą. Średni pokazuje kilka pierwszych linijek —
    dość, by rozpoznać notatkę — i mieści ich kilkanaście. */
 #noteList.v-medium .ncontent{
-  max-height:7.5em; overflow:hidden; line-height:1.5;
-  -webkit-mask-image:linear-gradient(180deg,#000 calc(100% - 18px),transparent);
-  mask-image:linear-gradient(180deg,#000 calc(100% - 18px),transparent);
+  max-height:7.5em; line-height:1.5;
+  overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
 }
+#noteList.v-medium .ncontent::-webkit-scrollbar{ width:4px; }
+#noteList.v-medium .ncontent::-webkit-scrollbar-thumb{ background:rgba(0,0,0,.22); border-radius:3px; }
 #noteList.v-medium .ncontent img{ max-height:110px; width:auto; }
 #noteList.v-medium .ncard{ margin-bottom:7px; }
 /* Własna wysokość notatki przebija widok — to wybór dotyczący tej jednej karty. */
@@ -2945,6 +2946,155 @@ header #btnWszystkie{ flex:0 1 auto; max-width:230px; overflow:hidden; }
   -webkit-mask-image:none; mask-image:none;
 }
 #noteList.v-medium .ncard.pelnaWys .ncontent{ max-height:none; overflow:visible; }
+
+/* ============================================================
+   WIDOK TABLICY — KARTECZKI OBOK SIEBIE (v2.10)
+
+   Lista układa notatki jedna pod drugą, więc nawet po odchudzeniu
+   pasków widać ich kilka. Tablica układa je w siatkę: na jednym
+   ekranie mieści się kilkanaście, a przewijanie ciągnie się dalej.
+   ============================================================ */
+#noteList.v-tablica{
+  display:grid;
+  /* --kolTablicy = 0 znaczy „dopasuj sam"; wtedy siatka liczy kolumny
+     z dostępnej szerokości i karteczka nie schodzi poniżej 190 px. */
+  grid-template-columns:repeat(var(--kolTablicy, 0), minmax(0, 1fr));
+  gap:10px;
+  align-content:start;
+  padding:10px 14px 40px;
+}
+#noteList.v-tablica[style*="--kolTablicy: 0"],
+#noteList.v-tablica:not([style*="--kolTablicy"]){
+  /* Przy dopasowaniu automatycznym szerokość karteczki idzie za jej wielkością:
+     bardzo małe mieszczą się gęściej, bardzo duże dostają więcej miejsca. */
+  grid-template-columns:repeat(auto-fill, minmax(var(--kartaMin, 190px), 1fr));
+}
+#noteList.v-tablica .ncard{
+  position:relative;
+  margin:0;
+  display:flex; flex-direction:column;
+  /* Wysokość karteczki bierze się z wybranej wielkości (--kartaWys). */
+  min-height:calc(var(--kartaWys, 240px) * .78);
+  max-height:var(--kartaWys, 240px);
+  overflow:hidden;
+  padding:0 0 0;
+  border-radius:12px;
+  box-shadow:0 3px 10px rgba(40,35,20,.16);
+}
+/* Belka tytułu — wąska, najwyżej dwie linijki. To ma być podpis karteczki,
+   a nie jej połowa. */
+#noteList.v-tablica .nhead{
+  margin:0; padding:5px 26px 4px 10px;
+  border-radius:12px 12px 0 0;
+  flex:0 0 auto;
+}
+#noteList.v-tablica .ntitle{
+  font-size:calc(var(--noteFs,14px) - 1px); line-height:1.25;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+/* NA KARTECZCE LICZY SIĘ TREŚĆ.
+   Wiersz z odnośnikiem, przyciskiem „Przypisz werset", plakietkami publikacji
+   i datą zajmował dwie trzecie karteczki — zostawała jedna ucięta linijka
+   tekstu. Te rzeczy są w każdym innym widoku i po otwarciu notatki; tutaj
+   ustępują miejsca temu, po co się na karteczkę patrzy. */
+#noteList.v-tablica .nmeta2,
+#noteList.v-tablica .chips,
+#noteList.v-tablica .wysUchwyt{ display:none!important; }
+/* Treść przewija się w karteczce — dłuższą notatkę da się przeczytać bez
+   otwierania jej na pełnym ekranie. overscroll-behavior pilnuje, żeby dojechanie
+   do końca tekstu nie pociągnęło całej tablicy. */
+#noteList.v-tablica .ncontent{
+  flex:1 1 auto; min-height:0;
+  overflow-y:auto; overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  margin:0; padding:8px 10px 10px;
+  font-size:calc(var(--noteFs,14px) - 1.5px); line-height:1.42;
+}
+#noteList.v-tablica .ncontent::-webkit-scrollbar{ width:4px; }
+#noteList.v-tablica .ncontent::-webkit-scrollbar-thumb{
+  background:rgba(0,0,0,.22); border-radius:3px;
+}
+#noteList.v-tablica .ncontent img{ max-height:70px; width:auto; }
+/* Pasek ikon nie zabiera miejsca treści — leży NAD nią i pokazuje się dopiero,
+   gdy karteczka jest pod kursorem albo dotknięta. */
+#noteList.v-tablica .ntools{
+  position:absolute; left:0; right:0; bottom:0;
+  margin:0; padding:3px 6px;
+  background:linear-gradient(180deg, transparent, var(--panel) 42%);
+  border-top:0; border-radius:0 0 12px 12px;
+  opacity:0; pointer-events:none;
+  transition:opacity .15s;
+}
+#noteList.v-tablica .ncard:hover .ntools,
+#noteList.v-tablica .ncard:focus-within .ntools,
+#noteList.v-tablica .ncard.showtags .ntools{ opacity:1; pointer-events:auto; }
+@media (hover:none){
+  /* Dotyk nie ma najechania — pasek widoczny, ale przezroczysty, żeby nie
+     zasłaniał tekstu pod spodem. */
+  #noteList.v-tablica .ntools{ opacity:.85; pointer-events:auto; }
+}
+#noteList.v-tablica .ntools .tagrow{ display:none; }
+#noteList.v-tablica .ntools .sbtn.ico{ padding:4px 6px; }
+#noteList.v-tablica .ntools .sbtn.ico .ic{ width:15px; height:15px; }
+/* Grupy przy sortowaniu wg publikacji mają iść przez całą szerokość tablicy. */
+#noteList.v-tablica .listGroup{ grid-column:1 / -1; }
+/* Własna wysokość notatki nie ma sensu w siatce — tam rządzi rozmiar karteczki. */
+#noteList.v-tablica .ncard.wlasnaWys .ncontent{
+  max-height:none!important; overflow:hidden!important;
+}
+
+/* Poświata pokazuje, że treść ciągnie się dalej — i z której strony.
+   Stała poświata u dołu myliła: wyglądała tak samo przy końcu tekstu. */
+.ncontent.przewDol:not(.przewGora){
+  -webkit-mask-image:linear-gradient(180deg,#000 calc(100% - 18px),transparent);
+  mask-image:linear-gradient(180deg,#000 calc(100% - 18px),transparent);
+}
+.ncontent.przewGora:not(.przewDol){
+  -webkit-mask-image:linear-gradient(180deg,transparent,#000 18px);
+  mask-image:linear-gradient(180deg,transparent,#000 18px);
+}
+.ncontent.przewGora.przewDol{
+  -webkit-mask-image:linear-gradient(180deg,transparent,#000 18px,#000 calc(100% - 18px),transparent);
+  mask-image:linear-gradient(180deg,transparent,#000 18px,#000 calc(100% - 18px),transparent);
+}
+
+/* ——— WŁASNE TŁO NOTATKI ———
+   Kolor napisu liczy czytelnyTekst() z jasności tła, więc karteczka pozostaje
+   czytelna zarówno w jasnym pastelu, jak i w nasyconym kolorze. */
+.ncard.wlasneTlo{
+  background:var(--tloKarty)!important;
+  color:var(--tekstKarty, inherit);
+}
+.ncard.wlasneTlo .ncontent,
+.ncard.wlasneTlo .ntitle{ color:var(--tekstKarty, inherit); }
+.ncard.wlasneTlo .nmeta{ color:var(--tekstKarty, inherit); opacity:.75; }
+.ncard.wlasneTlo .ntools{ background:rgba(255,255,255,.35); border-top-color:rgba(0,0,0,.08); }
+html[data-theme="dark"] .ncard.wlasneTlo .ntools{ background:rgba(0,0,0,.18); }
+
+/* Paleta w menu tła */
+#dropdown .tlaSiatka{
+  display:grid; grid-template-columns:repeat(5, 1fr); gap:6px; padding:6px 8px 2px;
+}
+#dropdown .tloSw{
+  width:100%; aspect-ratio:1/1; border-radius:8px;
+  border:1px solid rgba(0,0,0,.18); cursor:pointer;
+}
+#dropdown .tloSw.sel{ box-shadow:0 0 0 2px var(--panel), 0 0 0 4px var(--accent); }
+#dropdown .tloWlasny{
+  display:flex; align-items:center; gap:8px;
+  padding:8px 12px; cursor:pointer;
+}
+#dropdown .tloWlasny input[type=color]{
+  width:34px; height:26px; padding:0; border:1px solid var(--border);
+  border-radius:6px; background:none; cursor:pointer; margin-left:auto;
+}
+#kolTablicy, #rozmiarTablicy{
+  padding:4px 8px; border-radius:8px; border:1px solid var(--border);
+  background:var(--panel); color:var(--text);
+  font-size:calc(12px * var(--uiw));
+}
+#kolTablicy[hidden], #rozmiarTablicy[hidden]{ display:none; }
 
 </style></head>
 <body>
@@ -2954,7 +3104,7 @@ header #btnWszystkie{ flex:0 1 auto; max-width:230px; overflow:hidden; }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.09</span></div>
+      <div class="brand-name">JW Study <span class="ver">v2.13</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -3042,7 +3192,22 @@ header #btnWszystkie{ flex:0 1 auto; max-width:230px; overflow:hidden; }
           <button class="vb" data-view="list" title="Lista — cała treść notatki">${''}</button>
           <button class="vb" data-view="medium" title="Średni — pierwsze linijki treści, najwięcej notatek na ekranie">${''}</button>
           <button class="vb" data-view="compact" title="Zwarty — tytuł i początek treści">${''}</button>
+          <button class="vb" data-view="tablica" title="Tablica — karteczki obok siebie, kilkanaście naraz">${''}</button>
         </div>
+        <select id="rozmiarTablicy" hidden aria-label="Wielkość karteczek" title="Wielkość karteczek — ile treści widać na każdej">
+          <option value="xs">bardzo małe</option>
+          <option value="s">małe</option>
+          <option value="m">średnie</option>
+          <option value="l">duże</option>
+          <option value="xl">bardzo duże</option>
+        </select>
+        <select id="kolTablicy" hidden aria-label="Ile karteczek w rzędzie" title="Ile karteczek w rzędzie">
+          <option value="auto">auto</option>
+          <option value="2">2 w rzędzie</option>
+          <option value="3">3 w rzędzie</option>
+          <option value="4">4 w rzędzie</option>
+          <option value="5">5 w rzędzie</option>
+        </select>
       </div>
       <div id="quickFilters">
       <button class="qf" data-qf="all">Wszystkie</button>
@@ -3568,6 +3733,11 @@ function sanitizeNote(n, obce){
     if(czysty !== n.h) console.warn("Oczyszczono treść notatki z wczytanej kopii:", n.g);
     n.h = czysty;
   }
+  /* Tło karteczki trafia do atrybutu style — sprawdzamy ZAWSZE, nie tylko przy
+     obcych plikach. Zapis z cudzysłowem pozwoliłby wyjść z atrybutu i dopisać
+     własny, a kopia potrafi krążyć między urządzeniami i wrócić do nas. */
+  if(n.bg!=null && !kolorBezpieczny(n.bg)) delete n.bg;
+  if(n.wys!=null){ const h=Number(n.wys); if(isFinite(h) && h>=0) n.wys=h; else delete n.wys; }
   if(obce){
     // te pola trafiają do atrybutów i nazw — muszą być zwykłym tekstem
     if(n.ff!=null && typeof n.ff!=="string") delete n.ff;
@@ -3846,6 +4016,31 @@ async function wymusAktualizacje(){
 function offlineReady(){ return !!(navigator.serviceWorker && navigator.serviceWorker.controller); }
 /* Ustawia rozwijane menu tak, żeby ZAWSZE mieściło się na ekranie:
    dobiera stronę (pod/nad przyciskiem), przycina wysokość i dodaje przewijanie. */
+/**
+ * Obszar, który użytkownik NAPRAWDĘ widzi.
+ *
+ * innerWidth/innerHeight nie zmieniają się, gdy wyskoczy klawiatura ekranowa —
+ * okno zostaje tej samej wysokości, tylko dolna część jest zasłonięta. Menu
+ * układane względem innerHeight lądowało więc pod klawiaturą albo pod dolną
+ * krawędzią i wyglądało na zniknięte. Na tablecie dotkliwie, bo klawiatura
+ * zabiera tam nawet połowę ekranu.
+ *
+ * visualViewport podaje wycinek faktycznie widoczny — i to jego pilnujemy.
+ */
+function widocznyObszar(){
+  const vv = window.visualViewport;
+  if(!vv) return {lewo:0, gora:0, prawo:innerWidth, dol:innerHeight,
+                  szer:innerWidth, wys:innerHeight};
+  return {
+    lewo:  vv.offsetLeft,
+    gora:  vv.offsetTop,
+    prawo: vv.offsetLeft + vv.width,
+    dol:   vv.offsetTop  + vv.height,
+    szer:  vv.width,
+    wys:   vv.height
+  };
+}
+
 function placeDropdown(dd, anchor){
   const M = 10;                                   // margines od krawędzi ekranu
   /* Menu #dropdown jest JEDNO na całą aplikację i bywa przewijane (max-height
@@ -3854,25 +4049,30 @@ function placeDropdown(dd, anchor){
      Na komputerze nigdy nie było tego widać, bo menu mieści się na ekranie. */
   dd.scrollTop = 0;
   const r = anchor.getBoundingClientRect();
-  const vw = innerWidth, vh = innerHeight;
-  const safeTop = 0, safeBottom = vh;
+  const ob = widocznyObszar();
   dd.style.maxHeight = "none";
   const h = dd.offsetHeight, w = dd.offsetWidth;
-  const below = safeBottom - r.bottom - M*2;      // ile miejsca pod przyciskiem
-  const above = r.top - safeTop - M*2;            // ile miejsca nad przyciskiem
+  const below = ob.dol - r.bottom - M*2;          // ile miejsca pod przyciskiem
+  const above = r.top - ob.gora - M*2;            // ile miejsca nad przyciskiem
   let top, maxH;
   if(h <= below || below >= above){               // pod przyciskiem
     top = r.bottom + 6;
     maxH = Math.max(160, below);
   } else {                                        // nad przyciskiem
     maxH = Math.max(160, above);
-    top = Math.max(M, r.top - 6 - Math.min(h, maxH));
+    top = Math.max(ob.gora + M, r.top - 6 - Math.min(h, maxH));
   }
-  dd.style.maxHeight = Math.min(maxH, vh - M*2) + "px";
+  const wysokosc = Math.min(maxH, ob.wys - M*2);
+  dd.style.maxHeight = wysokosc + "px";
   dd.style.overflowY = "auto";
-  dd.style.top = Math.max(M, Math.min(top, vh - Math.min(h, maxH) - M)) + "px";
-  dd.style.left = Math.max(M, Math.min(r.left, vw - w - M)) + "px";
+  /* Dolna krawędź liczona z widocznego obszaru, nie z wysokości okna — dzięki
+     temu menu nie wchodzi pod klawiaturę. */
+  dd.style.top  = Math.max(ob.gora + M,
+                    Math.min(top, ob.dol - Math.min(h, wysokosc) - M)) + "px";
+  dd.style.left = Math.max(ob.lewo + M,
+                    Math.min(r.left, ob.prawo - w - M)) + "px";
 }
+
 /* zajętość pamięci urządzenia (dane aplikacji: notatki + zdjęcia) */
 async function showStorageInfo(){
   const el=document.getElementById("ddStorage"); if(!el) return;
@@ -4302,11 +4502,13 @@ function dopasujZapytanie(n){
    dość, żeby rozpoznać notatkę, i mieści ich na ekranie kilkanaście. */
 let noteView = "list";
 const savedView = lsGet(KP+"View", null);
-if(["list","medium","compact"].includes(savedView)) noteView = savedView;
+if(["list","medium","compact","tablica"].includes(savedView)) noteView = savedView;
 function applyNoteView(){
   const el=$("noteList"); if(!el) return;
-  el.classList.remove("v-list","v-medium","v-compact");
+  el.classList.remove("v-list","v-medium","v-compact","v-tablica");
   el.classList.add("v-"+noteView);
+  if(typeof zastosujKolumnyTablicy==="function") zastosujKolumnyTablicy();
+  if(typeof odswiezWyborKolumn==="function") odswiezWyborKolumn();
   document.querySelectorAll("#viewBar .vb").forEach(b=>{
     const wlaczony = b.dataset.view===noteView;
     b.classList.toggle("on", wlaczony);
@@ -4322,7 +4524,8 @@ function initViewBar(){
   const ic={
     list:_svg('<path d="M4 6h16M4 12h16M4 18h16"/>'),
     medium:_svg('<path d="M4 5h16M4 9h16M4 15h16M4 19h16"/>'),
-    compact:_svg('<path d="M4 5h16M4 9h16M4 13h16M4 17h16M4 21h16"/>')
+    compact:_svg('<path d="M4 5h16M4 9h16M4 13h16M4 17h16M4 21h16"/>'),
+    tablica:_svg('<rect x="3.5" y="3.5" width="7" height="7" rx="1.4"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.4"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.4"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.4"/>')
   };
   document.querySelectorAll("#viewBar .vb").forEach(b=>{
     b.innerHTML = ic[b.dataset.view]||"";
@@ -4784,8 +4987,10 @@ function openColorMenu(e, tryb){
   cm.style.display="block";
   const r=e.target.getBoundingClientRect();
   const w=cm.offsetWidth||300, h=cm.offsetHeight||380;
-  cm.style.left=Math.max(8,Math.min(r.right-w, innerWidth-w-8))+"px";
-  cm.style.top=Math.min(r.bottom+6, Math.max(8, innerHeight-h-8))+"px";
+  const _ob = (typeof widocznyObszar==="function") ? widocznyObszar()
+            : {lewo:0, gora:0, prawo:innerWidth, dol:innerHeight, szer:innerWidth};
+  cm.style.left=Math.max(_ob.lewo+8, Math.min(r.right-w, _ob.prawo-w-8))+"px";
+  cm.style.top=Math.max(_ob.gora+8, Math.min(r.bottom+6, _ob.dol-h-8))+"px";
 }
 function tagItem(key,name,cnt,user,color,inSection,secId){
   const active = String(filt.tag)===String(key);
@@ -5209,7 +5414,7 @@ function bumpTagsVer(){ _tagsVer++; }
 /* wszystko, co widać na karcie — gdy to samo, karta może zostać bez zmian */
 function noteCardSig(n){
   return [n.g, n.mo, n.t, (n.h||n.c||"").length, n.pin?1:0, n.fav?1:0, n.ord||0, n.ptb||0, n.tg.join(","), n.b, n.ch, n.v,
-          n.ks, n.itn, n.par, n.ff, n.lh, n.pm, n.la, n.stb, n.cr, n.wys,
+          n.ks, n.itn, n.par, n.ff, n.lh, n.pm, n.la, n.stb, n.cr, n.wys, n.bg,
           query, sortMode, _tagsVer].join("\u0001");
 }
 /**
@@ -5333,6 +5538,7 @@ const ICO = {
   /* strzałka w górę nad podstawką — ten sam znak, którym systemy oznaczają
      „udostępnij", więc nie trzeba go tłumaczyć */
   send:_svg('<path d="M12 16V4"/><path d="M8 8l4-4 4 4"/><path d="M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/>'),
+  paint:_svg('<path d="M12 3a9 9 0 1 0 0 18c1.4 0 2-.9 2-1.8 0-1.3 1-2.2 2.2-2.2H18a3 3 0 0 0 3-3A8 8 0 0 0 12 3z"/><circle cx="7.5" cy="11" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="7.5" r="1" fill="currentColor" stroke="none"/><circle cx="16.3" cy="11" r="1" fill="currentColor" stroke="none"/>'),
   tag:_svg('<path d="M3 12l9-9 8 8-9 9-8-8z"/><circle cx="8" cy="8" r="1.4" fill="currentColor" stroke="none"/>'),
   book:_svg('<path d="M4 5a2 2 0 0 1 2-2h5v16H6a2 2 0 0 0-2 2z"/><path d="M20 5a2 2 0 0 0-2-2h-5v16h5a2 2 0 0 1 2 2z"/>'),
   width:_svg('<path d="M4 12h16"/><path d="M7 8l-4 4 4 4"/><path d="M17 8l4 4-4 4"/><path d="M8 4v16M16 4v16" stroke-opacity=".45"/>'),
@@ -5469,6 +5675,8 @@ function noteCard(n){
                 noteCardTools(n);
   autolinkRefs(d.querySelector(".ncontent"));
   if(typeof zastosujWysokosc==="function") zastosujWysokosc(d, n);
+  if(typeof zastosujTloNotatki==="function") zastosujTloNotatki(d, n);
+  if(typeof przygotujPrzewijanie==="function") przygotujPrzewijanie(d);
   d.addEventListener("click", e=>{
     if(e.target.dataset.untag){ untag(n, +e.target.dataset.untag); return; }
     if(e.target.closest(".ntitle") && !e.target.isContentEditable){ touchAccess(n); if(!fsGuid) openFs(n); return; }
@@ -5492,6 +5700,7 @@ function noteCard(n){
          <div data-x="verse">${ICO.bookmark}${n.b?"Zmień":"Przypisz"} werset…</div>
          <div data-x="miejsce">${ICO.book}Miejsce w publikacji…${n.pw?' <span class="ddZnak">✓</span>':""}</div>
          <div data-x="wysokosc">${ICO.fs}Wysokość notatki…${(n.wys!==undefined)?' <span class="ddZnak">✓</span>':""}</div>
+         <div data-x="tlo">${ICO.paint}Tło notatki…${n.bg?' <span class="ddZnak" style="color:'+esc(n.bg)+'">●</span>':""}</div>
          ${n.ks?`<div data-x="ptb">${ICO.tag}Zakładka publikacji…</div>`:""}
          ${(typeof secTabs!=="undefined" && secTabs.length)?`<div data-x="stb">${ICO.tag}Zakładka w sekcji…</div>`:""}
          ${link?`<div data-x="open">${ICO.ext}Otwórz w JW Library</div>`:""}
@@ -5511,6 +5720,8 @@ function noteCard(n){
         if(x==="stb"){ setTimeout(()=>menuZakladek(e.target.closest(".ncard")||document.body, n, "note"), 40); return; }
         if(x==="wysokosc" && typeof menuWysokosci==="function"){
           setTimeout(()=>menuWysokosci(n, e.target.closest(".ncard")||document.body), 40); return; }
+        if(x==="tlo" && typeof menuTlaNotatki==="function"){
+          setTimeout(()=>menuTlaNotatki(n, e.target.closest(".ncard")||document.body), 40); return; }
         if(x==="fav") toggleFav(n);
         else if(x==="pin") togglePin(n);
         else if(x==="doc") exportNoteWord(n);
@@ -5851,8 +6062,10 @@ function openReadPop(btn){
     `<div class="rp-row"><span class="rp-lbl">Tło</span>${seg("theme",[{v:"light",t:"Dzień",on:themeMode==="light"},{v:"sepia",t:"Sepia",on:themeMode==="sepia"},{v:"dark",t:"Noc",on:themeMode==="dark"}])}</div>`;
   pop.style.display="block";
   const r=btn.getBoundingClientRect(), w=pop.offsetWidth||280, h=pop.offsetHeight||300;
-  pop.style.left = Math.max(8, Math.min(r.left, innerWidth-w-8))+"px";
-  pop.style.top  = Math.max(8, Math.min(r.top-h-10, innerHeight-h-8))+"px";
+  const _ob = (typeof widocznyObszar==="function") ? widocznyObszar()
+            : {lewo:0, gora:0, prawo:innerWidth, dol:innerHeight, szer:innerWidth};
+  pop.style.left = Math.max(_ob.lewo+8, Math.min(r.left, _ob.prawo-w-8))+"px";
+  pop.style.top  = Math.max(_ob.gora+8, Math.min(r.top-h-10, _ob.dol-h-8))+"px";
 }
 $("readPop").addEventListener("pointerdown", e=>{
   const b=e.target.closest("button[data-v]"); if(!b) return;
@@ -6721,9 +6934,13 @@ function openEbPop(kind, btn, bar){
   /* Menu bywa długie (np. „Więcej"), a na iPadzie w podzielonym oknie brakuje miejsca.
      placeDropdown dobiera stronę, przycina wysokość i włącza przewijanie. */
   if(typeof placeDropdown==="function"){ placeDropdown(pop, btn); return; }
+  /* Droga awaryjna, gdy placeDropdown jeszcze nie istnieje — też licząca
+     z obszaru widocznego, nie z wysokości okna zasłoniętego klawiaturą. */
   const r=btn.getBoundingClientRect(); const w=pop.offsetWidth||230, h=pop.offsetHeight||120;
-  pop.style.left=Math.max(8,Math.min(r.left, innerWidth-w-8))+"px";
-  pop.style.top=Math.min(r.bottom+6, innerHeight-h-8)+"px";
+  const ob = (typeof widocznyObszar==="function") ? widocznyObszar()
+           : {lewo:0, gora:0, prawo:innerWidth, dol:innerHeight};
+  pop.style.left=Math.max(ob.lewo+8, Math.min(r.left, ob.prawo-w-8))+"px";
+  pop.style.top=Math.max(ob.gora+8, Math.min(r.bottom+6, ob.dol-h-8))+"px";
 }
 $("ebPop").addEventListener("pointerdown", ev=>{
   ev.preventDefault();
@@ -7218,9 +7435,11 @@ function showImgBar(img){
   const bar = $("imgBar"); bar.style.display = "flex";
   const r = img.getBoundingClientRect();
   const bw = bar.offsetWidth || 320, bh = bar.offsetHeight || 44;
-  bar.style.left = Math.max(8, Math.min(r.left, innerWidth - bw - 8)) + "px";
+  const _ob = (typeof widocznyObszar==="function") ? widocznyObszar()
+            : {lewo:0, gora:0, prawo:innerWidth, dol:innerHeight, szer:innerWidth};
+  bar.style.left = Math.max(_ob.lewo + 8, Math.min(r.left, _ob.prawo - bw - 8)) + "px";
   let top = r.top - bh - 8; if(top < 8) top = r.bottom + 8;
-  bar.style.top = Math.min(top, innerHeight - bh - 8) + "px";
+  bar.style.top = Math.max(_ob.gora + 8, Math.min(top, _ob.dol - bh - 8)) + "px";
   const si = document.getElementById("imgSize");
   if(si){
     let wv = parseInt(img.style.width);
@@ -7629,23 +7848,29 @@ function showHlBar(){
   const r=range.getBoundingClientRect();
   hlBar.style.display="flex";
   const w = hlBar.offsetWidth || 380;
+  const h = hlBar.offsetHeight || 52;
+  /* Granice bierzemy z obszaru FAKTYCZNIE widocznego, nie z wysokości okna.
+     Przy otwartej klawiaturze okno zostaje tej samej wysokości, tylko dolna
+     część jest zasłonięta — pasek liczony ze starych granic lądował pod nią. */
+  const ob = (typeof widocznyObszar==="function") ? widocznyObszar()
+           : {lewo:0, gora:0, prawo:innerWidth, dol:innerHeight};
+  const wLewo = (x)=>Math.max(ob.lewo+8, Math.min(x, ob.prawo-w-8));
+  hlBar.style.bottom="auto";
+  hlBar.style.left = wLewo(r.left + r.width/2 - w/2) + "px";
   if(touchUI()){
     // iPad/iPhone: pasek tuż POD zaznaczeniem, z odstępem na systemowe menu Apple
-    hlBar.style.bottom="auto";
-    hlBar.style.left=Math.max(8,Math.min(r.left+r.width/2-w/2,innerWidth-w-8))+"px";
-    const off = r.top < 80 ? 95 : 55;   // przy górze ekranu menu Apple wyskakuje POD zaznaczeniem — zejdź niżej
+    const off = r.top < ob.gora + 80 ? 95 : 55;   // przy górze menu Apple wyskakuje POD zaznaczeniem
     let top = r.bottom + off;
-    if(top > innerHeight - 70){
-      // brak miejsca na dole — przypnij nad dolną krawędzią
-      hlBar.style.top="auto";
-      hlBar.style.bottom="calc(14px + env(safe-area-inset-bottom, 0px))";
-    } else {
-      hlBar.style.top = top+"px";
+    if(top + h > ob.dol - 12){
+      /* Brak miejsca pod zaznaczeniem — próbujemy NAD nim, a dopiero gdy i tam
+         się nie mieści, przypinamy do dolnej krawędzi widocznego obszaru. */
+      const nad = r.top - h - 12;
+      top = (nad > ob.gora + 8) ? nad : (ob.dol - h - 12);
     }
+    hlBar.style.top = Math.max(ob.gora + 8, top) + "px";
   } else {
-    hlBar.style.bottom="auto";
-    hlBar.style.left=Math.max(8,Math.min(r.left+r.width/2-w/2,innerWidth-w-8))+"px";
-    hlBar.style.top=Math.max(8,r.top-56)+"px";
+    hlBar.style.top = Math.max(ob.gora + 8,
+                        Math.min(r.top - h - 4, ob.dol - h - 8)) + "px";
   }
 }
 document.addEventListener("mouseup", e=>{
@@ -8564,8 +8789,10 @@ function chooseSaveOrShare(blob, filename, title){
   dd.style.display="block";
   dd.style.maxHeight="none"; dd.style.overflowY="visible";
   const w=dd.offsetWidth||270, h=dd.offsetHeight||140;
-  dd.style.left=Math.max(10,(innerWidth-w)/2)+"px";
-  dd.style.top=Math.max(10, Math.min(110, innerHeight-h-20))+"px";
+  const _ob = (typeof widocznyObszar==="function") ? widocznyObszar()
+            : {lewo:0, gora:0, prawo:innerWidth, dol:innerHeight, szer:innerWidth};
+  dd.style.left=Math.max(_ob.lewo+10, _ob.lewo+(_ob.szer-w)/2)+"px";
+  dd.style.top=Math.max(_ob.gora+10, Math.min(_ob.gora+110, _ob.dol-h-20))+"px";
   dd.onclick=async ev=>{
     const a=ev.target.closest("[data-sv]"); if(!a) return;
     dd.style.display="none";
@@ -9577,8 +9804,10 @@ function placeMenuAt(dd, x, y){
   dd.style.display = "block";
   dd.style.maxHeight = ""; dd.style.overflowY = "";
   const w = dd.offsetWidth || 260, h = dd.offsetHeight || 300;
-  dd.style.left = Math.max(8, Math.min(x, innerWidth - w - 8)) + "px";
-  dd.style.top  = Math.max(8, Math.min(y, innerHeight - h - 8)) + "px";
+  const _ob = (typeof widocznyObszar==="function") ? widocznyObszar()
+            : {lewo:0, gora:0, prawo:innerWidth, dol:innerHeight};
+  dd.style.left = Math.max(_ob.lewo + 8, Math.min(x, _ob.prawo - w - 8)) + "px";
+  dd.style.top  = Math.max(_ob.gora + 8, Math.min(y, _ob.dol - h - 8)) + "px";
 }
 
 /* Wspólne wejście dla obu sposobów wywołania. Zwraca true, gdy menu faktycznie otwarto. */
@@ -11835,6 +12064,239 @@ document.addEventListener("dblclick", e=>{
   renderNotes();
   toastOk("Przywrócono wysokość z widoku");
 });
+
+</script>
+<script>
+/* ==========================================================================
+   JW Study — tablica.js
+   NOTATKI JAK KARTECZKI NA TABLICY + WŁASNE TŁO KAŻDEJ NOTATKI
+
+   Lista układa notatki jedna pod drugą, więc nawet po odchudzeniu pasków widać
+   ich kilka. Tablica układa je obok siebie, w siatkę — na jednym ekranie mieści
+   się kilkanaście, a przewijanie ciągnie się dalej tak samo.
+
+   Każda karteczka może też mieć własne tło. Kolor dobierany dowolnie, a napis
+   sam dobiera odcień do jasności tła, żeby zawsze dało się go przeczytać —
+   inaczej ciemnogranatowa karteczka z czarnym tekstem byłaby ozdobą bez treści.
+   ========================================================================== */
+"use strict";
+
+/* Ile kolumn na tablicy. „auto" dopasowuje do szerokości ekranu. */
+const TABLICA_KOL = ["auto", 2, 3, 4, 5];
+let tablicaKol = lsGet(KP+"Kolumny", "auto");
+if(!TABLICA_KOL.includes(tablicaKol) && !TABLICA_KOL.includes(Number(tablicaKol)))
+  tablicaKol = "auto";
+
+/* Wielkość samej karteczki — osobno od tego, ile ich stoi w rzędzie.
+   Liczba w rzędzie decyduje o SZEROKOŚCI, ta lista o WYSOKOŚCI i o tym, jak
+   szeroka musi być karteczka przy dopasowaniu automatycznym. Razem dają
+   sensowne pary: mała karteczka to kilka linijek, bardzo duża to prawie cała
+   notatka na wierzchu. */
+const TABLICA_ROZMIARY = {
+  xs: {nazwa:"Bardzo małe", wys:130, min:150},
+  s:  {nazwa:"Małe",        wys:180, min:170},
+  m:  {nazwa:"Średnie",     wys:240, min:190},
+  l:  {nazwa:"Duże",        wys:330, min:230},
+  xl: {nazwa:"Bardzo duże", wys:440, min:280}
+};
+let tablicaRozmiar = lsGet(KP+"Rozmiar", "m");
+if(!TABLICA_ROZMIARY[tablicaRozmiar]) tablicaRozmiar = "m";
+
+function zastosujKolumnyTablicy(){
+  const el = $("noteList"); if(!el) return;
+  const n = Number(tablicaKol);
+  /* Zero oznacza „dopasuj sam" — wtedy siatka sama liczy, ile kart się zmieści. */
+  el.style.setProperty("--kolTablicy", isFinite(n) && n ? String(n) : "0");
+  const r = TABLICA_ROZMIARY[tablicaRozmiar] || TABLICA_ROZMIARY.m;
+  el.style.setProperty("--kartaWys", r.wys + "px");
+  el.style.setProperty("--kartaMin", r.min + "px");
+}
+function ustawRozmiarTablicy(v){
+  if(!TABLICA_ROZMIARY[v]) return;
+  tablicaRozmiar = v;
+  lsSet(KP+"Rozmiar", v);
+  if($("rozmiarTablicy")){
+  $("rozmiarTablicy").addEventListener("change", e=>{
+    ustawRozmiarTablicy(e.target.value);
+    const r = TABLICA_ROZMIARY[e.target.value];
+    toastOk("Karteczki: " + (r ? r.nazwa.toLowerCase() : e.target.value));
+  });
+}
+zastosujKolumnyTablicy();
+}
+function ustawKolumnyTablicy(v){
+  tablicaKol = v;
+  lsSet(KP+"Kolumny", String(v));
+  if($("rozmiarTablicy")){
+  $("rozmiarTablicy").addEventListener("change", e=>{
+    ustawRozmiarTablicy(e.target.value);
+    const r = TABLICA_ROZMIARY[e.target.value];
+    toastOk("Karteczki: " + (r ? r.nazwa.toLowerCase() : e.target.value));
+  });
+}
+zastosujKolumnyTablicy();
+}
+
+/* ===== WŁASNE TŁO NOTATKI =====
+   Barwy karteczek — jasne, żeby tekst zostawał czytelny, ale wyraźnie różne
+   od siebie, bo o to w tym chodzi: rozpoznać notatkę kątem oka. */
+const TLA_KARTECZEK = [
+  ["Żółta",       "#fdf3bf"],
+  ["Brzoskwinia", "#ffe0c7"],
+  ["Różowa",      "#ffd9e0"],
+  ["Liliowa",     "#e6dcff"],
+  ["Błękitna",    "#d3ecff"],
+  ["Miętowa",     "#d2f2e3"],
+  ["Limonkowa",   "#e6f5c4"],
+  ["Piaskowa",    "#ece3d4"],
+  ["Szara",       "#e6e8ea"]
+];
+
+/** Nakłada tło notatki na kartę. Wołane przy budowaniu karty. */
+function zastosujTloNotatki(karta, n){
+  if(!karta) return;
+  const kol = (typeof kolorBezpieczny==="function" && kolorBezpieczny(n.bg)) ? n.bg : "";
+  if(!kol){
+    karta.style.removeProperty("--tloKarty");
+    karta.style.removeProperty("--tekstKarty");
+    karta.classList.remove("wlasneTlo");
+    return;
+  }
+  karta.style.setProperty("--tloKarty", kol);
+  /* Kolor napisu liczony z jasności tła — ten sam sposób co przy sekcjach. */
+  if(typeof czytelnyTekst==="function")
+    karta.style.setProperty("--tekstKarty", czytelnyTekst(kol));
+  karta.classList.add("wlasneTlo");
+}
+
+/** Zapisuje tło notatki. `null` zdejmuje kolor. */
+function ustawTloNotatki(n, kol){
+  if(!n) return;
+  if(!kol) delete n.bg;
+  else if(typeof kolorBezpieczny==="function" && kolorBezpieczny(kol)) n.bg = kol;
+  else { toast("Nie rozpoznano koloru"); return; }
+  /* Kolor to wygląd, nie treść — data modyfikacji zostaje nietknięta, żeby
+     pomalowanie karteczki nie przestawiało notatki w sortowaniu wg zmiany. */
+  if(typeof idb!=="undefined" && idb)
+    idbBulk("notes", [n]).catch(e=>reportSaveError(e,"kolor notatki"));
+  if(typeof bumpDirty==="function") bumpDirty();
+}
+
+/** Menu kolorów karteczki: paleta + dowolny kolor + zdjęcie koloru. */
+function menuTlaNotatki(n, kotwica){
+  const dd = $("dropdown");
+  const teraz = (n.bg||"").toLowerCase();
+  dd.innerHTML =
+    `<div class="dd-lbl">Tło notatki</div>`+
+    `<div class="tlaSiatka">`+
+      TLA_KARTECZEK.map(([nazwa,hex])=>
+        `<button type="button" class="tloSw${teraz===hex.toLowerCase()?" sel":""}" `+
+        `data-tlo="${hex}" title="${esc(nazwa)}" aria-label="${esc(nazwa)}" `+
+        `style="background:${hex}"></button>`).join("")+
+    `</div>`+
+    `<div class="dd-sep"></div>`+
+    `<label class="tloWlasny">${ICO.paint||""}Dowolny kolor…`+
+      `<input type="color" data-tlowlasny value="${esc(n.bg||"#fdf3bf")}">`+
+    `</label>`+
+    `<div data-tlo="">Bez koloru${!n.bg?' <span class="ddZnak">✓</span>':""}</div>`;
+  dd.style.display = "block";
+  if(typeof oznaczPozycjeMenu==="function") oznaczPozycjeMenu(dd);
+  placeDropdown(dd, kotwica);
+
+  const zastosuj = (kol)=>{
+    ustawTloNotatki(n, kol||null);
+    renderNotes();
+    toastOk(kol ? "Zmieniono tło notatki" : "Zdjęto kolor notatki");
+  };
+  dd.onclick = e=>{
+    const sw = e.target.closest("[data-tlo]");
+    if(!sw) return;
+    dd.style.display = "none";
+    zastosuj(sw.dataset.tlo);
+  };
+  const pole = dd.querySelector("[data-tlowlasny]");
+  if(pole){
+    /* Podgląd na żywo przy przesuwaniu, zapis dopiero po wybraniu — inaczej
+       każdy ruch suwaka byłby osobnym zapisem do bazy. */
+    pole.oninput = ()=>{
+      const karta = document.querySelector('#noteList .ncard[data-g="'+n.g+'"]');
+      if(karta){
+        karta.style.setProperty("--tloKarty", pole.value);
+        if(typeof czytelnyTekst==="function")
+          karta.style.setProperty("--tekstKarty", czytelnyTekst(pole.value));
+        karta.classList.add("wlasneTlo");
+      }
+    };
+    pole.onchange = ()=>{ dd.style.display="none"; zastosuj(pole.value); };
+  }
+}
+
+
+/* ==========================================================================
+   PRZEWIJANIE TREŚCI W MAŁEJ KARTECZCE
+
+   Karteczka pokazuje osiem–dziesięć linijek, a notatka bywa dłuższa. Zamiast
+   otwierać ją na pełnym ekranie tylko po to, żeby zerknąć na koniec, treść
+   przewija się na miejscu.
+
+   Sam `overflow:auto` nie wystarczy: przy stałej poświacie u dołu nie widać
+   różnicy między „jest jeszcze tekst" a „to już koniec", a po przewinięciu
+   w dół znika ślad, że coś zostało wyżej. Dlatego poświatę zapalamy z TEJ
+   strony, z której faktycznie jest jeszcze treść.
+   ========================================================================== */
+function oznaczPrzewijanie(el){
+  if(!el) return;
+  const zapas = el.scrollHeight - el.clientHeight;
+  const jest  = zapas > 4;                       // 4 px marginesu na zaokrąglenia
+  el.classList.toggle("przewGora", jest && el.scrollTop > 2);
+  el.classList.toggle("przewDol",  jest && el.scrollTop < zapas - 2);
+}
+/** Zakłada oznaczenia na treść nowo zbudowanej karty. */
+function przygotujPrzewijanie(karta){
+  const t = karta && karta.querySelector(".ncontent");
+  if(!t) return;
+  /* Rozmiary są znane dopiero po ułożeniu strony, więc liczymy w następnej
+     klatce — inaczej scrollHeight równa się clientHeight i nic się nie zapala. */
+  if(typeof requestAnimationFrame==="function") requestAnimationFrame(()=>oznaczPrzewijanie(t));
+  else oznaczPrzewijanie(t);
+}
+/* Zdarzenie przewijania nie bąbelkuje, więc nasłuchujemy w fazie przechwytywania
+   — jeden nasłuch zamiast jednego na każdą kartę. */
+document.addEventListener("scroll", e=>{
+  const t = e.target;
+  if(t && t.classList && t.classList.contains("ncontent")) oznaczPrzewijanie(t);
+}, true);
+
+/* Wybór liczby kolumn pokazuje się tylko na tablicy — w pozostałych widokach
+   byłby ozdobą bez działania. */
+function odswiezWyborKolumn(){
+  const naTablicy = $("noteList") && $("noteList").classList.contains("v-tablica");
+  const sel = $("kolTablicy");
+  if(sel){
+    sel.hidden = !naTablicy;
+    if(naTablicy && sel.value !== String(tablicaKol)) sel.value = String(tablicaKol);
+  }
+  const roz = $("rozmiarTablicy");
+  if(roz){
+    roz.hidden = !naTablicy;
+    if(naTablicy && roz.value !== tablicaRozmiar) roz.value = tablicaRozmiar;
+  }
+}
+if($("kolTablicy")){
+  $("kolTablicy").addEventListener("change", e=>{
+    ustawKolumnyTablicy(e.target.value);
+    toastOk(e.target.value==="auto" ? "Liczba karteczek dopasowana do ekranu"
+                                    : e.target.value+" karteczki w rzędzie");
+  });
+}
+if($("rozmiarTablicy")){
+  $("rozmiarTablicy").addEventListener("change", e=>{
+    ustawRozmiarTablicy(e.target.value);
+    const r = TABLICA_ROZMIARY[e.target.value];
+    toastOk("Karteczki: " + (r ? r.nazwa.toLowerCase() : e.target.value));
+  });
+}
+zastosujKolumnyTablicy();
 
 </script>
 <script>
