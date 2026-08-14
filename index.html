@@ -2813,6 +2813,34 @@ body.przenoszenieNotatki{ cursor:grabbing; user-select:none; }
   color:var(--accent); font-weight:700;
 }
 
+/* ============================================================
+   PASEK BŁĘDU (v2.06)
+   Na telefonie nie ma konsoli — bez tego każda usterka kończyła
+   się „nie działa" i zgadywaniem po obu stronach.
+   ============================================================ */
+#pasekBledu{
+  position:fixed; left:8px; right:8px;
+  bottom:calc(8px + env(safe-area-inset-bottom, 0px));
+  z-index:900; display:none; align-items:center; gap:8px;
+  padding:9px 10px 9px 13px;
+  border-radius:12px;
+  background:#8c2b2b; color:#fff;
+  font-size:calc(12.5px * var(--uiw)); line-height:1.4;
+  box-shadow:0 10px 28px rgba(0,0,0,.35);
+}
+#pasekBledu .pbTxt{
+  flex:1; min-width:0;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+#pasekBledu button{
+  flex:0 0 auto; border:1px solid rgba(255,255,255,.45);
+  background:rgba(255,255,255,.14); color:#fff;
+  border-radius:8px; padding:5px 10px; font-size:calc(12px * var(--uiw));
+  cursor:pointer;
+}
+#pasekBledu button:active{ background:rgba(255,255,255,.28); }
+#pasekBledu .pbZam{ padding:5px 9px; }
+
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -2821,7 +2849,7 @@ body.przenoszenieNotatki{ cursor:grabbing; user-select:none; }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.05</span></div>
+      <div class="brand-name">JW Study <span class="ver">v2.06</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -2973,6 +3001,7 @@ body.przenoszenieNotatki{ cursor:grabbing; user-select:none; }
         📂 Wybierz plik…
         <input type="file" id="mfInput" style="display:none">
       </label>
+      <button class="btn" id="mfWklej" type="button" title="Gdy wybór pliku nie działa — wklej zawartość kopii">📋 Wklej treść</button>
       <button class="btn" data-zamknij="modalFile">Anuluj</button>
     </div>
   </div>
@@ -7779,6 +7808,33 @@ function openFilePicker(mode){
   inp.dataset.mode = mode;
   openModal("modalFile");
 }
+/* Droga awaryjna dla telefonu.
+   W aplikacji uruchomionej z ikony na ekranie głównym wybór pliku bywa
+   nieosiągalny, a przeniesienie z OneNote i tak kończy się tekstem, który
+   łatwiej wkleić niż zapisać, odszukać i wskazać. Wklejenie trafia dokładnie
+   w to samo sprawdzanie co plik — nie omija żadnego zabezpieczenia. */
+$("mfWklej").onclick = async ()=>{
+  if($("mfInput").dataset.mode==="jwl"){
+    showInfo("Kopii z JW Library nie da się wkleić",
+      "Plik <b>.jwlibrary</b> to spakowane archiwum z bazą danych, a nie tekst — "+
+      "trzeba go wskazać przyciskiem <b>„Wybierz plik…\"</b>.<br><br>"+
+      "Wklejanie działa dla kopii <b>.json</b> aplikacji JW Study, w tym dla pliku "+
+      "z przeniesienia notatek z OneNote.");
+    return;
+  }
+  let wklejone = "";
+  try{ if(navigator.clipboard && navigator.clipboard.readText) wklejone = await navigator.clipboard.readText(); }
+  catch(e){}
+  const tekst = await askText({
+    title:"Wklej treść kopii",
+    value: wklejone,
+    placeholder:'{"notes":[…],"tags":[…]}',
+    okLabel:"Wczytaj",
+    hint:"Wklej całą zawartość pliku .json — sprawdzanie jest takie samo jak przy wyborze pliku."});
+  if(tekst===null || !tekst.trim()) return;
+  closeModal("modalFile");
+  wczytajKopieZTekstu(tekst);
+};
 $("mfInput").addEventListener("change", e=>{
   closeModal("modalFile");
   if(!e.target.files.length) return;
@@ -8302,9 +8358,29 @@ function noteExportHtml(n){
 function exportFileName(n){
   return ((refLabel(n)||n.t||"notatka").replace(/[^\p{L}\p{N} ,-]/gu,"").trim().substring(0,50)||"notatka");
 }
+/** Czy aplikacja działa jako ikona z ekranu głównego (tryb samodzielny). */
+function trybSamodzielny(){
+  return !!navigator.standalone ||
+         (matchMedia && matchMedia("(display-mode: standalone)").matches);
+}
+
+/**
+ * Zapisuje plik i MÓWI, gdy się nie udało.
+ *
+ * Na iPhonie i iPadzie uruchomionych z ekranu głównego przeglądarka NIE POBIERA
+ * plików: kliknięcie w <a download> nie robi zupełnie nic i nie zgłasza błędu.
+ * Wcześniej kończyliśmy właśnie na tym — użytkownik dotykał „Zapisz", nic się
+ * nie działo i wyglądało to na zepsutą aplikację. Dlatego:
+ *   1. na telefonie próbujemy okna udostępniania (AirDrop, Pliki, Mail),
+ *   2. gdy go nie ma albo zawiedzie, w trybie samodzielnym NIE udajemy sukcesu,
+ *      tylko tłumaczymy, co zrobić.
+ *
+ * @returns {Promise<boolean>} czy plik faktycznie wyszedł z aplikacji
+ */
 async function saveFile(blob, filename, title){
   // iPadOS w Safari udaje „Maca” — isIOS() wykrywa to poprawnie (maxTouchPoints)
   const isMobile = (typeof isIOS==="function" && isIOS()) || /Android/i.test(navigator.userAgent);
+  let powodShare = "";
   if(isMobile){
     try{
       if(navigator.canShare && typeof File!=="undefined"){
@@ -8313,8 +8389,23 @@ async function saveFile(blob, filename, title){
           await navigator.share({files:[file], title: title || filename});
           return true;
         }
-      }
-    }catch(err){ if(err && err.name==="AbortError") return true; }
+        powodShare = "system nie przyjmuje tego rodzaju pliku";
+      } else powodShare = "urządzenie nie ma okna udostępniania";
+    }catch(err){
+      if(err && err.name==="AbortError") return false;      // użytkownik zrezygnował
+      powodShare = (err && err.message) || String(err);
+    }
+  }
+  if(isMobile && trybSamodzielny()){
+    /* Ostatnia deska ratunku byłaby pobraniem pliku, a to tutaj nie zadziała.
+       Lepiej powiedzieć to wprost, niż zostawić martwy przycisk. */
+    if(typeof showInfo==="function") showInfo("Nie udało się zapisać pliku",
+      "Aplikacja uruchomiona z ikony na ekranie głównym <b>nie może pobierać plików</b> — "+
+      "tak działa system, nie da się tego obejść od środka."+
+      (powodShare ? "<br><br>Okno udostępniania nie zadziałało: <i>"+esc(powodShare)+"</i>." : "")+
+      "<br><br><b>Co zrobić:</b> otwórz aplikację w Safari pod jej adresem "+
+      "(zamiast z ikony) i powtórz zapis. Stamtąd plik zapisze się normalnie w „Plikach”.");
+    return false;
   }
   download(blob, filename);   // komputer: zwykłe pobranie → dwuklik otwiera w Wordzie
   return true;
@@ -8683,17 +8774,37 @@ function mergeBackup(data, takeLayout, nadpisuj){
 async function handleJsonFile(e){
   const f=e.target.files[0]; e.target.value="";
   if(!f) return;
-  let data;
+  let tekstPliku;
   try{
-    /* Kopia JSON jest wczytywana w całości do pamięci i przetwarzana jako tekst.
-       Przy 16 000 notatek plik ma kilkanaście MB, więc 200 MB to zapas z nawiązką,
-       a jednocześnie zapora przed przypadkowym wskazaniem filmu albo obrazu dysku. */
     if(f.size > MAX_KOPIA_JSON)
       throw new Error("Plik ma "+ludzkiRozmiar(f.size)+", a dopuszczalne jest do "+
                       ludzkiRozmiar(MAX_KOPIA_JSON)+" — to nie wygląda na kopię notatek");
     if(f.size === 0) throw new Error("Plik jest pusty");
-    const tekst = await f.text();
-    if(!tekst || !tekst.trim()) throw new Error("Plik jest pusty");
+    tekstPliku = await f.text();
+  }catch(err){ toastErr("Nie wczytano kopii: "+err.message); return; }
+  return wczytajKopieZTekstu(tekstPliku);
+}
+
+/**
+ * Wczytanie kopii z gotowego tekstu.
+ *
+ * Wydzielone z obsługi pliku, bo na telefonie plik bywa nieosiągalny: aplikacja
+ * uruchomiona z ikony na ekranie głównym nie zawsze dogaduje się z wyborem
+ * pliku, a przeniesienie z OneNote kończy się tekstem, który łatwiej wkleić niż
+ * zapisać i odszukać. Ta sama droga, to samo sprawdzanie — inne tylko wejście.
+ */
+async function wczytajKopieZTekstu(tekstPliku){
+  let data;
+  try{
+    const f = {size: (tekstPliku||"").length};
+    /* Kopia JSON jest wczytywana w całości do pamięci i przetwarzana jako tekst.
+       Przy 16 000 notatek plik ma kilkanaście MB, więc 200 MB to zapas z nawiązką,
+       a jednocześnie zapora przed przypadkowym wskazaniem filmu albo obrazu dysku. */
+    if(f.size > MAX_KOPIA_JSON)
+      throw new Error("Dane mają "+ludzkiRozmiar(f.size)+", a dopuszczalne jest do "+
+                      ludzkiRozmiar(MAX_KOPIA_JSON)+" — to nie wygląda na kopię notatek");
+    const tekst = tekstPliku;
+    if(!tekst || !tekst.trim()) throw new Error("Nie ma czego wczytać — dane są puste");
     try{ data = JSON.parse(tekst); }
     catch(e){ throw new Error("To nie jest plik kopii JW Study (błąd formatu JSON)"); }
     if(!data || typeof data!=="object") throw new Error("Plik nie zawiera danych kopii");
@@ -9547,6 +9658,13 @@ function openSettings(){
          <div><kbd>←</kbd> <kbd>→</kbd><span>poprzednia / następna notatka w czytniku</span></div>
          <div><kbd>Esc</kbd><span>zamknij okno lub czytnik</span></div>
        </div>
+       <div class="st-lbl">Dziennik błędów</div>
+       <div class="st-row">
+         <button class="btn" id="stBledy" type="button">Pokaż ostatnie błędy</button>
+         <button class="btn" id="stBledyCzysc" type="button">Wyczyść</button>
+       </div>
+       <div class="st-hint">Na telefonie nie ma konsoli, więc aplikacja zapisuje tu ostatnie
+         dwadzieścia błędów. Przy zgłaszaniu usterki skopiuj je stąd — bez nich zostaje zgadywanie.</div>
        <div class="st-hint">Skróty działają, gdy nie piszesz w polu tekstowym. Prawy przycisk myszy (albo przytrzymanie palcem) otwiera szybkie akcje.</div>
      </div>
      <div class="st-sec">
@@ -9583,6 +9701,11 @@ function openSettings(){
   openModal("modalSettings");
 
   box.onclick = e=>{
+    if(e.target.closest("#stBledy")){
+      pokazRaport(diagRaport());
+      return;
+    }
+    if(e.target.closest("#stBledyCzysc")){ diagWyczysc(); return; }
     const fs = e.target.closest(".st-fs [data-fs]");   // tylko przyciski A− / A+, nie dowolny przodek
     if(fs){
       $(fs.dataset.fs==="+" ? "fPlus" : "fMinus").click();
@@ -10614,8 +10737,11 @@ async function wyslijWycinek(dane, rodzaj, nazwa){
   if(!ok) return;
 
   const plik = nazwaPliku(rodzaj, nazwa);
-  await saveFile(new Blob([tekst], {type:"application/json"}), plik, "JW Study — "+nazwa);
-  toastOk("Zapisano: "+plik);
+  /* saveFile mówi teraz, czy plik NAPRAWDĘ wyszedł z aplikacji. Wcześniej
+     zawsze zwracał prawdę, więc na iPhonie z ekranu głównego pokazywaliśmy
+     „Zapisano", choć nie powstawało nic. */
+  const wyszlo = await saveFile(new Blob([tekst], {type:"application/json"}), plik, "JW Study — "+nazwa);
+  if(wyszlo) toastOk("Zapisano: "+plik);
 }
 
 /** Wysyła etykietę razem ze wszystkimi jej notatkami. */
@@ -11282,6 +11408,95 @@ async function ustawMiejsceWPublikacji(guid){
   markDirty(n); renderAll();
   toastOk("Miejsce zapisane: " + opisMiejsca(n));
 }
+
+</script>
+<script>
+/* ==========================================================================
+   JW Study — diagnostyka.js
+   BŁĘDY MAJĄ BYĆ WIDOCZNE, A NIE CICHE
+
+   Na telefonie nie ma konsoli. Gdy coś się wysypało, aplikacja po prostu
+   „nie działała" i nie było jak dojść dlaczego — ani użytkownikowi, ani
+   przy zgłoszeniu. Każdy taki przypadek kończył się zgadywaniem.
+
+   Ten moduł łapie błędy wykonania i odrzucone obietnice, pokazuje krótki pasek
+   z treścią i pozwala skopiować szczegóły. Ostatnie dwadzieścia wpisów zostaje
+   w pamięci urządzenia, więc widać też to, co wydarzyło się przed chwilą.
+   ========================================================================== */
+"use strict";
+
+const DIAG_KLUCZ = "jwsBledy";
+const DIAG_ILE   = 20;
+
+function diagWczytaj(){
+  try{ return JSON.parse(localStorage.getItem(DIAG_KLUCZ) || "[]"); }catch(e){ return []; }
+}
+function diagZapisz(lista){
+  try{ localStorage.setItem(DIAG_KLUCZ, JSON.stringify(lista.slice(-DIAG_ILE))); }catch(e){}
+}
+/** Dopisuje wpis i pokazuje pasek. */
+function zapiszBlad(opis, gdzie){
+  const wpis = {kiedy:new Date().toISOString(), opis:String(opis||"").slice(0,300),
+                gdzie:String(gdzie||"").slice(0,200),
+                wersja:(document.querySelector(".ver")||{}).textContent||"",
+                ekran:innerWidth+"×"+innerHeight,
+                tryb:(navigator.standalone || matchMedia("(display-mode: standalone)").matches)
+                     ? "z ekranu głównego" : "przeglądarka"};
+  const lista = diagWczytaj(); lista.push(wpis); diagZapisz(lista);
+  pokazPasekBledu(wpis);
+}
+/** Krótki pasek na dole — nie zasłania pracy, ale nie da się go przeoczyć. */
+function pokazPasekBledu(wpis){
+  let p = document.getElementById("pasekBledu");
+  if(!p){
+    p = document.createElement("div");
+    p.id = "pasekBledu";
+    document.body.appendChild(p);
+  }
+  p.innerHTML =
+    '<span class="pbTxt"></span>'+
+    '<button class="pbKop" type="button">Kopiuj</button>'+
+    '<button class="pbZam" type="button" aria-label="Zamknij">✕</button>';
+  p.querySelector(".pbTxt").textContent = "Coś poszło nie tak: " + wpis.opis;
+  p.style.display = "flex";
+  p.querySelector(".pbZam").onclick = ()=>{ p.style.display = "none"; };
+  p.querySelector(".pbKop").onclick = ()=>{
+    const tekst = diagRaport();
+    if(navigator.clipboard) navigator.clipboard.writeText(tekst)
+      .then(()=>toastOk("Skopiowano szczegóły — wklej je w zgłoszeniu"))
+      .catch(()=>pokazRaport(tekst));
+    else pokazRaport(tekst);
+  };
+}
+/** Pełny raport do wklejenia. */
+function diagRaport(){
+  const l = diagWczytaj();
+  if(!l.length) return "Brak zapisanych błędów.";
+  return l.map(w=>`${w.kiedy}  ${w.wersja}  ${w.tryb}  ${w.ekran}\n  ${w.opis}\n  ${w.gdzie}`).join("\n\n");
+}
+function pokazRaport(tekst){
+  showInfo("Szczegóły błędów",
+    "<p>Skopiuj poniższy tekst i wklej go w zgłoszeniu:</p>"+
+    "<pre style='white-space:pre-wrap;font-size:11px;max-height:40vh;overflow:auto'>"+
+    esc(tekst)+"</pre>");
+}
+/** Czyści dziennik — po naprawie nie ma sensu straszyć starymi wpisami. */
+function diagWyczysc(){
+  try{ localStorage.removeItem(DIAG_KLUCZ); }catch(e){}
+  const p = document.getElementById("pasekBledu"); if(p) p.style.display = "none";
+  toastOk("Wyczyszczono dziennik błędów");
+}
+
+window.addEventListener("error", e=>{
+  /* Błędy wczytywania obrazków i innych zasobów nie mają message — te pomijamy,
+     bo nie mówią nic o działaniu aplikacji. */
+  if(!e || !e.message) return;
+  zapiszBlad(e.message, (e.filename||"") + (e.lineno?(":"+e.lineno):""));
+});
+window.addEventListener("unhandledrejection", e=>{
+  const p = e && e.reason;
+  zapiszBlad((p && (p.message || p)) || "odrzucona obietnica", (p && p.stack) || "");
+});
 
 </script>
 <script>
