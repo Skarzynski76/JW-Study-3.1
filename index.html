@@ -225,13 +225,6 @@ html[data-theme="dark"] .vb.on{background:#2e7a5f}
 #noteList.v-compact .nmeta2{margin-bottom:5px}
 #noteList.v-compact .ncard:hover .ntools{display:block}
 /* przyklejone nagłówki grup na liście notatek */
-.listGroup{position:sticky;top:0;z-index:9;margin:14px 0 8px;padding:7px 12px;
-  background:var(--sel);color:var(--accent);border:1px solid var(--border);border-radius:10px;
-  font-size:11.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-.listGroup:first-child{margin-top:2px}
-html[data-theme="dark"] .listGroup{background:#33333c;color:var(--accent2);border-color:var(--border)}
 /* ——— PANEL PUBLIKACJI (dolna 1/3 kolumny Etykiety) ——— */
 /* dwie zaokrąglone „kolumny" jedna nad drugą: etykiety u góry, publikacje na dole */
 #tagPanel{flex:2 1 0;min-height:120px;display:flex;flex-direction:column;overflow:hidden;
@@ -2364,7 +2357,6 @@ header{ gap:calc(9px * var(--uiw)); }
 #fsWrap .nhead{ z-index:11; }
 /* na liście notatek pasek musi być nad nagłówkami grup (te też są przyklejone) */
 #noteList .editbar{ z-index:11; }
-.listGroup{ z-index:9; }
 /* pasek zawsze nieprzezroczysty — inaczej prześwitywał przez niego tekst */
 .editbar{ background:var(--panel); }
 /* podpis sekcji w menu może mieć własną ikonę */
@@ -3008,7 +3000,11 @@ header #btnWszystkie{ flex:0 1 auto; max-width:230px; overflow:hidden; }
   flex:1 1 auto; min-height:0;
   overflow-y:auto; overscroll-behavior:contain;
   -webkit-overflow-scrolling:touch;
-  margin:0; padding:8px 10px 10px;
+  margin:0;
+  /* Zapas u dołu na wysokość paska ikon PLUS kilka linijek. Pasek leży nad
+     treścią, więc bez tego zasłaniał ostatnie zdanie i nie dało się dojechać
+     do końca — tekst się kończył, a widać go nie było. */
+  padding:8px 10px calc(38px + 3.2em);
   font-size:calc(var(--noteFs,14px) - 1.5px); line-height:1.42;
 }
 #noteList.v-tablica .ncontent::-webkit-scrollbar{ width:4px; }
@@ -3021,7 +3017,9 @@ header #btnWszystkie{ flex:0 1 auto; max-width:230px; overflow:hidden; }
 #noteList.v-tablica .ntools{
   position:absolute; left:0; right:0; bottom:0;
   margin:0; padding:3px 6px;
-  background:linear-gradient(180deg, transparent, var(--panel) 42%);
+  /* Tło paska bierze kolor karteczki, gdy jest ustawiony — inaczej pod spodem
+     świeciła szara belka i karteczka wyglądała na obciętą. */
+  background:linear-gradient(180deg, transparent, var(--tloKarty, var(--panel)) 42%);
   border-top:0; border-radius:0 0 12px 12px;
   opacity:0; pointer-events:none;
   transition:opacity .15s;
@@ -3037,18 +3035,6 @@ header #btnWszystkie{ flex:0 1 auto; max-width:230px; overflow:hidden; }
 #noteList.v-tablica .ntools .tagrow{ display:none; }
 #noteList.v-tablica .ntools .sbtn.ico{ padding:4px 6px; }
 #noteList.v-tablica .ntools .sbtn.ico .ic{ width:15px; height:15px; }
-/* ——— NAGŁÓWEK GRUPY NA TABLICY ———
-   W siatce `position:sticky` przykleja się do WŁASNEGO wiersza, a ten ma
-   wysokość samego napisu. Nagłówek zwężał się więc do paska i wchodził na
-   karteczki, zamiast stać nad nimi. W układzie kafelkowym przyklejanie i tak
-   nie ma sensu — nagłówek zostaje na swoim miejscu, przez całą szerokość. */
-#noteList.v-tablica .listGroup{
-  grid-column:1 / -1;
-  position:static;
-  margin:14px 0 2px;
-  padding:8px 12px;
-}
-#noteList.v-tablica .listGroup:first-child{ margin-top:0; }
 /* Własna wysokość notatki nie ma sensu w siatce — tam rządzi rozmiar karteczki. */
 #noteList.v-tablica .ncard.wlasnaWys .ncontent{
   max-height:none!important; overflow:hidden!important;
@@ -3107,15 +3093,70 @@ html[data-theme="dark"] .ncard.wlasneTlo .ntools{ background:rgba(0,0,0,.18); }
 #kolTablicy[hidden], #rozmiarTablicy[hidden]{ display:none; }
 
 
-/* ——— DŁUGA NAZWA GRUPY MA BYĆ CZYTELNA (v2.14) ———
-   Nazwa publikacji z numerem lekcji bywa dłuższa niż kolumna. Ucinanie
-   wielokropkiem zostawiało sam początek, po którym nie dało się rozpoznać,
-   czego dotyczy grupa. Teraz zawija się do dwóch wierszy. */
-.listGroup{
-  white-space:normal;
-  overflow:hidden;
-  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
-  line-height:1.35;
+
+
+/* ============================================================
+   PEŁNY EKRAN: TYTUŁ W NAGŁÓWKU, BEZ PŁYWANIA (v2.16)
+
+   Nagłówek notatki był przyklejony do góry (position:sticky).
+   Przy czytaniu wisiał nad tekstem i zabierał miejsce, a przy
+   edycji nachodził na pasek narzędzi. Tytuł jest podpisem
+   notatki, a nie paskiem sterowania — należy do początku
+   dokumentu i ma się przewijać razem z treścią.
+   ============================================================ */
+#fsWrap .nhead{ position:static!important; }
+/* Krzyżyk odjeżdżał razem z nagłówkiem, więc zamknięcie znikało po przewinięciu.
+   Trzyma się teraz rogu okna, niezależnie od tego, gdzie jest tytuł. */
+#modalFs .fsmodal > #fsClose{
+  display:flex!important; position:absolute;
+  top:calc(10px + env(safe-area-inset-top, 0px)); right:10px;
+  z-index:14;
+  width:34px; height:34px; border-radius:50%;
+  align-items:center; justify-content:center;
+  border:1px solid var(--border); background:var(--panel); color:var(--text);
+  font-size:17px; line-height:1; cursor:pointer;
+  box-shadow:0 3px 10px rgba(0,0,0,.22);
+}
+#modalFs .fsmodal > #fsClose:active{ transform:scale(.93); }
+/* Skoro krzyżyk jest w rogu okna, ten w nagłówku byłby drugi taki sam. */
+#fsWrap .fsCloseInline{ display:none!important; }
+#fsWrap .nhead{ padding-right:clamp(4px, 2vw, 20px)!important; }
+
+/* ============================================================
+   WYDOBYCIE KARTECZKI NA WIERZCH (v2.17)
+   Dotknięcie powiększa karteczkę do około jednej trzeciej okna;
+   drugie dotknięcie odkłada ją równo z pozostałymi.
+   ============================================================ */
+#noteList.v-tablica{ position:relative; }   /* odniesienie dla wydobytej karty */
+#noteList.v-tablica .ncard.wydobyta{
+  z-index:40;
+  max-height:none;                /* rządzi teraz wysokość nadana w pikselach */
+  min-height:0;
+  box-shadow:0 18px 46px rgba(30,25,15,.30);
+  cursor:zoom-out;
+}
+/* Ruch dotyczy krawędzi, nie skali — tekst zostaje ostry, a w powiększeniu
+   widać go WIĘCEJ, a nie po prostu większy. */
+#noteList.v-tablica .ncard.wRuchuWydobycia{
+  transition:top .26s cubic-bezier(.22,.8,.28,1),
+             left .26s cubic-bezier(.22,.8,.28,1),
+             width .26s cubic-bezier(.22,.8,.28,1),
+             height .26s cubic-bezier(.22,.8,.28,1),
+             box-shadow .26s ease;
+}
+/* Podkładka trzyma miejsce w siatce, żeby reszta karteczek nie przeskakiwała. */
+#noteList.v-tablica .wydPodkladka{
+  border-radius:12px;
+  border:1px dashed var(--border);
+  opacity:.5;
+}
+/* W powiększeniu jest miejsce na szczegóły, które na małej karteczce ustąpiły. */
+#noteList.v-tablica .ncard.wydobyta .nmeta2{ display:flex!important; }
+#noteList.v-tablica .ncard.wydobyta .ntitle{ -webkit-line-clamp:3; }
+#noteList.v-tablica .ncard.wydobyta .ntools{ opacity:1; pointer-events:auto; }
+#noteList.v-tablica .ncard:not(.wydobyta){ cursor:zoom-in; }
+@media (prefers-reduced-motion: reduce){
+  #noteList.v-tablica .ncard.wRuchuWydobycia{ transition:none; }
 }
 
 </style></head>
@@ -3126,7 +3167,7 @@ html[data-theme="dark"] .ncard.wlasneTlo .ntools{ background:rgba(0,0,0,.18); }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.14</span></div>
+      <div class="brand-name">JW Study <span class="ver">v2.18</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -4334,17 +4375,6 @@ function renderPubPanel(){
   initPubDrag(el);
 }
 /* podpis nagłówka grupy na liście notatek */
-function groupHeaderFor(n){
-  if(sortMode==="bible"){
-    if(!n.b) return "Publikacje i notatki ogólne";
-    return (BOOKS[n.b]||("Księga "+n.b)) + (n.ch?(" "+n.ch):"");
-  }
-  // sortMode === "pub"
-  if(n.b) return "Notatki biblijne";
-  const art = (n.pub||"").trim();
-  const head = pubKeyLabel(pubKeyOf(n));
-  return art ? head+" · "+art : head;
-}
 function pubKeyLabel(key){
   const [ks,itn]=String(key).split("|");
   const name = ks==="—" ? "Bez oznaczenia" : pubFullName(ks);
@@ -5485,6 +5515,10 @@ let _moreObserver = null;           // jeden obserwator zamiast nowego przy każ
  * kolejnych porcji przy przewijaniu.
  */
 function renderNotes(){
+  /* Wydobyta karteczka zostałaby po przerysowaniu bez swojej karty, a podkładka
+     — pustym miejscem w siatce. Odkładamy ją bez animacji, zanim cokolwiek
+     zbudujemy od nowa. */
+  if(typeof schowajKarteczke==="function") schowajKarteczke(true);
   let arr, _base = null;
   if(sortMode==="recent"){
     arr = notes.filter(n=>!n.del && n.la).sort((a,b)=>b.la.localeCompare(a.la)).slice(0,5);
@@ -5508,21 +5542,14 @@ function renderNotes(){
     fsNavList=[];
     return;
   }
-  // przy sortowaniu wg publikacji lub Biblii dodajemy przyklejone nagłówki grup
-  const grouped = (sortMode==="pub" || sortMode==="bible");
+  /* Belki z nazwą grupy zniknęły (v2.16).
+     Przy sortowaniu wg publikacji wstawiały się nad listą nagłówki z nazwą
+     wydania. W układzie kafelkowym przykrywały karteczki, a w liście
+     powtarzały to, co i tak widać w kolumnie po lewej: gdzie się właśnie
+     jest. Dwa źródła tej samej informacji, z których jedno zabierało miejsce. */
   const wanted = [];
   const keep = new Set();
-  let lastGrp = null;
   arr.slice(0,visibleCount).forEach(n=>{
-    if(grouped){
-      const g = groupHeaderFor(n);
-      if(g !== lastGrp){
-        lastGrp = g;
-        const h=document.createElement("div");
-        h.className="listGroup"; h.textContent=g;
-        wanted.push(h);
-      }
-    }
     keep.add(n.g);
     wanted.push(noteCardFor(n));
   });
@@ -12319,6 +12346,168 @@ if($("rozmiarTablicy")){
   });
 }
 zastosujKolumnyTablicy();
+
+</script>
+<script>
+/* ==========================================================================
+   JW Study — wydobycie.js
+   KARTECZKA WYDOBYWA SIĘ NA WIERZCH
+
+   Na tablicy karteczka pokazuje początek notatki. Żeby przeczytać więcej, trzeba
+   było otwierać ją na pełnym ekranie i wracać — a to gubi miejsce w siatce
+   i rytm przeglądania.
+
+   Dotknięcie karteczki wyjmuje ją na wierzch i powiększa mniej więcej do jednej
+   trzeciej okna aplikacji. Drugie dotknięcie odkłada ją na miejsce, równo
+   z pozostałymi.
+
+   O ruchu: karta na czas powiększenia przechodzi w położenie bezwzględne, ale
+   w siatce zostaje po niej PODKŁADKA o dokładnie tych samych wymiarach. Bez niej
+   pozostałe karteczki przeskakiwałyby w górę i całość wyglądałaby na zepsutą.
+   Animujemy krawędzie (góra, lewo, szerokość, wysokość), a nie skalę — dzięki
+   temu tekst nie rozmazuje się i w powiększeniu widać go WIĘCEJ, a nie po prostu
+   większy.
+   ========================================================================== */
+"use strict";
+
+const WYD_CZAS = 260;           // ms — tyle trwa ruch w obie strony
+let _wydobyta = null;           // {karta, podkladka, poprzedniPasek}
+
+/* Proporcja arkusza A6 w pionie — ta sama, co każdego formatu z rodziny A:
+   bok dłuższy jest √2 raza dłuższy od krótszego. */
+const A6_STOSUNEK = 1.4142;
+
+/**
+ * Docelowy rozmiar wydobytej karteczki: kartka A6 postawiona pionowo.
+ *
+ * Wcześniej była to „jedna trzecia okna", co przy szerokim ekranie dawało
+ * przysadzisty prostokąt, a przy wąskim — coś zupełnie innego. Kartka ma stały
+ * kształt niezależnie od urządzenia; zmienia się tylko jej wielkość, i to tylko
+ * wtedy, gdy inaczej nie zmieściłaby się na ekranie.
+ */
+function rozmiarWydobycia(lista){
+  const ob = (typeof widocznyObszar==="function") ? widocznyObszar()
+           : {szer:innerWidth, wys:innerHeight};
+  const r = lista.getBoundingClientRect();
+  /* Wysokość jak u kartki trzymanej w ręku: spora, ale z zapasem na krawędzie. */
+  let wys = Math.min(520, Math.max(300, ob.wys * 0.66));
+  wys = Math.min(wys, ob.wys - 40, r.height - 16);
+  let szer = wys / A6_STOSUNEK;
+  /* Gdy zabraknie szerokości (wąski telefon, wąska kolumna), to ona narzuca
+     rozmiar — kształt zostaje ten sam, kartka po prostu jest mniejsza. */
+  const maxSzer = Math.min(r.width - 16, ob.szer - 24);
+  if(szer > maxSzer){ szer = maxSzer; wys = szer * A6_STOSUNEK; }
+  return {szer:Math.round(szer), wys:Math.round(wys)};
+}
+
+/** Czy w karteczce da się teraz cokolwiek chwycić poza samą treścią. */
+function pomijaneWydobycie(cel){
+  return !!(cel.closest("button, a, select, input, textarea, .ntools, .drag, .dragOrd, .wysUchwyt"));
+}
+
+function schowajKarteczke(natychmiast){
+  if(!_wydobyta) return;
+  const {karta, podkladka} = _wydobyta;
+  _wydobyta = null;
+  const r = podkladka.getBoundingClientRect();
+  const rl = karta.offsetParent ? karta.offsetParent.getBoundingClientRect() : {top:0,left:0};
+  const wroc = ()=>{
+    karta.classList.remove("wydobyta", "wRuchuWydobycia");
+    karta.style.position = karta.style.top = karta.style.left =
+      karta.style.width = karta.style.height = karta.style.zIndex = "";
+    if(podkladka.parentNode) podkladka.parentNode.removeChild(podkladka);
+    if(typeof oznaczPrzewijanie==="function"){
+      const t = karta.querySelector(".ncontent"); if(t) oznaczPrzewijanie(t);
+    }
+  };
+  if(natychmiast){ wroc(); return; }
+  /* Wracamy do miejsca, które przez cały czas trzymała podkładka. */
+  karta.style.top    = (r.top  - rl.top)  + "px";
+  karta.style.left   = (r.left - rl.left) + "px";
+  karta.style.width  = r.width  + "px";
+  karta.style.height = r.height + "px";
+  setTimeout(wroc, WYD_CZAS);
+}
+
+function wydobadzKarteczke(karta){
+  const lista = $("noteList");
+  if(!lista || !lista.classList.contains("v-tablica")) return;
+  if(_wydobyta && _wydobyta.karta === karta){ schowajKarteczke(); return; }
+  if(_wydobyta) schowajKarteczke(true);
+
+  const r  = karta.getBoundingClientRect();
+  const rl = lista.getBoundingClientRect();
+
+  /* Podkładka trzyma miejsce w siatce — bez niej reszta karteczek przeskoczyłaby. */
+  const podkladka = document.createElement("div");
+  podkladka.className = "wydPodkladka";
+  podkladka.style.height = r.height + "px";
+  karta.parentNode.insertBefore(podkladka, karta);
+
+  /* Punkt wyjścia: dokładnie tam, gdzie karta stoi teraz — żeby ruch zaczynał się
+     bez przeskoku. Położenie liczymy względem listy, bo to ona jest odniesieniem. */
+  karta.style.position = "absolute";
+  karta.style.top    = (r.top  - rl.top  + lista.scrollTop)  + "px";
+  karta.style.left   = (r.left - rl.left + lista.scrollLeft) + "px";
+  karta.style.width  = r.width  + "px";
+  karta.style.height = r.height + "px";
+  karta.classList.add("wydobyta", "wRuchuWydobycia");
+
+  const {szer, wys} = rozmiarWydobycia(lista);
+  /* Środek powiększonej karty zostaje tam, gdzie był środek małej — o ile
+     mieści się w widoku. Dzięki temu wzrok nie ucieka w inne miejsce ekranu. */
+  let top  = r.top  - rl.top + lista.scrollTop + (r.height - wys)/2;
+  let left = r.left - rl.left + lista.scrollLeft + (r.width  - szer)/2;
+  top  = Math.max(lista.scrollTop + 8, Math.min(top,  lista.scrollTop + rl.height - wys - 8));
+  left = Math.max(8, Math.min(left, rl.width - szer - 8));
+
+  requestAnimationFrame(()=>{
+    karta.style.top    = top  + "px";
+    karta.style.left   = left + "px";
+    karta.style.width  = szer + "px";
+    karta.style.height = wys  + "px";
+  });
+  setTimeout(()=>{
+    karta.classList.remove("wRuchuWydobycia");
+    if(typeof oznaczPrzewijanie==="function"){
+      const t = karta.querySelector(".ncontent"); if(t) oznaczPrzewijanie(t);
+    }
+  }, WYD_CZAS);
+
+  _wydobyta = {karta, podkladka};
+}
+
+document.addEventListener("click", e=>{
+  const lista = $("noteList");
+  if(!lista || !lista.classList.contains("v-tablica")) return;
+  const karta = e.target.closest && e.target.closest("#noteList .ncard");
+  if(!karta){
+    /* Dotknięcie obok odkłada wydobytą karteczkę — tak jak odłożenie kartki
+       na biurko, gdy sięga się po następną. */
+    if(_wydobyta && !e.target.closest("#dropdown")) schowajKarteczke();
+    return;
+  }
+  if(pomijaneWydobycie(e.target)) return;
+  /* Zaznaczanie tekstu nie może zwijać karteczki w połowie zdania. */
+  const zazn = getSelection && getSelection();
+  if(zazn && !zazn.isCollapsed && String(zazn).trim()) return;
+  e.preventDefault(); e.stopPropagation();
+  wydobadzKarteczke(karta);
+}, true);
+
+/* Przewinięcie LISTY to znak, że użytkownik szuka czegoś dalej — karteczka
+   sama się wtedy odkłada. Przewijanie treści W ŚRODKU karteczki to co innego:
+   wtedy właśnie ją czyta, więc nie wolno jej zamykać. Zdarzenie przewijania
+   nie bąbelkuje, więc słuchamy w fazie przechwytywania i patrzymy, co dokładnie
+   się przewinęło. */
+document.addEventListener("scroll", e=>{
+  if(!_wydobyta) return;
+  if(e.target === $("noteList")) schowajKarteczke();
+}, true);
+
+/* Przerysowanie listy buduje karty od nowa — wydobyta karta przestałaby wtedy
+   istnieć, a podkładka zostałaby pustym miejscem. */
+document.addEventListener("keydown", e=>{ if(e.key==="Escape" && _wydobyta) schowajKarteczke(); });
 
 </script>
 <script>
