@@ -3188,6 +3188,69 @@ html[data-theme="dark"] .ncard.wlasneTlo .ntools{ background:rgba(0,0,0,.18); }
   #noteList.v-tablica .ncard.wRuchuWydobycia{ transition:none; }
 }
 
+/* ============================================================
+   ZWARTY INTERFEJS (v2.22)
+
+   Na telefonie górny pasek zawijał się na trzy rzędy, filtry na
+   dwa, a ikony na karteczkach leżały wprost na tekście. Zanim
+   pokazała się pierwsza notatka, znikała blisko połowa ekranu.
+   Klasę „zwarty" nadaje 41-oszczedny.js — sam na małym ekranie
+   albo na życzenie z Ustawień.
+   ============================================================ */
+
+/* ——— GÓRNY PASEK ——— */
+html.zwarty header{
+  gap:6px; row-gap:5px;
+  padding:calc(5px + env(safe-area-inset-top, 0px)) 8px 5px;
+}
+html.zwarty header .brand-sub,
+html.zwarty header .ver{ display:none; }        /* podtytuł i numer wersji są w Ustawieniach */
+html.zwarty .brand-logo{ width:26px; height:26px; }
+html.zwarty .brand-name{ font-size:calc(14px * var(--uiw)); }
+html.zwarty header .btn{ padding:6px 9px; }
+html.zwarty header .ico-btn{ padding:6px 8px; }
+html.zwarty header .ic{ width:17px; height:17px; }
+/* Regulacja pisma i zapis kopii mają swoje miejsce w Ustawieniach i w menu Plik —
+   na wąskim pasku zabierały cały rząd. */
+html.zwarty header .fontctl,
+html.zwarty header #btnBackup,
+html.zwarty header #btnUndo{ display:none; }
+html.zwarty header #btnNew .ic{ margin-right:2px; }
+html.zwarty header .searchwrap{ flex:1 1 100%; order:9; }
+html.zwarty #search{ padding-top:7px; padding-bottom:7px; }
+
+/* ——— PASEK PRZEŁĄCZANIA KOLUMN ——— */
+html.zwarty #mobileTabs{ padding:4px 8px; gap:4px; }
+html.zwarty #mobileTabs button{ padding:6px 4px; font-size:calc(12.5px * var(--uiw)); border-radius:8px; }
+
+/* ——— PASEK NAD LISTĄ ——— */
+html.zwarty #pasekListy{ padding:5px 10px 4px; gap:5px 7px; }
+/* Filtry w jednym rzędzie, przewijanym w bok — łamanie się na dwa wiersze
+   kosztowało tyle, co cała notatka. */
+html.zwarty #quickFilters{
+  flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+}
+html.zwarty #quickFilters::-webkit-scrollbar{ display:none; }
+html.zwarty #quickFilters .qf{ flex:0 0 auto; padding:4px 10px; }
+html.zwarty #counts{ font-size:calc(11px * var(--uiw)); }
+html.zwarty #viewBar .vb{ padding:5px 8px; }
+html.zwarty #kolTablicy, html.zwarty #rozmiarTablicy{ padding:3px 6px; font-size:calc(11.5px * var(--uiw)); }
+
+/* ——— KARTECZKI: TREŚĆ PRZED OZDOBAMI ———
+   Pasek ikon leżał na tekście i robił z niego bigos. Na urządzeniu dotykowym
+   pokazuje się dopiero po wydobyciu karteczki — a wydobycie jest o jedno
+   dotknięcie stąd. */
+@media (hover:none){
+  #noteList.v-tablica .ncard:not(.wydobyta) .ntools{ opacity:0; pointer-events:none; }
+  #noteList.v-tablica .ncard.wydobyta .ntools{ opacity:1; pointer-events:auto; }
+}
+/* Skoro pasek nie zasłania, zapas pod tekstem może być mniejszy — to kolejne
+   dwie linijki treści na każdej karteczce. */
+@media (hover:none){
+  #noteList.v-tablica .ncard:not(.wydobyta) .ncontent{ padding-bottom:12px; }
+}
+
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -3196,7 +3259,7 @@ html[data-theme="dark"] .ncard.wlasneTlo .ntools{ background:rgba(0,0,0,.18); }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.19</span></div>
+      <div class="brand-name">JW Study <span class="ver">v2.22</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -6247,7 +6310,9 @@ $("colorMenu").addEventListener("click", e=>{
 });
 document.addEventListener("click", e=>{
   const cm=$("colorMenu");
-  if(cm.style.display==="block" && !e.target.closest("#colorMenu") && e.target.id!=="btnColors" && e.target.id!=="btnSettings" && !e.target.closest("#btnColors")){ cm.style.display="none"; }
+  /* Celem kliknięcia bywa sam dokument, który nie ma metody closest. */
+  const bl = e.target && e.target.closest ? e.target : null;
+  if(cm.style.display==="block" && (!bl || (!bl.closest("#colorMenu") && bl.id!=="btnColors" && bl.id!=="btnSettings" && !bl.closest("#btnColors")))){ cm.style.display="none"; }
 }, true);
 applyColors();
 
@@ -7493,7 +7558,7 @@ function autoformat(ce){
 document.addEventListener("input", e=>{ const ce=e.target && e.target.closest && e.target.closest('.ncontent[contenteditable="true"]'); if(ce) autoformat(ce); });
 // odhaczanie list zadań (odnośniki do wersetów są zwykłymi <a target="_blank"> — otwierają się natywnie, iOS przekieruje do JW Library)
 document.addEventListener("click", e=>{
-  const li=e.target.closest(".ncontent ul.tasklist li");
+  const li=e.target && e.target.closest ? e.target.closest(".ncontent ul.tasklist li") : null;
   if(li){ const r=li.getBoundingClientRect(); if(e.clientX-r.left<=30){ li.classList.toggle("done"); const ce=li.closest(".ncontent"); if(ce) commitLiveEdit(ce); e.preventDefault(); return; } }
 });
 
@@ -7590,9 +7655,10 @@ let suppressImgClick = false;
 document.addEventListener("click", e=>{
   if(movePending) return;   // w trybie przenoszenia obsługą zajmuje się placeImgAt
   if(suppressImgClick){ suppressImgClick = false; return; }
-  const img = e.target.closest(".ncontent img");
+  const img = e.target && e.target.closest ? e.target.closest(".ncontent img") : null;
   if(img && img.closest('[contenteditable="true"]')){ e.preventDefault(); showImgBar(img); return; }
-  if(!e.target.closest("#imgBar") && !e.target.closest("#imgHandles")) hideImgBar();
+  const c = e.target && e.target.closest ? e.target : null;
+  if(!c || (!c.closest("#imgBar") && !c.closest("#imgHandles"))) hideImgBar();
 });
 
 /* ===== przenoszenie zdjęcia: „dotknij, by umieścić” (niezawodne na dotyku) ===== */
@@ -7657,7 +7723,7 @@ function placeImgAt(e){
 }
 document.addEventListener("click", placeImgAt);
 /* nie pozwól iOS uruchomić natywnego przeciągania obrazka w edytowanej notatce */
-document.addEventListener("dragstart", e=>{ if(e.target.closest('.ncontent[contenteditable="true"] img')) e.preventDefault(); });
+document.addEventListener("dragstart", e=>{ if(e.target && e.target.closest && e.target.closest('.ncontent[contenteditable="true"] img')) e.preventDefault(); });
 /* WKLEJANIE obrazu (Ctrl/Cmd+V lub „Wklej") do edytowanej notatki */
 document.addEventListener("paste", async e=>{
   const ce = e.target && e.target.closest && e.target.closest('.ncontent[contenteditable="true"]');
@@ -7952,7 +8018,7 @@ function showHlBar(){
   }
 }
 document.addEventListener("mouseup", e=>{
-  if(e.target.closest("#hlBar")) return;
+  if(e.target && e.target.closest && e.target.closest("#hlBar")) return;
   setTimeout(showHlBar,10);
 });
 // iPad/iPhone: pasek kolorów pojawia się szybko po zaznaczeniu palcem lub rysikiem
@@ -7966,7 +8032,7 @@ document.addEventListener("touchend", ()=>{ setTimeout(showHlBar, 12); }, {passi
 document.addEventListener("pointerup", e=>{ if(e.pointerType==="pen"||e.pointerType==="touch") setTimeout(showHlBar, 12); }, {passive:true});
 // kliknięcie w pokolorowany fragment (poza edycją) → zaznacz go i pokaż paletę do zmiany koloru
 document.addEventListener("click", e=>{
-  const m = e.target.closest(".ncard .ncontent mark");
+  const m = e.target && e.target.closest ? e.target.closest(".ncard .ncontent mark") : null;
   if(!m || m.closest('[contenteditable="true"]')) return;
   const range=document.createRange(); range.selectNodeContents(m);
   const sel=getSelection(); sel.removeAllRanges(); sel.addRange(range);
@@ -8181,7 +8247,8 @@ $("btnMenu").onclick = e=>{
 };
 $("trashEmpty").onclick = emptyTrash;
 document.addEventListener("click", e=>{
-  if(!e.target.closest("#dropdown") && e.target.id!=="btnMenu") $("dropdown").style.display="none";
+  const c = e.target && e.target.closest ? e.target : null;
+  if(!c || (!c.closest("#dropdown") && c.id!=="btnMenu")) $("dropdown").style.display="none";
 }, true);
 
 /* =====================================================================
@@ -9537,7 +9604,7 @@ document.querySelectorAll(".overlay").forEach(o=>{
    onclick w kodzie strony. Atrybuty z kodem są pierwszym, co blokuje polityka
    bezpieczeństwa treści (CSP) — bez nich da się ją zacieśnić. */
 document.addEventListener("click", e=>{
-  const b = e.target.closest("[data-zamknij]");
+  const b = e.target && e.target.closest ? e.target.closest("[data-zamknij]") : null;
   if(b) closeModal(b.dataset.zamknij);
 });
 function download(blob,name){
@@ -10117,6 +10184,18 @@ function openSettings(){
          <div><kbd>←</kbd> <kbd>→</kbd><span>poprzednia / następna notatka w czytniku</span></div>
          <div><kbd>Esc</kbd><span>zamknij okno lub czytnik</span></div>
        </div>
+       <div class="st-lbl">Oszczędzanie miejsca u góry</div>
+       <div class="st-row">
+         <select id="stOszczedny" aria-label="Zwarty interfejs">
+           <option value="auto">Automatycznie (na małym ekranie)</option>
+           <option value="zawsze">Zawsze</option>
+           <option value="nigdy">Nigdy</option>
+         </select>
+       </div>
+       <div class="st-hint">Zwarty pasek górny, filtry w jednym przewijanym rzędzie
+         i mniejsze przyciski. Na telefonie odzyskuje to blisko jedną trzecią ekranu
+         dla samych notatek. Nic nie znika — wszystko działa tak samo, tylko ciaśniej.</div>
+
        <div class="st-lbl">Dziennik błędów</div>
        <div class="st-row">
          <button class="btn" id="stBledy" type="button">Pokaż ostatnie błędy</button>
@@ -10151,6 +10230,15 @@ function openSettings(){
      </div>`;
   pokazPlikKopii();
   pokazStanBibliotek();
+  const wyborOsz = $("stOszczedny");
+  if(wyborOsz){
+    wyborOsz.value = (typeof oszczedny!=="undefined") ? oszczedny : "auto";
+    wyborOsz.onchange = e=>{
+      if(typeof ustawOszczedny==="function") ustawOszczedny(e.target.value);
+      toastOk(e.target.value==="auto" ? "Zwarty pasek dobierany do ekranu"
+            : e.target.value==="zawsze" ? "Zwarty pasek zawsze" : "Pełny pasek zawsze");
+    };
+  }
   const pole = $("stWersja");
   if(pole){
     const znak = document.querySelector(".brand-name .ver");
@@ -11921,6 +12009,19 @@ async function ustawMiejsceWPublikacji(guid){
 const DIAG_KLUCZ = "jwsBledy";
 const DIAG_ILE   = 20;
 
+/* ——— ŚLADY OSTATNICH DZIAŁAŃ ———
+   „Script error." bez pliku i numeru wiersza to komunikat, który przeglądarka
+   podaje, gdy nie chce zdradzić szczegółów. Sam w sobie nie mówi nic. Dlatego
+   zapisujemy kilkanaście ostatnich kroków użytkownika — przy zgłoszeniu widać
+   wtedy, CO robił tuż przed awarią, nawet gdy treść błędu przepadła. */
+const DIAG_SLADY = 14;
+const _slady = [];
+function slad(co){
+  const t = new Date().toISOString().substring(11, 19);
+  _slady.push(t + " " + String(co).slice(0, 80));
+  if(_slady.length > DIAG_SLADY) _slady.shift();
+}
+
 function diagWczytaj(){
   try{ return JSON.parse(localStorage.getItem(DIAG_KLUCZ) || "[]"); }catch(e){ return []; }
 }
@@ -11931,6 +12032,7 @@ function diagZapisz(lista){
 function zapiszBlad(opis, gdzie){
   const wpis = {kiedy:new Date().toISOString(), opis:String(opis||"").slice(0,300),
                 gdzie:String(gdzie||"").slice(0,200),
+                slady:_slady.slice(-DIAG_SLADY),
                 wersja:(document.querySelector(".ver")||{}).textContent||"",
                 ekran:innerWidth+"×"+innerHeight,
                 tryb:(navigator.standalone || matchMedia("(display-mode: standalone)").matches)
@@ -11965,7 +12067,12 @@ function pokazPasekBledu(wpis){
 function diagRaport(){
   const l = diagWczytaj();
   if(!l.length) return "Brak zapisanych błędów.";
-  return l.map(w=>`${w.kiedy}  ${w.wersja}  ${w.tryb}  ${w.ekran}\n  ${w.opis}\n  ${w.gdzie}`).join("\n\n");
+  return l.map(w=>{
+    const glowa = `${w.kiedy}  ${w.wersja}  ${w.tryb}  ${w.ekran}\n  ${w.opis}\n  ${w.gdzie}`;
+    const kroki = (w.slady && w.slady.length)
+      ? "\n  ostatnie kroki:\n" + w.slady.map(x=>"    "+x).join("\n") : "";
+    return glowa + kroki;
+  }).join("\n\n");
 }
 function pokazRaport(tekst){
   showInfo("Szczegóły błędów",
@@ -11984,12 +12091,37 @@ window.addEventListener("error", e=>{
   /* Błędy wczytywania obrazków i innych zasobów nie mają message — te pomijamy,
      bo nie mówią nic o działaniu aplikacji. */
   if(!e || !e.message) return;
-  zapiszBlad(e.message, (e.filename||"") + (e.lineno?(":"+e.lineno):""));
+  /* Przy „Script error." przeglądarka ukrywa szczegóły, ale sam obiekt błędu
+     bywa dostępny — wtedy stos mówi więcej niż komunikat. */
+  const stos = (e.error && e.error.stack) ? String(e.error.stack).slice(0,300) : "";
+  zapiszBlad(e.message + (e.error && e.error.message && e.error.message!==e.message
+                          ? " — " + e.error.message : ""),
+             (e.filename||"") + (e.lineno?(":"+e.lineno):"") + (stos ? "\n  " + stos : ""));
 });
+
+/* Ślady zbieramy z rzeczy, które użytkownik faktycznie robi. Bez treści notatek
+   — w dzienniku błędów nie ma prawa znaleźć się to, co napisał. */
+document.addEventListener("click", e=>{
+  const c = e.target && e.target.closest ? e.target.closest("[data-act],[data-x],[id],button") : null;
+  if(!c) return;
+  slad("dotknięcie: " + (c.dataset && (c.dataset.act || c.dataset.x) || c.id || c.className || c.tagName));
+}, true);
 window.addEventListener("unhandledrejection", e=>{
   const p = e && e.reason;
   zapiszBlad((p && (p.message || p)) || "odrzucona obietnica", (p && p.stack) || "");
 });
+
+
+/* Zdarzenia aplikacji warte zapamiętania — widok, sortowanie, wielkość okna. */
+(function(){
+  const lista = document.getElementById("noteList");
+  if(lista && typeof MutationObserver!=="undefined"){
+    new MutationObserver(()=>slad("widok listy: " + lista.className))
+      .observe(lista, {attributes:true, attributeFilter:["class"]});
+  }
+  addEventListener("resize", ()=>slad("rozmiar okna: " + innerWidth + "×" + innerHeight));
+  addEventListener("orientationchange", ()=>slad("obrót ekranu"));
+})();
 
 </script>
 <script>
@@ -12405,27 +12537,53 @@ let _wydobyta = null;           // {karta, podkladka, poprzedniPasek}
 /* Proporcja arkusza A6 w pionie — ta sama, co każdego formatu z rodziny A:
    bok dłuższy jest √2 raza dłuższy od krótszego. */
 const A6_STOSUNEK = 1.4142;
+/* Kartka bierze jeszcze trzydzieści procent zapasu — w praniu okazała się
+   odrobinę za mała, żeby wygodnie czytać. */
+const A6_ZAPAS = 1.3;
+/* O tyle wydobyta karteczka musi być większa od tej, która stała w rzędzie.
+   Poniżej tego progu „powiększenie" wygląda jak pomyłka. */
+const WYD_MIN_WZROST = 1.12;
 
 /**
  * Docelowy rozmiar wydobytej karteczki: kartka A6 postawiona pionowo.
  *
- * Wcześniej była to „jedna trzecia okna", co przy szerokim ekranie dawało
- * przysadzisty prostokąt, a przy wąskim — coś zupełnie innego. Kartka ma stały
- * kształt niezależnie od urządzenia; zmienia się tylko jej wielkość, i to tylko
- * wtedy, gdy inaczej nie zmieściłaby się na ekranie.
+ * Jedna zasada jest ważniejsza od kształtu: karteczka MUSI być większa od tej,
+ * którą było widać w rzędzie. Przy dwóch albo trzech w rzędzie karty są szerokie
+ * i sama kartka A6 wychodziła od nich WĘŻSZA — kliknięcie wyglądało wtedy jak
+ * pomniejszenie. Dlatego najpierw liczymy A6, a potem sprawdzamy, czy urosła.
+ * Gdy nie — rośnie, nawet kosztem odejścia od proporcji, bo lepiej mieć nieco
+ * inny kształt niż karteczkę mniejszą po powiększeniu.
+ *
+ * @param {HTMLElement} lista  pojemnik listy notatek
+ * @param {DOMRect} maleRect   rozmiar karteczki sprzed wydobycia
  */
-function rozmiarWydobycia(lista){
+function rozmiarWydobycia(lista, maleRect){
   const ob = (typeof widocznyObszar==="function") ? widocznyObszar()
            : {szer:innerWidth, wys:innerHeight};
   const r = lista.getBoundingClientRect();
-  /* Wysokość jak u kartki trzymanej w ręku: spora, ale z zapasem na krawędzie. */
-  let wys = Math.min(520, Math.max(300, ob.wys * 0.66));
-  wys = Math.min(wys, ob.wys - 40, r.height - 16);
-  let szer = wys / A6_STOSUNEK;
-  /* Gdy zabraknie szerokości (wąski telefon, wąska kolumna), to ona narzuca
-     rozmiar — kształt zostaje ten sam, kartka po prostu jest mniejsza. */
   const maxSzer = Math.min(r.width - 16, ob.szer - 24);
-  if(szer > maxSzer){ szer = maxSzer; wys = szer * A6_STOSUNEK; }
+  const maxWys  = Math.min(ob.wys - 40, r.height - 16);
+
+  let wys = Math.min(520 * A6_ZAPAS, Math.max(300 * A6_ZAPAS, ob.wys * 0.66 * A6_ZAPAS));
+  wys = Math.min(wys, maxWys);
+  let szer = wys / A6_STOSUNEK;
+
+  /* Gwarancja wzrostu — najpierw wysokość, potem szerokość. */
+  if(maleRect){
+    const chcianaWys = maleRect.height * WYD_MIN_WZROST;
+    if(wys < chcianaWys){ wys = Math.min(chcianaWys, maxWys); szer = wys / A6_STOSUNEK; }
+    const chcianaSzer = maleRect.width * WYD_MIN_WZROST;
+    if(szer < chcianaSzer) szer = chcianaSzer;
+  }
+
+  /* Na koniec mieścimy się w tym, co jest — a gdy i to nie starcza, zostaje
+     tyle, ile się da. Karteczka bywa wtedy równa tej z rzędu, ale nigdy mniejsza. */
+  szer = Math.min(szer, maxSzer);
+  wys  = Math.min(wys,  maxWys);
+  if(maleRect){
+    szer = Math.max(szer, Math.min(maleRect.width,  maxSzer));
+    wys  = Math.max(wys,  Math.min(maleRect.height, maxWys));
+  }
   return {szer:Math.round(szer), wys:Math.round(wys)};
 }
 
@@ -12482,7 +12640,7 @@ function wydobadzKarteczke(karta){
   karta.style.height = r.height + "px";
   karta.classList.add("wydobyta", "wRuchuWydobycia");
 
-  const {szer, wys} = rozmiarWydobycia(lista);
+  const {szer, wys} = rozmiarWydobycia(lista, r);
   /* Środek powiększonej karty zostaje tam, gdzie był środek małej — o ile
      mieści się w widoku. Dzięki temu wzrok nie ucieka w inne miejsce ekranu. */
   let top  = r.top  - rl.top + lista.scrollTop + (r.height - wys)/2;
@@ -12513,7 +12671,12 @@ document.addEventListener("click", e=>{
   if(!karta){
     /* Dotknięcie obok odkłada wydobytą karteczkę — tak jak odłożenie kartki
        na biurko, gdy sięga się po następną. */
-    if(_wydobyta && !e.target.closest("#dropdown")) schowajKarteczke();
+    /* Cel kliknięcia nie zawsze jest elementem z metodą closest (bywa nim sam
+       dokument). Bez tego sprawdzenia nasłuch pilnujący CAŁEJ strony wywracał
+       się na zwykłym dotknięciu tła — a błąd z nasłuchu w fazie przechwytywania
+       trafia do okna bez treści, jako gołe „Script error.". */
+    if(_wydobyta && !(e.target.closest && e.target.closest("#dropdown")))
+      schowajKarteczke();
     return;
   }
   if(pomijaneWydobycie(e.target)) return;
@@ -12537,6 +12700,55 @@ document.addEventListener("scroll", e=>{
 /* Przerysowanie listy buduje karty od nowa — wydobyta karta przestałaby wtedy
    istnieć, a podkładka zostałaby pustym miejscem. */
 document.addEventListener("keydown", e=>{ if(e.key==="Escape" && _wydobyta) schowajKarteczke(); });
+
+</script>
+<script>
+/* ==========================================================================
+   JW Study — oszczedny.js
+   ZWARTY INTERFEJS NA MAŁYM EKRANIE
+
+   Na telefonie górny pasek zawijał się na trzy rzędy, pod nim szedł pasek
+   przełączania kolumn, a filtry łamały się na dwa wiersze. Zanim pokazała się
+   pierwsza notatka, znikała blisko połowa ekranu. Na komputerze te same
+   elementy mieszczą się w jednym rzędzie i nikomu nie przeszkadzają — więc
+   nie chodzi o to, żeby coś usuwać, tylko żeby zachowywało się stosownie do
+   miejsca, jakie ma.
+
+   Trzy ustawienia:
+     • auto   — zwarcie włącza się samo poniżej 700 px szerokości (domyślnie),
+     • zawsze — także na dużym ekranie, gdy ktoś woli gęściej,
+     • nigdy  — pełny pasek wszędzie.
+   ========================================================================== */
+"use strict";
+
+const OSZ_TRYBY = ["auto", "zawsze", "nigdy"];
+let oszczedny = lsGet(KP+"Oszczedny", "auto");
+if(!OSZ_TRYBY.includes(oszczedny)) oszczedny = "auto";
+
+/** Czy w tej chwili interfejs ma być zwarty. */
+function zwartyInterfejs(){
+  if(oszczedny === "zawsze") return true;
+  if(oszczedny === "nigdy")  return false;
+  const ob = (typeof widocznyObszar==="function") ? widocznyObszar()
+           : {szer:innerWidth, wys:innerHeight};
+  /* Decyduje szerokość ALBO niska wysokość — telefon położony poziomo ma dużo
+     szerokości, a bardzo mało wysokości, i tam oszczędzanie liczy się jeszcze
+     bardziej. */
+  return ob.szer <= 700 || ob.wys <= 560;
+}
+function zastosujOszczedny(){
+  document.documentElement.classList.toggle("zwarty", zwartyInterfejs());
+}
+function ustawOszczedny(v){
+  if(!OSZ_TRYBY.includes(v)) return;
+  oszczedny = v;
+  lsSet(KP+"Oszczedny", v);
+  zastosujOszczedny();
+}
+addEventListener("resize", zastosujOszczedny);
+addEventListener("orientationchange", ()=>setTimeout(zastosujOszczedny, 250));
+if(window.visualViewport) window.visualViewport.addEventListener("resize", zastosujOszczedny);
+zastosujOszczedny();
 
 </script>
 <script>
