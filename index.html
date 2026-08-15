@@ -3151,7 +3151,36 @@ html[data-theme="dark"] .ncard.wlasneTlo .ntools{ background:rgba(0,0,0,.18); }
   opacity:.5;
 }
 /* W powiększeniu jest miejsce na szczegóły, które na małej karteczce ustąpiły. */
-#noteList.v-tablica .ncard.wydobyta .nmeta2{ display:flex!important; }
+/* ——— ODNOŚNIK W WYDOBYTEJ KARTECZCE ———
+   Wiersz z pochodzeniem notatki jest pomyślany dla szerokiej listy: duży
+   przycisk odnośnika, plakietki i data w rozmiarze treści. Na kartce A6 zajmował
+   trzecią część powierzchni i zagłuszał to, po co się ją wydobywa — czyli tekst.
+   Tutaj wszystko jest o połowę mniejsze, a nazwa publikacji mieści się w jednym
+   wierszu (całość zostaje w podpowiedzi i po otwarciu notatki). */
+#noteList.v-tablica .ncard.wydobyta .nmeta2{
+  display:flex!important;
+  gap:4px; margin:4px 0 2px; padding:0 10px;
+  flex-wrap:nowrap; align-items:center;
+}
+#noteList.v-tablica .ncard.wydobyta .refbtn{
+  padding:2px 8px;
+  font-size:calc(var(--noteFs,14px) - 4px);
+  font-weight:500;
+  border-radius:999px;
+  min-width:0; max-width:100%;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  gap:3px;
+}
+#noteList.v-tablica .ncard.wydobyta .refbtn .ic{ width:11px; height:11px; flex:0 0 auto; }
+#noteList.v-tablica .ncard.wydobyta .pill{
+  padding:1px 6px; font-size:calc(var(--noteFs,14px) - 5px);
+}
+/* Data i plakietki to drobiazgi — nie mogą konkurować z tekstem notatki. */
+#noteList.v-tablica .ncard.wydobyta .pill.date{ padding:1px 6px; }
+#noteList.v-tablica .ncard.wydobyta .pill .ic,
+#noteList.v-tablica .ncard.wydobyta .pill svg{ width:10px; height:10px; }
+/* Ołówek „zmień werset" jest kwadracikiem obok, a nie drugim przyciskiem. */
+#noteList.v-tablica .ncard.wydobyta .refbtn.edref{ padding:2px 5px; flex:0 0 auto; }
 #noteList.v-tablica .ncard.wydobyta .ntitle{ -webkit-line-clamp:3; }
 #noteList.v-tablica .ncard.wydobyta .ntools{ opacity:1; pointer-events:auto; }
 #noteList.v-tablica .ncard:not(.wydobyta){ cursor:zoom-in; }
@@ -3167,7 +3196,7 @@ html[data-theme="dark"] .ncard.wlasneTlo .ntools{ background:rgba(0,0,0,.18); }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.18</span></div>
+      <div class="brand-name">JW Study <span class="ver">v2.19</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
