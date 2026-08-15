@@ -3251,6 +3251,26 @@ html.zwarty #kolTablicy, html.zwarty #rozmiarTablicy{ padding:3px 6px; font-size
   #noteList.v-tablica .ncard:not(.wydobyta) .ncontent{ padding-bottom:12px; }
 }
 
+/* ——— PASKI USTĘPUJĄ PRZY CZYTANIU (v2.23) ———
+   Chowamy wysokością, a nie przesunięciem: lista notatek rośnie wtedy w górę
+   płynnie i nic nie przeskakuje. */
+html.zwarty #mobileTabs,
+html.zwarty #pasekListy{
+  overflow:hidden;
+  transition:max-height .22s ease, opacity .18s ease,
+             padding-top .22s ease, padding-bottom .22s ease;
+  max-height:220px;
+}
+html.zwarty.paskiSchowane #mobileTabs,
+html.zwarty.paskiSchowane #pasekListy{
+  max-height:0; opacity:0;
+  padding-top:0; padding-bottom:0;
+  pointer-events:none;
+}
+@media (prefers-reduced-motion: reduce){
+  html.zwarty #mobileTabs, html.zwarty #pasekListy{ transition:none; }
+}
+
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -3259,7 +3279,7 @@ html.zwarty #kolTablicy, html.zwarty #rozmiarTablicy{ padding:3px 6px; font-size
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.22</span></div>
+      <div class="brand-name">JW Study <span class="ver">v2.23</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -5611,6 +5631,8 @@ function renderNotes(){
      — pustym miejscem w siatce. Odkładamy ją bez animacji, zanim cokolwiek
      zbudujemy od nowa. */
   if(typeof schowajKarteczke==="function") schowajKarteczke(true);
+  /* Nowa lista zaczyna się od góry, więc paski nie mają powodu zostawać schowane. */
+  if(typeof odslonPaski==="function") odslonPaski();
   let arr, _base = null;
   if(sortMode==="recent"){
     arr = notes.filter(n=>!n.del && n.la).sort((a,b)=>b.la.localeCompare(a.la)).slice(0,5);
@@ -12749,6 +12771,67 @@ addEventListener("resize", zastosujOszczedny);
 addEventListener("orientationchange", ()=>setTimeout(zastosujOszczedny, 250));
 if(window.visualViewport) window.visualViewport.addEventListener("resize", zastosujOszczedny);
 zastosujOszczedny();
+
+
+/* ==========================================================================
+   PASKI CHOWAJĄ SIĘ PRZY PRZEWIJANIU W DÓŁ
+
+   Pasek przełączania kolumn i pasek z widokami oraz filtrami są potrzebne, gdy
+   się wybiera, CO oglądać. Podczas czytania listy tylko zabierają miejsce —
+   a na telefonie zabierają go tyle, co dwie karteczki.
+
+   Przewijanie w dół znaczy „czytam dalej" i paski ustępują. Ruch w górę znaczy
+   „szukam ustawień" i wracają. Na samej górze listy są widoczne zawsze, bo tam
+   nikt niczego nie czyta.
+   ========================================================================== */
+const CHOW_PROG_DOL  = 26;   // px w dół, zanim paski ustąpią
+const CHOW_PROG_GORA = 10;   // px w górę — reakcja ma być natychmiastowa
+const CHOW_STREFA_GORY = 60; // tuż pod górną krawędzią paski zostają
+
+let _ostatniScroll = 0, _nazbierane = 0;
+
+function pokazPaski(pokaz){
+  document.documentElement.classList.toggle("paskiSchowane", !pokaz);
+}
+function obsluzPrzewijanieListy(el){
+  const y = el.scrollTop;
+  const roznica = y - _ostatniScroll;
+  _ostatniScroll = y;
+
+  /* Przy samej górze zawsze widoczne — tam się wybiera, a nie czyta. */
+  if(y <= CHOW_STREFA_GORY){ _nazbierane = 0; pokazPaski(true); return; }
+  /* Lista krótsza od okna nie ma czego chować. */
+  if(el.scrollHeight - el.clientHeight < 120){ pokazPaski(true); return; }
+
+  /* Zbieramy ruch w jedną stronę, żeby drgnięcie palca niczego nie przełączało. */
+  if((roznica > 0) !== (_nazbierane > 0)) _nazbierane = 0;
+  _nazbierane += roznica;
+
+  if(_nazbierane > CHOW_PROG_DOL){ pokazPaski(false); _nazbierane = 0; }
+  else if(_nazbierane < -CHOW_PROG_GORA){ pokazPaski(true); _nazbierane = 0; }
+}
+/* Zdarzenie przewijania nie bąbelkuje — słuchamy w fazie przechwytywania
+   i reagujemy TYLKO na listę notatek. Przewijanie treści wewnątrz karteczki
+   ma zostawić paski w spokoju. */
+document.addEventListener("scroll", e=>{
+  if(!zwartyInterfejs()) return;
+  const lista = $("noteList");
+  if(!lista || e.target !== lista) return;
+  obsluzPrzewijanieListy(lista);
+}, true);
+
+/* Przy zmianie widoku, filtra albo wyjściu ze zwartego trybu paski wracają —
+   inaczej zostałyby schowane bez powodu i bez sposobu na ich przywrócenie. */
+function odslonPaski(){
+  _nazbierane = 0;
+  /* Punkt odniesienia bierzemy z listy, a nie z zera. Wyzerowanie sprawiało,
+     że pierwsze kolejne zdarzenie wyglądało jak gwałtowne przewinięcie w dół
+     o całą bieżącą pozycję — i paski chowały się natychmiast po tym, jak je
+     przywróciliśmy. */
+  const lista = $("noteList");
+  _ostatniScroll = lista ? lista.scrollTop : 0;
+  pokazPaski(true);
+}
 
 </script>
 <script>
