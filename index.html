@@ -2931,7 +2931,21 @@ header #btnWszystkie{ flex:0 1 auto; max-width:230px; overflow:hidden; }
 }
 #noteList.v-medium .ncontent::-webkit-scrollbar{ width:4px; }
 #noteList.v-medium .ncontent::-webkit-scrollbar-thumb{ background:rgba(0,0,0,.22); border-radius:3px; }
-#noteList.v-medium .ncontent img{ max-height:110px; width:auto; }
+/* ——— ZDJĘCIA W MINIATURACH ZACHOWUJĄ PROPORCJE ———
+   Zdjęcie wstawione do notatki dostaje wpisaną W ATRYBUCIE szerokość
+   (np. 45%), bo tak działa jego regulacja w edytorze. Wpis w atrybucie bije
+   każdą regułę arkusza, więc w miniaturze szerokość zostawała duża, a sama
+   wysokość była przycinana do 70 px — obraz wychodził spłaszczony.
+
+   W widokach miniaturowych zdejmujemy więc wpisaną szerokość (!important) i
+   pozwalamy jej iść za wysokością. Do tego object-fit pilnuje proporcji nawet
+   wtedy, gdyby coś jeszcze narzuciło oba wymiary. */
+#noteList.v-medium .ncontent img{
+  width:auto!important; height:auto!important;
+  max-width:100%!important; max-height:110px;
+  object-fit:contain;
+  float:none!important; display:block; margin:6px 0;
+}
 #noteList.v-medium .ncard{ margin-bottom:7px; }
 /* Własna wysokość notatki przebija widok — to wybór dotyczący tej jednej karty. */
 #noteList.v-medium .ncard.wlasnaWys .ncontent{
@@ -3011,7 +3025,14 @@ header #btnWszystkie{ flex:0 1 auto; max-width:230px; overflow:hidden; }
 #noteList.v-tablica .ncontent::-webkit-scrollbar-thumb{
   background:rgba(0,0,0,.22); border-radius:3px;
 }
-#noteList.v-tablica .ncontent img{ max-height:70px; width:auto; }
+#noteList.v-tablica .ncontent img{
+  width:auto!important; height:auto!important;
+  max-width:100%!important; max-height:70px;
+  object-fit:contain;
+  float:none!important; display:block; margin:5px 0;
+}
+/* W wydobytej karteczce jest miejsce na większy podgląd. */
+#noteList.v-tablica .ncard.wydobyta .ncontent img{ max-height:150px; }
 /* Pasek ikon nie zabiera miejsca treści — leży NAD nią i pokazuje się dopiero,
    gdy karteczka jest pod kursorem albo dotknięta. */
 #noteList.v-tablica .ntools{
@@ -3251,24 +3272,59 @@ html.zwarty #kolTablicy, html.zwarty #rozmiarTablicy{ padding:3px 6px; font-size
   #noteList.v-tablica .ncard:not(.wydobyta) .ncontent{ padding-bottom:12px; }
 }
 
-/* ——— PASKI USTĘPUJĄ PRZY CZYTANIU (v2.23) ———
-   Chowamy wysokością, a nie przesunięciem: lista notatek rośnie wtedy w górę
-   płynnie i nic nie przeskakuje. */
-html.zwarty #mobileTabs,
-html.zwarty #pasekListy{
-  overflow:hidden;
-  transition:max-height .22s ease, opacity .18s ease,
-             padding-top .22s ease, padding-bottom .22s ease;
-  max-height:220px;
+/* ——— PASKI USTĘPUJĄ PRZY CZYTANIU (v2.24) ———
+
+   Chowanie odbywa się WYŁĄCZNIE przesunięciem. Zwijanie wysokością zmieniało
+   układ strony przy każdej klatce, więc przeglądarka przeliczała od nowa całą
+   listę notatek — stąd szarpanie na telefonie. Miejsce pod paski jest
+   zarezerwowane na stałe odstępem u góry listy, dzięki czemu przy chowaniu
+   i pokazywaniu nic się nie przelicza.
+
+   Działa na każdym urządzeniu, nie tylko w trybie zwartym. */
+
+/* Pasek nad listą leży NAD nią, a nie przed nią. */
+#colNotes{ position:relative; }
+#pasekListy{
+  position:absolute; top:0; left:0; right:0; z-index:6;
+  background:var(--panel);
+  transition:transform .26s cubic-bezier(.22,.8,.28,1), opacity .2s ease;
+  will-change:transform;
 }
-html.zwarty.paskiSchowane #mobileTabs,
-html.zwarty.paskiSchowane #pasekListy{
-  max-height:0; opacity:0;
-  padding-top:0; padding-bottom:0;
-  pointer-events:none;
+/* Miejsce zarezerwowane raz — zmienia się tylko wtedy, gdy pasek zmieni
+   zawartość, a nie w trakcie chowania. */
+#noteList{ padding-top:var(--wysPaska, 0px); }
+
+/* Pasek przełączania kolumn wsuwa się pod zielony pasek aplikacji.
+   Nagłówek ma wyższą warstwę, więc pasek chowa się dokładnie pod nim. */
+#mobileTabs{
+  position:relative; z-index:1;
+  transition:transform .26s cubic-bezier(.22,.8,.28,1), opacity .2s ease;
+  will-change:transform;
 }
+/* Główna część przesuwa się razem z nim i o tyle samo rośnie — jednym ruchem,
+   bez animowania wysokości. */
+main{
+  transition:transform .26s cubic-bezier(.22,.8,.28,1);
+  will-change:transform;
+}
+
+html.paskiSchowane #mobileTabs{
+  transform:translateY(calc(-1 * var(--wysTabs, 0px)));
+  opacity:0; pointer-events:none;
+}
+html.paskiSchowane main{
+  transform:translateY(calc(-1 * var(--wysTabs, 0px)));
+  margin-bottom:calc(-1 * var(--wysTabs, 0px));
+}
+html.paskiSchowane #pasekListy{
+  transform:translateY(calc(-1 * (var(--wysPaska, 0px) + 4px)));
+  opacity:0; pointer-events:none;
+}
+/* Schowany pasek nie zabiera już miejsca u góry listy. */
+html.paskiSchowane #noteList{ padding-top:0; }
+
 @media (prefers-reduced-motion: reduce){
-  html.zwarty #mobileTabs, html.zwarty #pasekListy{ transition:none; }
+  #mobileTabs, #pasekListy, main{ transition:none; }
 }
 
 </style></head>
@@ -3279,7 +3335,7 @@ html.zwarty.paskiSchowane #pasekListy{
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.23</span></div>
+      <div class="brand-name">JW Study <span class="ver">v2.25</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -12777,18 +12833,45 @@ zastosujOszczedny();
    PASKI CHOWAJĄ SIĘ PRZY PRZEWIJANIU W DÓŁ
 
    Pasek przełączania kolumn i pasek z widokami oraz filtrami są potrzebne, gdy
-   się wybiera, CO oglądać. Podczas czytania listy tylko zabierają miejsce —
-   a na telefonie zabierają go tyle, co dwie karteczki.
+   się wybiera, CO oglądać. Podczas czytania listy tylko zabierają miejsce.
+   Przewijanie w dół znaczy „czytam dalej" i paski ustępują; ruch w górę znaczy
+   „szukam ustawień" i wracają.
 
-   Przewijanie w dół znaczy „czytam dalej" i paski ustępują. Ruch w górę znaczy
-   „szukam ustawień" i wracają. Na samej górze listy są widoczne zawsze, bo tam
-   nikt niczego nie czyta.
+   O SPOSOBIE CHOWANIA — to on decydował o tym, że aplikacja skakała.
+   Pierwsze podejście zwijało paski wysokością. Każda klatka takiej animacji
+   zmienia układ strony, więc przeglądarka przeliczała od nowa całą listę
+   notatek — kilkadziesiąt kart z cieniami i przycięciami tekstu. Na telefonie
+   dawało to szarpany ruch.
+
+   Teraz paski są warstwą NAD listą i chowają się samym przesunięciem
+   (transform), którym karta graficzna zajmuje się bez udziału układu strony.
+   Miejsce pod nie jest zarezerwowane na stałe odstępem u góry listy, więc przy
+   chowaniu i pokazywaniu nic się nie przelicza i nic nie przeskakuje. Paski
+   wsuwają się pod zielony pasek aplikacji, tak jak w programach systemowych.
    ========================================================================== */
 const CHOW_PROG_DOL  = 26;   // px w dół, zanim paski ustąpią
 const CHOW_PROG_GORA = 10;   // px w górę — reakcja ma być natychmiastowa
 const CHOW_STREFA_GORY = 60; // tuż pod górną krawędzią paski zostają
 
 let _ostatniScroll = 0, _nazbierane = 0;
+
+/** Mierzy paski i zapisuje ich wysokość, żeby CSS mógł zarezerwować miejsce. */
+function zmierzPaski(){
+  const r = document.documentElement.style;
+  const tabs = $("mobileTabs"), pasek = $("pasekListy");
+  /* offsetHeight jest zerowe dla elementu ukrytego (np. pasek kolumn na dużym
+     ekranie) — wtedy rezerwacja też ma być zerowa. */
+  const wTabs  = tabs  && tabs.offsetParent  ? tabs.offsetHeight  : 0;
+  const wPasek = pasek && pasek.offsetParent ? pasek.offsetHeight : 0;
+  r.setProperty("--wysTabs",  wTabs  + "px");
+  r.setProperty("--wysPaska", wPasek + "px");
+}
+if(typeof ResizeObserver!=="undefined"){
+  const obs = new ResizeObserver(()=>zmierzPaski());
+  ["mobileTabs","pasekListy"].forEach(id=>{ const el = $(id); if(el) obs.observe(el); });
+}
+addEventListener("resize", zmierzPaski);
+zmierzPaski();
 
 function pokazPaski(pokaz){
   document.documentElement.classList.toggle("paskiSchowane", !pokaz);
@@ -12814,14 +12897,13 @@ function obsluzPrzewijanieListy(el){
    i reagujemy TYLKO na listę notatek. Przewijanie treści wewnątrz karteczki
    ma zostawić paski w spokoju. */
 document.addEventListener("scroll", e=>{
-  if(!zwartyInterfejs()) return;
   const lista = $("noteList");
   if(!lista || e.target !== lista) return;
   obsluzPrzewijanieListy(lista);
 }, true);
 
-/* Przy zmianie widoku, filtra albo wyjściu ze zwartego trybu paski wracają —
-   inaczej zostałyby schowane bez powodu i bez sposobu na ich przywrócenie. */
+/* Przy zmianie widoku albo filtra paski wracają — inaczej zostałyby schowane
+   bez powodu i bez sposobu na ich przywrócenie. */
 function odslonPaski(){
   _nazbierane = 0;
   /* Punkt odniesienia bierzemy z listy, a nie z zera. Wyzerowanie sprawiało,
@@ -12831,6 +12913,7 @@ function odslonPaski(){
   const lista = $("noteList");
   _ostatniScroll = lista ? lista.scrollTop : 0;
   pokazPaski(true);
+  zmierzPaski();
 }
 
 </script>
