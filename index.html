@@ -3436,8 +3436,28 @@ html.rysikZaznacza{ cursor:text; }
   display:flex; align-items:center; gap:8px;
   font-size:calc(12px * var(--uiw)); font-weight:700;
   letter-spacing:.05em; text-transform:uppercase;
-  color:var(--muted); margin-bottom:10px;
+  color:var(--muted);
+  cursor:pointer; list-style:none; padding:4px 0;
+  -webkit-tap-highlight-color:transparent;
 }
+.powNagl::-webkit-details-marker{ display:none; }   /* własna strzałka zamiast systemowej */
+.powNagl:hover{ color:var(--text); }
+.powStrzalka{
+  display:inline-block; transition:transform .18s ease;
+  font-size:calc(15px * var(--uiw)); line-height:1;
+}
+details.powiazane[open] .powStrzalka{ transform:rotate(90deg); }
+/* Wysuwanie — krótkie, bo to tylko potwierdzenie, że coś się otworzyło. */
+details.powiazane[open] .powLista{ animation:powWysun .2s ease-out; }
+@keyframes powWysun{
+  from{ opacity:0; transform:translateY(-6px); }
+  to{ opacity:1; transform:none; }
+}
+@media (prefers-reduced-motion: reduce){
+  details.powiazane[open] .powLista{ animation:none; }
+  .powStrzalka{ transition:none; }
+}
+.powLista{ margin-top:8px; }
 .powIle{
   min-width:20px; padding:1px 7px; border-radius:999px;
   background:var(--sel); color:var(--accent);
@@ -3524,7 +3544,7 @@ html[data-theme="dark"] #dropdown .dd-danger{ background:var(--panel); }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.36</span></div>
+      <div class="brand-name">JW Study <span class="ver">v2.37</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -13793,7 +13813,23 @@ function powiazaneNotatki(n, ile){
   return wynik.slice(0, ile);
 }
 
-/** Budowa listy pod notatką w czytniku. */
+/* Czy blok ma być rozwinięty. Zapamiętane, bo to nawyk: kto z powiązań
+   korzysta, chce je widzieć od razu; kto nie — nie chce ich w ogóle. */
+function powiazaneOtwarte(){ return lsGet(KP+"PowOtw", "0") === "1"; }
+function zapamietajPowiazane(otwarte){ lsSet(KP+"PowOtw", otwarte ? "1" : "0"); }
+
+/**
+ * Budowa listy pod notatką w czytniku.
+ *
+ * Blok jest ZWINIĘTY. Rozwinięty zajmował nawet jedną trzecią strony pod każdą
+ * notatką, a powiązania są potrzebne od czasu do czasu — nie zawsze. Liczba
+ * w nagłówku wystarczy, żeby wiedzieć, czy warto zaglądać; reszta wysuwa się
+ * po dotknięciu.
+ *
+ * Używamy <details>, a nie własnego przełącznika: przeglądarka sama obsługuje
+ * klawiaturę i czytnik ekranu, a stan „otwarte/zamknięte" jest w niej prawdziwy,
+ * a nie udawany klasą.
+ */
 function htmlPowiazanych(n){
   const lista = powiazaneNotatki(n);
   if(!lista.length) return "";
@@ -13808,11 +13844,21 @@ function htmlPowiazanych(n){
         <span class="powCzemu">${esc(powody.slice(0,2).join(" · "))}</span>
       </button>`;
   };
-  return `<div class="powiazane">
-      <div class="powNagl">Powiązane notatki <span class="powIle">${lista.length}</span></div>
-      ${lista.map(wiersz).join("")}
-    </div>`;
+  return `<details class="powiazane"${powiazaneOtwarte()?" open":""}>
+      <summary class="powNagl">
+        <span class="powStrzalka" aria-hidden="true">›</span>
+        Powiązane notatki <span class="powIle">${lista.length}</span>
+      </summary>
+      <div class="powLista">${lista.map(wiersz).join("")}</div>
+    </details>`;
 }
+
+/* Zapamiętujemy wybór — ale dopiero ten świadomy, czyli zmianę stanu przez
+   użytkownika, a nie ustawienie początkowe przy rysowaniu. */
+document.addEventListener("toggle", e=>{
+  const el = e.target;
+  if(el && el.classList && el.classList.contains("powiazane")) zapamietajPowiazane(el.open);
+}, true);
 
 /* Otwarcie powiązanej notatki — w tym samym czytniku, bez zamykania okna. */
 document.addEventListener("click", e=>{
