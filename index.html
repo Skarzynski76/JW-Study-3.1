@@ -2967,7 +2967,10 @@ header #btnWszystkie{ flex:0 1 auto; max-width:230px; overflow:hidden; }
   grid-template-columns:repeat(var(--kolTablicy, 0), minmax(0, 1fr));
   gap:10px;
   align-content:start;
-  padding:10px 14px 40px;
+  /* Odstęp u góry MUSI zawierać rezerwę pod pasek (--wysPaska). Skrót `padding`
+     ustawiał tu 10 px i kasował rezerwę nadaną wcześniej regułą ogólną — przez
+     to pierwszy rząd karteczek chował się pod paskiem zaraz po otwarciu. */
+  padding:calc(10px + var(--wysPaska, 0px)) 14px 40px;
 }
 #noteList.v-tablica[style*="--kolTablicy: 0"],
 #noteList.v-tablica:not([style*="--kolTablicy"]){
@@ -3292,7 +3295,9 @@ html.zwarty #kolTablicy, html.zwarty #rozmiarTablicy{ padding:3px 6px; font-size
 }
 /* Miejsce zarezerwowane raz — zmienia się tylko wtedy, gdy pasek zmieni
    zawartość, a nie w trakcie chowania. */
-#noteList{ padding-top:var(--wysPaska, 0px); }
+/* Rezerwa pod pasek leżący nad listą. Ta sama wartość co w widoku tablicy —
+   gdyby kiedyś doszedł kolejny widok z własnym odstępem, ma dodać ją tak samo. */
+#noteList{ padding-top:calc(10px + var(--wysPaska, 0px)); }
 
 /* Pasek przełączania kolumn wsuwa się pod zielony pasek aplikacji.
    Nagłówek ma wyższą warstwę, więc pasek chowa się dokładnie pod nim. */
@@ -3320,8 +3325,16 @@ html.paskiSchowane #pasekListy{
   transform:translateY(calc(-1 * (var(--wysPaska, 0px) + 4px)));
   opacity:0; pointer-events:none;
 }
-/* Schowany pasek nie zabiera już miejsca u góry listy. */
-html.paskiSchowane #noteList{ padding-top:0; }
+/* Odstęp u góry listy zostaje STAŁY, także wtedy, gdy pasek jest schowany.
+
+   Zerowanie go przy chowaniu wyglądało na oszczędność, a było źródłem usterki:
+   odstęp znikał i wracał przy każdym schowaniu i pokazaniu paska, więc treść
+   skakała o jego wysokość. W stanie pośrednim — pasek widoczny, lista już
+   przewinięta — pierwszy rząd notatek chował się POD paskiem i nie dało się go
+   przeczytać.
+
+   Stały odstęp nic nie kosztuje: przy samej górze pasek jest zawsze widoczny
+   i dokładnie ten odstęp wypełnia, a niżej i tak jest już przewinięty. */
 
 @media (prefers-reduced-motion: reduce){
   #mobileTabs, #pasekListy, main{ transition:none; }
@@ -3336,6 +3349,145 @@ html.rysikZaznacza .ncontent{
 }
 html.rysikZaznacza{ cursor:text; }
 
+/* ============================================================
+   OKNA PYTAŃ I KOMUNIKATÓW MIESZCZĄ SIĘ NA EKRANIE (v2.27)
+
+   #askModal i #msgModal nie miały ŻADNEGO ograniczenia wysokości.
+   Przy dłuższej treści — liście artykułów do wyboru, raporcie
+   błędów, opisie importu — okno rosło poza ekran, a że nie miało
+   też własnego przewijania, dolnej części po prostu nie dało się
+   zobaczyć ani dosięgnąć. Przyciski „OK" i „Anuluj" bywały wtedy
+   poza zasięgiem.
+   ============================================================ */
+#askModal .askbox,
+#msgModal .askbox{
+  display:flex; flex-direction:column;
+  max-height:min(86vh, calc(100vh - 32px));
+  max-height:min(86dvh, calc(100dvh - 32px));
+}
+/* Środek się przewija, nagłówek i przyciski zostają na widoku. */
+#msgModal .msgBody,
+#askModal .askHint{
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  min-height:0;
+}
+#askModal .askTitle,
+#msgModal .askTitle{ flex:0 0 auto; }
+#askModal .askInput{ flex:0 0 auto; }
+/* Wybór z wieloma odpowiedziami (np. lista artykułów) też musi się mieścić. */
+#askModal .askBtns,
+#msgModal .askBtns{
+  flex:0 0 auto;
+  max-height:42vh; overflow-y:auto; overscroll-behavior:contain;
+}
+
+/* ============================================================
+   SZABLONY NOTATEK (v2.28)
+   Pasek w oknie nowej notatki: nazwa szablonu do wstawienia
+   i „⋯" do zmiany nazwy albo usunięcia.
+   ============================================================ */
+#nnSzablony{
+  display:flex; flex-wrap:wrap; gap:6px;
+  padding:2px 0 0;
+}
+.nnSzab{
+  display:inline-flex; align-items:stretch;
+  border:1px solid var(--border); border-radius:999px;
+  overflow:hidden; background:var(--panel);
+}
+.nnSzabB{
+  border:0; background:transparent; color:var(--text); cursor:pointer;
+  padding:5px 10px; font-size:calc(12.5px * var(--uiw)); font-weight:500;
+  max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.nnSzabB:hover{ background:var(--sel); }
+.nnSzab .nnSzabB.wybrany{ background:var(--accent); color:#fff; }
+.nnSzabX{
+  border:0; border-left:1px solid var(--border);
+  background:transparent; color:var(--muted); cursor:pointer;
+  padding:0 8px; font-size:calc(13px * var(--uiw)); line-height:1;
+}
+.nnSzabX:hover{ background:var(--sel); color:var(--text); }
+.nnSzabPusto{
+  font-size:calc(12px * var(--uiw)); color:var(--muted); line-height:1.5;
+}
+/* Bez szablonów karta jest tylko podpowiedzią — nie ma czym błyszczeć. */
+.nn-card.nn-szab.pusty{ background:transparent; }
+@media (hover:none){ .nnSzabB{ padding:7px 12px; } .nnSzabX{ padding:0 11px; } }
+
+/* ============================================================
+   POWIĄZANE NOTATKI (v2.29)
+   Blok pod treścią w czytniku. Ma być łatwy do zauważenia
+   i łatwy do zignorowania — to przypomnienie, nie treść główna.
+   ============================================================ */
+.powiazane{
+  max-width:var(--fsMax, 760px);
+  margin:26px auto 8px;
+  padding:14px 0 4px;
+  border-top:1px solid var(--border);
+}
+.powNagl{
+  display:flex; align-items:center; gap:8px;
+  font-size:calc(12px * var(--uiw)); font-weight:700;
+  letter-spacing:.05em; text-transform:uppercase;
+  color:var(--muted); margin-bottom:10px;
+}
+.powIle{
+  min-width:20px; padding:1px 7px; border-radius:999px;
+  background:var(--sel); color:var(--accent);
+  font-size:calc(11px * var(--uiw)); letter-spacing:0;
+}
+.powPoz{
+  display:block; width:100%; text-align:left;
+  border:1px solid var(--border); border-radius:12px;
+  background:var(--panel); color:var(--text);
+  padding:9px 12px; margin-bottom:7px; cursor:pointer;
+  transition:border-color .12s, background .12s;
+}
+.powPoz:hover{ border-color:var(--accent2); background:var(--sel); }
+.powTyt{
+  display:block; font-size:calc(13.5px * var(--uiw)); font-weight:600;
+  line-height:1.35; margin-bottom:2px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.powSkad{
+  display:inline-block; font-size:calc(11.5px * var(--uiw));
+  color:var(--accent); margin-right:8px;
+}
+.powCzemu{
+  display:block; font-size:calc(11.5px * var(--uiw)); color:var(--muted);
+  line-height:1.4; margin-top:2px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+@media (hover:none){ .powPoz{ padding:11px 12px; } }
+
+
+/* ============================================================
+   „USUŃ" ZAWSZE NA WIDOKU (v2.32)
+
+   Menu ⋯ przy notatce ma siedemnaście pozycji i na tablecie nie
+   mieści się w całości — trzeba je przewijać. „Usuń notatkę" jest
+   ostatnie, więc bywało poza ekranem, a w jego okolicy leżały
+   pozycje otwierające inne menu („Zakładka publikacji…"). Stąd
+   zgłoszenie, że zamiast usunięcia pojawia się przypisanie do
+   publikacji.
+
+   Pozycja niebezpieczna trzyma się teraz dolnej krawędzi menu
+   niezależnie od przewinięcia: widać ją zawsze i nie sposób jej
+   pomylić z sąsiadem, bo sąsiad odjeżdża, a ona zostaje.
+   ============================================================ */
+#dropdown .dd-danger{
+  position:sticky; bottom:0; z-index:2;
+  background:var(--panel);
+  border-top:1px solid var(--border);
+  margin-top:2px;
+}
+html[data-theme="dark"] #dropdown .dd-danger{ background:var(--panel); }
+/* Oddzielamy ją też wzrokowo od reszty — to ostatnia rzecz, którą się wybiera. */
+#dropdown .dd-danger::before{ content:""; }
+
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -3344,7 +3496,7 @@ html.rysikZaznacza{ cursor:text; }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.26</span></div>
+      <div class="brand-name">JW Study <span class="ver">v2.32</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -3531,6 +3683,14 @@ html.rysikZaznacza{ cursor:text; }
     <div class="nn-head">
       <span class="nn-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9a2 2 0 0 0-3-3L5 17v3z"/><path d="M14 7l3 3"/></svg></span>
       <div><h3>Nowa notatka</h3><div class="nn-sub">Tytuł i treść — resztę możesz uzupełnić później</div></div>
+    </div>
+
+    <div class="nn-card nn-szab">
+      <div class="nn-card-hd">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h9l5 5v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v5h5"/><path d="M8 13h8M8 17h5"/></svg>
+        <span>Szablony</span><span class="nn-opt">dotknij, aby wstawić</span>
+      </div>
+      <div id="nnSzablony"></div>
     </div>
 
     <label for="nnTitle">Tytuł</label>
@@ -3886,7 +4046,14 @@ function reportSaveError(e, what){
  * dowiedział się o nieudanym zapisie zamiast stracić dane po cichu.
  * @param {Note} n
  */
-function saveNote(n){ if(idb) idbPut("notes", n).catch(e=>reportSaveError(e,"notatka")); }
+function saveNote(n){
+  /* Skorowidz rzadkich słów opisuje stan sprzed zmiany — po zapisie notatki
+     przestaje być prawdziwy. Kasujemy go tutaj, w jednym miejscu, przez które
+     przechodzi każdy zapis; wyliczy się od nowa dopiero wtedy, gdy będzie
+     potrzebny. */
+  if(typeof unieaktualnijPowiazane==="function") unieaktualnijPowiazane();
+  if(idb) idbPut("notes", n).catch(e=>reportSaveError(e,"notatka"));
+}
 /* sprawdzenie miejsca przed wstawieniem zdjęcia */
 async function checkSpaceForImage(bytes){
   try{
@@ -4131,6 +4298,7 @@ async function boot(){
   if(idb){ try{ sections = (await idbGet("meta","sections")) || []; }catch(e){ sections=[]; } }
   if(typeof loadPubTabs==="function") await loadPubTabs();
   if(typeof loadSecTabs==="function") await loadSecTabs();
+  if(typeof loadSzablony==="function") await loadSzablony();
   purgeOldTrash();   // usuń trwale notatki, które są w koszu ponad 30 dni
   buildStatic();
   initViewBar();
@@ -4169,6 +4337,14 @@ async function boot(){
  * aplikacja potrafi tygodniami pokazywać starą.
  */
 function zarejestrujSW(){
+  /* Bez sieci rejestracja nie ma prawa się udać: przeglądarka musi pobrać sw.js
+     z serwera. Próba i tak kończy się błędem „Script … load failed", który
+     trafia do okna jako zwykły błąd strony — a to nie jest usterka aplikacji,
+     tylko brak połączenia. Nie próbujemy więc na pusto, tylko czekamy na sieć. */
+  if(navigator.onLine === false){
+    addEventListener("online", ()=>zarejestrujSW(), {once:true});
+    return;
+  }
   navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(rej=>{
     navigator.serviceWorker.ready.then(()=>{
       if(!lsGet(KP+"OfflineOK", null)){
@@ -4177,7 +4353,9 @@ function zarejestrujSW(){
       }
     });
     // sprawdzaj nową wersję przy starcie i po każdym powrocie do aplikacji
-    const sprawdz = ()=>{ try{ rej.update(); }catch(e){} };
+    /* Sprawdzanie nowej wersji też wymaga sieci — offline kończyłoby się tym
+       samym błędem, tyle że po każdym powrocie do aplikacji. */
+    const sprawdz = ()=>{ if(navigator.onLine === false) return; try{ rej.update(); }catch(e){} };
     setTimeout(sprawdz, 1200);
     document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) sprawdz(); });
     rej.addEventListener("updatefound", ()=>{
@@ -4188,7 +4366,12 @@ function zarejestrujSW(){
         if(nowy.state==="installed" && navigator.serviceWorker.controller) pokazNowaWersje(nowy);
       });
     });
-  }).catch(()=>{});
+  }).catch(err=>{
+    /* Cicho, ale nie bez śladu: wpis trafia do dziennika, żeby przy zgłoszeniu
+       było widać, że obsługa offline się nie zarejestrowała. */
+    if(typeof slad==="function") slad("obsługa offline nieaktywna: " + (err && err.message || err));
+    addEventListener("online", ()=>zarejestrujSW(), {once:true});
+  });
   /* Gdy NOWA wersja zastępuje starą, przeładowujemy raz — inaczej w bieżącej
      sesji zostałyby stare pliki CSS i JS wczytane przed podmianą.
 
@@ -5928,6 +6111,7 @@ function noteCard(n){
          <div data-x="verse">${ICO.bookmark}${n.b?"Zmień":"Przypisz"} werset…</div>
          <div data-x="miejsce">${ICO.book}Miejsce w publikacji…${n.pw?' <span class="ddZnak">✓</span>':""}</div>
          <div data-x="wysokosc">${ICO.fs}Wysokość notatki…${(n.wys!==undefined)?' <span class="ddZnak">✓</span>':""}</div>
+         <div data-x="szablon">${ICO.doc}Zapisz jako szablon…</div>
          <div data-x="tlo">${ICO.paint}Tło notatki…${n.bg?' <span class="ddZnak" style="color:'+esc(n.bg)+'">●</span>':""}</div>
          ${n.ks?`<div data-x="ptb">${ICO.tag}Zakładka publikacji…</div>`:""}
          ${(typeof secTabs!=="undefined" && secTabs.length)?`<div data-x="stb">${ICO.tag}Zakładka w sekcji…</div>`:""}
@@ -5948,6 +6132,7 @@ function noteCard(n){
         if(x==="stb"){ setTimeout(()=>menuZakladek(e.target.closest(".ncard")||document.body, n, "note"), 40); return; }
         if(x==="wysokosc" && typeof menuWysokosci==="function"){
           setTimeout(()=>menuWysokosci(n, e.target.closest(".ncard")||document.body), 40); return; }
+        if(x==="szablon" && typeof zapiszJakoSzablon==="function"){ zapiszJakoSzablon(n.g); return; }
         if(x==="tlo" && typeof menuTlaNotatki==="function"){
           setTimeout(()=>menuTlaNotatki(n, e.target.closest(".ncard")||document.body), 40); return; }
         if(x==="fav") toggleFav(n);
@@ -6077,6 +6262,16 @@ function renderFs(){
     aa.innerHTML = '<span style="font-weight:800;font-size:15px;letter-spacing:.5px">Aa</span>';
     aa.addEventListener("pointerdown", e=>{ e.preventDefault(); openReadPop(aa); });
     br.appendChild(aa);
+  }
+  /* Powiązane notatki pod treścią — to miejsce na przypomnienie, którego nikt
+     nie szukał, więc nie może zasłaniać tego, po co się notatkę otworzyło. */
+  if(typeof htmlPowiazanych==="function"){
+    const pow = htmlPowiazanych(n);
+    if(pow){
+      const box = document.createElement("div");
+      box.innerHTML = pow;
+      card.appendChild(box.firstElementChild);
+    }
   }
   // pasek czytnika: licznik słów/czasu + szukaj w notatce + spis treści
   const cont = card.querySelector(".ncontent");
@@ -8216,29 +8411,69 @@ function renderNnZakladki(){
   if(!sel) return;
   const sekcje = (typeof sections!=="undefined" ? sections : []).slice()
     .sort((a,b)=>(a.ord??0)-(b.ord??0));
+
+  /* Sekcja BEZ zakładek też musi być na liście.
+     Wcześniej pomijaliśmy takie sekcje, a gdy żadna nie miała zakładek — całe
+     pole znikało. Kto dopiero co utworzył sekcję, nie miał więc jak wrzucić do
+     niej nowej notatki i trafiała ona do ogólnego zbioru. Dla takiej sekcji
+     dajemy pozycję „nowa zakładka": nazwę podaje użytkownik przy zapisie,
+     więc nic nie powstaje po cichu. */
   const grupy = sekcje.map(s=>{
     const lista = (typeof secTabsFor==="function") ? secTabsFor(s.id) : [];
-    if(!lista.length) return "";
     return `<optgroup label="${esc(s.name)}">`+
       lista.map(z=>`<option value="${z.id}">${esc(z.name)}</option>`).join("")+
+      `<option value="nowa:${s.id}">＋ nowa zakładka w tej sekcji…</option>`+
       `</optgroup>`;
   }).join("");
-  if(!grupy){                       // nie ma żadnych zakładek — pole tylko myli
+
+  if(!sekcje.length){
+    /* Naprawdę nie ma czego wybierać dopiero wtedy, gdy nie ma ŻADNEJ sekcji. */
     if(karta) karta.style.display = "none";
-    sel.innerHTML = '<option value="">— brak —</option>';
+    sel.innerHTML = '<option value="">— brak sekcji —</option>';
     return;
   }
   if(karta) karta.style.display = "";
-  sel.innerHTML = '<option value="">— brak (notatka poza zakładkami) —</option>' + grupy;
+  sel.innerHTML = '<option value="">— brak (notatka poza sekcjami) —</option>' + grupy;
   /* Podpowiedź: gdy lista jest właśnie zawężona do zakładki, to w niej pracujesz. */
   const teraz = String(filt.tag||"");
   if(teraz.indexOf("stb:")===0) sel.value = teraz.slice(4);
 }
+
+/**
+ * Zamienia wybór z listy na numer zakładki.
+ * Dla „nowa zakładka" pyta o nazwę i tworzy ją — dopiero przy zapisie notatki,
+ * żeby porzucone okno nie zostawiało po sobie pustych zakładek.
+ * @returns {Promise<number|null|false>} numer zakładki, null (brak) albo false (rezygnacja)
+ */
+async function ustalZakladkeNowejNotatki(wybor){
+  if(!wybor) return null;
+  if(String(wybor).indexOf("nowa:") !== 0) return +wybor || null;
+  const idSekcji = +String(wybor).slice(5);
+  const sek = (typeof sections!=="undefined" ? sections : []).find(x=>x.id===idSekcji);
+  const nazwa = await askText({
+    title: "Nowa zakładka" + (sek ? " w sekcji „"+sek.name+"”" : ""),
+    placeholder: "np. Kongres 2026",
+    okLabel: "Utwórz i zapisz notatkę",
+    hint: "Notatka trafi do tej zakładki."});
+  if(nazwa===null || !nazwa.trim()) return false;
+  if(typeof secTabs==="undefined") return null;
+  const z = {
+    id: Math.max(0, ...secTabs.map(x=>+x.id||0)) + 1,
+    sec: idSekcji,
+    name: nazwa.trim().slice(0,60),
+    ord: secTabsFor(idSekcji).length * 10
+  };
+  secTabs.push(z);
+  if(typeof saveSecTabs==="function") saveSecTabs();
+  return z.id;
+}
+
 $("btnNew").onclick = ()=>{
   $("nnTitle").value=""; $("nnContent").value=""; $("nnBook").value="0"; $("nnCh").value=""; $("nnV").value="";
   $("nnNewTagName").value="";
   renderNnTags(typeof filt.tag==="number" ? [filt.tag] : []);
   renderNnZakladki();
+  if(typeof rysujSzablony==="function") rysujSzablony();
   if(typeof filt.book==="number"&&filt.book>0) $("nnBook").value=String(filt.book);
   openModal("modalNew");
 };
@@ -8259,17 +8494,19 @@ function nnCreateTag(){
 }
 $("nnAddTag").onclick = nnCreateTag;
 $("nnNewTagName").addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); nnCreateTag(); } });
-$("nnSave").onclick = ()=>{
+$("nnSave").onclick = async ()=>{
   const c=$("nnContent").value.trim(), t=$("nnTitle").value.trim();
   if(!c&&!t){ toast("Wpisz tytuł lub treść"); return; }
+  const wybor = $("nnZakladka") ? $("nnZakladka").value : "";
+  const idZakladki = await ustalZakladkeNowejNotatki(wybor);
+  if(idZakladki===false) return;              // rezygnacja z nazwy zakładki
   const now=new Date().toISOString();
   const n={ g:crypto.randomUUID().toUpperCase(), t, c, h:null,
     b:+$("nnBook").value||0, ch:+$("nnCh").value||null, v:+$("nnV").value||null,
     pub:"", ks:"", doc:0, itn:0, col:0, cr:now, mo:now,
     tg:[...$("nnTags").querySelectorAll("input:checked")].map(i=>+i.value),
     nw:true, tgd:true };
-  const zak = $("nnZakladka") ? $("nnZakladka").value : "";
-  if(zak) n.stb = +zak;
+  if(idZakladki) n.stb = idZakladki;
   notes.unshift(n); saveNote(n);
   pushUndo({type:"newNote", g:n.g, label:"dodanie notatki"});
   closeModal("modalNew"); renderAll();
@@ -8743,6 +8980,43 @@ function applyChangesToDb(db){
     db.run("INSERT INTO Location (LocationId, BookNumber, ChapterNumber, KeySymbol, MepsLanguage, Type, IssueTagNumber) VALUES (?,?,?,?,?,0,0)",[maxLocId,book,chapter,key,meps]);
     locCache[kk]=maxLocId; return maxLocId;
   }
+  /**
+   * Miejsce notatki z PUBLIKACJI (nie z Biblii).
+   *
+   * Wcześniej takie notatki szły do JW Library z pustym LocationId — a notatka
+   * bez miejsca nie ma się gdzie pokazać: nie wisi przy żadnym akapicie i nie
+   * widać jej w publikacji. Wychodziło to dopiero po przywróceniu kopii na
+   * urządzeniu, czyli wtedy, gdy nic już nie dało się poprawić.
+   *
+   * Miejsce w publikacji opisują: symbol (np. „w"), numer wydania i numer
+   * dokumentu. Szukamy istniejącego wiersza po tej trójce, a gdy go nie ma —
+   * dopisujemy nowy, w tej samej postaci, w jakiej robi to JW Library.
+   */
+  function pubLocation(n){
+    const key = (n.ks||"").trim();
+    if(!key) return null;
+    const itn = Number(n.itn)||0;
+    const doc = Number(n.doc)||0;
+    const kk = "p_"+key+"_"+itn+"_"+doc;
+    if(locCache[kk]!==undefined) return locCache[kk];
+    let meps = 0;
+    try{
+      const mr=db.exec("SELECT MepsLanguage FROM Location WHERE MepsLanguage IS NOT NULL LIMIT 1");
+      if(mr.length) meps = mr[0].values[0][0];
+    }catch(e){}
+    try{
+      const st = db.prepare(
+        "SELECT LocationId FROM Location WHERE KeySymbol=? AND IFNULL(IssueTagNumber,0)=? "+
+        "AND IFNULL(DocumentId,0)=? AND BookNumber IS NULL LIMIT 1");
+      st.bind([key, itn, doc]);
+      if(st.step()){ const id = st.get()[0]; st.free(); locCache[kk]=id; return id; }
+      st.free();
+    }catch(e){}
+    maxLocId++;
+    db.run("INSERT INTO Location (LocationId, KeySymbol, IssueTagNumber, DocumentId, MepsLanguage, Type) "+
+           "VALUES (?,?,?,?,?,0)", [maxLocId, key, itn, doc||null, meps]);
+    locCache[kk]=maxLocId; return maxLocId;
+  }
   // zakładki usunięte w aplikacji — usuń też z eksportowanej bazy
   deletedTagNames.forEach(nm=>{
     const did = tname[nm];
@@ -8791,6 +9065,11 @@ function applyChangesToDb(db){
             if(n.v){ blockType=2; blockId=n.v; }   // przypięcie do konkretnego wersetu
             else { blockType=1; blockId=n.ch; }    // do rozdziału, gdy brak wersetu
           }
+        } else if(n.ks){
+          /* Notatka z publikacji: miejsce opisuje symbol, wydanie i dokument,
+             a akapit wskazuje BlockIdentifier. */
+          locId = pubLocation(n);
+          if(locId!=null && n.par){ blockType=1; blockId=Number(n.par)||null; }
         }
       }catch(e){ locId=null; blockType=0; blockId=null; }
       db.run("INSERT INTO Note (Guid, Title, Content, LastModified, Created, BlockType, BlockIdentifier, LocationId, NoteId) VALUES (?,?,?,?,?,?,?,?,?)",
@@ -9221,7 +9500,10 @@ function daneKopii(){
           pubTabs: (typeof pubTabs!=="undefined" ? pubTabs : []),
           /* Zakładki sekcji to własny podział użytkownika — bez nich kopia
              odtworzy notatki, ale zgubi porządek, który sobie zrobił. */
-          secTabs: (typeof secTabs!=="undefined" ? secTabs : [])};
+          secTabs: (typeof secTabs!=="undefined" ? secTabs : []),
+          /* Szablony też są dorobkiem użytkownika: powstają z jego notatek
+             i mają jechać razem z nimi na drugie urządzenie. */
+          szablony: (typeof szablony!=="undefined" ? szablony : [])};
 }
 
 /**
@@ -9333,6 +9615,26 @@ function mergeBackup(data, takeLayout, nadpisuj){
       zakMap[z.id] = mine.id;
     });
     if(st.zakSekAdded) saveSecTabs();
+  }
+  /* Szablony dokładamy po nazwie — powtórki nie mają sensu, a nadpisywanie
+     cudzym szablonem tego, co użytkownik u siebie poprawił, byłoby stratą. */
+  if(typeof szablony!=="undefined" && Array.isArray(data.szablony)){
+    let doszlo = 0;
+    data.szablony.forEach(z=>{
+      if(!z || typeof z!=="object") return;
+      const nazwa = typeof z.nazwa==="string" ? z.nazwa.trim() : "";
+      if(!nazwa) return;
+      if(szablony.some(x=>norm(x.nazwa)===norm(nazwa))) return;
+      szablony.push({
+        id: Date.now() + Math.floor(Math.random()*1000),
+        nazwa: nazwa.slice(0,60),
+        tytul: typeof z.tytul==="string" ? z.tytul.slice(0,200) : "",
+        tresc: typeof z.tresc==="string" ? z.tresc.slice(0,20000) : "",
+        ord: szablony.length * 10
+      });
+      doszlo++;
+    });
+    if(doszlo){ saveSzablony(); st.szablonyAdded = doszlo; }
     /* Etykiety przypisane do zakładek też muszą wskazywać właściwą. */
     (Array.isArray(data.tags)?data.tags:[]).forEach(t=>{
       if(t.stb===undefined || tagMap[t.id]===undefined) return;
@@ -12153,13 +12455,20 @@ function pokazPasekBledu(wpis){
 /** Pełny raport do wklejenia. */
 function diagRaport(){
   const l = diagWczytaj();
-  if(!l.length) return "Brak zapisanych błędów.";
+  /* Ślady bieżącej sesji dokładamy zawsze, także gdy żaden błąd się nie zapisał.
+     Część rzeczy nie jest błędem — brak sieci, nieudana rejestracja obsługi
+     offline — a i tak warto wiedzieć, co się działo, gdy użytkownik mówi
+     „coś jest nie tak". */
+  const kroki = _slady.length
+    ? "\n\nBieżąca sesja — ostatnie kroki:\n" + _slady.map(x=>"    "+x).join("\n")
+    : "";
+  if(!l.length) return (kroki ? "Brak zapisanych błędów." + kroki : "Brak zapisanych błędów.");
   return l.map(w=>{
     const glowa = `${w.kiedy}  ${w.wersja}  ${w.tryb}  ${w.ekran}\n  ${w.opis}\n  ${w.gdzie}`;
     const kroki = (w.slady && w.slady.length)
       ? "\n  ostatnie kroki:\n" + w.slady.map(x=>"    "+x).join("\n") : "";
     return glowa + kroki;
-  }).join("\n\n");
+  }).join("\n\n") + kroki;
 }
 function pokazRaport(tekst){
   showInfo("Szczegóły błędów",
@@ -12170,14 +12479,33 @@ function pokazRaport(tekst){
 /** Czyści dziennik — po naprawie nie ma sensu straszyć starymi wpisami. */
 function diagWyczysc(){
   try{ localStorage.removeItem(DIAG_KLUCZ); }catch(e){}
+  _slady.length = 0;          // czyścimy też ślady — inaczej „wyczyść" czyści połowę
   const p = document.getElementById("pasekBledu"); if(p) p.style.display = "none";
   toastOk("Wyczyszczono dziennik błędów");
+}
+
+/* Awarie sieci nie są usterkami aplikacji.
+   Przy braku połączenia przeglądarka zgłasza do okna „Script … load failed"
+   — najczęściej przy próbie odświeżenia obsługi offline. Czerwony pasek
+   z takim komunikatem straszy użytkownika czymś, na co nikt nie ma wpływu
+   i co samo mija po powrocie sieci. Zapisujemy to w śladach, żeby przy
+   zgłoszeniu było widać, ale nie robimy z tego alarmu. */
+function toAwariaSieci(tresc, gdzie){
+  const t = String(tresc||"") + " " + String(gdzie||"");
+  if(!/load failed|Failed to fetch|NetworkError|ERR_INTERNET|network error/i.test(t)) return false;
+  /* Wyjątek: gdy sieć DZIAŁA, a zasób i tak się nie wczytał, to już jest
+     wiadomość warta pokazania — brakuje pliku albo serwer go nie oddaje. */
+  return navigator.onLine === false || /sw\.js|serviceworker/i.test(t);
 }
 
 window.addEventListener("error", e=>{
   /* Błędy wczytywania obrazków i innych zasobów nie mają message — te pomijamy,
      bo nie mówią nic o działaniu aplikacji. */
   if(!e || !e.message) return;
+  if(toAwariaSieci(e.message, e.filename)){
+    slad("brak sieci: " + String(e.message).slice(0,60));
+    return;
+  }
   /* Przy „Script error." przeglądarka ukrywa szczegóły, ale sam obiekt błędu
      bywa dostępny — wtedy stos mówi więcej niż komunikat. */
   const stos = (e.error && e.error.stack) ? String(e.error.stack).slice(0,300) : "";
@@ -12195,7 +12523,12 @@ document.addEventListener("click", e=>{
 }, true);
 window.addEventListener("unhandledrejection", e=>{
   const p = e && e.reason;
-  zapiszBlad((p && (p.message || p)) || "odrzucona obietnica", (p && p.stack) || "");
+  const tresc = (p && (p.message || p)) || "odrzucona obietnica";
+  if(toAwariaSieci(tresc, p && p.stack)){
+    slad("brak sieci: " + String(tresc).slice(0,60));
+    return;
+  }
+  zapiszBlad(tresc, (p && p.stack) || "");
 });
 
 
@@ -13024,6 +13357,349 @@ function koniecRysika(){
 }
 document.addEventListener("touchend", koniecRysika);
 document.addEventListener("touchcancel", koniecRysika);
+
+</script>
+<script>
+/* ==========================================================================
+   JW Study — szablony.js
+   SZABLONY NOTATEK
+
+   W notatkach z zebrań powtarza się ten sam szkielet: data, nazwisko mówcy,
+   „Komentarze", „Omówienie". Wpisywanie go od nowa przy każdej notatce to
+   kilkanaście sekund i kilka pomyłek tygodniowo — a przy notowaniu na bieżąco
+   liczy się każda z nich.
+
+   Szablon powstaje z TWOJEJ notatki: bierzesz tę najlepiej ułożoną i robisz
+   z niej wzorzec (menu ⋯ → „Zapisz jako szablon"). Nie ma tu gotowców
+   wymyślonych przeze mnie, bo układ notatki to sprawa osobista.
+
+   W treści szablonu działają trzy wstawki, zamieniane przy tworzeniu notatki:
+     {data}     — dzisiejsza data (2026-08-15)
+     {godzina}  — bieżąca godzina (16:07)
+     {kursor}   — miejsce, w którym ma stanąć kursor
+   ========================================================================== */
+"use strict";
+
+let szablony = [];            // [{id, nazwa, tytul, tresc, ord}]
+
+/* ===== ZAPIS ===== */
+function saveSzablony(){
+  if(idb) idbPut("meta", szablony, "szablony").catch(e=>reportSaveError(e,"szablony"));
+}
+async function loadSzablony(){
+  if(!idb) return;
+  try{ const z = await idbGet("meta","szablony"); if(Array.isArray(z)) szablony = z; }catch(e){}
+}
+function szablonyPoKolei(){
+  return szablony.slice().sort((a,b)=>(a.ord??0)-(b.ord??0));
+}
+
+/* ===== WSTAWKI =====
+   Świadomie skromny zestaw. Każda kolejna wstawka to kolejna rzecz do
+   zapamiętania, a te trzy pokrywają to, co w notatce z zebrania faktycznie
+   zmienia się co tydzień. */
+function wypelnijWstawki(tekst){
+  if(!tekst) return "";
+  const teraz = new Date();
+  const data = teraz.getFullYear() + "-" +
+               String(teraz.getMonth()+1).padStart(2,"0") + "-" +
+               String(teraz.getDate()).padStart(2,"0");
+  const godzina = String(teraz.getHours()).padStart(2,"0") + ":" +
+                  String(teraz.getMinutes()).padStart(2,"0");
+  return String(tekst)
+    .replace(/\{data\}/gi, data)
+    .replace(/\{godzina\}/gi, godzina);
+}
+/** Zwraca tekst bez znacznika kursora oraz jego położenie. */
+function rozdzielKursor(tekst){
+  const i = String(tekst||"").search(/\{kursor\}/i);
+  if(i < 0) return {tekst:String(tekst||""), pozycja:null};
+  return {tekst:String(tekst).replace(/\{kursor\}/i, ""), pozycja:i};
+}
+
+/* ===== TWORZENIE SZABLONU Z NOTATKI ===== */
+async function zapiszJakoSzablon(guid){
+  const n = notes.find(x=>x.g===guid && !x.del);
+  if(!n) return;
+  const proponowana = (n.t||"").trim().slice(0,40) || "Mój szablon";
+  const nazwa = await askText({
+    title:"Zapisz jako szablon",
+    value: proponowana,
+    placeholder:"np. Komentarz z zebrania",
+    okLabel:"Zapisz szablon",
+    hint:"Powstanie wzorzec z tytułu i treści tej notatki. Wstaw {data}, {godzina} albo {kursor} tam, gdzie mają działać."});
+  if(nazwa===null || !nazwa.trim()) return;
+  const tresc = (typeof htmlToPlain==="function" && n.h) ? htmlToPlain(n.h) : (n.c||"");
+  const s = {
+    id: Date.now(),
+    nazwa: nazwa.trim().slice(0,60),
+    tytul: (n.t||"").slice(0,200),
+    tresc: String(tresc).slice(0,20000),
+    ord: szablony.length * 10
+  };
+  szablony.push(s);
+  saveSzablony();
+  toastOk("Szablon „"+s.nazwa+"” zapisany — znajdziesz go w oknie nowej notatki");
+}
+
+function usunSzablon(id){
+  const i = szablony.findIndex(s=>s.id===id);
+  if(i<0) return;
+  const nazwa = szablony[i].nazwa;
+  szablony.splice(i,1);
+  saveSzablony();
+  rysujSzablony();
+  toastOk("Usunięto szablon „"+nazwa+"”");
+}
+async function zmienNazweSzablonu(id){
+  const s = szablony.find(x=>x.id===id); if(!s) return;
+  const nazwa = await askText({title:"Nazwa szablonu", value:s.nazwa, okLabel:"Zmień"});
+  if(nazwa===null || !nazwa.trim()) return;
+  s.nazwa = nazwa.trim().slice(0,60);
+  saveSzablony(); rysujSzablony();
+}
+
+/* ===== UŻYCIE W OKNIE NOWEJ NOTATKI ===== */
+/** Wstawia szablon do pól okna. Nie kasuje tego, co użytkownik już wpisał. */
+function zastosujSzablon(id){
+  const s = szablony.find(x=>x.id===id); if(!s) return;
+  const poleT = $("nnTitle"), poleC = $("nnContent");
+  if(poleT && !poleT.value.trim()) poleT.value = wypelnijWstawki(s.tytul);
+  if(poleC){
+    const {tekst, pozycja} = rozdzielKursor(wypelnijWstawki(s.tresc));
+    /* Doklejamy, gdy coś już jest — inaczej wybór szablonu po rozpoczęciu
+       pisania kasowałby zapisane zdania. */
+    const bylo = poleC.value;
+    poleC.value = bylo.trim() ? (bylo.replace(/\s*$/,"") + "\n\n" + tekst) : tekst;
+    poleC.focus();
+    const gdzie = bylo.trim()
+      ? poleC.value.length
+      : (pozycja!=null ? pozycja : tekst.length);
+    try{ poleC.setSelectionRange(gdzie, gdzie); }catch(e){}
+  }
+  const pas = $("nnSzablony");
+  if(pas) pas.querySelectorAll("[data-szab]").forEach(b=>
+    b.classList.toggle("wybrany", +b.dataset.szab===id));
+}
+
+/** Rysuje pasek szablonów w oknie nowej notatki. */
+function rysujSzablony(){
+  const pas = $("nnSzablony"); if(!pas) return;
+  const lista = szablonyPoKolei();
+  const karta = pas.closest(".nn-card");
+  if(!lista.length){
+    /* Bez szablonów pokazujemy, skąd się biorą — pusty pasek niczego nie uczy. */
+    setHtml(pas, '<span class="nnSzabPusto">Nie masz jeszcze szablonów. '+
+      'Otwórz notatkę o dobrym układzie, wybierz <b>⋯ → Zapisz jako szablon</b> '+
+      'i będzie tutaj.</span>');
+    if(karta) karta.classList.add("pusty");
+    return;
+  }
+  if(karta) karta.classList.remove("pusty");
+  setHtml(pas, lista.map(s=>
+    '<span class="nnSzab">'+
+      '<button type="button" class="nnSzabB" data-szab="'+s.id+'" title="Wstaw szablon">'+
+        esc(s.nazwa)+'</button>'+
+      '<button type="button" class="nnSzabX" data-szabmenu="'+s.id+'" '+
+        'title="Zmień nazwę albo usuń" aria-label="Opcje szablonu">⋯</button>'+
+    '</span>').join(""));
+}
+
+document.addEventListener("click", e=>{
+  const cel = e.target && e.target.closest ? e.target : null;
+  if(!cel) return;
+  const uzyj = cel.closest("[data-szab]");
+  if(uzyj){ e.preventDefault(); zastosujSzablon(+uzyj.dataset.szab); return; }
+  const menu = cel.closest("[data-szabmenu]");
+  if(menu){
+    e.preventDefault(); e.stopPropagation();
+    const id = +menu.dataset.szabmenu;
+    const dd = $("dropdown");
+    dd.innerHTML = '<div class="dd-lbl">Szablon</div>'+
+      '<div data-szo="nazwa">Zmień nazwę…</div>'+
+      '<div class="dd-sep"></div>'+
+      '<div data-szo="usun" class="dd-danger">Usuń szablon</div>';
+    dd.style.display = "block";
+    if(typeof oznaczPozycjeMenu==="function") oznaczPozycjeMenu(dd);
+    placeDropdown(dd, menu);
+    dd.onclick = ev=>{
+      const it = ev.target.closest("[data-szo]"); if(!it) return;
+      dd.style.display = "none";
+      if(it.dataset.szo==="nazwa") zmienNazweSzablonu(id);
+      else usunSzablon(id);
+    };
+  }
+});
+
+</script>
+<script>
+/* ==========================================================================
+   JW Study — powiazane.js
+   POWIĄZANE NOTATKI
+
+   Przy ośmiu tysiącach notatek najtrudniej dowiedzieć się, że coś już się
+   kiedyś zapisało. Wyszukiwanie odpowiada na pytanie zadane wprost; tutaj
+   chodzi o coś odwrotnego — o przypomnienie, którego nikt nie szukał.
+
+   Pod otwartą notatką pojawia się lista innych, które jej dotyczą. Powód jest
+   zawsze wypisany, bo lista bez uzasadnienia to wróżenie: „ten sam werset",
+   „ta sama lekcja", „wspólne słowa: pokora, akrobacje".
+
+   Wszystko liczy się na urządzeniu. Nic nie jest nigdzie wysyłane.
+
+   O SZYBKOŚCI. Porównywanie każdej notatki z każdą to przy ośmiu tysiącach
+   sześćdziesiąt cztery miliony par — nie do przyjęcia. Dlatego rzadkie słowa
+   mają swój skorowidz: słowo → notatki, w których wystąpiło. Buduje się raz
+   i przeżywa aż do zmiany notatek. Wyrazy pospolite w ogóle do niego nie
+   trafiają — nie niosą informacji, a to one kosztowałyby najwięcej.
+   ========================================================================== */
+"use strict";
+
+const POW_ILE          = 8;    // ile powiązań pokazujemy
+const POW_MIN_DLUGOSC  = 5;    // krótsze wyrazy zbyt często znaczą nic
+const POW_MAX_NOTATEK  = 40;   // słowo z większej liczby notatek nie jest rzadkie
+const POW_MAX_SLOW     = 400;  // ile słów bierzemy z jednej notatki
+
+let _skorowidz = null;         // Map(słowo → [guid, …])
+let _skorowidzNieaktualny = true;
+
+/** Zawiadomienie, że notatki się zmieniły — skorowidz trzeba złożyć od nowa. */
+function unieaktualnijPowiazane(){ _skorowidzNieaktualny = true; }
+
+/** Słowa notatki: znormalizowane, bez krótkich i bez powtórzeń. */
+function slowaNotatki(n){
+  const tekst = (n.t||"") + " " + (n.c || (n.h ? String(n.h).replace(/<[^>]*>/g," ") : ""));
+  const wynik = new Set();
+  const czesci = norm(tekst).split(/[^a-z0-9]+/);
+  for(let i=0; i<czesci.length && wynik.size<POW_MAX_SLOW; i++){
+    const s = czesci[i];
+    if(s.length >= POW_MIN_DLUGOSC) wynik.add(s);
+  }
+  return wynik;
+}
+
+/** Skorowidz rzadkich słów. Liczony raz, do najbliższej zmiany notatek. */
+function skorowidzSlow(){
+  if(_skorowidz && !_skorowidzNieaktualny) return _skorowidz;
+  const wszystkie = new Map();
+  for(const n of notes){
+    if(n.del) continue;
+    for(const s of slowaNotatki(n)){
+      let lista = wszystkie.get(s);
+      if(!lista){ lista = []; wszystkie.set(s, lista); }
+      /* Powyżej progu i tak odrzucimy — nie ma po co zbierać dalej. */
+      if(lista.length <= POW_MAX_NOTATEK) lista.push(n.g);
+    }
+  }
+  /* Zostawiamy tylko rzadkie. Słowo z pięciuset notatek nic nie mówi o żadnej
+     z nich, a to właśnie takie słowa zajmowałyby najwięcej miejsca. */
+  const rzadkie = new Map();
+  wszystkie.forEach((lista, s)=>{ if(lista.length>1 && lista.length<=POW_MAX_NOTATEK) rzadkie.set(s, lista); });
+  _skorowidz = rzadkie;
+  _skorowidzNieaktualny = false;
+  return _skorowidz;
+}
+
+/**
+ * Notatki powiązane z podaną, od najmocniej związanych.
+ * @returns {Array} lista wpisów: notatka, liczba punktów, powody powiązania
+ */
+function powiazaneNotatki(n, ile){
+  if(!n) return [];
+  ile = ile || POW_ILE;
+  const punkty = new Map();     // guid → liczba
+  const powody = new Map();     // guid → Set opisów
+  const dodaj = (g, ile2, powod)=>{
+    if(g === n.g) return;
+    punkty.set(g, (punkty.get(g)||0) + ile2);
+    if(!powody.has(g)) powody.set(g, new Set());
+    powody.get(g).add(powod);
+  };
+
+  /* 1. Miejsce — najmocniejszy związek, bo mówi o tym samym fragmencie. */
+  for(const inna of notes){
+    if(inna.del || inna.g === n.g) continue;
+    if(n.b && inna.b === n.b && inna.ch === n.ch){
+      if(n.v && inna.v === n.v) dodaj(inna.g, 10, "ten sam werset");
+      else dodaj(inna.g, 6, "ten sam rozdział");
+    }
+    if(n.ks && inna.ks === n.ks){
+      const toSamoWydanie = (Number(inna.itn)||0) === (Number(n.itn)||0);
+      const tenSamArtykul = n.doc && (Number(inna.doc)||0) === (Number(n.doc)||0);
+      if(tenSamArtykul && toSamoWydanie) dodaj(inna.g, 8, "ten sam artykuł");
+      else if(toSamoWydanie && n.itn) dodaj(inna.g, 4, "to samo wydanie");
+      else dodaj(inna.g, 2, "ta sama publikacja");
+    }
+    if(n.tg && n.tg.length && inna.tg && inna.tg.length){
+      const wspolne = inna.tg.filter(t=>n.tg.includes(t));
+      if(wspolne.length){
+        const nazwy = wspolne.map(t=>(tags.find(x=>x.id===t)||{}).name).filter(Boolean);
+        dodaj(inna.g, 3 * wspolne.length, "wspólna etykieta: " + nazwy.join(", "));
+      }
+    }
+  }
+
+  /* 2. Rzadkie słowa — to one wyciągają notatkę sprzed dwóch lat. */
+  const idx = skorowidzSlow();
+  const moje = slowaNotatki(n);
+  const trafienia = new Map();  // guid → [słowa]
+  moje.forEach(s=>{
+    const lista = idx.get(s);
+    if(!lista) return;
+    /* Im rzadsze słowo, tym więcej znaczy jego powtórzenie. */
+    const waga = lista.length <= 3 ? 5 : lista.length <= 10 ? 3 : 1;
+    lista.forEach(g=>{
+      if(g === n.g) return;
+      punkty.set(g, (punkty.get(g)||0) + waga);
+      if(!trafienia.has(g)) trafienia.set(g, []);
+      const t = trafienia.get(g);
+      if(t.length < 3) t.push(s);
+    });
+  });
+  trafienia.forEach((slowa, g)=>{
+    if(!powody.has(g)) powody.set(g, new Set());
+    powody.get(g).add("wspólne słowa: " + slowa.join(", "));
+  });
+
+  const wynik = [];
+  punkty.forEach((p, g)=>{
+    const inna = notes.find(x=>x.g===g);
+    if(inna && !inna.del) wynik.push({n:inna, punkty:p, powody:[...powody.get(g)]});
+  });
+  wynik.sort((a,b)=> b.punkty - a.punkty ||
+                     (b.n.mo||"").localeCompare(a.n.mo||""));
+  return wynik.slice(0, ile);
+}
+
+/** Budowa listy pod notatką w czytniku. */
+function htmlPowiazanych(n){
+  const lista = powiazaneNotatki(n);
+  if(!lista.length) return "";
+  const wiersz = ({n:inna, powody})=>{
+    const tytul = (inna.t||"").trim() ||
+                  (typeof refLabel==="function" ? refLabel(inna) : "") || "Bez tytułu";
+    const skad = (typeof refLabel==="function" ? refLabel(inna) : "") ||
+                 (inna.ks ? (typeof pubFullName==="function" ? pubFullName(inna.ks) : inna.ks) : "");
+    return `<button type="button" class="powPoz" data-pow="${esc(inna.g)}">
+        <span class="powTyt">${esc(tytul)}</span>
+        ${skad ? `<span class="powSkad">${esc(skad)}</span>` : ""}
+        <span class="powCzemu">${esc(powody.slice(0,2).join(" · "))}</span>
+      </button>`;
+  };
+  return `<div class="powiazane">
+      <div class="powNagl">Powiązane notatki <span class="powIle">${lista.length}</span></div>
+      ${lista.map(wiersz).join("")}
+    </div>`;
+}
+
+/* Otwarcie powiązanej notatki — w tym samym czytniku, bez zamykania okna. */
+document.addEventListener("click", e=>{
+  const b = e.target && e.target.closest ? e.target.closest("[data-pow]") : null;
+  if(!b) return;
+  e.preventDefault(); e.stopPropagation();
+  const inna = notes.find(x=>x.g===b.dataset.pow);
+  if(inna && typeof openFs==="function") openFs(inna);
+});
 
 </script>
 <script>

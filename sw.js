@@ -1,4 +1,4 @@
-const CACHE = 'jwstudy-v226s';
+const CACHE = 'jwstudy-v232s';
 /* Rdzeń: dokument + wszystkie moduły CSS i JS — bez nich aplikacja nie ruszy offline. */
 const CORE = [
   './', './index.html'
