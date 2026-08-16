@@ -1,7 +1,0 @@
-To jest wersja ROBOCZA (modułowa) — do pracy nad kodem.
-
-index.html ma tu ~30 kB i sam z siebie NIE DZIAŁA:
-szuka plików w katalogach js/ i css/.
-
-Na GitHub wgrywaj katalog:  JW_Study_publikacja
-tam index.html ma ~701 kB i zawiera całą aplikację.
