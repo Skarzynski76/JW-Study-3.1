@@ -3500,6 +3500,22 @@ html[data-theme="dark"] #dropdown .dd-danger{ background:var(--panel); }
 }
 @media (hover:none){ #pubList .pubDrag{ opacity:.5; } }
 
+/* ——— PASEK IKON W POWIĘKSZONEJ KARTECZCE (v2.36) ———
+   Na dotyku pasek bywał przeoczony: półprzezroczysty, wtopiony w treść.
+   W karteczce podniesionej do A6 ma być widoczny bez szukania — to z niego
+   prowadzi droga do pełnego ekranu, edycji i menu. */
+@media (hover:none){
+  #noteList.v-tablica .ncard.wydobyta .ntools{
+    background:var(--tloKarty, var(--panel));
+    border-top:1px solid var(--border);
+    padding:5px 6px;
+  }
+  #noteList.v-tablica .ncard.wydobyta .ntools .sbtn.ico{ padding:7px 9px; }
+  #noteList.v-tablica .ncard.wydobyta .ntools .sbtn.ico .ic{ width:17px; height:17px; }
+  /* Treść ustępuje mu tyle miejsca, ile faktycznie zajmuje. */
+  #noteList.v-tablica .ncard.wydobyta .ncontent{ padding-bottom:calc(46px + 1.2em); }
+}
+
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -3508,7 +3524,7 @@ html[data-theme="dark"] #dropdown .dd-danger{ background:var(--panel); }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.34</span></div>
+      <div class="brand-name">JW Study <span class="ver">v2.36</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -10339,6 +10355,13 @@ function placeMenuAt(dd, x, y){
    gdy widoczny jest pasek kolorów albo cokolwiek jest już zaznaczone. */
 function contextMenuBlocked(target){
   if(!target || !target.closest) return true;
+  /* Na tablicy treść karteczki jest przycięta i nie służy do zaznaczania —
+     a innego sposobu na menu tam nie ma, bo pasek ikon jest schowany, dopóki
+     karteczka jest mała. Przytrzymanie palcem musi więc działać także na
+     treści. W powiększonej karteczce i w pozostałych widokach zostaje po
+     staremu: tam tekst się czyta i zaznacza. */
+  const wMiniaturze = target.closest("#noteList.v-tablica .ncard:not(.wydobyta)");
+  if(wMiniaturze) return false;
   if(target.closest(".ncontent")) return true;          // treść notatki — tam się zaznacza
   if(target.closest("#fsWrap, #modalFs")) return true;  // czytnik pełnoekranowy
   if(target.closest("#hlBar, .editbar, #imgBar, #readPop")) return true;  // paski narzędzi
@@ -13106,8 +13129,31 @@ function wydobadzKarteczke(karta){
 
 document.addEventListener("click", e=>{
   const lista = $("noteList");
-  if(!lista || !lista.classList.contains("v-tablica")) return;
+  if(!lista) return;
+  const naTablicy = lista.classList.contains("v-tablica");
   const karta = e.target.closest && e.target.closest("#noteList .ncard");
+
+  /* DWA DOTKNIĘCIA OTWIERAJĄ PEŁNY EKRAN — W KAŻDYM WIDOKU.
+     Najpierw miałem to tylko na tablicy, bo tam powstało. To był błąd: gest ma
+     znaczyć wszędzie to samo, inaczej trzeba pamiętać, w którym widoku działa
+     — a wtedy nie działa nigdzie. */
+  if(karta && !pomijaneWydobycie(e.target)){
+    const zazn0 = getSelection && getSelection();
+    const zaznaczono = !!(zazn0 && !zazn0.isCollapsed && String(zazn0).trim());
+    if(!zaznaczono && toDrugieDotkniecie(e, karta.dataset.g)){
+      const n = notes.find(x=>x.g===karta.dataset.g);
+      if(n && typeof openFs==="function"){
+        e.preventDefault(); e.stopPropagation();
+        schowajKarteczke(true);   // karteczka wraca do rzędu, notatka idzie na cały ekran
+        openFs(n);
+        return;
+      }
+    }
+  }
+
+  /* Podnoszenie karteczki dotyczy już tylko tablicy — w pozostałych widokach
+     notatka i tak jest widoczna w całości albo przycięta wprost. */
+  if(!naTablicy) return;
   if(!karta){
     /* Dotknięcie obok odkłada wydobytą karteczkę — tak jak odłożenie kartki
        na biurko, gdy sięga się po następną. */
@@ -13140,6 +13186,62 @@ document.addEventListener("scroll", e=>{
 /* Przerysowanie listy buduje karty od nowa — wydobyta karta przestałaby wtedy
    istnieć, a podkładka zostałaby pustym miejscem. */
 document.addEventListener("keydown", e=>{ if(e.key==="Escape" && _wydobyta) schowajKarteczke(); });
+
+/* ==========================================================================
+   DWA DOTKNIĘCIA — PEŁNY EKRAN I POWRÓT
+
+   Powiększona karteczka ma pasek ikon przy dolnej krawędzi, ale na telefonie
+   jest mały i łatwo go przeoczyć. Prostsza droga do pełnego ekranu to po prostu
+   dotknąć notatki jeszcze raz — i tak samo wrócić.
+
+   Zasada: pierwsze dotknięcie podnosi karteczkę, drugie (zaraz po nim) otwiera
+   ją na pełnym ekranie. W czytniku dwa dotknięcia zamykają go z powrotem.
+
+   Nie liczymy własnego czasu tam, gdzie przeglądarka i tak go liczy: `dblclick`
+   dostajemy zarówno od myszy, jak i od dwóch szybkich dotknięć, więc zamiast
+   budować własny zegar — a przy okazji własne pomyłki — korzystamy z niego.
+   Palec bywa jednak mniej dokładny niż mysz, dlatego dokładamy własne
+   rozpoznanie dla dotyku, z zapasem na drgnięcie ręki.
+   ========================================================================== */
+const DWUKLIK_CZAS  = 450;   // ms między dotknięciami
+const DWUKLIK_LUZ   = 28;    // px — o tyle palec może się przesunąć
+
+let _ostatnieDotkniecie = 0, _ostatniX = 0, _ostatniY = 0, _ostatniCel = null;
+
+/** Czy to drugie dotknięcie tego samego miejsca. */
+function toDrugieDotkniecie(e, cel){
+  const teraz = Date.now();
+  const blisko = Math.abs(e.clientX - _ostatniX) < DWUKLIK_LUZ &&
+                 Math.abs(e.clientY - _ostatniY) < DWUKLIK_LUZ;
+  const wCzasie = (teraz - _ostatnieDotkniecie) < DWUKLIK_CZAS;
+  const tenSam = _ostatniCel === cel;
+  _ostatnieDotkniecie = teraz; _ostatniX = e.clientX; _ostatniY = e.clientY; _ostatniCel = cel;
+  if(wCzasie && blisko && tenSam){
+    _ostatnieDotkniecie = 0; _ostatniCel = null;   // trzecie dotknięcie zaczyna od nowa
+    return true;
+  }
+  return false;
+}
+/** Miejsca, w których dwa dotknięcia znaczą co innego niż „pokaż większe". */
+function pomijaneDwaDotkniecia(cel){
+  if(!cel || !cel.closest) return true;
+  if(cel.closest("button, a, select, input, textarea, .ntools, .drag, .dragOrd")) return true;
+  /* Zaznaczanie tekstu też korzysta z dwóch dotknięć — nie odbieramy mu ich. */
+  const zazn = getSelection && getSelection();
+  return !!(zazn && !zazn.isCollapsed && String(zazn).trim());
+}
+
+/* Drugie dotknięcie w czytniku — tam nie ma nasłuchu podnoszącego karteczki,
+   więc wystarczy zwykły nasłuch. */
+document.addEventListener("click", e=>{
+  const cel = e.target;
+  if(pomijaneDwaDotkniecia(cel)) return;
+  if(!(cel.closest && cel.closest("#fsWrap"))) return;
+  if(toDrugieDotkniecie(e, "czytnik") && typeof closeFs==="function"){
+    e.preventDefault(); e.stopPropagation();
+    closeFs();
+  }
+}, false);
 
 </script>
 <script>
