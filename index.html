@@ -3488,6 +3488,14 @@ html[data-theme="dark"] #dropdown .dd-danger{ background:var(--panel); }
 /* Oddzielamy ją też wzrokowo od reszty — to ostatnia rzecz, którą się wybiera. */
 #dropdown .dd-danger::before{ content:""; }
 
+/* Uchwyt publikacji — ten sam rozmiar i zachowanie co przy etykietach. */
+#pubList .pubDrag{
+  touch-action:none;
+  min-width:22px; min-height:28px;
+  display:inline-flex; align-items:center; justify-content:center;
+}
+@media (hover:none){ #pubList .pubDrag{ opacity:.5; } }
+
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -3496,7 +3504,7 @@ html[data-theme="dark"] #dropdown .dd-danger{ background:var(--panel); }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.32</span></div>
+      <div class="brand-name">JW Study <span class="ver">v2.33</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -4616,39 +4624,15 @@ function applyPubOrder(keys){
 }
 function setPubOrder(list){ pubOrder[pubOrderKey()] = list; savePubOrder(); }
 function clearPubOrder(){ delete pubOrder[pubOrderKey()]; savePubOrder(); renderPubPanel(); toast("Przywrócono domyślną kolejność"); }
-/* przeciąganie pozycji chwytem — pointer events (mysz + dotyk + rysik) */
-function initPubDrag(el){
-  el.querySelectorAll(".pubDrag").forEach(h=>{
-    h.addEventListener("pointerdown", ev=>{
-      const row = h.closest(".item"); if(!row) return;
-      ev.preventDefault(); ev.stopPropagation();
-      try{ h.setPointerCapture(ev.pointerId); }catch(e){}
-      row.classList.add("dragging"); el.classList.add("reordering");
-      const move = e=>{
-        const y = e.clientY;
-        const others = [...el.querySelectorAll(".item.pubMove")].filter(x=>x!==row);
-        let after = null;
-        for(const it of others){
-          const r = it.getBoundingClientRect();
-          if(y > r.top + r.height/2) after = it;
-        }
-        if(after){ if(after.nextSibling!==row) after.after(row); }
-        else { const first = el.querySelector(".item.pubMove"); if(first && first!==row) el.insertBefore(row, first); }
-      };
-      const end = ()=>{
-        h.removeEventListener("pointermove", move);
-        h.removeEventListener("pointerup", end);
-        h.removeEventListener("pointercancel", end);
-        row.classList.remove("dragging"); el.classList.remove("reordering");
-        setPubOrder([...el.querySelectorAll(".item.pubMove")].map(x=>x.dataset.ord));
-        const rst=$("pubReset"); if(rst) rst.style.display="";
-      };
-      h.addEventListener("pointermove", move);
-      h.addEventListener("pointerup", end);
-      h.addEventListener("pointercancel", end);
-    });
-  });
-}
+/* Przeciąganie pozycji panelu publikacji obsługuje 34-chwytanie.js — ten sam
+   mechanizm, co przy etykietach, zakładkach i notatkach: element „przykleja
+   się" do palca, gruba linia pokazuje miejsce, a nasłuch siedzi na dokumencie.
+
+   Poprzednia obsługa trzymała nasłuchy na samym uchwycie i polegała na
+   przechwyceniu wskaźnika. Gdy przechwycenie przepadało — a na tablecie
+   zdarza się to przy przerysowaniu panelu — wiersz przestawał iść za palcem
+   albo puszczenie nie dochodziło i nowa kolejność nie była zapisywana. */
+
 /**
  * Rysuje panel Publikacje pod listą etykiet. Trzy poziomy nawigacji:
  * kategorie → roczniki (albo pojedyncze publikacje) → wydania.
@@ -4732,7 +4716,6 @@ function renderPubPanel(){
       if(innerWidth<=900) mobileShow("colNotes");
     };
   });
-  initPubDrag(el);
 }
 /* podpis nagłówka grupy na liście notatek */
 function pubKeyLabel(key){
@@ -11794,6 +11777,10 @@ function rodzajPozycji(el){
   if(el.classList.contains("ncard")) return {rodzaj:"notatka", id:el.dataset.g};
   if(el.classList.contains("stbItem")) return {rodzaj:"zakladka", id:+el.dataset.stb};
   if(el.classList.contains("ptbItem")) return {rodzaj:"zakladkaPub", id:+el.dataset.ptb};
+  /* Pozycje panelu publikacji: kategorie, roczniki i same publikacje. Ich
+     kolejność to lista kluczy, a nie liczby porządkowe przy obiektach. */
+  if(el.classList.contains("pubMove") && el.dataset.ord!==undefined)
+    return {rodzaj:"publikacja", id:el.dataset.ord};
   if(el.classList.contains("item") && el.dataset.k && !isNaN(+el.dataset.k))
     return {rodzaj:"etykieta", id:+el.dataset.k};
   return null;
@@ -11838,7 +11825,8 @@ function ustawWskaznik(w, cel, przed){
 
 /** Pozycje, obok których wolno upuścić — tego samego rodzaju co chwycona. */
 function pozycjeDoUpuszczenia(rodzaj){
-  const sel = rodzaj==="notatka"     ? "#noteList .ncard"
+  const sel = rodzaj==="publikacja"   ? "#pubList .item.pubMove"
+            : rodzaj==="notatka"     ? "#noteList .ncard"
             : rodzaj==="zakladkaPub" ? "#pubList .ptbItem"
             : rodzaj==="zakladka"    ? "#tagList .stbItem"
             : "#tagList .item[data-k]:not(.stbItem)";
@@ -11912,6 +11900,24 @@ function upuscPozycje(rodzaj, id, cel, przed, sekcjaCel){
     const n = notes.find(x=>x.g===id); if(!n) return;
     const sasiad = notes.find(x=>x.g===info.id);
     przeniesNotatke(n, sasiad, przed);
+    return;
+  }
+  if(rodzaj==="publikacja"){
+    /* Kolejność panelu publikacji zapisuje się jako lista kluczy w tej samej
+       postaci, w jakiej panel ją odczytuje. Bierzemy ją z ekranu — DOM jest tu
+       jedynym miejscem, w którym widać bieżący układ poziomu. */
+    const klucze = [...document.querySelectorAll("#pubList .item.pubMove")]
+                     .map(x=>x.dataset.ord).filter(k=>k!==undefined);
+    const skad = klucze.indexOf(id);
+    if(skad < 0) return;
+    klucze.splice(skad, 1);
+    let dokad = klucze.indexOf(info.id);
+    if(dokad < 0) dokad = klucze.length; else if(!przed) dokad++;
+    klucze.splice(dokad, 0, id);
+    if(typeof setPubOrder==="function") setPubOrder(klucze);
+    if(typeof renderPubPanel==="function") renderPubPanel();
+    const rst = document.getElementById("pubReset"); if(rst) rst.style.display = "";
+    toastOk("Zapisano kolejność publikacji");
     return;
   }
   if(rodzaj==="zakladkaPub"){
@@ -12063,7 +12069,9 @@ document.addEventListener("pointerdown", ev=>{
   if(ev.target.closest(".more") || ev.target.closest(".menu")) return;   // menu ⋯ ma swoje zadanie
 
   const notatka = info.rodzaj==="notatka";
-  const zUchwytu = !!(ev.target.closest && ev.target.closest(notatka ? ".drag" : ".dragOrd"));
+  const uchwytSel = notatka ? ".drag"
+                  : (info.rodzaj==="publikacja" ? ".pubDrag" : ".dragOrd");
+  const zUchwytu = !!(ev.target.closest && ev.target.closest(uchwytSel));
   /* Kartę notatki wolno chwycić TYLKO za uchwyt — inaczej każde przytrzymanie
      przy czytaniu albo zaznaczaniu tekstu zabierałoby notatkę w podróż. */
   if(notatka && !zUchwytu) return;
