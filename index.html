@@ -3536,6 +3536,16 @@ html[data-theme="dark"] #dropdown .dd-danger{ background:var(--panel); }
   #noteList.v-tablica .ncard.wydobyta .ncontent{ padding-bottom:calc(46px + 1.2em); }
 }
 
+
+/* ——— MINIATURA NIE JEST MIEJSCEM DO PISANIA (v2.38) ———
+   Nawet gdyby coś ustawiło tryb edycji na karteczce, tekst zostaje tylko do
+   czytania. Pisanie odbywa się na pełnym ekranie, gdzie nic nie zabiera gestów. */
+#noteList.v-tablica .ncard .ncontent,
+#noteList.v-tablica .ncard .ntitle{
+  -webkit-user-modify:read-only;
+}
+#noteList.v-tablica .ncard .editbar{ display:none!important; }
+
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -3544,7 +3554,7 @@ html[data-theme="dark"] #dropdown .dd-danger{ background:var(--panel); }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.37</span></div>
+      <div class="brand-name">JW Study <span class="ver">v2.41</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -8114,6 +8124,24 @@ async function compressImage(file){
  * @param {Note} n
  */
 function toggleEdit(card,n){
+  /* NA TABLICY NIE EDYTUJEMY W MINIATURZE.
+     Karteczka reaguje na dotknięcia (podnosi się, odkłada, przewija treść),
+     więc pisanie w niej to walka gestów: próba przesunięcia kursora zwijała
+     kartę i tekst uciekał. Miejsce do pisania musi być spokojne, a takim jest
+     pełny ekran — więc tam przenosimy edycję, zamiast jej odbierać. */
+  const naTablicy = card.closest && card.closest("#noteList.v-tablica");
+  if(naTablicy && !card.classList.contains("editing")){
+    if(typeof schowajKarteczke==="function") schowajKarteczke(true);
+    if(typeof openFs==="function"){
+      openFs(n);
+      /* Czytnik buduje kartę od nowa, więc edycję włączamy dopiero na niej. */
+      setTimeout(()=>{
+        const wCzytniku = document.querySelector("#fsWrap .ncard");
+        if(wCzytniku && !wCzytniku.classList.contains("editing")) toggleEdit(wCzytniku, n);
+      }, 60);
+      return;
+    }
+  }
   const editing = card.classList.contains("editing");
   const titleEl = card.querySelector(".ntitle");
   const contEl = card.querySelector(".ncontent");
@@ -8123,7 +8151,13 @@ function toggleEdit(card,n){
     contEl.querySelectorAll(".qhl").forEach(s=>{ s.replaceWith(...s.childNodes); });
     contEl.querySelectorAll("a.jwl-ref.auto").forEach(a=>{ a.replaceWith(document.createTextNode(a.textContent)); });
     titleEl.querySelectorAll(".qhl").forEach(s=>{ s.replaceWith(...s.childNodes); });
-    titleEl.contentEditable="true"; contEl.contentEditable="true";
+    /* Ustawiamy i własność, i atrybut. W przeglądarce jedno pociąga drugie, ale
+     opieramy się na atrybucie w kilku miejscach — rysik po nim rozpoznaje, że
+     ma nie przechwytywać zaznaczania — więc zapisujemy go wprost, zamiast
+     ufać, że tak się stanie. */
+  titleEl.contentEditable="true"; contEl.contentEditable="true";
+  titleEl.setAttribute("contenteditable","true");
+  contEl.setAttribute("contenteditable","true");
     try{ document.execCommand("styleWithCSS", false, false); }catch(e){}
     card.insertBefore(buildEditbar(n), contEl);
     btn.innerHTML=ICO.save; btn.title="Zapisz zmiany";
@@ -8138,6 +8172,8 @@ function toggleEdit(card,n){
     card.querySelector(".editbar")?.remove();
     if(typeof zmierzNhead==="function") zmierzNhead();   // belka wraca na swoje miejsce
     titleEl.contentEditable="false"; contEl.contentEditable="false";
+  titleEl.setAttribute("contenteditable","false");
+  contEl.setAttribute("contenteditable","false");
     btn.innerHTML=ICO.edit; btn.title="Edytuj notatkę";
     saveVersion(n);   // zapisz poprzednią treść do historii wersji
     pushUndo({type:"note", label:"edycję notatki", before:cloneNote(n)});
@@ -13036,8 +13072,15 @@ function rozmiarWydobycia(lista, maleRect){
   const ob = (typeof widocznyObszar==="function") ? widocznyObszar()
            : {szer:innerWidth, wys:innerHeight};
   const r = lista.getBoundingClientRect();
+  /* Karta zaczyna się POD paskiem, więc miejsca w pionie jest tyle, ile zostaje
+     po odjęciu rezerwy — a nie tyle, ile ma cała lista. Liczenie od pełnej
+     wysokości sprawiało, że karta wystawała dołem: pasek ikon lądował na samej
+     krawędzi albo poza nią i nie dało się go dotknąć. Do tego zostawiamy
+     oddech u dołu, żeby karteczka nie kleiła się do krawędzi. */
+  const rezerwa = parseFloat(getComputedStyle(lista).paddingTop) || 0;
+  const oddech  = 20;
   const maxSzer = Math.min(r.width - 16, ob.szer - 24);
-  const maxWys  = Math.min(ob.wys - 40, r.height - 16);
+  const maxWys  = Math.min(ob.wys - 40, r.height - rezerwa - oddech * 2);
 
   let wys = Math.min(520 * A6_ZAPAS, Math.max(300 * A6_ZAPAS, ob.wys * 0.66 * A6_ZAPAS));
   wys = Math.min(wys, maxWys);
@@ -13126,8 +13169,9 @@ function wydobadzKarteczke(karta){
      karteczki z pierwszego rzędu wsuwało jej początek pod pasek i pierwsze
      zdania znikały. */
   const rezerwa = parseFloat(getComputedStyle(lista).paddingTop) || 0;
-  const gora = lista.scrollTop + rezerwa + 8;
-  const dol  = lista.scrollTop + rl.height - wys - 8;
+  const oddech  = 20;
+  const gora = lista.scrollTop + rezerwa + oddech;
+  const dol  = lista.scrollTop + rl.height - wys - oddech;
   top  = Math.max(gora, Math.min(top, Math.max(gora, dol)));
   left = Math.max(8, Math.min(left, rl.width - szer - 8));
 
@@ -13153,25 +13197,7 @@ document.addEventListener("click", e=>{
   const naTablicy = lista.classList.contains("v-tablica");
   const karta = e.target.closest && e.target.closest("#noteList .ncard");
 
-  /* DWA DOTKNIĘCIA OTWIERAJĄ PEŁNY EKRAN — W KAŻDYM WIDOKU.
-     Najpierw miałem to tylko na tablicy, bo tam powstało. To był błąd: gest ma
-     znaczyć wszędzie to samo, inaczej trzeba pamiętać, w którym widoku działa
-     — a wtedy nie działa nigdzie. */
-  if(karta && !pomijaneWydobycie(e.target)){
-    const zazn0 = getSelection && getSelection();
-    const zaznaczono = !!(zazn0 && !zazn0.isCollapsed && String(zazn0).trim());
-    if(!zaznaczono && toDrugieDotkniecie(e, karta.dataset.g)){
-      const n = notes.find(x=>x.g===karta.dataset.g);
-      if(n && typeof openFs==="function"){
-        e.preventDefault(); e.stopPropagation();
-        schowajKarteczke(true);   // karteczka wraca do rzędu, notatka idzie na cały ekran
-        openFs(n);
-        return;
-      }
-    }
-  }
-
-  /* Podnoszenie karteczki dotyczy już tylko tablicy — w pozostałych widokach
+  /* Podnoszenie karteczki dotyczy tylko tablicy — w pozostałych widokach
      notatka i tak jest widoczna w całości albo przycięta wprost. */
   if(!naTablicy) return;
   if(!karta){
@@ -13193,75 +13219,45 @@ document.addEventListener("click", e=>{
   wydobadzKarteczke(karta);
 }, true);
 
-/* Przewinięcie LISTY to znak, że użytkownik szuka czegoś dalej — karteczka
-   sama się wtedy odkłada. Przewijanie treści W ŚRODKU karteczki to co innego:
-   wtedy właśnie ją czyta, więc nie wolno jej zamykać. Zdarzenie przewijania
-   nie bąbelkuje, więc słuchamy w fazie przechwytywania i patrzymy, co dokładnie
-   się przewinęło. */
-document.addEventListener("scroll", e=>{
-  if(!_wydobyta) return;
-  if(e.target === $("noteList")) schowajKarteczke();
-}, true);
+/* PRZEWIJANIE NIE ODKŁADA KARTECZKI.
+
+   Wcześniej przewinięcie listy oznaczało „szukam czegoś dalej" i karteczka
+   sama wracała do rzędu. W praktyce wyszło inaczej: gdy tekst w karteczce
+   sięgał końca albo mieścił się w całości, palec przewijał listę pod spodem —
+   i karteczka znikała w chwili, gdy użytkownik chciał tylko doczytać zdanie.
+   Nie dało się na tym polegać, a od narzędzia do czytania trzeba wymagać
+   przewidywalności.
+
+   Teraz karteczkę odkłada wyłącznie świadome działanie: dotknięcie jej samej,
+   dotknięcie obok albo klawisz Escape. Przewijanie należy do czytania.
+
+   (Paski nad listą chowają się przy przewijaniu nadal — to co innego: one nie
+   trzymają treści, tylko zabierają miejsce.) */
 
 /* Przerysowanie listy buduje karty od nowa — wydobyta karta przestałaby wtedy
    istnieć, a podkładka zostałaby pustym miejscem. */
 document.addEventListener("keydown", e=>{ if(e.key==="Escape" && _wydobyta) schowajKarteczke(); });
 
 /* ==========================================================================
-   DWA DOTKNIĘCIA — PEŁNY EKRAN I POWRÓT
+   DLACZEGO NIE MA TU DWÓCH DOTKNIĘĆ
 
-   Powiększona karteczka ma pasek ikon przy dolnej krawędzi, ale na telefonie
-   jest mały i łatwo go przeoczyć. Prostsza droga do pełnego ekranu to po prostu
-   dotknąć notatki jeszcze raz — i tak samo wrócić.
+   Przez trzy wydania działał gest: dwa dotknięcia otwierały notatkę na pełnym
+   ekranie. Usunięty, i to z dwóch powodów.
 
-   Zasada: pierwsze dotknięcie podnosi karteczkę, drugie (zaraz po nim) otwiera
-   ją na pełnym ekranie. W czytniku dwa dotknięcia zamykają go z powrotem.
+   Pierwszy: gestów na karteczce zrobiło się za dużo. Dotknięcie podnosi,
+   dotknięcie obok odkłada, przeciągnięcie przenosi, przewinięcie czyta —
+   a drugie dotknięcie miało znaczyć jeszcze coś innego, w zależności od
+   odstępu czasu. Za każdym razem trzeba było zgadywać, co się właśnie stanie.
 
-   Nie liczymy własnego czasu tam, gdzie przeglądarka i tak go liczy: `dblclick`
-   dostajemy zarówno od myszy, jak i od dwóch szybkich dotknięć, więc zamiast
-   budować własny zegar — a przy okazji własne pomyłki — korzystamy z niego.
-   Palec bywa jednak mniej dokładny niż mysz, dlatego dokładamy własne
-   rozpoznanie dla dotyku, z zapasem na drgnięcie ręki.
+   Drugi, poważniejszy: DWA DOTKNIĘCIA TO ZAZNACZENIE SŁOWA. Przechwytując je,
+   odbieraliśmy tę możliwość — a w czytniku i w edycji zaznaczanie jest
+   ważniejsze od skrótu do pełnego ekranu. Objawiało się to tak, że przy
+   próbie zaznaczenia słowa nie działo się nic.
+
+   Pełny ekran otwiera się przyciskiem ⛶ na pasku karteczki, dotknięciem
+   tytułu w widoku listy albo z menu pod przytrzymaniem palca. Trzy drogi
+   wystarczą.
    ========================================================================== */
-const DWUKLIK_CZAS  = 450;   // ms między dotknięciami
-const DWUKLIK_LUZ   = 28;    // px — o tyle palec może się przesunąć
-
-let _ostatnieDotkniecie = 0, _ostatniX = 0, _ostatniY = 0, _ostatniCel = null;
-
-/** Czy to drugie dotknięcie tego samego miejsca. */
-function toDrugieDotkniecie(e, cel){
-  const teraz = Date.now();
-  const blisko = Math.abs(e.clientX - _ostatniX) < DWUKLIK_LUZ &&
-                 Math.abs(e.clientY - _ostatniY) < DWUKLIK_LUZ;
-  const wCzasie = (teraz - _ostatnieDotkniecie) < DWUKLIK_CZAS;
-  const tenSam = _ostatniCel === cel;
-  _ostatnieDotkniecie = teraz; _ostatniX = e.clientX; _ostatniY = e.clientY; _ostatniCel = cel;
-  if(wCzasie && blisko && tenSam){
-    _ostatnieDotkniecie = 0; _ostatniCel = null;   // trzecie dotknięcie zaczyna od nowa
-    return true;
-  }
-  return false;
-}
-/** Miejsca, w których dwa dotknięcia znaczą co innego niż „pokaż większe". */
-function pomijaneDwaDotkniecia(cel){
-  if(!cel || !cel.closest) return true;
-  if(cel.closest("button, a, select, input, textarea, .ntools, .drag, .dragOrd")) return true;
-  /* Zaznaczanie tekstu też korzysta z dwóch dotknięć — nie odbieramy mu ich. */
-  const zazn = getSelection && getSelection();
-  return !!(zazn && !zazn.isCollapsed && String(zazn).trim());
-}
-
-/* Drugie dotknięcie w czytniku — tam nie ma nasłuchu podnoszącego karteczki,
-   więc wystarczy zwykły nasłuch. */
-document.addEventListener("click", e=>{
-  const cel = e.target;
-  if(pomijaneDwaDotkniecia(cel)) return;
-  if(!(cel.closest && cel.closest("#fsWrap"))) return;
-  if(toDrugieDotkniecie(e, "czytnik") && typeof closeFs==="function"){
-    e.preventDefault(); e.stopPropagation();
-    closeFs();
-  }
-}, false);
 
 </script>
 <script>
@@ -13334,8 +13330,22 @@ zastosujOszczedny();
    wsuwają się pod zielony pasek aplikacji, tak jak w programach systemowych.
    ========================================================================== */
 const CHOW_PROG_DOL  = 26;   // px w dół, zanim paski ustąpią
-const CHOW_PROG_GORA = 10;   // px w górę — reakcja ma być natychmiastowa
 const CHOW_STREFA_GORY = 60; // tuż pod górną krawędzią paski zostają
+/* Powrót pasków ma być spokojniejszy niż ich zniknięcie.
+   Przy dziesięciu pikselach wracały przy najlżejszym odbiciu palca w drugą
+   stronę — a przewijanie w dół rzadko bywa idealnie jednokierunkowe. Czekamy
+   więc, aż wróci się o mniej więcej półtora rzędu notatek: tyle, ile trzeba,
+   żeby ruch dało się uznać za zamierzony. */
+const CHOW_RZEDY_POWROTU = 1.5;
+const CHOW_POWROT_MIN = 90, CHOW_POWROT_MAX = 700;
+
+/** Ile trzeba wrócić w górę, żeby paski uznały to za świadomy ruch. */
+function progPowrotu(){
+  const karta = document.querySelector("#noteList .ncard");
+  const wys = karta ? karta.getBoundingClientRect().height : 0;
+  if(!wys) return 240;                    // rozsądny zapas, gdy nie ma czego zmierzyć
+  return Math.min(CHOW_POWROT_MAX, Math.max(CHOW_POWROT_MIN, wys * CHOW_RZEDY_POWROTU));
+}
 
 let _ostatniScroll = 0, _nazbierane = 0;
 
@@ -13375,7 +13385,7 @@ function obsluzPrzewijanieListy(el){
   _nazbierane += roznica;
 
   if(_nazbierane > CHOW_PROG_DOL){ pokazPaski(false); _nazbierane = 0; }
-  else if(_nazbierane < -CHOW_PROG_GORA){ pokazPaski(true); _nazbierane = 0; }
+  else if(_nazbierane < -progPowrotu()){ pokazPaski(true); _nazbierane = 0; }
 }
 /* Zdarzenie przewijania nie bąbelkuje — słuchamy w fazie przechwytywania
    i reagujemy TYLKO na listę notatek. Przewijanie treści wewnątrz karteczki
