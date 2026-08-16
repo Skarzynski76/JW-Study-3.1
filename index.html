@@ -3153,7 +3153,11 @@ html[data-theme="dark"] .ncard.wlasneTlo .ntools{ background:rgba(0,0,0,.18); }
    ============================================================ */
 #noteList.v-tablica{ position:relative; }   /* odniesienie dla wydobytej karty */
 #noteList.v-tablica .ncard.wydobyta{
-  z-index:40;
+  /* Nad pozostałymi karteczkami, ale POD paskiem nad listą (z-index 6).
+     Wyższa warstwa sprawiłaby, że powiększona karta zasłania filtry i wybór
+     widoku — a pasek ma zostać dostępny. O to, żeby karta nigdy pod niego nie
+     weszła, dba obliczanie jej położenia: zaczyna się poniżej rezerwy. */
+  z-index:4;
   max-height:none;                /* rządzi teraz wysokość nadana w pikselach */
   min-height:0;
   box-shadow:0 18px 46px rgba(30,25,15,.30);
@@ -3504,7 +3508,7 @@ html[data-theme="dark"] #dropdown .dd-danger{ background:var(--panel); }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.33</span></div>
+      <div class="brand-name">JW Study <span class="ver">v2.34</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -13073,7 +13077,15 @@ function wydobadzKarteczke(karta){
      mieści się w widoku. Dzięki temu wzrok nie ucieka w inne miejsce ekranu. */
   let top  = r.top  - rl.top + lista.scrollTop + (r.height - wys)/2;
   let left = r.left - rl.left + lista.scrollLeft + (r.width  - szer)/2;
-  top  = Math.max(lista.scrollTop + 8, Math.min(top,  lista.scrollTop + rl.height - wys - 8));
+  /* Górna granica MUSI uwzględniać rezerwę na pasek nad listą.
+     Karta jest ustawiana względem pola wypełnienia listy, więc „samą górą"
+     jest miejsce POD paskiem, a nie pod nim widoczne. Bez tego powiększenie
+     karteczki z pierwszego rzędu wsuwało jej początek pod pasek i pierwsze
+     zdania znikały. */
+  const rezerwa = parseFloat(getComputedStyle(lista).paddingTop) || 0;
+  const gora = lista.scrollTop + rezerwa + 8;
+  const dol  = lista.scrollTop + rl.height - wys - 8;
+  top  = Math.max(gora, Math.min(top, Math.max(gora, dol)));
   left = Math.max(8, Math.min(left, rl.width - szer - 8));
 
   requestAnimationFrame(()=>{
