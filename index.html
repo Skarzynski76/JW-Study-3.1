@@ -3546,6 +3546,139 @@ html[data-theme="dark"] #dropdown .dd-danger{ background:var(--panel); }
 }
 #noteList.v-tablica .ncard .editbar{ display:none!important; }
 
+/* ══════════════ RÓŻNICE PO WCZYTANIU KOPII Z JW LIBRARY ══════════════
+
+   Okno pokazuje obie wersje notatki obok siebie. Dwie rzeczy muszą być tu
+   widoczne od pierwszego spojrzenia: która wersja jest wybrana i co się
+   traci, wybierając tę z JW Library. Reszta ma nie zabierać uwagi. */
+.rozmodal{ max-width:min(780px, 94vw); }
+.roz-wstep{ font-size:13.5px; line-height:1.6; color:var(--muted); }
+.roz-hurt{ display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 6px; }
+.roz-lista{
+  max-height:min(52vh, 460px); overflow:auto;
+  border:1px solid var(--border); border-radius:12px; padding:6px;
+  background:var(--bg);
+}
+.roz{ padding:10px 8px; border-bottom:1px solid var(--border); }
+.roz:last-child{ border-bottom:none; }
+.roz-tyt{ font-weight:600; font-size:14px; margin-bottom:2px; }
+.roz-powod{ font-size:12px; color:var(--muted); margin-bottom:8px; }
+
+/* Dwie kolumny na szerokim ekranie, jedna pod drugą na telefonie —
+   na wąskim ekranie kolumny zwężają tekst tak, że nie da się go porównać. */
+.roz-pary{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+@media (max-width:640px){ .roz-pary{ grid-template-columns:1fr; } }
+
+.roz-opcja{
+  display:grid; gap:3px; cursor:pointer;
+  border:1.5px solid var(--border); border-radius:10px; padding:8px 10px;
+  background:var(--panel);
+}
+.roz-opcja.wybrana{ border-color:var(--accent2); background:var(--sel); }
+.roz-opcja input{ display:none; }
+.roz-skad{ font-weight:600; font-size:12.5px; }
+.roz-data{ font-size:11.5px; color:var(--muted); }
+.roz-tresc{ font-size:12.5px; line-height:1.5; }
+.roz-uwaga{ font-size:11.5px; color:var(--muted); }
+.roz-uwaga.ostrz{ color:var(--danger, #b23b2e); font-weight:600; }
+.roz-podsum{ font-size:13px; margin:8px 0 0; }
+
+/* ══════════════ GÓRNY PASEK: JEDNA WYSOKOŚĆ DLA WSZYSTKIEGO ══════════════
+
+   Każde pole liczyło wysokość po swojemu, z własnego wypełnienia, i wychodziło
+   pięć różnych wartości w jednym rzędzie:
+
+     Szukaj                42 px   (0 13px + pole 10px 0)
+     Wszystkie notatki     38 px   (.btn 9px 14px)
+     Kolejność w publikacji 30 px  (#sortSel 6px 8px)
+     ikony                 36 px
+     A− A+                 34 px
+
+   Górne i dolne krawędzie nie tworzyły przez to wspólnej linii — oko nie miało
+   się o co zaczepić i pasek wyglądał na poskładany z przypadkowych części.
+
+   Teraz wysokość jest JEDNA, podana z góry, a wypełnienie zostaje tylko
+   w poziomie. Skalowanie interfejsu (--uiw) nadal działa: przy większym
+   interfejsie rośnie razem z pismem, zamiast je przycinać. */
+:root{
+  --wysPola: calc(36px * var(--uiw, 1));
+  --rPola: 10px;
+}
+/* Na dotyku pole musi być większe niezależnie od gustu: palec ma około 9 mm,
+   kursor myszy jeden piksel. To nie jest ta sama decyzja. */
+@media (hover:none){
+  :root{ --wysPola: calc(40px * var(--uiw, 1)); }
+}
+
+header .searchwrap,
+header .btn,
+header #sortSel,
+header .fontctl,
+header .ikony-grupa{
+  height: var(--wysPola);
+  min-height: var(--wysPola);
+  border-radius: var(--rPola);
+}
+/* Wypełnienie pionowe wyzerowane wszędzie — od teraz o wysokości decyduje
+   wyłącznie zmienna, a nie suma przypadkowych wartości. */
+header .btn{ padding-top:0; padding-bottom:0; }
+header #search{ padding:0; height:100%; }
+header #sortSel{ padding:0 8px; }
+header .fontctl button{ padding:0 11px; height:100%; }
+header .btn.ico-btn{ height: var(--wysPola); min-height: var(--wysPola); }
+
+/* Grupa ikon: przyciski stykają się bokami, więc zamiast pięciu odstępów jest
+   jeden. Zaokrąglenie zostaje tylko na skrajnych — w środku byłoby widać
+   przerwy tam, gdzie ich nie ma. */
+.ikony-grupa{
+  display:inline-flex;
+  border:1px solid var(--border);
+  border-radius: var(--rPola);
+  overflow:hidden;
+}
+header .ikony-grupa{ border-color:rgba(255,255,255,.24); }
+.ikony-grupa .btn.ico-btn{
+  border:none;
+  border-radius:0;
+  height:100%;
+  min-height:0;
+}
+.ikony-grupa .btn.ico-btn + .btn.ico-btn{ border-left:1px solid rgba(255,255,255,.18); }
+/* Obwódka zaznaczenia klawiaturą musi zostać widoczna także w środku grupy,
+   gdzie nie ma własnych krawędzi — inaczej idąc tabulatorem gubi się miejsce. */
+.ikony-grupa .btn.ico-btn:focus-visible{ outline:2px solid #fff; outline-offset:-2px; }
+
+/* ——— SZEROKOŚĆ: ŻEBY „PLIK" WRÓCIŁ DO PIERWSZEGO RZĘDU ———
+
+   Pasek łamał się na dwa rzędy dla JEDNEGO przycisku. Zwężają się tylko pola
+   szukania (reszta ma flex-shrink:0), więc o złamaniu decyduje suma szerokości
+   STAŁYCH elementów plus minimum dla szukania. Zeszliśmy z niej trzema drobnymi
+   krokami, bez chowania czegokolwiek:
+
+     zsunięcie pięciu ikon w grupę   ~36 px  (cztery odstępy mniej)
+     mniejszy odstęp między polami   ~24 px
+     węższe pola kolejności i filtru ~40 px
+
+   Razem około stu pikseli — tyle brakowało. */
+header{ gap: calc(7px * var(--uiw, 1)); }
+header #sortSel{ max-width: calc(190px * var(--uiw, 1)); }
+header #btnWszystkie{ max-width: calc(190px * var(--uiw, 1)); }
+
+/* Gdy mimo wszystko zabraknie miejsca — na wąskim oknie albo przy powiększonym
+   interfejsie — pasek nadal ma prawo się złamać. Wtedy rzędy mają leżeć równo
+   jeden pod drugim, a nie stykać się krawędziami. */
+header{ row-gap: calc(7px * var(--uiw, 1)); }
+
+/* Na węższym oknie skracamy dwa najdłuższe napisy, zamiast łamać rząd.
+   Ikona przy każdym z nich niesie to samo znaczenie, więc „Wszystkie" i „Nowa"
+   są równie jednoznaczne — a złamany pasek zabiera notatkom cały rząd. */
+@media (max-width:1400px){
+  #btnWszystkie .bwTxt{ font-size:0; }
+  #btnWszystkie .bwTxt::after{ content:"Wszystkie"; font-size:calc(13px * var(--uiw,1)); }
+  #btnNew .tb-txt{ font-size:0; }
+  #btnNew .tb-txt::after{ content:"Nowa"; font-size:calc(13px * var(--uiw,1)); }
+}
+
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -3554,7 +3687,7 @@ html[data-theme="dark"] #dropdown .dd-danger{ background:var(--panel); }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.41</span></div>
+      <div class="brand-name">JW Study <span class="ver">v2.44</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -3563,7 +3696,7 @@ html[data-theme="dark"] #dropdown .dd-danger{ background:var(--panel); }
     <div id="searchSug"></div>
     <input id="search" type="search" autocomplete="off" aria-label="Szukaj w notatkach" placeholder='Szukaj w notatkach…' title='Wyszukiwanie rozszerzone:&#10;• bez ogonków też działa: milosc znajdzie miłość&#10;• kilka słów — wszystkie muszą wystąpić&#10;• gwiazdka: miłos* znajdzie miłość, miłosierdzie…&#10;• "w cudzysłowie" — dokładna fraza&#10;• (słowo|inne) — którekolwiek z nich&#10;• tytuł:pokora · etykieta:studium · werset:Jan'>
   </div>
-  <button class="btn" id="btnWszystkie" hidden title="Wróć do wszystkich notatek — czyści szukanie, etykietę, księgę i szybki filtr (0)"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5L4 12l5 7"/><path d="M4 12h9a6 6 0 0 1 0 12"/></svg> <span class="bwTxt">Wszystkie notatki</span><span class="bwN"></span></button>
+  <button class="btn" id="btnWszystkie" hidden title="Wróć do wszystkich notatek — czyści szukanie, etykietę, księgę i szybki filtr (0)"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5L4 12l5 7"/><path d="M4 12h9a6 6 0 0 1 0 12"/></svg> <span class="bwTxt">Wszystkie notatki</span></button>
   <select id="sortSel" aria-label="Kolejność notatek na liście" title="Kolejność notatek na liście">
     <optgroup label="Według zmiany">
       <option value="new">Ostatnio zmienione</option>
@@ -3582,17 +3715,21 @@ html[data-theme="dark"] #dropdown .dd-danger{ background:var(--panel); }
       <option value="custom">Własna kolejność (przeciąganie)</option>
     </optgroup>
   </select>
-  <button class="btn ico-btn" id="btnSettings" title="Ustawienia (,)"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.1"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a1.9 1.9 0 1 1-2.7 2.7l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5v.2a1.9 1.9 0 1 1-3.8 0V21a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a1.9 1.9 0 1 1-2.7-2.7l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a1.9 1.9 0 1 1 0-3.8h.2a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a1.9 1.9 0 1 1 2.7-2.7l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a1.9 1.9 0 1 1 3.8 0v.2a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a1.9 1.9 0 1 1 2.7 2.7l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1h.2a1.9 1.9 0 1 1 0 3.8H21a1.6 1.6 0 0 0-1.5 1z"/></svg></button>
-  <button class="btn ico-btn" id="btnTheme" title="Motyw"></button>
-  <button class="btn ico-btn" id="btnCols" title="Pokaż lub ukryj kolumny"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="2"/><path d="M9 4.5v15M15 4.5v15"/></svg></button>
-  <button class="btn ico-btn" id="btnColors" title="Kolory kolumn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18c1.4 0 2-.9 2-1.8 0-1.3 1-2.2 2.2-2.2H18a3 3 0 0 0 3-3A8 8 0 0 0 12 3z"/><circle cx="7.5" cy="11" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="7.5" r="1" fill="currentColor" stroke="none"/><circle cx="16.3" cy="11" r="1" fill="currentColor" stroke="none"/></svg></button>
-  <button class="btn ico-btn" id="btnUndo" title="Cofnij ostatnią zmianę"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 7L4 12l5 5"/><path d="M4 12h11a5 5 0 0 1 0 10h-3"/></svg></button>
+  <!-- Pięć przycisków widoku w jednej grupie: stykają się bokami, więc
+       zamiast pięciu odstępów jest jeden, a wzrokowo tworzą jedną rzecz. -->
+  <div class="ikony-grupa" role="group" aria-label="Widok">
+    <button class="btn ico-btn" id="btnSettings" title="Ustawienia (,)"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.1"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a1.9 1.9 0 1 1-2.7 2.7l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5v.2a1.9 1.9 0 1 1-3.8 0V21a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a1.9 1.9 0 1 1-2.7-2.7l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a1.9 1.9 0 1 1 0-3.8h.2a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a1.9 1.9 0 1 1 2.7-2.7l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a1.9 1.9 0 1 1 3.8 0v.2a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a1.9 1.9 0 1 1 2.7 2.7l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1h.2a1.9 1.9 0 1 1 0 3.8H21a1.6 1.6 0 0 0-1.5 1z"/></svg></button>
+    <button class="btn ico-btn" id="btnTheme" title="Motyw"></button>
+    <button class="btn ico-btn" id="btnCols" title="Pokaż lub ukryj kolumny"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="2"/><path d="M9 4.5v15M15 4.5v15"/></svg></button>
+    <button class="btn ico-btn" id="btnColors" title="Kolory kolumn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18c1.4 0 2-.9 2-1.8 0-1.3 1-2.2 2.2-2.2H18a3 3 0 0 0 3-3A8 8 0 0 0 12 3z"/><circle cx="7.5" cy="11" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="7.5" r="1" fill="currentColor" stroke="none"/><circle cx="16.3" cy="11" r="1" fill="currentColor" stroke="none"/></svg></button>
+    <button class="btn ico-btn" id="btnUndo" title="Cofnij ostatnią zmianę"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 7L4 12l5 5"/><path d="M4 12h11a5 5 0 0 1 0 10h-3"/></svg></button>
+  </div>
   <div class="fontctl" title="Rozmiar czcionki (notatki i kolumny)">
     <button id="fMinus">A−</button>
     <button id="fPlus" style="font-size:15px">A+</button>
   </div>
   <button class="btn ico-btn" id="btnBackup" title="Kopia zapasowa danych"></button>
-  <button class="btn primary" id="btnNew"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Nowa notatka</button>
+  <button class="btn primary" id="btnNew"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> <span class="tb-txt">Nowa notatka</span></button>
   <button class="btn" id="btnMenu"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.6v2.4M12 19v2.4M21.4 12H19M5 12H2.6M18.6 5.4l-1.7 1.7M7.1 16.9l-1.7 1.7M18.6 18.6l-1.7-1.7M7.1 7.1L5.4 5.4"/></svg> Plik</button>
 </header>
 
@@ -3803,6 +3940,26 @@ html[data-theme="dark"] #dropdown .dd-danger{ background:var(--panel); }
     <div class="actions">
       <button class="btn" data-zamknij="modalExport">Anuluj</button>
       <button class="btn primary" id="expGo">Utwórz plik .jwlibrary</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modalRoznice">
+  <div class="modal rozmodal">
+    <h3>Te notatki się rozjechały</h3>
+    <p class="roz-wstep">Zmieniły się <b id="rozIle">0</b> razy w obu miejscach naraz — tu i w JW Library.
+      Nowe i niezmienione notatki zostały już wczytane; te wymagają Twojej decyzji.
+      <br><b>JW Library przechowuje notatki jako czysty tekst</b>, więc wersja stamtąd nie ma pogrubień,
+      kolorów ani zdjęć.</p>
+    <div class="roz-hurt">
+      <button class="btn" id="rozWszystkieMoje" type="button">Wszędzie zostaw moje</button>
+      <button class="btn" id="rozWszystkieBiblioteka" type="button">Wszędzie weź z JW Library</button>
+    </div>
+    <div id="rozLista" class="roz-lista"></div>
+    <p id="rozPodsum" class="roz-podsum"></p>
+    <div class="actions">
+      <button class="btn" id="rozAnuluj" type="button">Zostaw wszystko bez zmian</button>
+      <button class="btn primary" id="rozZastosuj" type="button">Zastosuj wybory</button>
     </div>
   </div>
 </div>
@@ -5814,9 +5971,11 @@ function isIOS(){
   return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
          (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1);
 }
-function hilite(html){
-  if(!query) return html;
-  const tmp = document.createElement("div"); tmp.innerHTML = html;
+/* Nakłada podświetlenie WPROST na istniejący element, bez przepisywania go
+   przez HTML. Dzięki temu podświetlenie da się zdjąć i nałożyć na karcie, która
+   już stoi na ekranie — zamiast budować ją od nowa. */
+function podswietlWElemencie(korzen){
+  if(!korzen || !query) return;
   const rx = qHl || new RegExp("("+query.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","gi");
   (function walk(node){
     [...node.childNodes].forEach(ch=>{
@@ -5830,7 +5989,21 @@ function hilite(html){
         node.replaceChild(frag, ch);
       } else if(ch.nodeType===1 && !ch.classList.contains("qhl")) walk(ch);
     });
-  })(tmp);
+  })(korzen);
+}
+/** Zdejmuje podświetlenie, zostawiając sam tekst. */
+function zdejmijPodswietlenie(korzen){
+  if(!korzen) return;
+  korzen.querySelectorAll(".qhl").forEach(s=>{
+    const rodzic = s.parentNode;
+    s.replaceWith(...s.childNodes);
+    if(rodzic) rodzic.normalize();     // scalamy rozcięte kawałki tekstu z powrotem
+  });
+}
+function hilite(html){
+  if(!query) return html;
+  const tmp = document.createElement("div"); tmp.innerHTML = html;
+  podswietlWElemencie(tmp);
   return tmp.innerHTML;
 }
 function contentHtml(n){ return hilite(n.h ? n.h : esc(n.c||"")); }
@@ -5857,10 +6030,25 @@ let _tagsVer = 0;                   // rośnie przy zmianie etykiet (wpływa na 
 function bumpTagsVer(){ _tagsVer++; }
 
 /* wszystko, co widać na karcie — gdy to samo, karta może zostać bez zmian */
+/* W ODCISKU KARTY NIE MA WPISANEGO SZUKANIA.
+   Było — bo podświetlenie trafień jest częścią tego, co karta pokazuje. Skutek:
+   KAŻDA LITERA WPISANA W WYSZUKIWARKĘ BUDOWAŁA OD NOWA WSZYSTKIE WIDOCZNE
+   KARTY, ze zdjęciami, przyciskami i powiązanymi notatkami — po to, żeby
+   zmienić kolor kilku słów. Podświetlenie nakładamy więc na karty, które już
+   stoją na ekranie (odswiezPodswietlenie), a odcisk pilnuje tylko treści.
+
+   KARTA ZALEŻY OD SPOSOBU SORTOWANIA TYLKO W JEDNYM: pokazuje datę utworzenia
+   albo datę zmiany. Przez długi czas w odcisku karty siedział cały sortMode,
+   więc PRZEŁĄCZENIE SORTOWANIA PRZEBUDOWYWAŁO WSZYSTKIE WIDOCZNE KARTY — sześć
+   dziesiątek — mimo że zmieniała się wyłącznie ich kolejność. Pytamy więc
+   o to, co karta faktycznie pokazuje. */
+function sortujePoUtworzeniu(){
+  return (sortMode==="createdNew" || sortMode==="createdOld") ? 1 : 0;
+}
 function noteCardSig(n){
   return [n.g, n.mo, n.t, (n.h||n.c||"").length, n.pin?1:0, n.fav?1:0, n.ord||0, n.ptb||0, n.tg.join(","), n.b, n.ch, n.v,
           n.ks, n.itn, n.par, n.ff, n.lh, n.pm, n.la, n.stb, n.cr, n.wys, n.bg,
-          query, sortMode, _tagsVer].join("\u0001");
+          sortujePoUtworzeniu(), _tagsVer].join("\u0001");
 }
 /**
  * Zwraca kartę notatki: gotową z pamięci podręcznej albo nowo zbudowaną.
@@ -5931,6 +6119,7 @@ function renderNotes(){
 
   if(_moreObserver){ _moreObserver.disconnect(); _moreObserver = null; }   // stary obserwator do kosza
 
+
   if(arr.length===0){
     _cardCache.clear();
     el.replaceChildren(emptyStateEl());
@@ -5960,8 +6149,30 @@ function renderNotes(){
     _moreObserver.observe(more);
   }
   syncChildren(el, wanted);
+  odswiezPodswietlenie(el);
   pruneCardCache(keep);
   fsNavList = arr.map(n=>n.g);
+}
+/* ==========================================================================
+   PODŚWIETLENIE TRAFIEŃ NA GOTOWYCH KARTACH
+
+   Karty przychodzą tu z pamięci podręcznej — te same węzły co przed chwilą.
+   Zdejmujemy z nich stare podświetlenie i nakładamy nowe. Kilkadziesiąt
+   zamian tekstu zamiast zbudowania kilkudziesięciu kart od zera.
+
+   Karta w trakcie edycji zostaje nietknięta: podświetlenie wstawia znaczniki
+   w treść, a te w polu edycji trafiłyby do zapisu.
+   ========================================================================== */
+function odswiezPodswietlenie(lista){
+  if(!lista) return;
+  lista.querySelectorAll(".ncard").forEach(karta=>{
+    if(karta.classList.contains("editing")) return;
+    [karta.querySelector(".ntitle"), karta.querySelector(".ncontent")].forEach(cz=>{
+      if(!cz || cz.isContentEditable) return;
+      zdejmijPodswietlenie(cz);
+      podswietlWElemencie(cz);
+    });
+  });
 }
 /* normalizacja: ma\u0142e litery + usuni\u0119cie ogonk\u00f3w (\u0142/\u0141 nie rozk\u0142ada si\u0119 przez NFD, wi\u0119c osobno) */
 function norm(s){ return (s||"").toLowerCase().replace(/\u0142/g,"l").normalize("NFD").replace(/[\u0300-\u036f]/g,""); }
@@ -6534,10 +6745,7 @@ $("readPop").addEventListener("pointerdown", e=>{
   else if(grp==="theme"){ setTheme(v); }
   const g=b.closest("[data-grp]"); g.querySelectorAll("button").forEach(x=>x.classList.remove("on")); b.classList.add("on");
 });
-document.addEventListener("pointerdown", e=>{
-  const p=$("readPop");
-  if(p && p.style.display==="block" && !e.target.closest("#readPop") && !e.target.closest("[data-readbtn]")) p.style.display="none";
-}, true);
+/* Zamykanie przy dotknięciu obok — wspólne dla wszystkich okienek, w 45-zamykanie.js */
 $("fsClose").onclick = closeFs;
 $("modalFs").addEventListener("click", e=>{ if(e.target.id==="modalFs") closeFs(); });
 // nawigacja poprzednia/następna
@@ -6623,12 +6831,7 @@ $("colorMenu").addEventListener("click", e=>{
   row.querySelectorAll(".cm-sw").forEach(s=>s.classList.remove("sel"));
   swEl.classList.add("sel");
 });
-document.addEventListener("click", e=>{
-  const cm=$("colorMenu");
-  /* Celem kliknięcia bywa sam dokument, który nie ma metody closest. */
-  const bl = e.target && e.target.closest ? e.target : null;
-  if(cm.style.display==="block" && (!bl || (!bl.closest("#colorMenu") && bl.id!=="btnColors" && bl.id!=="btnSettings" && !bl.closest("#btnColors")))){ cm.style.display="none"; }
-}, true);
+/* Zamykanie przy dotknięciu obok — wspólne dla wszystkich okienek, w 45-zamykanie.js */
 applyColors();
 
 /* ================= ROZMIAR CZCIONKI ================= */
@@ -7485,7 +7688,7 @@ $("ebPop").addEventListener("pointerdown", ev=>{
     pop.style.display="none"; return;
   }
 });
-document.addEventListener("pointerdown", e=>{ const p=$("ebPop"); if(p && p.style.display==="block" && !e.target.closest("#ebPop") && !e.target.closest("[data-pop]")) p.style.display="none"; }, true);
+/* Zamykanie przy dotknięciu obok — wspólne dla wszystkich okienek, w 45-zamykanie.js */
 let edSavedRange = null;
 
 /** Notatka, do której należy podane pole edycji. */
@@ -8629,10 +8832,7 @@ $("btnMenu").onclick = e=>{
   };
 };
 $("trashEmpty").onclick = emptyTrash;
-document.addEventListener("click", e=>{
-  const c = e.target && e.target.closest ? e.target : null;
-  if(!c || (!c.closest("#dropdown") && c.id!=="btnMenu")) $("dropdown").style.display="none";
-}, true);
+/* Zamykanie przy dotknięciu obok — wspólne dla wszystkich okienek, w 45-zamykanie.js */
 
 /* =====================================================================
    BIBLIOTEKI DO IMPORTU Z JW LIBRARY
@@ -8806,10 +9006,22 @@ async function handleImportFile(e){
                                 "To może być kopia z innej wersji JW Library."); }
     if(idb){ await idbPut("files",buf,"lastBackup"); await idbPut("meta",file.name,"lastBackupName"); await idbPut("meta",new Date().toISOString(),"lastBackupDate"); }
     renderAll();
+    /* NAJPIERW RÓŻNICE, POTEM PODSUMOWANIE.
+       Odwrotna kolejność kazałaby zamknąć okno z liczbami, żeby dopiero zobaczyć,
+       że coś czeka na decyzję — a podsumowanie bez rozstrzygniętych różnic i tak
+       podawałoby liczby nieostateczne. */
+    let zastapione = 0;
+    if(res.roznice && res.roznice.length && typeof pokazRoznice==="function"){
+      zastapione = await pokazRoznice(res.roznice);
+    }
     showInfo("Import zakończony", `Kopia z JW Library została <b>dołączona</b> (bez kasowania Twoich danych).<br><br>`+
       `• Nowych notatek: <b>${res.added}</b><br>`+
-      `• Zaktualizowanych: <b>${res.updated}</b><br>`+
-      `• Pominięto (bez zmian lub Twoje edycje): ${res.skipped}`+
+      `• Zaktualizowanych: <b>${res.updated + zastapione}</b><br>`+
+      (res.roznice && res.roznice.length
+        ? `• Rozjechanych, pokazanych do wyboru: <b>${res.roznice.length}</b>`+
+          (zastapione ? ` — zastąpiono <b>${zastapione}</b>` : ` — zostawiono wszystkie swoje`) + `<br>`
+        : "")+
+      `• Pominięto (bez zmian): ${res.skipped}`+
       (res.wlasne ? `<br>• Nietknięte miejsca ustawione ręcznie: <b>${res.wlasne}</b>` : "")+
       (res.polozenia ? `<br><br>Poprawiono położenie w publikacji u <b>${res.polozenia}</b> notatek — `+
                        `to naprawia sortowanie „Kolejność w publikacji”.` : ""));
@@ -8821,6 +9033,37 @@ async function handleImportFile(e){
   }finally{
     if(db){ try{ db.close(); }catch(e){} }   // pamięć bazy zwalniamy także po błędzie
   }
+}
+/* ==========================================================================
+   CZY TO NAPRAWDĘ RÓŻNICA
+
+   Porównujemy sam TEKST, nie zapis. Notatka wyeksportowana stąd i wczytana
+   z powrotem ma inne odstępy i łamania wierszy — JW Library przechowuje ją
+   jako czysty tekst — więc porównanie znak po znaku pokazywałoby różnicę przy
+   każdym wczytaniu tej samej notatki. Pytanie o coś, co się nie zmieniło, jest
+   gorsze niż brak pytania: uczy klikać „dalej" bez patrzenia.
+   ========================================================================== */
+function tekstDoPorownania(x){
+  return String(x||"").replace(/\s+/g," ").trim();
+}
+function toSamaTresc(moja, zBiblioteki){
+  const a = tekstDoPorownania(moja.c || (moja.h ? htmlToPlain(moja.h) : ""));
+  const b = tekstDoPorownania(zBiblioteki.c);
+  return a === b && tekstDoPorownania(moja.t) === tekstDoPorownania(zBiblioteki.t);
+}
+/** Czy notatka ma coś, czego JW Library nie przechowuje i czego nie odzyska. */
+function maFormatowanie(n){
+  return !!(n.h && /<(b|i|u|s|mark|img|ul|ol|li|h2|h3|blockquote|font|span)[ >]/i.test(n.h));
+}
+function opiszRoznice(moja, zBiblioteki, powod){
+  return {
+    g: moja.g,
+    powod,
+    zeZdjeciem: !!(moja.h && /<img/i.test(moja.h)),
+    zFormatowaniem: maFormatowanie(moja),
+    moja:       {t: moja.t||"", c: moja.c || (moja.h?htmlToPlain(moja.h):""), mo: moja.mo||""},
+    biblioteka: {t: zBiblioteki.t||"", c: zBiblioteki.c||"", mo: zBiblioteki.mo||""}
+  };
 }
 function importFromDb(db){
   const tagRows=db.exec("SELECT TagId, Name FROM Tag WHERE Type=1");
@@ -8843,6 +9086,7 @@ function importFromDb(db){
     FROM Note n LEFT JOIN Location l ON n.LocationId=l.LocationId LEFT JOIN UserMark u ON n.UserMarkId=u.UserMarkId`;
   const rows=db.exec(q);
   let added=0,updated=0,skipped=0,polozenia=0,wlasne=0;
+  const roznice=[];
   const byG={}; notes.forEach(n=>byG[n.g]=n);
   const changed=[];
   if(rows.length) rows[0].values.forEach(r=>{
@@ -8875,9 +9119,40 @@ function importFromDb(db){
 
       if(ex.pw) wlasne++;
       if(ruszone) polozenia++;
-      if(ex.ed||ex.tgd){ if(ruszone) changed.push(ex); skipped++; }
-      else if((inc.mo||"")>(ex.mo||"")){ const keepCol=ex.col; Object.assign(ex,inc); ex.h=null; if(!inc.col)ex.col=keepCol; changed.push(ex); updated++; }
-      else { if(ruszone) changed.push(ex); skipped++; }
+
+      /* ═══ ROZSTRZYGANIE RÓŻNIC ═══
+
+         Dawniej działo się to po cichu i w dwie strony gubiło pracę:
+
+         • notatkę zmienioną TUTAJ import pomijał w całości — wersja z JW
+           Library znikała bez słowa, wliczona do „pominięto";
+         • notatkę zmienioną TYLKO w JW Library nadpisywał i przy okazji
+           kasował `h`, czyli CAŁE FORMATOWANIE I ZDJĘCIA. JW Library trzyma
+           notatki jako czysty tekst, więc nie miał ich skąd odtworzyć.
+
+         Obie decyzje bywają słuszne — ale nie da się ich podjąć za kogoś.
+         Zbieramy je więc i pokazujemy: oba teksty obok siebie, wybór przy
+         każdej notatce. Reszta wchodzi bez pytania, jak dotąd. */
+      const tenSamTekst = toSamaTresc(ex, inc);
+      const straceFormatowanie = maFormatowanie(ex);
+
+      if(tenSamTekst){
+        /* Treść się zgadza — nie ma o czym rozstrzygać. Zapisujemy tylko
+           odświeżone położenie, jeśli się zmieniło. */
+        if(ruszone) changed.push(ex);
+        skipped++;
+      } else if(ex.ed || ex.tgd){
+        roznice.push(opiszRoznice(ex, inc, "zmienione w obu miejscach"));
+        if(ruszone) changed.push(ex);
+      } else if((inc.mo||"") > (ex.mo||"")){
+        if(straceFormatowanie){
+          roznice.push(opiszRoznice(ex, inc, "wersja z JW Library jest nowsza, ale bez formatowania"));
+          if(ruszone) changed.push(ex);
+        } else {
+          const keepCol=ex.col; Object.assign(ex,inc); ex.h=null; if(!inc.col)ex.col=keepCol;
+          changed.push(ex); updated++;
+        }
+      } else { if(ruszone) changed.push(ex); skipped++; }
     }
   });
   if(idb&&changed.length) idbBulk("notes",changed).catch(e=>reportSaveError(e,"import"));
@@ -8886,7 +9161,7 @@ function importFromDb(db){
     const bk=db.exec("SELECT KeySymbol, COUNT(*) c FROM Location WHERE BookNumber IS NOT NULL AND KeySymbol IS NOT NULL GROUP BY KeySymbol ORDER BY c DESC LIMIT 1");
     if(bk.length && bk[0].values[0][0]){ bibleKs = bk[0].values[0][0]; try{ localStorage.setItem(KP+"BibleKs", bibleKs); }catch(e){} }
   }catch(e){}
-  return {added,updated,skipped,polozenia,wlasne};
+  return {added,updated,skipped,polozenia,wlasne,roznice};
 }
 /* ===== podkreślenia: kolory, etykieta, link ===== */
 function openUrlJWL(url){
@@ -10199,11 +10474,7 @@ if($("btnCols")) $("btnCols").onclick = e=>{
   dd.dataset.rodzaj="kolumny";
   otworzMenuKolumn($("btnCols"));
 };
-document.addEventListener("pointerdown", e=>{
-  const dd=$("dropdown");
-  if(dd && dd.dataset.rodzaj==="kolumny" && dd.style.display==="block" &&
-     !e.target.closest("#dropdown") && !e.target.closest("#btnCols")) dd.style.display="none";
-}, true);
+/* Zamykanie przy dotknięciu obok — wspólne dla wszystkich okienek, w 45-zamykanie.js */
 document.querySelectorAll(".colResizer").forEach(rz=>{
   rz.addEventListener("pointerdown", e=>{
     if(innerWidth<=900) return;
@@ -10239,7 +10510,12 @@ document.querySelectorAll(".colResizer").forEach(rz=>{
   });
 });
 let searchTimer=null;
-$("search").addEventListener("input",e=>{ parseQuery(e.target.value); clearTimeout(searchTimer); searchTimer=setTimeout(renderAll, 130); showSearchSug(e.target.value); });
+/* PISANIE W WYSZUKIWARCE ODŚWIEŻA TYLKO KOLUMNĘ NOTATEK.
+   Było tu renderAll, czyli przerysowanie wszystkich trzech kolumn po każdej
+   przerwie w pisaniu. Kolumny etykiet i publikacji nie zależą jednak od tego,
+   co wpisano — ich liczniki są liczone z całości, nie z wyników — więc dwie
+   trzecie tej pracy szło w próżnię przy każdej literze. */
+$("search").addEventListener("input",e=>{ parseQuery(e.target.value); clearTimeout(searchTimer); searchTimer=setTimeout(renderNotes, 130); showSearchSug(e.target.value); });
 
 </script>
 <script>
@@ -12337,8 +12613,12 @@ function odswiezPrzyciskWszystkie(){
   b.hidden = !zaw.length;
   if(!zaw.length) return;
   const ile = notes.filter(n=>!n.del).length;
-  const licznik = b.querySelector(".bwN");
-  if(licznik) setText(licznik, String(ile));
+  /* LICZBY NIE POWTARZAMY NA JEDNYM PASKU.
+     Przycisk pokazywał ją w bąbelku, a podpis pod nazwą aplikacji — „16617
+     notatek" — podaje dokładnie tę samą wartość, kilka centymetrów obok. Dwa
+     razy to samo, a przy sześciu cyfrach bąbelek zabierał tyle miejsca, że
+     pasek łamał się na dwa rzędy dla jednego przycisku. Liczba została tam,
+     gdzie jest zawsze widoczna, i w podpowiedzi tego przycisku. */
   /* W tytule wypisujemy, co zostanie zdjęte — inaczej przycisk kasujący kilka
      rzeczy naraz bywa niespodzianką. */
   b.title = "Wróć do wszystkich notatek (" + ile + ") — zdejmie: " + zaw.join(", ") + "   [0]";
@@ -13878,6 +14158,267 @@ document.addEventListener("click", e=>{
   const inna = notes.find(x=>x.g===b.dataset.pow);
   if(inna && typeof openFs==="function") openFs(inna);
 });
+
+</script>
+<script>
+/* ==========================================================================
+   JW Study — zamykanie.js
+   JEDEN SPOSÓB ZAMYKANIA WYSKAKUJĄCYCH OKIENEK
+
+   Było ich pięć, w pięciu plikach, i różniły się między sobą:
+
+     menu główne (dropdown)      zamykało się przy „click"
+     menu kolorów (colorMenu)    przy „click"
+     ustawienia czytania         przy „pointerdown"
+     okienko paska edycji        przy „pointerdown"
+     menu kolumn                 przy „pointerdown"
+
+   Różne zdarzenie to różny moment: jedne znikały pod palcem, inne dopiero po
+   jego uniesieniu. Ale ważniejsze było to, co robiły WSZYSTKIE PIĘĆ:
+
+   ŻADNE NIE POŁYKAŁO DOTKNIĘCIA. Dotknięcie obok otwartego menu zamykało je
+   i JEDNOCZEŚNIE naciskało to, co znalazło się pod palcem. Chcąc tylko zamknąć
+   menu, można było trafić w przycisk pod spodem — również taki, który usuwa.
+   Na dotyku to szczególnie łatwe, bo menu bywa duże i zajmuje pół ekranu.
+
+   Wszędzie indziej — w systemie, w innych aplikacjach — pierwsze dotknięcie
+   obok otwartego menu tylko je zamyka. Dopiero drugie coś naciska. Tak jest
+   teraz i tutaj.
+
+   Okienka są WYMIENIONE W JEDNEJ TABLICY. Dopisanie kolejnego to jeden wiersz,
+   a nie kolejny nasłuch na całą stronę z własnym pomysłem na zamykanie.
+   ========================================================================== */
+"use strict";
+
+/* Dla każdego okienka: co ma się schować i czego NIE wolno uznać za „obok".
+   Wyjątkiem jest zawsze przycisk otwierający — inaczej dotknięcie go przy
+   otwartym okienku zamknęłoby je i natychmiast otworzyło z powrotem. */
+const OKIENKA = [
+  {id:"dropdown",  wyjatki:["#btnMenu", "#btnCols"]},
+  {id:"colorMenu", wyjatki:["#btnColors", "#btnSettings"]},
+  {id:"readPop",   wyjatki:["[data-readbtn]"]},
+  {id:"ebPop",     wyjatki:["[data-pop]"]}
+];
+
+/** Czy okienko jest teraz widoczne. */
+function okienkoOtwarte(el){
+  return !!(el && el.style.display === "block");
+}
+/** Czy dotknięcie padło w to okienko albo w coś, co do niego należy. */
+function nalezyDoOkienka(cel, o){
+  if(!cel || !cel.closest) return false;
+  if(cel.closest("#" + o.id)) return true;
+  return o.wyjatki.some(w=>cel.closest(w));
+}
+
+/* Połknięcie dotknięcia.
+
+   Zamykamy przy „pointerdown", czyli zanim palec zostanie uniesiony — okienko
+   znika od razu, bez wrażenia opóźnienia. Ale kliknięcie przychodzi PÓŹNIEJ
+   i poleciałoby do elementu pod spodem, więc trzeba je przechwycić.
+
+   Nasłuch jest jednorazowy i dodatkowo wygasa po 700 ms. Wcześniej w tym
+   projekcie taka „bramka" była trzymana na zmiennej i przy zgubionym zdarzeniu
+   potrafiła połknąć WSZYSTKIE kolejne kliknięcia — aplikacja wyglądała wtedy na
+   zawieszoną. Nasłuch, który sam się zdejmuje, nie ma jak się zaciąć. */
+function polknijNastepneKlikniecie(){
+  let licznik = 0;
+  const zdejmij = ()=>{
+    clearTimeout(licznik);
+    document.removeEventListener("click", polknij, true);
+  };
+  const polknij = e=>{
+    zdejmij();
+    e.preventDefault();
+    e.stopPropagation();
+  };
+  document.addEventListener("click", polknij, true);
+  licznik = setTimeout(zdejmij, 700);
+}
+
+/** Zamyka wszystkie otwarte okienka poza tymi, do których należy cel. */
+function zamknijOkienkaObok(cel){
+  let zamkniete = 0;
+  for(const o of OKIENKA){
+    const el = document.getElementById(o.id);
+    if(!okienkoOtwarte(el)) continue;
+    if(cel !== undefined && nalezyDoOkienka(cel, o)) continue;
+    el.style.display = "none";
+    zamkniete++;
+  }
+  return zamkniete;
+}
+
+document.addEventListener("pointerdown", e=>{
+  /* Celem bywa sam dokument, który nie ma metody closest. Bez tego sprawdzenia
+     nasłuch pilnujący całej strony wywracał się na zwykłym dotknięciu tła —
+     a błąd z fazy przechwytywania trafia do okna bez treści, jako gołe
+     „Script error.". */
+  const cel = e.target && e.target.closest ? e.target : null;
+  if(zamknijOkienkaObok(cel)) polknijNastepneKlikniecie();
+}, true);
+
+/* Klawisz Esc zamyka to samo. Dotąd obsługiwał tylko część okienek — a skoro
+   tablica już istnieje, nie ma powodu, żeby którekolwiek po nim zostawało.
+
+   Z jednym zastrzeżeniem: DUŻE OKNO JEST WYŻEJ NIŻ MENU. Gdy otwarte jest okno
+   (ustawienia, pomoc, nowa notatka), Esc ma zamknąć JE — a nie menu, które
+   zostało pod spodem i którego w tym momencie nie widać. Inaczej pierwsze
+   naciśnięcie sprzątałoby coś niewidocznego i wyglądało na zignorowane. */
+function jestOtwarteOkno(){
+  return !!document.querySelector(".overlay.show");
+}
+document.addEventListener("keydown", e=>{
+  if(e.key !== "Escape") return;
+  if(jestOtwarteOkno()) return;
+  if(zamknijOkienkaObok()) e.stopPropagation();
+}, true);
+
+</script>
+<script>
+/* ==========================================================================
+   JW Study — roznice.js
+   ROZSTRZYGANIE RÓŻNIC PO WCZYTANIU KOPII Z JW LIBRARY
+
+   Droga powrotna z JW Library istniała od dawna, ale rozstrzygała po cichu
+   i w obie strony gubiła pracę:
+
+   • notatkę zmienioną TUTAJ import pomijał w całości — wersja z JW Library
+     znikała bez słowa, doliczona do „pominięto";
+   • notatkę zmienioną TYLKO w JW Library nadpisywał i przy okazji kasował
+     formatowanie oraz zdjęcia. JW Library trzyma notatki jako czysty tekst,
+     więc nie miał ich skąd odtworzyć — i nikt się o tym nie dowiadywał.
+
+   Obie decyzje bywają słuszne. Żadnej nie da się podjąć za kogoś, bo tylko
+   autor wie, która wersja jest tą właściwą. Pokazujemy więc oba teksty obok
+   siebie i pytamy — ale TYLKO o notatki, które naprawdę się rozjechały.
+   Nowe i niezmienione wchodzą bez pytania, jak dotąd.
+   ========================================================================== */
+"use strict";
+
+let _roznice = [];          // lista do rozstrzygnięcia
+let _wybory  = {};          // guid → "moja" | "biblioteka"
+
+/** Krótki podgląd tekstu — tyle, żeby rozpoznać notatkę, nie żeby ją czytać. */
+function skrotTekstu(t, ile){
+  const czysty = String(t||"").replace(/\s+/g," ").trim();
+  if(!czysty) return "<i>(pusta)</i>";
+  return esc(czysty.length > ile ? czysty.slice(0, ile) + "…" : czysty);
+}
+function dataPolska(iso){
+  if(!iso) return "—";
+  const d = new Date(iso);
+  if(isNaN(d)) return "—";
+  return d.toLocaleDateString("pl", {day:"numeric", month:"long", year:"numeric"}) +
+         " " + d.toTimeString().slice(0,5);
+}
+
+/** Buduje wiersz jednej różnicy. */
+function wierszRoznicy(r){
+  const wybor = _wybory[r.g] || "moja";
+  /* Ostrzeżenie pokazujemy tylko tam, gdzie jest co stracić — przy notatce bez
+     formatowania byłoby szumem, a szum uczy klikać bez czytania. */
+  const strata = r.zeZdjeciem ? "formatowanie i zdjęcia"
+               : r.zFormatowaniem ? "formatowanie" : "";
+  return `<div class="roz" data-roz="${esc(r.g)}">
+    <div class="roz-tyt">${skrotTekstu(r.moja.t || r.biblioteka.t, 70)}</div>
+    <div class="roz-powod">${esc(r.powod)}</div>
+    <div class="roz-pary">
+      <label class="roz-opcja${wybor==="moja"?" wybrana":""}">
+        <input type="radio" name="roz-${esc(r.g)}" value="moja"${wybor==="moja"?" checked":""}>
+        <span class="roz-skad">Ta z aplikacji</span>
+        <span class="roz-data">${esc(dataPolska(r.moja.mo))}</span>
+        <span class="roz-tresc">${skrotTekstu(r.moja.c, 260)}</span>
+        ${strata?`<span class="roz-uwaga">zachowuje ${esc(strata)}</span>`:""}
+      </label>
+      <label class="roz-opcja${wybor==="biblioteka"?" wybrana":""}">
+        <input type="radio" name="roz-${esc(r.g)}" value="biblioteka"${wybor==="biblioteka"?" checked":""}>
+        <span class="roz-skad">Ta z JW Library</span>
+        <span class="roz-data">${esc(dataPolska(r.biblioteka.mo))}</span>
+        <span class="roz-tresc">${skrotTekstu(r.biblioteka.c, 260)}</span>
+        ${strata?`<span class="roz-uwaga ostrz">usunie ${esc(strata)}</span>`:""}
+      </label>
+    </div>
+  </div>`;
+}
+
+function rysujRoznice(){
+  const box = $("rozLista"); if(!box) return;
+  setHtml(box, _roznice.map(wierszRoznicy).join(""));
+  const ile = _roznice.filter(r=>(_wybory[r.g]||"moja")==="biblioteka").length;
+  setText($("rozPodsum"), ile
+    ? "Zastąpisz notatek: " + ile + " z " + _roznice.length
+    : "Nic nie zostanie zastąpione — wszystkie zostają takie, jak tutaj.");
+}
+
+/** Pokazuje okno różnic. Zwraca liczbę notatek faktycznie zastąpionych. */
+function pokazRoznice(lista){
+  _roznice = Array.isArray(lista) ? lista : [];
+  _wybory = {};
+  /* DOMYŚLNIE ZOSTAJE TO, CO TUTAJ. Wybór domyślny musi być tym, który niczego
+     nie niszczy — zamknięcie okna bez czytania ma zostawić notatki w spokoju,
+     a nie skasować formatowanie kilkudziesięciu z nich. */
+  _roznice.forEach(r=>{ _wybory[r.g] = "moja"; });
+  if(!_roznice.length) return Promise.resolve(0);
+
+  return new Promise(zakoncz=>{
+    setText($("rozIle"), String(_roznice.length));
+    rysujRoznice();
+    openModal("modalRoznice");
+
+    const posprzataj = ()=>{
+      $("rozLista").onchange = null;
+      $("rozWszystkieMoje").onclick = null;
+      $("rozWszystkieBiblioteka").onclick = null;
+      $("rozZastosuj").onclick = null;
+      $("rozAnuluj").onclick = null;
+    };
+
+    $("rozLista").onchange = e=>{
+      const pole = e.target.closest && e.target.closest('input[type="radio"]');
+      const wiersz = pole && pole.closest("[data-roz]");
+      if(!pole || !wiersz) return;
+      _wybory[wiersz.dataset.roz] = pole.value;
+      rysujRoznice();
+    };
+    $("rozWszystkieMoje").onclick = ()=>{
+      _roznice.forEach(r=>{ _wybory[r.g]="moja"; }); rysujRoznice(); };
+    $("rozWszystkieBiblioteka").onclick = ()=>{
+      _roznice.forEach(r=>{ _wybory[r.g]="biblioteka"; }); rysujRoznice(); };
+    $("rozAnuluj").onclick = ()=>{
+      posprzataj(); closeModal("modalRoznice"); zakoncz(0); };
+    $("rozZastosuj").onclick = ()=>{
+      const ile = zastosujWybory();
+      posprzataj(); closeModal("modalRoznice"); zakoncz(ile); };
+  });
+}
+
+/** Wprowadza wybory w życie. Zwraca liczbę zastąpionych notatek. */
+function zastosujWybory(){
+  const zmienione = [];
+  _roznice.forEach(r=>{
+    if((_wybory[r.g]||"moja") !== "biblioteka") return;
+    const n = notes.find(x=>x.g===r.g);
+    if(!n) return;
+    /* Wersję sprzed zastąpienia odkładamy do historii notatki. To jedyna
+       nieodwracalna operacja w całym wczytywaniu — a odwracalna kosztuje tu
+       tyle, co jedno wywołanie. */
+    if(typeof saveVersion==="function") saveVersion(n);
+    if(typeof pushUndo==="function" && typeof cloneNote==="function")
+      pushUndo({type:"note", label:"zastąpienie notatki wersją z JW Library", before:cloneNote(n)});
+    n.t = r.biblioteka.t;
+    n.c = r.biblioteka.c;
+    n.h = null;                 // JW Library nie ma formatowania — nie ma czego wstawić
+    n.mo = r.biblioteka.mo || n.mo;
+    n.ed = false;               // od tej chwili zgadza się z biblioteką
+    zmienione.push(n);
+  });
+  if(zmienione.length){
+    if(idb) idbBulk("notes", zmienione).catch(e=>reportSaveError(e,"różnice"));
+    renderAll();
+  }
+  return zmienione.length;
+}
 
 </script>
 <script>
