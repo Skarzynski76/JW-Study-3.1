@@ -3679,6 +3679,145 @@ header{ row-gap: calc(7px * var(--uiw, 1)); }
   #btnNew .tb-txt::after{ content:"Nowa"; font-size:calc(13px * var(--uiw,1)); }
 }
 
+/* ══════════════ PASEK PRZYPOMNIENIA O KOPII ══════════════
+
+   Leży tam, gdzie pasek błędu — u dołu, poza drogą czytania — ale jest
+   spokojny, a nie alarmowy: to nie awaria, tylko podpowiedź. Zostaje do
+   czasu, aż coś z nim zrobisz, bo znikający dymek trafiał w próżnię, gdy
+   akurat patrzyłeś na notatkę.
+
+   Niżej niż pasek błędu w kolejności warstw (800 < 900): gdyby oba wypadły
+   naraz, awaria jest ważniejsza. */
+#pasekKopii{
+  position:fixed; left:8px; right:8px;
+  bottom:calc(8px + env(safe-area-inset-bottom, 0px));
+  z-index:800;
+  display:none; align-items:center; gap:10px;
+  padding:10px 12px;
+  border-radius:12px;
+  background:var(--panel); color:var(--text);
+  border:1px solid var(--border);
+  font-size:calc(12.5px * var(--uiw)); line-height:1.45;
+  box-shadow:0 10px 28px rgba(0,0,0,.22);
+}
+#pasekKopii.widoczny{ display:flex; }
+#pasekKopii .pk-ic{ font-size:16px; flex-shrink:0; }
+#pasekKopii .pk-txt{ flex:1; min-width:0; }
+#pasekKopii .btn{ flex-shrink:0; }
+/* Na wąskim ekranie przyciski schodzą pod tekst — ściśnięte do jednej linii
+   robiły się węższe niż palec. */
+@media (max-width:520px){
+  #pasekKopii{ flex-wrap:wrap; }
+  #pasekKopii .pk-txt{ flex:1 1 100%; }
+  #pasekKopii .pk-teraz{ flex:1; }
+}
+/* Większy ekran: pasek nie musi być na całą szerokość — wystarczy tyle, ile
+   zajmuje treść, żeby nie przykrywał ostatniego rzędu notatek. */
+@media (min-width:900px){
+  #pasekKopii{ left:auto; right:14px; max-width:560px; }
+}
+
+/* ══════════════ MENU „PLIK" — TREŚĆ TO NIE POZYCJA MENU ══════════════
+
+   PRZYCZYNA połamanego zdania w ramce ze stanem kopii:
+
+     #dropdown div{ display:flex; align-items:center; gap:10px; padding:10px 12px }
+
+   Reguła została napisana dla POZYCJI MENU, ale trafia w KAŻDY div w środku —
+   także w ramkę z opisem. Ramka stawała się wierszem elastycznym, a każdy
+   kawałek jej zdania — osobną kolumną. Stąd tekst rozsypany na słupki:
+   „Ostatnia | kopia: | 4 dni | temu | (13 | sierpnia…".
+
+   Nie ruszamy tamtej reguły, bo pozycji menu jest kilkadziesiąt w kilkunastu
+   miejscach kodu. Zamiast tego treść dostaje własną klasę `dd-tresc`, która
+   zdejmuje z niej wszystko, co należy do pozycji menu. Każdy przyszły blok
+   opisu wystarczy nią oznaczyć — pułapka zamyka się raz na zawsze. */
+#dropdown .dd-tresc,
+#dropdown .dd-tresc div{
+  display:block;
+  padding:0;
+  gap:0;
+  cursor:default;
+  border-radius:0;
+}
+#dropdown .dd-tresc{
+  padding:10px 12px;
+  border-radius:11px;
+}
+#dropdown .dd-tresc:hover{ background:var(--bg); transform:none; box-shadow:none; }
+#dropdown .bk-box.ok:hover{ background:#eef5f0; }
+#dropdown .bk-box.warn:hover{ background:#fdf3e3; }
+html[data-theme="dark"] #dropdown .bk-box.ok:hover{ background:#1e2a22; }
+html[data-theme="dark"] #dropdown .bk-box.warn:hover{ background:#2e2517; }
+
+/* Trzy wiersze o malejącej wadze: co się stało, kiedy dokładnie, co z tego
+   wynika. Data schodzi pod spód, bo „4 dni temu" i „13 sierpnia 2026" to dwie
+   miary tego samego faktu — obok siebie zmuszały do porównywania. */
+#dropdown .bk-line{ font-size:calc(12.5px * var(--uiw,1)); line-height:1.4; }
+#dropdown .bk-date{ font-size:calc(11px * var(--uiw,1)); color:var(--muted); margin-top:1px; }
+#dropdown .bk-desc{ font-size:calc(11.5px * var(--uiw,1)); line-height:1.45; margin-top:5px; }
+
+/* ——— PROPORCJE MENU ———
+   Pozycje były wyższe niż potrzeba (10 px u góry i u dołu przy piśmie 13,5 px),
+   więc menu z dziewięcioma pozycjami sięgało niemal całej wysokości ekranu
+   telefonu. Niżej o dwa piksele na pozycję to prawie dwadzieścia na całości —
+   przy zachowanym celu dla palca (pozycja ma nadal 38 px wysokości). */
+#dropdown div{ padding:8px 12px; }
+#dropdown .dd-tresc div{ padding:0; }
+#dropdown .dd-lbl{ padding:8px 12px 3px; }
+#dropdown .dd-sep{ margin:4px 10px; }
+
+/* Podpowiedź po prawej („JSON", „iCloud, Drive…") ma być cicha i nie odbierać
+   miejsca nazwie — przy wąskim menu to ona ustępuje pierwsza. */
+#dropdown .dd-hint{
+  margin-left:auto; padding-left:10px;
+  font-size:calc(11px * var(--uiw,1)); color:var(--muted);
+  flex-shrink:1; min-width:0;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+
+/* ══════════════ POWRÓT DO NOTATKI ══════════════
+
+   Jeden wiersz nad treścią w notatce, która wraca dzisiaj. Bez niego powrót
+   byłby niemy: notatka pojawiłaby się na liście, a nie byłoby jak powiedzieć
+   „przeczytane, przypomnij za miesiąc" bez wchodzenia w menu.
+
+   Spokojny, nie alarmowy — to spotkanie, które sam sobie umówiłeś, a nie
+   zaległość. Kolor akcentu, nie ostrzeżenia. */
+.pwtPasek{
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  margin:0 0 8px;
+  padding:6px 10px;
+  border-radius:10px;
+  background:var(--sel);
+  border:1px solid var(--border);
+  font-size:calc(11.5px * var(--uiw,1));
+}
+.pwtPasek .pwtTxt{ flex:1; min-width:0; color:var(--muted); }
+.pwtPasek .pwtBtn{
+  border:1px solid var(--border); background:var(--panel); color:var(--text);
+  border-radius:8px; padding:3px 9px; cursor:pointer;
+  font-size:calc(11.5px * var(--uiw,1)); font-weight:500;
+  min-height:26px; flex-shrink:0;
+}
+.pwtPasek .pwtBtn:hover{ background:var(--sel); }
+/* Na tablicy karteczki są małe — pasek zwęża się do samych przycisków,
+   bo tam liczy się każdy wiersz treści. */
+#noteList.v-tablica .ncard:not(.wydobyta) .pwtPasek .pwtTxt{ display:none; }
+#noteList.v-tablica .ncard:not(.wydobyta) .pwtPasek{ padding:4px 6px; }
+
+/* Chip „Na dziś" — ten sam wygląd co pozostałe szybkie filtry, więc nie
+   wymaga uczenia się niczego nowego. */
+.qf.qf-pwt[hidden]{ display:none; }
+
+/* Strzałka przy pozycji prowadzącej do podmenu. Cicha, po prawej — mówi
+   „to jeszcze nie jest wybór, tu się wchodzi", zanim się w nią dotknie. */
+#dropdown .ddStrz{
+  margin-left:auto; padding-left:10px;
+  color:var(--muted); font-size:calc(14px * var(--uiw,1)); line-height:1;
+  flex-shrink:0;
+}
+
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -3687,7 +3826,7 @@ header{ row-gap: calc(7px * var(--uiw, 1)); }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.44</span></div>
+      <div class="brand-name">JW Study <span class="ver">v2.48</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -3803,6 +3942,9 @@ header{ row-gap: calc(7px * var(--uiw, 1)); }
       <button class="qf" data-qf="untagged">Bez etykiety</button>
       <button class="qf" data-qf="img">Ze zdjęciem</button>
         <button class="qf" data-qf="week">Ostatni tydzień</button>
+      <!-- Powroty do notatek wskazanych przez użytkownika. Chip pokazuje się
+           tylko wtedy, gdy coś czeka — pusty uczyłby go pomijać wzrokiem. -->
+      <button class="qf qf-pwt" data-qf="powtorka" data-lbl="Na dziś">Na dziś</button>
       </div>
       <div id="counts"></div>
     </div>
@@ -4525,7 +4667,10 @@ async function boot(){
   }
   $("loading").style.display = "none";
   updateBackupBadge();
-  if(backupStale()) setTimeout(()=>toast("💾 Warto zrobić kopię danych — kliknij 💾 na górze"), 1500);
+  /* Zamiast znikającego dymka z instrukcją szukania przycisku — pasek, który
+     zostaje i sam robi kopię. Z opóźnieniem, żeby nie wyskakiwał w tej samej
+     chwili, w której pojawiają się notatki. */
+  if(typeof sprawdzKopie==="function") setTimeout(sprawdzKopie, 1500);
   /* Znacznik „widziano" stawiamy dopiero po ZAMKNIĘCIU okna, nie po otwarciu.
      Gdyby cokolwiek przerwało pierwsze uruchomienie, powitanie pokaże się ponownie
      zamiast przepaść bez śladu. */
@@ -4718,7 +4863,12 @@ async function showStorageInfo(){
   try{
     if(navigator.storage && navigator.storage.estimate){
       const {usage=0, quota=0} = await navigator.storage.estimate();
-      const mb = u => u>=1048576 ? (u/1048576).toFixed(1)+" MB" : Math.round(u/1024)+" KB";
+      /* Do gigabajtów przechodzimy powyżej tysiąca megabajtów. Bez tego limit
+         urządzenia pokazywał się jako „~78643.2 MB" — liczba, której nikt nie
+         przeczyta jednym spojrzeniem, a chodzi tu tylko o rząd wielkości. */
+      const mb = u => u>=1073741824 ? (u/1073741824).toFixed(u>=10737418240?0:1)+" GB"
+                    : u>=1048576    ? (u/1048576).toFixed(1)+" MB"
+                    :                 Math.round(u/1024)+" KB";
       const pct = quota ? Math.min(100, Math.round(usage/quota*100)) : 0;
       let txt = `Zajęte: ${mb(usage)}` + (quota ? ` z ~${mb(quota)} (${pct}%)` : "");
       if(imgCount) txt += ` · zdjęć: ${imgCount}`;
@@ -5153,6 +5303,7 @@ function matchesQuick(n){
   if(quickFilter==="fav") return !!n.fav;
   if(quickFilter==="untagged") return !n.tg || n.tg.length===0;
   if(quickFilter==="img") return /<img/i.test(n.h||"");
+  if(quickFilter==="powtorka") return (typeof czekaNaPowrot==="function") && czekaNaPowrot(n);
   if(quickFilter==="week"){
     const t=Date.parse(n.mo||n.cr||"");
     return isFinite(t) && (Date.now()-t) < 7*86400000;
@@ -5180,7 +5331,7 @@ function renderQuickFilters(base){
   base = base || baseNotes();
   // pojedyncza pętla liczy wszystkie liczniki naraz (wcześniej: cztery osobne przebiegi)
   const now = Date.now();
-  const cnt={ all: base.length, pin:0, fav:0, untagged:0, img:0, week:0 };
+  const cnt={ all: base.length, pin:0, fav:0, untagged:0, img:0, week:0, powtorka:0 };
   for(let i=0;i<base.length;i++){
     const n=base[i];
     if(n.pin) cnt.pin++;
@@ -5189,11 +5340,17 @@ function renderQuickFilters(base){
     if(n.h && n.h.indexOf("<img")>=0) cnt.img++;
     const t=Date.parse(n.mo||n.cr||"");
     if(isFinite(t) && (now-t)<_QF_WEEK) cnt.week++;
+    if(typeof czekaNaPowrot==="function" && czekaNaPowrot(n)) cnt.powtorka++;
   }
   box.querySelectorAll(".qf").forEach(b=>{
     const k=b.dataset.qf, c=cnt[k]||0;
     b.classList.toggle("on", quickFilter===k);
     b.classList.toggle("empty", k!=="all" && !c);
+    /* „Na dziś" chowamy zupełnie, gdy nic nie czeka. Pozostałe filtry opisują
+       zbiory, które istnieją zawsze; ten opisuje umówione spotkania — a pusty
+       chip „Na dziś 0" uczyłby omijać go wzrokiem także wtedy, gdy coś w nim
+       będzie. */
+    if(k==="powtorka") b.hidden = !c && quickFilter!==k;
     const label = b.dataset.lbl || b.textContent.replace(/\s*\d+$/,"").trim();
     setHtml(b, esc(label) + (k!=="all" && c ? ` <span class="qf-n">${c}</span>` : ""));
     b.onclick = ()=>{ quickFilter = (quickFilter===k && k!=="all") ? "all" : k; renderNotes(); };
@@ -6048,6 +6205,7 @@ function sortujePoUtworzeniu(){
 function noteCardSig(n){
   return [n.g, n.mo, n.t, (n.h||n.c||"").length, n.pin?1:0, n.fav?1:0, n.ord||0, n.ptb||0, n.tg.join(","), n.b, n.ch, n.v,
           n.ks, n.itn, n.par, n.ff, n.lh, n.pm, n.la, n.stb, n.cr, n.wys, n.bg,
+          (n.pwt ? n.pwt.d+"/"+n.pwt.o : ""),
           sortujePoUtworzeniu(), _tagsVer].join("\u0001");
 }
 /**
@@ -6325,6 +6483,7 @@ function noteCard(n){
   if(n.pm) d.style.setProperty("--nPm", n.pm);        // własny odstęp akapitów
   const link = finderUrl(n);        // gotowy adres do JW Library — używany też przez menu „Więcej"
   d.innerHTML = noteCardHead(n) + noteCardMeta(n) + noteCardChips(n) +
+                (typeof htmlPaskaPowtorki==="function" ? htmlPaskaPowtorki(n) : "") +
                 `<div class="ncontent">${contentHtml(n)}</div>` +
                 `<div class="wysUchwyt" title="Przeciągnij, aby zmienić wysokość notatki (dwuklik = jak w widoku)"></div>` +
                 noteCardTools(n);
@@ -6349,22 +6508,15 @@ function noteCard(n){
          <div data-x="read">${ICO.book}Tryb czytania</div>
          <div data-x="copy">${ICO.copy}Kopiuj treść</div>
          ${link?`<div data-x="link">${ICO.link}Kopiuj odnośnik</div>`:""}
-         <div data-x="wyslij">${ICO.send}Wyślij na inne urządzenie…</div>
-         <div class="dd-sep"></div>
-         <div class="dd-lbl">Werset</div>
-         <div data-x="verse">${ICO.bookmark}${n.b?"Zmień":"Przypisz"} werset…</div>
-         <div data-x="miejsce">${ICO.book}Miejsce w publikacji…${n.pw?' <span class="ddZnak">✓</span>':""}</div>
-         <div data-x="wysokosc">${ICO.fs}Wysokość notatki…${(n.wys!==undefined)?' <span class="ddZnak">✓</span>':""}</div>
-         <div data-x="szablon">${ICO.doc}Zapisz jako szablon…</div>
-         <div data-x="tlo">${ICO.paint}Tło notatki…${n.bg?' <span class="ddZnak" style="color:'+esc(n.bg)+'">●</span>':""}</div>
-         ${n.ks?`<div data-x="ptb">${ICO.tag}Zakładka publikacji…</div>`:""}
-         ${(typeof secTabs!=="undefined" && secTabs.length)?`<div data-x="stb">${ICO.tag}Zakładka w sekcji…</div>`:""}
          ${link?`<div data-x="open">${ICO.ext}Otwórz w JW Library</div>`:""}
          <div class="dd-sep"></div>
-         <div class="dd-lbl">Eksport notatki</div>
-         <div data-x="doc">${ICO.doc}Word (.doc)</div>
-         <div data-x="pdf">${ICO.printer}PDF / Drukuj</div>
-         <div data-x="jwl">${ICO.book}JW Library (.jwlibrary)</div>
+         <div data-x="powtorka">${IC_CLOCK}Przypomnij mi o niej…${(typeof maPowtorke==="function" && maPowtorke(n))?' <span class="ddZnak">✓</span>':""}</div>
+         <div data-x="szablon">${ICO.doc}Zapisz jako szablon…</div>
+         <div data-x="wyslij">${ICO.send}Wyślij na inne urządzenie…</div>
+         <div class="dd-sep"></div>
+         <div data-x="grMiejsce">${ICO.bookmark}Gdzie leży<span class="ddStrz">›</span></div>
+         <div data-x="grWyglad">${ICO.paint}Wygląd${(n.wys!==undefined||n.bg)?' <span class="ddZnak">✓</span>':""}<span class="ddStrz">›</span></div>
+         <div data-x="grZapis">${ICO.doc}Zapisz jako plik<span class="ddStrz">›</span></div>
          <div class="dd-sep"></div>
          <div data-x="del" class="dd-danger">${ICO.trash}Usuń notatkę</div>`;
       dd.style.display="block";
@@ -6372,8 +6524,13 @@ function noteCard(n){
       dd.onclick = ev=>{
         const it=ev.target.closest("[data-x]"); if(!it) return;
         const x=it.dataset.x; dd.style.display="none";
-        if(x==="ptb"){ setTimeout(()=>pubTabMenu(n, e.target.closest(".ncard")||document.body), 40); return; }
-        if(x==="stb"){ setTimeout(()=>menuZakladek(e.target.closest(".ncard")||document.body, n, "note"), 40); return; }
+        const kotwica = e.target.closest(".ncard") || document.body;
+        if(x==="grMiejsce" || x==="grWyglad" || x==="grZapis"){
+          setTimeout(()=>podmenuNotatki(x, n, kotwica), 40); return; }
+        if(x==="ptb"){ setTimeout(()=>pubTabMenu(n, kotwica), 40); return; }
+        if(x==="stb"){ setTimeout(()=>menuZakladek(kotwica, n, "note"), 40); return; }
+        if(x==="powtorka" && typeof menuPowtorki==="function"){
+          setTimeout(()=>menuPowtorki(n, e.target.closest(".ncard")||document.body), 40); return; }
         if(x==="wysokosc" && typeof menuWysokosci==="function"){
           setTimeout(()=>menuWysokosci(n, e.target.closest(".ncard")||document.body), 40); return; }
         if(x==="szablon" && typeof zapiszJakoSzablon==="function"){ zapiszJakoSzablon(n.g); return; }
@@ -6383,7 +6540,6 @@ function noteCard(n){
         else if(x==="pin") togglePin(n);
         else if(x==="doc") exportNoteWord(n);
         else if(x==="pdf") exportNotePdf(n);
-        else if(x==="jwl") exportOneNoteJwl(n);
         else if(x==="wyslij" && typeof wyslijNotatke==="function") wyslijNotatke(n.g);
         else if(x==="verse") assignVerse(n);
         else if(x==="miejsce" && typeof ustawMiejsceWPublikacji==="function") ustawMiejsceWPublikacji(n.g);
@@ -6878,8 +7034,11 @@ function persistFilt(){ lsSetSoon(KP+"Filt", JSON.stringify(filt), 300); }
 "use strict";
 /* ================= AKCJE ================= */
 /* licznik niezapisanych zmian: czytamy z pamięci podręcznej, zapis sklejamy */
-function bumpDirty(){ lsSetSoon(KP+"Dirty", String((+(lsGet(KP+"Dirty",0)||0))+1), 500); updateBackupBadge(); }
-function clearDirty(){ lsSet(KP+"Dirty","0"); lsSet(KP+"LastBk", new Date().toISOString().substring(0,10)); updateBackupBadge(); }
+function bumpDirty(){ lsSetSoon(KP+"Dirty", String((+(lsGet(KP+"Dirty",0)||0))+1), 500); updateBackupBadge();
+  if(typeof sprawdzKopie==="function") sprawdzKopie(); }
+function clearDirty(){ lsSet(KP+"Dirty","0"); lsSet(KP+"LastBk", new Date().toISOString().substring(0,10)); updateBackupBadge();
+  if(typeof zapomnijOdlozenie==="function") zapomnijOdlozenie();
+  if(typeof schowajPasekKopii==="function") schowajPasekKopii(); }
 function backupDaysAgo(){ const lb=lsGet(KP+"LastBk", null); if(!lb) return null; const d=Math.floor((Date.now()-Date.parse(lb))/86400000); return isFinite(d)?d:null; }
 function backupStale(){ const dirty=+(lsGet(KP+"Dirty",0)||0); const days=backupDaysAgo(); return dirty>0 && (days===null || days>=7 || dirty>=50); }
 /* czytelny opis stanu kopii zapasowej w menu „Plik" */
@@ -6889,7 +7048,7 @@ function backupStatusHtml(){
   const days = backupDaysAgo();
   const plNotes = n => n===1 ? "zmiana" : (n%10>=2 && n%10<=4 && (n%100<12||n%100>14)) ? "zmiany" : "zmian";
   if(!lb){
-    return `<div class="bk-box warn">
+    return `<div class="bk-box dd-tresc warn">
       <div class="bk-line"><b>Nie masz jeszcze kopii zapasowej</b></div>
       <div class="bk-desc">Notatki są tylko na tym urządzeniu. Kliknij „Zapisz kopię danych”, żeby je zabezpieczyć.</div></div>`;
   }
@@ -6908,8 +7067,13 @@ function backupStatusHtml(){
         ? `Od tego czasu jest <b>1 zmiana</b>, której nie ma w kopii.`
         : `Od tego czasu jest <b>${dirty} ${plNotes(dirty)}</b>, których nie ma w kopii.`)
     : `Wszystkie zmiany są zapisane w kopii.`;
-  return `<div class="bk-box ${stale?"warn":(dirty>0?"":"ok")}">
-    <div class="bk-line">Ostatnia kopia: <b>${whenTxt}</b> <span class="bk-date">(${dateNice})</span></div>
+  /* Data w nawiasie schodzi do drugiego wiersza. W jednym wierszu z „4 dni
+     temu" robiła z niego łamigłówkę: dwie różne miary tego samego faktu obok
+     siebie, a przy dłuższej dacie wiersz i tak się łamał w przypadkowym
+     miejscu. Na górze zostaje to, co czyta się od razu. */
+  return `<div class="bk-box dd-tresc ${stale?"warn":(dirty>0?"":"ok")}">
+    <div class="bk-line">Ostatnia kopia: <b>${whenTxt}</b></div>
+    <div class="bk-date">${dateNice}</div>
     <div class="bk-desc">${desc}</div></div>`;
 }
 /**
@@ -6925,13 +7089,15 @@ function updateBackupBadge(){
     + (dirty>0 ? (" · zmian od kopii: "+dirty) : " · brak nowych zmian")
     + " — kliknij, aby zapisać kopię danych";
 }
-// przypomnienie przy zamykaniu, gdy są zmiany bez kopii zapasowej (na komputerze)
-window.addEventListener("beforeunload", e=>{
-  if(+(lsGet(KP+"Dirty",0)||0) > 0){
-    e.preventDefault();
-    e.returnValue = "Masz zmiany niezapisane w kopii JSON — dane w aplikacji są bezpieczne, ale warto zrobić kopię.";
-  }
-});
+/* PRZY ZAMYKANIU JUŻ NIE PYTAMY.
+
+   Było tu okno przeglądarki „czy na pewno wyjść". Pojawiało się w chwili, gdy
+   człowiek już wychodzi, a jedyne, co dawało się z nim zrobić, to zostać —
+   kopii i tak nie można wtedy wykonać. Ostrzeżenie, na które nie da się
+   zareagować, uczy tylko klikać „wyjdź" bez czytania.
+
+   Przypomnienie przeniosło się tam, gdzie da się je wykonać: na pasek z
+   przyciskiem robiącym kopię (js/47-przypomnienie.js). */
 /* ================= COFNIJ ================= */
 const undoStack = [];
 /* Kopie na potrzeby cofania. structuredClone jest szybszy i radzi sobie z datami,
@@ -9434,57 +9600,31 @@ function applyChangesToDb(db){
   return {inserted:insertedCount, updated:updatedCount, deleted:deletedCount};
 }
 /* ===== EKSPORT POJEDYNCZEJ NOTATKI DO .JWLIBRARY (z przypięciem do wersetu) ===== */
-async function buildJwlibraryBlob(transform, label){
-  const buf=await idbGet("files","lastBackup");
-  if(!buf) throw new Error("Najpierw zaimportuj swój backup .jwlibrary (⚙️ Plik → Importuj backup).");
-  const zip=await JSZip.loadAsync(buf);
-  const db=new SQL.Database(await zip.file("userData.db").async("uint8array"));
-  transform(db);
-  const outDb=db.export(); db.close();
-  zip.file("userData.db",outDb);
-  const hashBuf=await crypto.subtle.digest("SHA-256",outDb);
-  const hash=[...new Uint8Array(hashBuf)].map(b=>b.toString(16).padStart(2,"0")).join("");
-  const mFile2 = zip.file("manifest.json");
-  if(!mFile2) throw new Error("Plik .jwlibrary jest niekompletny — brak manifest.json");
-  let manifest;
-  try{ manifest = JSON.parse(await mFile2.async("string")); }
-  catch(e){ throw new Error("Plik .jwlibrary ma uszkodzony manifest.json"); }
-  if(!manifest || !manifest.userDataBackup) throw new Error("Plik .jwlibrary ma nieoczekiwaną budowę manifestu");
-  const now=new Date(), iso=now.toISOString().substring(0,19)+"+00:00", dateStr=now.toISOString().substring(0,10);
-  manifest.name=`UserdataBackup_${dateStr}_${label}.jwlibrary`;
-  manifest.creationDate=iso; manifest.userDataBackup.hash=hash; manifest.userDataBackup.lastModifiedDate=iso; manifest.userDataBackup.deviceName=label;
-  zip.file("manifest.json",JSON.stringify(manifest));
-  const zblob=await zip.generateAsync({type:"blob",compression:"DEFLATE"});
-  return {blob:new Blob([zblob],{type:"application/octet-stream"}), name:manifest.name};
-}
-async function exportOneNoteJwl(n){
-  toast("Tworzenie pliku .jwlibrary…");
-  try{
-    await getLibs();
-    const {blob,name}=await buildJwlibraryBlob(db=>{
-      // zostaw tylko tę jedną notatkę (czyścimy treści użytkownika, schemat i lokalizacje zostają)
-      ["TagMap","BlockRange","UserMark","Bookmark","InputField","Note"].forEach(tb=>{ try{db.run("DELETE FROM "+tb);}catch(e){} });
-      const one=sql=>{const r=db.exec(sql);return r.length?r[0].values[0][0]:null;};
-      let maxLocId=one("SELECT MAX(LocationId) FROM Location")||0;
-      const nowIso=new Date().toISOString().substring(0,19)+"+00:00";
-      let locId=null, blockType=0, blockId=null;
-      if(n.b && n.ch){
-        let meps=0,key="nwtsty";
-        try{ const mr=db.exec("SELECT MepsLanguage, KeySymbol FROM Location WHERE KeySymbol IN ('nwtsty','nwt') AND BookNumber IS NOT NULL LIMIT 1"); if(mr.length){ meps=mr[0].values[0][0]; key=mr[0].values[0][1]||"nwtsty"; } }catch(e){}
-        try{ const ex=db.exec(`SELECT LocationId FROM Location WHERE KeySymbol='${key}' AND BookNumber=${n.b} AND ChapterNumber=${n.ch} AND DocumentId IS NULL AND (IssueTagNumber=0 OR IssueTagNumber IS NULL) LIMIT 1`); if(ex.length) locId=ex[0].values[0][0]; }catch(e){}
-        if(locId==null){ maxLocId++; db.run("INSERT INTO Location (LocationId, BookNumber, ChapterNumber, KeySymbol, MepsLanguage, Type, IssueTagNumber) VALUES (?,?,?,?,?,0,0)",[maxLocId,n.b,n.ch,key,meps]); locId=maxLocId; }
-        if(n.v){ blockType=2; blockId=n.v; } else { blockType=1; blockId=n.ch; }
-      }
-      const jwlD = v => { if(!v) return nowIso; const d=new Date(v); if(!isNaN(d)) return d.toISOString().substring(0,19)+"+00:00";
-        const s=String(v); return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s+"T00:00:00+00:00" : nowIso; };
-      db.run("INSERT INTO Note (Guid, Title, Content, LastModified, Created, BlockType, BlockIdentifier, LocationId, NoteId) VALUES (?,?,?,?,?,?,?,?,1)",
-        [n.g, n.t||null, (n.c||n.t||" "), jwlD(n.mo), jwlD(n.cr), blockType, blockId, locId]);
-      try{ db.run("UPDATE LastModified SET LastModified=?",[nowIso]); }catch(e){}
-    }, "Notatka");
-    chooseSaveOrShare(blob, name, "Notatka → JW Library");
-    toast("Plik .jwlibrary gotowy");
-  }catch(err){ console.error(err); toast("Błąd eksportu: "+err.message); }
-}
+/* Była tu jeszcze funkcja pomocnicza budująca plik .jwlibrary z JEDNEJ
+   notatki. Jej jedynym użytkownikiem był eksport pojedynczej notatki, więc
+   odeszła razem z nim. Pełny eksport buduje plik własną drogą — na kopii
+   użytkownika, bez kasowania czegokolwiek. */
+/* ==========================================================================
+   BYŁ TU EKSPORT POJEDYNCZEJ NOTATKI DO .JWLIBRARY — I DOBRZE, ŻE GO NIE MA
+
+   Wyglądał niewinnie: „zapisz tę jedną notatkę do JW Library". W środku robił
+   coś zupełnie innego:
+
+       DELETE FROM TagMap, BlockRange, UserMark, Bookmark, InputField, Note
+
+   czyli czyścił kopię ze WSZYSTKIEGO, co użytkownik kiedykolwiek napisał
+   i podkreślił, a potem wstawiał tę jedną notatkę. JW Library nie dokleja
+   przywracanych kopii — ZASTĘPUJE nimi całą zawartość urządzenia. Przywrócenie
+   takiego pliku zostawiłoby więc na telefonie dokładnie jedną notatkę i zero
+   podkreśleń.
+
+   Duży eksport ostrzega o tym wprost, wielkim akapitem. Ten nie mówił nic.
+
+   Nie da się tego naprawić ostrzeżeniem, bo sama czynność nie ma sensu: JW
+   Library nie potrafi przyjąć pojedynczej notatki. Do przenoszenia jednej
+   notatki między urządzeniami służy „Wyślij na inne urządzenie", a do JW
+   Library idzie pełny plik z menu „Plik → Eksportuj do JW Library".
+   ========================================================================== */
 async function assignVerse(n){
   const cur = n.b ? refText({b:n.b,ch:n.ch,v:n.v}) : "";
   const txt = await askText({title:"Przypisz werset do notatki", value:cur, placeholder:"np. Jan 3:16  (puste = usuń)", okLabel:"Przypisz", hint:"Notatka pojawi się w JW Library przy tym wersecie."});
@@ -14418,6 +14558,362 @@ function zastosujWybory(){
     renderAll();
   }
   return zmienione.length;
+}
+
+</script>
+<script>
+/* ==========================================================================
+   JW Study — przypomnienie.js
+   PRZYPOMNIENIE O KOPII, KTÓRE DA SIĘ OD RAZU WYKONAĆ
+
+   Dotąd przypomnienie było w dwóch miejscach i żadne nie prowadziło do celu:
+
+   • przy starcie — znikający dymek „Warto zrobić kopię danych, kliknij 💾 na
+     górze". Znikał po kilku sekundach, a jego treścią była INSTRUKCJA SZUKANIA
+     przycisku. Jeśli akurat patrzyłeś na notatkę, przepadał bez śladu;
+   • przy zamykaniu — okno przeglądarki „czy na pewno wyjść". Pojawia się
+     w chwili, gdy człowiek już wychodzi, i jedyne, co da się z nim zrobić, to
+     zostać. Zrobić kopii wtedy nie można.
+
+   Teraz jest jedno miejsce: pasek, który zostaje do czasu, aż coś z nim
+   zrobisz, i ma na sobie PRZYCISK ROBIĄCY KOPIĘ. Zero szukania.
+
+   ODKŁADANIE MIERZYMY ZMIANAMI, NIE ZEGAREM. „Później" znaczy: wróć, gdy
+   uzbiera się kolejna porcja pracy. Przypomnienie po czasie wraca tak samo
+   natrętne niezależnie od tego, czy coś się zmieniło — a to uczy je zamykać
+   odruchowo, bez czytania.
+   ========================================================================== */
+"use strict";
+
+const PROG_ZMIAN   = 20;    // tyle zmian od ostatniej kopii wywołuje przypomnienie
+const PROG_DNI     = 14;    // albo tyle dni, choćby zmian było mało
+const KLUCZ_ODLOZ  = "KopiaOdlozonaPrzy";   // ile zmian było, gdy odłożyłeś
+
+let _pasekKopii = null;
+
+/** Ile zmian od ostatniej kopii. */
+function zmianOdKopii(){
+  return +(lsGet(KP+"Dirty", 0) || 0);
+}
+/** Przy ilu zmianach ostatnio odłożyłeś przypomnienie. */
+function odlozonePrzy(){
+  return +(lsGet(KP+KLUCZ_ODLOZ, 0) || 0);
+}
+/**
+ * Czy pokazać przypomnienie.
+ * Po odłożeniu wraca dopiero, gdy przybędzie KOLEJNA pełna porcja zmian —
+ * dzięki temu narasta razem z tym, co jest do stracenia, zamiast po zegarze.
+ */
+function czasNaPrzypomnienie(){
+  const zmian = zmianOdKopii();
+  if(zmian <= 0) return false;
+  const dni = (typeof backupDaysAgo==="function") ? backupDaysAgo() : null;
+  const powod = (zmian >= PROG_ZMIAN) || (dni === null) || (dni >= PROG_DNI);
+  if(!powod) return false;
+  return zmian >= odlozonePrzy() + PROG_ZMIAN || odlozonePrzy() === 0;
+}
+
+function opisZmian(ile){
+  const forma = ile===1 ? "zmiana"
+              : (ile%10>=2 && ile%10<=4 && (ile%100<12 || ile%100>14)) ? "zmiany" : "zmian";
+  return ile + " " + forma;
+}
+
+/** Buduje pasek raz; kolejne wywołania tylko go pokazują. */
+function pasekKopii(){
+  if(_pasekKopii) return _pasekKopii;
+  const p = document.createElement("div");
+  p.id = "pasekKopii";
+  p.setAttribute("role", "status");
+  p.innerHTML =
+    '<span class="pk-ic" aria-hidden="true">💾</span>' +
+    '<span class="pk-txt"></span>' +
+    '<button class="btn primary pk-teraz" type="button">Zrób kopię</button>' +
+    '<button class="btn pk-pozniej" type="button">Później</button>';
+  document.body.appendChild(p);
+
+  p.querySelector(".pk-teraz").addEventListener("click", async ()=>{
+    schowajPasekKopii();
+    /* Kopia idzie tą samą drogą co z przycisku na pasku górnym — jedna droga,
+       jedno zachowanie. Na iPadzie otworzy się okno udostępniania systemu. */
+    if(typeof exportJson === "function") await exportJson();
+  });
+  p.querySelector(".pk-pozniej").addEventListener("click", ()=>{
+    lsSet(KP+KLUCZ_ODLOZ, String(zmianOdKopii()));
+    schowajPasekKopii();
+  });
+  _pasekKopii = p;
+  return p;
+}
+
+function pokazPasekKopii(){
+  if(!czasNaPrzypomnienie()) return false;
+  const p = pasekKopii();
+  const dni = (typeof backupDaysAgo==="function") ? backupDaysAgo() : null;
+  const ile = zmianOdKopii();
+  /* Mówimy, ILE jest do stracenia i OD KIEDY — sama zachęta „warto zrobić
+     kopię" nie daje podstawy do decyzji. */
+  const kiedy = dni === null ? "Nie masz jeszcze żadnej kopii."
+              : dni === 0    ? "Ostatnia kopia jest z dzisiaj."
+              : dni === 1    ? "Ostatnia kopia jest z wczoraj."
+              :                "Ostatnia kopia sprzed " + dni + " dni.";
+  setText(p.querySelector(".pk-txt"), kiedy + " Od tego czasu: " + opisZmian(ile) + ".");
+  p.classList.add("widoczny");
+  return true;
+}
+function schowajPasekKopii(){
+  if(_pasekKopii) _pasekKopii.classList.remove("widoczny");
+}
+
+/* Po udanej kopii licznik odłożenia traci sens — następnym razem przypomnienie
+   ma zacząć liczyć od zera, a nie od starego progu. */
+function zapomnijOdlozenie(){
+  lsSet(KP+KLUCZ_ODLOZ, "0");
+}
+
+/* Sprawdzamy przy każdej zmianie licznika, ale pasek pokazujemy najwyżej raz
+   na uruchomienie — przypomnienie wracające co chwilę przestaje być
+   przypomnieniem, a staje się przeszkodą. */
+let _juzPokazano = false;
+function sprawdzKopie(){
+  if(_juzPokazano) return;
+  if(pokazPasekKopii()) _juzPokazano = true;
+}
+
+</script>
+<script>
+/* ==========================================================================
+   JW Study — powtorki.js
+   POWRÓT DO WYBRANYCH NOTATEK
+
+   Klasyczne powtórki — te z fiszek — polegają na tym, że po każdej kartce
+   oceniasz się „umiem / nie umiem", a program sam dosypuje materiał. Przy
+   kilkunastu tysiącach notatek to nie ma prawa zadziałać: samo przejrzenie
+   zaległości zajęłoby lata, a notatka ze studium nie jest fiszką z pytaniem.
+
+   Dlatego tutaj NIC NIE DZIEJE SIĘ SAMO. To Ty wskazujesz notatkę, do której
+   chcesz wrócić, i mówisz kiedy. Zaległości nie mogą urosnąć, bo nie ma
+   materiału, którego byś nie wybrał.
+
+   Trzy odstępy, nie dziesięć. Wybór spośród trzech zajmuje chwilę; spośród
+   dziesięciu zamienia proste „przypomnij mi” w zadanie do przemyślenia.
+
+   Pole w notatce: n.pwt = {d:"RRRR-MM-DD", o:7|30|90}
+     d — dzień, w którym notatka ma wrócić
+     o — ostatnio wybrany odstęp, żeby „jeszcze raz" nie pytało od nowa
+   ========================================================================== */
+"use strict";
+
+/* Nazwa z przedrostkiem, bo moduły dzielą JEDNĄ przestrzeń nazw: samo
+   „ODSTEPY" jest już zajęte przez odstępy akapitów w edytorze, a powtórzony
+   `const` nie jest ostrzeżeniem — to błąd składni, który wywala CAŁY plik
+   i wszystko, co w nim jest. */
+const ODSTEPY_POWTORKI = [
+  {dni:7,  nazwa:"Za tydzień"},
+  {dni:30, nazwa:"Za miesiąc"},
+  {dni:90, nazwa:"Za kwartał"}
+];
+
+/** Dzisiejsza data jako RRRR-MM-DD (bez godziny — powtórka to sprawa dnia). */
+function dzisRRMMDD(){
+  const t = new Date();
+  return t.getFullYear() + "-" + String(t.getMonth()+1).padStart(2,"0") + "-" +
+         String(t.getDate()).padStart(2,"0");
+}
+function zaIleDni(dni){
+  const t = new Date();
+  t.setDate(t.getDate() + dni);
+  return t.getFullYear() + "-" + String(t.getMonth()+1).padStart(2,"0") + "-" +
+         String(t.getDate()).padStart(2,"0");
+}
+/** Czy notatka czeka na powrót DZIŚ albo wcześniej. */
+function czekaNaPowrot(n){
+  return !!(n && !n.del && n.pwt && n.pwt.d && n.pwt.d <= dzisRRMMDD());
+}
+/** Czy notatka ma umówiony powrót — dziś albo kiedyś. */
+function maPowtorke(n){
+  return !!(n && n.pwt && n.pwt.d);
+}
+/* Licznika „ile na dziś" nie ma tutaj świadomie: chipy nad listą liczą
+   wszystkie swoje wartości w JEDNYM przebiegu po notatkach. Osobna funkcja
+   znaczyłaby drugi przebieg po kilkunastu tysiącach notatek przy każdym
+   przerysowaniu — po to samo. */
+
+function ustawPowtorke(guid, dni){
+  const n = notes.find(x=>x.g===guid); if(!n) return;
+  n.pwt = {d: zaIleDni(dni), o: dni};
+  /* Umówienie powrotu to nie zmiana treści — nie oznaczamy notatki jako
+     zmienionej, bo trafiłaby do eksportu do JW Library, gdzie tego pojęcia
+     nie ma, i podbiłaby licznik zmian bez kopii. */
+  if(idb) idbPut("notes", n, n.g).catch(e=>reportSaveError(e,"powtórka"));
+  renderNotes();
+  const opis = (ODSTEPY_POWTORKI.find(o=>o.dni===dni)||{}).nazwa || ("za "+dni+" dni");
+  toastOk("Wróci do Ciebie: " + opis.toLowerCase().replace("za ","za ") + " (" + n.pwt.d + ")");
+}
+function usunPowtorke(guid, cicho){
+  const n = notes.find(x=>x.g===guid); if(!n || !n.pwt) return;
+  delete n.pwt;
+  if(idb) idbPut("notes", n, n.g).catch(e=>reportSaveError(e,"powtórka"));
+  renderNotes();
+  if(!cicho) toastOk("Nie będę już o niej przypominać");
+}
+
+/** Menu wyboru odstępu — z jednego miejsca, i przy ustawianiu, i przy powrocie. */
+function menuPowtorki(n, kotwica){
+  const dd = $("dropdown");
+  dd.innerHTML =
+    '<div class="dd-lbl">Przypomnij o tej notatce</div>' +
+    ODSTEPY_POWTORKI.map(o=>`<div data-pwt="${o.dni}">${(typeof IC_CLOCK!=="undefined"?IC_CLOCK:"")}${esc(o.nazwa)}` +
+      `${(n.pwt && n.pwt.o===o.dni)?' <span class="ddZnak">✓</span>':""}</div>`).join("") +
+    (maPowtorke(n)
+      ? '<div class="dd-sep"></div><div data-pwt="0" class="dd-danger">Nie przypominaj</div>'
+      : "");
+  dd.style.display = "block";
+  if(typeof oznaczPozycjeMenu==="function") oznaczPozycjeMenu(dd);
+  placeDropdown(dd, kotwica);
+  dd.onclick = ev=>{
+    const it = ev.target.closest("[data-pwt]"); if(!it) return;
+    dd.style.display = "none";
+    const dni = +it.dataset.pwt;
+    if(dni > 0) ustawPowtorke(n.g, dni); else usunPowtorke(n.g);
+  };
+}
+
+/* ===== PASEK W NOTATCE, KTÓRA WŁAŚNIE WRÓCIŁA =====
+   Notatka czekająca na dziś dostaje jeden wiersz nad treścią. Bez niego
+   powrót byłby niemy: notatka pojawiłaby się na liście, a Ty nie miałbyś jak
+   powiedzieć „przeczytane, przypomnij za miesiąc" bez wchodzenia w menu. */
+function htmlPaskaPowtorki(n){
+  if(!czekaNaPowrot(n)) return "";
+  const spozn = n.pwt.d < dzisRRMMDD();
+  return `<div class="pwtPasek" data-pwtg="${esc(n.g)}">` +
+    `<span class="pwtTxt">${spozn ? "Miała wrócić " + esc(n.pwt.d) : "Wraca dzisiaj"}</span>` +
+    `<button type="button" class="pwtBtn" data-pwtakcja="jeszcze">Jeszcze raz</button>` +
+    `<button type="button" class="pwtBtn" data-pwtakcja="koniec">Gotowe</button>` +
+  `</div>`;
+}
+
+document.addEventListener("click", e=>{
+  const cel = e.target && e.target.closest ? e.target : null;
+  if(!cel) return;
+  const przycisk = cel.closest("[data-pwtakcja]");
+  if(!przycisk) return;
+  const pasek = przycisk.closest("[data-pwtg]"); if(!pasek) return;
+  e.preventDefault(); e.stopPropagation();
+  const n = notes.find(x=>x.g===pasek.dataset.pwtg); if(!n) return;
+  if(przycisk.dataset.pwtakcja === "koniec"){ usunPowtorke(n.g); return; }
+  /* „Jeszcze raz" powtarza ostatnio wybrany odstęp — najczęstszy przypadek
+     załatwia jednym dotknięciem, zamiast pytać o to samo co miesiąc. */
+  ustawPowtorke(n.g, (n.pwt && n.pwt.o) || 30);
+});
+
+</script>
+<script>
+/* ==========================================================================
+   JW Study — podmenu.js
+   TRZY GRUPY W MENU NOTATKI
+
+   Menu notatki miało dziewiętnaście pozycji i jeden nagłówek — „Werset" —
+   który stał nad ośmioma, z czego siedem nie miało z wersetem nic wspólnego:
+   wysokość karty, tło, szablon, obie zakładki, przypomnienie. Nagłówek, który
+   kłamie, jest gorszy od braku nagłówka: uczy ich nie czytać.
+
+   Zamiast prostować nazwy nad dziewiętnastoma pozycjami — trzy grupy. Na
+   wierzchu zostaje to, po co sięga się codziennie; rzadsze rzeczy są o jedno
+   dotknięcie dalej, ale w miejscu, które da się nazwać jednym słowem.
+
+   Menu mieści się dzięki temu na ekranie telefonu bez przewijania. Wcześniej
+   „Usuń notatkę" bywało pod krawędzią — a to najgorsza z możliwych pozycji do
+   szukania w pośpiechu.
+   ========================================================================== */
+"use strict";
+
+/* Co jest w której grupie. Wpis: [klucz, nazwa, warunek widoczności].
+   Warunek jest funkcją, bo część pozycji ma sens tylko dla notatek z miejscem
+   w publikacji albo przy istniejących zakładkach. */
+const GRUPY_NOTATKI = {
+  grMiejsce: {
+    tytul: "Gdzie leży",
+    poz: n=>[
+      ["verse",   (n.b?"Zmień":"Przypisz")+" werset…", true, n.b?"✓":""],
+      ["miejsce", "Miejsce w publikacji…", true, n.pw?"✓":""],
+      ["ptb",     "Zakładka publikacji…", !!n.ks, n.ptb?"✓":""],
+      ["stb",     "Zakładka w sekcji…", (typeof secTabs!=="undefined" && secTabs.length>0), n.stb?"✓":""]
+    ]
+  },
+  grWyglad: {
+    tytul: "Wygląd notatki",
+    poz: n=>[
+      ["wysokosc", "Wysokość notatki…", true, (n.wys!==undefined)?"✓":""],
+      ["tlo",      "Tło notatki…", true, n.bg?"●":""]
+    ]
+  },
+  /* „Wyślij na inne urządzenie" zostaje w menu głównym, nie tutaj. To była
+     kiedyś usterka zgłoszona wprost — na telefonie polecenie bywało poza
+     zasięgiem i trafiało się w sąsiednią pozycję. Schowanie go o poziom niżej
+     cofałoby tamtą poprawkę. Tu zostaje sam zapis do pliku, sięgany rzadko. */
+  grZapis: {
+    tytul: "Zapisz jako plik",
+    poz: ()=>[
+      ["doc", "Word (.doc)", true, ""],
+      ["pdf", "PDF / Drukuj", true, ""]
+    ]
+  }
+};
+
+/**
+ * Otwiera podmenu grupy.
+ * Buduje je w tym samym elemencie co menu główne — dzięki temu zamykanie,
+ * umiejscawianie i obsługa dotyku działają tak samo, bez drugiego zestawu
+ * reguł do utrzymania.
+ */
+function podmenuNotatki(klucz, n, kotwica){
+  const grupa = GRUPY_NOTATKI[klucz]; if(!grupa || !n) return;
+  const dd = $("dropdown");
+  const pozycje = grupa.poz(n).filter(p=>p[2]);
+  dd.innerHTML =
+    `<div class="dd-lbl">${esc(grupa.tytul)}</div>` +
+    pozycje.map(([x, nazwa, , znak])=>
+      `<div data-x="${x}">${esc(nazwa)}${znak?` <span class="ddZnak"${x==="tlo"&&n.bg?` style="color:${esc(n.bg)}"`:""}>${znak}</span>`:""}</div>`
+    ).join("") +
+    `<div class="dd-sep"></div>` +
+    /* Powrót, a nie samo zamknięcie: podmenu wybiera się zwykle po to, żeby
+       coś ustawić, a potem sprawdzić coś jeszcze w menu głównym. */
+    `<div data-x="wroc">‹ Wróć</div>`;
+  dd.style.display = "block";
+  if(typeof oznaczPozycjeMenu==="function") oznaczPozycjeMenu(dd);
+  placeDropdown(dd, kotwica);
+
+  dd.onclick = ev=>{
+    const it = ev.target.closest("[data-x]"); if(!it) return;
+    const x = it.dataset.x;
+    if(x === "wroc"){
+      dd.style.display = "none";
+      /* Menu główne otwieramy tą samą drogą, którą otwiera je użytkownik —
+         przez przycisk „⋯" na karcie. Budowanie go tutaj drugi raz znaczyłoby
+         dwa opisy tego samego menu, które musiałyby zgadzać się na zawsze. */
+      const przycisk = kotwica.querySelector && kotwica.querySelector('[data-act="more"]');
+      if(przycisk) setTimeout(()=>przycisk.click(), 30);
+      return;
+    }
+    dd.style.display = "none";
+    wykonajZMenuNotatki(x, n, kotwica);
+  };
+}
+
+/** Wykonuje pozycję z podmenu. Jedno miejsce dla wszystkich grup. */
+function wykonajZMenuNotatki(x, n, kotwica){
+  if(x==="ptb"){ setTimeout(()=>pubTabMenu(n, kotwica), 40); return; }
+  if(x==="stb"){ setTimeout(()=>menuZakladek(kotwica, n, "note"), 40); return; }
+  if(x==="wysokosc" && typeof menuWysokosci==="function"){
+    setTimeout(()=>menuWysokosci(n, kotwica), 40); return; }
+  if(x==="tlo" && typeof menuTlaNotatki==="function"){
+    setTimeout(()=>menuTlaNotatki(n, kotwica), 40); return; }
+  if(x==="verse"){ assignVerse(n); return; }
+  if(x==="miejsce" && typeof ustawMiejsceWPublikacji==="function"){ ustawMiejsceWPublikacji(n.g); return; }
+  if(x==="wyslij" && typeof wyslijNotatke==="function"){ wyslijNotatke(n.g); return; }
+  if(x==="doc"){ exportNoteWord(n); return; }
+  if(x==="pdf"){ exportNotePdf(n); return; }
 }
 
 </script>
