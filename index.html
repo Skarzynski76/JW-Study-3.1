@@ -4292,6 +4292,304 @@ html[data-theme="dark"] #noteList.v-tablica .ncard.wydUbrana .wydDzialanie:hover
   #fsWrap .ncard.editing .ntools{ padding-bottom:8px; }
 }
 
+
+/* ============================================================
+   PROPORCJE OKIEN PRZY ZMIANIE ROZMIARU (v2.54)
+
+   ——— 1. CZYTNIK: WSZYSTKO NA JEDNEJ OSI ———
+
+   Na oknie szerszym niż mniej więcej 900 px czytnik rozjeżdżał się na dwie
+   osie. Zmierzone przy 1920 px, wewnątrz karty szerokiej na 1856 px:
+
+      tytuł, wiersz publikacji, etykiety, tekst, pasek dolny → x = 580 (wyśrodkowane)
+      pasek „18 słów · Spis · Znajdź"                        → x = 48  (do lewej)
+      „POWIĄZANE NOTATKI"                                    → x = 48  (do lewej)
+      uchwyt wysokości                                       → x = 48, szeroki na 1824
+
+   Czyli: licznik słów stał metr od tekstu, którego dotyczył, a nagłówek
+   powiązanych notatek zaczynał się pod lewą krawędzią ekranu, choć notatka
+   kończyła się w środku.
+
+   PRZYCZYNA to wypadek pierwszeństwa reguł, nie zła intencja. Karty na liście
+   mają wspólną regułę odstępów bocznych:
+
+      .ncard>*:not(.nhead):not(.ntools){ margin-left:16px; margin-right:16px }
+
+   Jej waga to (0,3,0). Elementy czytnika, które mają wyśrodkowanie, zapisane są
+   jako `#fsWrap .ncontent` — z identyfikatorem, waga (1,1,0), więc wygrywają
+   i zostają na środku. Ale `.fsBar` i `.powiazane` mają wagę (0,1,0) — swoje
+   `margin:0 auto` tracą na rzecz tych 16 px i lądują przy lewej krawędzi.
+
+   Dlatego poprawka MUSI mieć w selektorze #fsWrap: inaczej przegra tak samo. */
+#fsWrap .fsBar,
+#fsWrap .fsFind,
+#fsWrap .fsToc,
+#fsWrap .powiazane,
+#fsWrap .wysUchwyt{
+  max-width:var(--fsMax, 760px);
+  margin-left:auto;
+  margin-right:auto;
+  /* `width:100%` jest tu konieczne, nie na zapas. Karta czytnika to kolumna
+     elastyczna; element rozciąga się na jej szerokość TYLKO dopóki nie ma
+     automatycznych marginesów w poprzek. Gdy je dostaje — a właśnie mu je
+     dajemy — przestaje się rozciągać i kurczy do własnej treści. Bez tej linii
+     „POWIĄZANE NOTATKI" zwężały się ze 760 px do 180 px, a uchwyt wysokości
+     do 44 px. */
+  width:100%;
+  box-sizing:border-box;
+}
+
+/* ——— 2. MINIATURY: KARTECZKA NIE ROŚNIE DWUKROTNIE ———
+
+   Siatka miniatur układa się przez `repeat(auto-fill, minmax(--kartaMin, 1fr))`.
+   Taki zapis daje karteczce szerokość od kartaMin do prawie dwóch kartaMin —
+   bo kolejna kolumna wchodzi dopiero wtedy, gdy zmieści się w całości.
+   Przy „średnim" rozmiarze (kartaMin 190 px) zmierzone szerokości karty były:
+
+      okno 1024 px → 1 kolumna, karta 339 px   ← prawie dwa razy szersza
+      okno 1180 px → 2 kolumny, karta 243 px
+      okno 1400 px → 3 kolumny, karta 194 px   ← i znowu najwęższa
+      okno 1920 px → 5 kolumn,  karta 216 px
+
+   Wysokość karty w tym czasie ani drgnie (bierze się z wybranego rozmiaru),
+   więc karteczka raz jest kwadratem, raz leżącym prostokątem prawie 2:1.
+   To właśnie „miniatury skaczą przy powiększaniu okna".
+
+   Górna granica szerokości ucina tę huśtawkę: zakres 194–276 px zamiast
+   194–339 px. Mnożnik 1.45 jest wspólny dla wszystkich pięciu rozmiarów, więc
+   „bardzo duże" nadal są bardzo duże.
+
+   Granica obowiązuje dopiero od 900 px — czyli tam, gdzie kolumna z notatkami
+   jest JEDNĄ z kilku. Niżej kolumna z notatkami jest całym ekranem telefonu
+   i jedna karteczka ma prawo zająć całą szerokość; ograniczanie jej do 276 px
+   zostawiałoby przy 390 px sześćdziesiąt pustych pikseli z prawej.
+
+   `justify-items:center` dopełnia rzecz: gdy w rzędzie stoi jedna karta węższa
+   niż jej miejsce w siatce, zostaje na środku, a nie przy lewej krawędzi. */
+@media (min-width:900px){
+  #noteList.v-tablica{ justify-items:center; }
+  /* `:not(.wydobyta)` nie jest ostrożnością na zapas — bez niego karteczka
+     podniesiona do formatu A6 dostaje tę samą górną granicę co miniatura
+     w siatce i jej podpisy u dołu („Edytuj", „Pełny ekran", „Przypnij"…)
+     zostają ucięte. Podniesiona karta ma własną, znacznie większą szerokość
+     i to jest jej rola: przestać być miniaturą. */
+  #noteList.v-tablica .ncard:not(.wydobyta){
+    max-width:calc(var(--kartaMin, 190px) * 1.45);
+    width:100%;
+  }
+}
+
+/* ——— 3. CZYTNIK JAKO OKNO, NIE JAK ŚCIANA ———
+
+   Czytnik zajmuje 100vw × 100dvh na każdym ekranie. Na telefonie i tablecie
+   to jedyne sensowne rozwiązanie. Na monitorze wychodzi z tego coś, czego nikt
+   nie zaprojektował: tekst szeroki na 760 px stoi w bieli szerokiej na 1920,
+   czyli zajmuje 40% okna, a krzyżyk zamknięcia leży w prawym górnym ROGU
+   EKRANU — 580 px od karty, do której należy. Okno przestaje być oknem.
+
+   Od 1200 px czytnik dostaje więc krawędzie: 1180 px szerokości, zaokrąglone
+   narożniki, cień, a wokół przygaszone tło z resztą aplikacji (widać, gdzie się
+   wróci). Tekst zajmuje wtedy 64% okna zamiast 40%, krzyżyk siedzi w rogu OKNA,
+   a strzałki ‹ › stają przy jego krawędziach, nie przy krawędziach ekranu.
+
+   1180 px, a nie więcej: przy komfortowej szerokości czytania 760 px zostaje po
+   200 px z każdej strony — dość, żeby tekst nie dotykał ramy, za mało, żeby
+   znowu zrobiła się pustka. Kto ustawi szerokość „pełny", wypełni całe 1180.
+
+   Granica 1200 px, a nie 900: między 900 a 1200 px okno i tak jest ledwie
+   szersze od tekstu, więc rama tylko zabierałaby miejsce.
+
+   Wysokości nie ograniczamy — czytanie idzie w dół i każdy pixel wysokości
+   pracuje. Ograniczamy tylko szerokość, bo to ona się marnowała. */
+@media (min-width:1200px){
+  #modalFs{
+    /* jedno źródło szerokości: używa jej i okno, i położenie strzałek */
+    --fsOkno: min(100vw - 64px, 1180px);
+    padding:clamp(12px, 2vh, 24px) 32px;
+  }
+  #modalFs .fsmodal{
+    width:var(--fsOkno);
+    height:100%;
+    max-height:100%;
+    border-radius:18px;
+  }
+  /* Strzałki stoją PRZY OKNIE. `max(8px, …)` pilnuje, żeby przy 1200 px, gdzie
+     okno niemal dotyka krawędzi ekranu, nie wyjechały za nią. */
+  #modalFs .fsNav.prev{ left:max(8px, calc(50vw - var(--fsOkno) / 2 - 52px)); }
+  #modalFs .fsNav.next{ right:max(8px, calc(50vw - var(--fsOkno) / 2 - 52px)); }
+}
+
+/* ——— 4. „TU BYŁEŚ" PO ZAMKNIĘCIU CZYTNIKA (v2.54) ———
+
+   Podświetlenie karty, do której czytnik oddaje sterowanie. Ma być widoczne
+   z drugiego końca listy i zniknąć samo — to wskazówka, nie stan. Półtorej
+   sekundy wystarcza, żeby oko trafiło, i nie zostaje jako fałszywe zaznaczenie.
+
+   Obwódka jest rysowana cieniem, nie ramką: ramka zmieniłaby wysokość karty
+   i cała siatka drgnęłaby w chwili powrotu. */
+#noteList .ncard.wrocilem{
+  animation:wrocilemBlysk 1.6s ease-out;
+}
+@keyframes wrocilemBlysk{
+  0%   { box-shadow:0 0 0 3px var(--accent), 0 6px 18px rgba(0,0,0,.18); }
+  70%  { box-shadow:0 0 0 3px var(--accent), 0 6px 18px rgba(0,0,0,.18); }
+  100% { box-shadow:0 0 0 0 transparent; }
+}
+/* Kto wyłączył animacje, dostaje to samo bez migania: obwódka po prostu jest,
+   a JavaScript zdejmuje ją po tym samym czasie. */
+@media (prefers-reduced-motion:reduce){
+  #noteList .ncard.wrocilem{
+    animation:none;
+    box-shadow:0 0 0 3px var(--accent);
+  }
+}
+html[data-anim="off"] #noteList .ncard.wrocilem{
+  animation:none;
+  box-shadow:0 0 0 3px var(--accent);
+}
+
+
+/* ============================================================
+   TRZY OKNA Z PASKA GÓRNEGO (v2.54)
+   ============================================================ */
+
+/* ——— PALETA: DZIESIĄTA PRÓBKA NIE SPADA DO DRUGIEGO WIERSZA ———
+
+   Panel ma pięć takich samych wierszy (Biblia, Etykiety, Publikacje, tło
+   notatek, belka notatki). W każdym stoi dziesięć próbek: „domyślny" plus
+   dziewięć kolorów. Wiersz był zwykłym `flex-wrap` o szerokości 298 px, a
+   dziesięć próbek po 27 px z odstępem 9 px potrzebuje 351 px — więc w każdym
+   z pięciu wierszy DZIEWIĄTA mieściła się, a dziesiąta spadała sama pod spód.
+   Pięć razy cały wiersz wysokości dla jednego kółka: 590 px panelu, z czego
+   ponad 150 px na te sieroty.
+
+   Teraz wiersz to siatka o dziesięciu równych kolumnach — próbki nie mają jak
+   się złamać, bo nie ma na co. Gdy panelu jest mniej niż trzeba, zwężają się
+   wszystkie po równo; ograniczenie do 28 px pilnuje, żeby na szerokim ekranie
+   nie rozlazły się w placki.
+
+   Panel dostaje przy tym prawo być szerszy: do 420 px, ale nie więcej niż
+   ekran bez 24 px na marginesy. Przy 420 px próbki mają pełne 27 px i palec
+   trafia w nie bez celowania. */
+#colorMenu{ max-width:min(420px, calc(100vw - 24px)); }
+#colorMenu .cm-row{
+  display:grid;
+  grid-template-columns:repeat(10, minmax(0, 1fr));
+  gap:8px;
+  align-items:center;
+  justify-items:center;
+}
+#colorMenu .cm-sw{
+  width:100%;
+  max-width:28px;
+  height:auto;
+  aspect-ratio:1;
+}
+
+/* ——— MENU JASNOŚCI EKRANU ———
+   Wygląd bierze z panelu palety (ta sama rama, ten sam cień, to samo miejsce
+   pod paskiem), więc dwa okienka z jednego paska nie wyglądają jak z dwóch
+   różnych aplikacji. Różni je zawartość: tam próbki, tu podpisane wiersze. */
+#motywMenu{
+  position:fixed; display:none; z-index:130;
+  min-width:236px; max-width:min(300px, calc(100vw - 24px));
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:18px;
+  box-shadow:var(--cien-2);
+  padding:10px;
+  animation:wejscieMenu var(--dur-szybko) var(--ease);
+}
+html[data-theme="dark"] #motywMenu{ box-shadow:0 18px 48px rgba(0,0,0,.55); }
+#motywMenu .cm-title{
+  font-size:calc(13.5px * var(--uiw, 1)); font-weight:600;
+  color:var(--text); padding:2px 6px 8px;
+}
+#motywMenu .mm-opt{
+  display:flex; align-items:center; gap:10px;
+  width:100%; padding:9px 10px; margin:0;
+  border:0; border-radius:12px;
+  background:transparent; color:var(--text);
+  font-size:calc(14px * var(--uiw, 1)); text-align:left;
+  cursor:pointer;
+}
+#motywMenu .mm-opt:hover{ background:var(--sel); }
+#motywMenu .mm-opt:focus-visible{ outline:2px solid var(--accent); outline-offset:-2px; }
+#motywMenu .mm-opt .mm-ik{ display:flex; width:18px; height:18px; color:var(--muted); }
+#motywMenu .mm-opt .mm-ik svg{ width:18px; height:18px; }
+#motywMenu .mm-opt .mm-nm{ flex:1; }
+/* Zaznaczenie bieżącego wyboru ptaszkiem, nie samym tłem: tło w tym panelu
+   znaczy „palec na tym stoi", więc drugie znaczenie by je zamazało. */
+#motywMenu .mm-opt.on{ font-weight:600; }
+#motywMenu .mm-opt.on::after{
+  content:"✓"; color:var(--accent); font-weight:700;
+  font-size:calc(15px * var(--uiw, 1));
+}
+#motywMenu .mm-opt.on .mm-ik{ color:var(--accent); }
+#motywMenu .cm-note{
+  font-size:calc(11.5px * var(--uiw, 1)); line-height:1.45;
+  color:var(--muted); padding:8px 8px 2px; margin-top:4px;
+  border-top:1px solid var(--border);
+}
+
+/* ——— USTAWIENIA: KARTY, PRZYKLEJONY NAGŁÓWEK I PRZYKLEJONE „GOTOWE" ———
+
+   Okno ustawień przewija się samo (.modal ma overflow-y:auto), więc nagłówek
+   i stopka mogą się w nim przykleić. To nie kosmetyka: przy 2000 px treści
+   przycisk „Gotowe" był poza zasięgiem bez przewinięcia do samego dołu.
+
+   `position:sticky` liczy się względem najbliższego przewijanego przodka —
+   czyli tu względem .modal, a nie okna przeglądarki. Dlatego działa bez
+   żadnych obliczeń wysokości. Ujemne marginesy i dopełnienie odtwarzają
+   wewnętrzny odstęp okna: bez nich przyklejony nagłówek pokazywałby przy
+   przewijaniu wąskie paski treści po bokach. */
+#modalSettings .modal{
+  padding-top:0;
+  padding-bottom:0;
+}
+#modalSettings .nn-head{
+  position:sticky; top:0; z-index:3;
+  display:block;
+  margin:0 calc(-1 * var(--sp-5)) 14px;
+  padding:var(--sp-5) var(--sp-5) 0;
+  background:var(--panel);
+  border-bottom:1px solid var(--border);
+}
+#modalSettings .nn-head h3{ margin:0 0 12px; }
+#modalSettings .btnrow{
+  position:sticky; bottom:0; z-index:3;
+  margin:18px calc(-1 * var(--sp-5)) 0!important;
+  padding:12px var(--sp-5) var(--sp-4);
+  background:var(--panel);
+  border-top:1px solid var(--border);
+}
+
+/* ——— rząd zakładek ———
+   Zakładki siedzą w nagłówku, więc przyklejają się razem z tytułem: wiadomo
+   przez cały czas, w której części ustawień się jest. */
+#modalSettings .st-zakladki{
+  display:flex; gap:4px;
+  margin-bottom:-1px;                 /* linia karty zlewa się z linią nagłówka */
+}
+#modalSettings .st-zak{
+  flex:1;
+  border:0; border-bottom:2px solid transparent;
+  background:transparent; color:var(--muted);
+  padding:9px 6px; border-radius:10px 10px 0 0;
+  font-size:calc(13px * var(--uiw, 1)); font-weight:600;
+  cursor:pointer; white-space:nowrap;
+}
+#modalSettings .st-zak:hover{ background:var(--sel); color:var(--text); }
+#modalSettings .st-zak:focus-visible{ outline:2px solid var(--accent); outline-offset:-2px; }
+#modalSettings .st-zak.on{
+  color:var(--accent);
+  border-bottom-color:var(--accent);
+}
+/* Karta niewidoczna musi być NIEOBECNA w układzie, nie tylko przezroczysta —
+   inaczej okno nadal miałoby wysokość wszystkich trzech razem. */
+#setBody .st-karta{ display:none; }
+#setBody .st-karta.on{ display:flex; flex-direction:column; gap:18px; }
+
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -4300,7 +4598,7 @@ html[data-theme="dark"] #noteList.v-tablica .ncard.wydUbrana .wydDzialanie:hover
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.53</span></div>
+      <div class="brand-name">JW Study <span class="ver">v2.54</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -4446,6 +4744,7 @@ html[data-theme="dark"] #noteList.v-tablica .ncard.wydUbrana .wydDzialanie:hover
 <div id="toast"></div>
 <div id="dropdown" role="menu" aria-label="Menu"></div>
 <div id="colorMenu" role="dialog" aria-label="Kolory kolumn i notatek"></div>
+<div id="motywMenu" role="dialog" aria-label="Jasność ekranu"></div>
 <div id="ebPop" role="menu" aria-label="Narzędzia edytora"></div>
 <div id="readPop"></div>
 <div class="overlay" id="askModal">
@@ -7543,7 +7842,55 @@ function fsWroc(){
   if(!n){ fsWroc(); return; }
   fsGuid = g; renderFs(); updateFsNav(); updateFsProgress();
 }
-function closeFs(){ saveReadPos(); fsSlad.length = 0; fsGuid = null; closeModal("modalFs"); releaseWake(); updateFsNav(); const p=$("readPop"); if(p) p.style.display="none"; if(fsListDirty){ fsListDirty=false; renderNotes(); } }
+/* ——— POWRÓT NA WŁAŚCIWE MIEJSCE LISTY ———
+
+   Samo przewinięcie listy zamknięcie czytnika zachowuje — lista jest pod spodem
+   i nikt jej nie przewija. Gubi się co innego: WIEDZA, KTÓRA TO BYŁA NOTATKA.
+   Po przeczytaniu trzech powiązanych notatek ✕ oddaje ścianę kart, na której
+   nic nie mówi „tu byłeś". Przy dwóch tysiącach notatek szukanie własnego
+   miejsca zaczyna się od nowa.
+
+   Dlatego po zamknięciu wskazujemy kartę, z której czytanie się zaczęło:
+   przewijamy do niej, jeśli wypadła z widoku, i podświetlamy ją na chwilę.
+
+   Która to karta:
+     • ślad NIEPUSTY — czyli były skoki po powiązanych — wracamy do notatki,
+       Z KTÓREJ wyszliśmy z listy, czyli do fsSlad[0]. Notatka, na której
+       czytanie się skończyło, mogła w ogóle nie być na liście (inny filtr).
+     • ślad PUSTY — wracamy do notatki otwartej w czytniku. Mogła się zmienić
+       przez strzałki ‹ ›, ale wtedy nadal jest to ruch PO LIŚCIE, więc karta
+       istnieje i to ona jest ostatnim miejscem użytkownika.
+
+   Czego ta funkcja NIE robi: nie przewija, gdy karta i tak jest widoczna
+   (przeskok pod palcem wygląda jak usterka), i nie robi nic, gdy karty nie ma
+   na liście — bo zniknięcie z listy znaczy, że filtr się zmienił i wskazywanie
+   pustego miejsca tylko by myliło. */
+let _wskazTimer = 0;
+function wskazNaLiscie(g){
+  if(!g) return;
+  const lista = $("noteList"); if(!lista) return;
+  const karta = lista.querySelector('.ncard[data-g="'+g+'"]');
+  if(!karta) return;
+  const rl = lista.getBoundingClientRect(), rk = karta.getBoundingClientRect();
+  const widoczna = rk.top >= rl.top && rk.bottom <= rl.bottom;
+  if(!widoczna) karta.scrollIntoView({block:"center", behavior:"auto"});
+  clearTimeout(_wskazTimer);
+  document.querySelectorAll("#noteList .ncard.wrocilem").forEach(k=>k.classList.remove("wrocilem"));
+  karta.classList.add("wrocilem");
+  _wskazTimer = setTimeout(()=>karta.classList.remove("wrocilem"), 1600);
+}
+function closeFs(){
+  saveReadPos();
+  /* Notatkę do wskazania trzeba wziąć PRZED skasowaniem śladu i fsGuid. */
+  const wrocDo = fsSlad.length ? fsSlad[0] : fsGuid;
+  fsSlad.length = 0; fsGuid = null;
+  closeModal("modalFs"); releaseWake(); updateFsNav();
+  const p=$("readPop"); if(p) p.style.display="none";
+  if(fsListDirty){ fsListDirty=false; renderNotes(); }
+  /* Po przerysowaniu listy, nie przed — inaczej wskazywalibyśmy kartę, którą
+     renderNotes() zaraz zastąpi nową. */
+  wskazNaLiscie(wrocDo);
+}
 /* ===== CZYTNIK: nawigacja, panel Aa, pasek postępu, wake lock ===== */
 function fsGo(dir){
   if(!fsGuid) return;
@@ -7665,12 +8012,70 @@ function applyTheme(){
 }
 function setTheme(mode){ themeMode=mode; lsSet(KP+"Theme", themeMode); applyTheme(); }
 try{ mqDark.addEventListener("change", ()=>{ if(themeMode==="auto") applyTheme(); }); }catch(e){}
+/* ——— MENU JASNOŚCI, ZAMIAST PRZEŁĄCZANIA W CIEMNO ———
+
+   Przycisk w pasku przełączał po kolei: dzień → sepia → noc → jak w systemie.
+   Cztery stany na jednym przycisku znaczą, że żeby wybrać noc, trzeba nacisnąć
+   od jednego do trzech razy — i za każdym razem najpierw ZOBACZYĆ efekt, którego
+   się nie chciało. Sama lista możliwości nigdzie nie była widoczna: kto nie
+   wyklikał wszystkich czterech, nie wiedział, że sepia istnieje.
+
+   Teraz przycisk otwiera listę czterech podpisanych możliwości z zaznaczoną
+   bieżącą. Jedno dotknięcie wybiera wprost tę, o którą chodzi. Ikona przycisku
+   nadal pokazuje stan, więc pasek nie stracił informacji. */
+const MOTYWY = [
+  ["light", "Dzień",         "sun"],
+  ["sepia", "Sepia",         "droplet"],
+  ["dark",  "Noc",           "moon"],
+  ["auto",  "Jak w systemie","monitor"]
+];
+function otworzMenuMotywu(przycisk){
+  const m = $("motywMenu"); if(!m) return;
+  m.innerHTML = '<div class="cm-title">Jasność ekranu</div>' +
+    MOTYWY.map(([v, nazwa, ik])=>
+      '<button type="button" class="mm-opt' + (themeMode===v ? ' on' : '') + '" data-motyw="' + v + '">' +
+        '<span class="mm-ik">' + (ICO[ik]||"") + '</span>' +
+        '<span class="mm-nm">' + nazwa + '</span>' +
+      '</button>').join("") +
+    '<div class="cm-note">Jasność i kolor działają razem: kolor interfejsu ' +
+    'ustawia paleta obok, gotowe kompozycje — Ustawienia.</div>';
+  m.style.display = "block";
+  /* Położenie liczone tak samo jak przy palecie: pod przyciskiem, ale nigdy
+     poza widocznym obszarem — na telefonie z klawiaturą albo w oknie dzielonym
+     „pod przyciskiem" może być już za krawędzią ekranu. */
+  const r = przycisk.getBoundingClientRect();
+  const w = m.offsetWidth || 260, h = m.offsetHeight || 240;
+  const ob = (typeof widocznyObszar==="function") ? widocznyObszar()
+           : {lewo:0, gora:0, prawo:innerWidth, dol:innerHeight};
+  m.style.left = Math.max(ob.lewo+8, Math.min(r.right-w, ob.prawo-w-8)) + "px";
+  m.style.top  = Math.max(ob.gora+8, Math.min(r.bottom+6, ob.dol-h-8)) + "px";
+  const wybrany = m.querySelector(".mm-opt.on") || m.querySelector(".mm-opt");
+  if(wybrany) wybrany.focus();
+}
 $("btnTheme").onclick = ()=>{
-  themeMode = themeMode==="auto" ? "light" : themeMode==="light" ? "sepia" : themeMode==="sepia" ? "dark" : "auto";
-  setTheme(themeMode);
-  const nm={light:"dzień ☀️",sepia:"sepia 📜",dark:"noc 🌙",auto:"jak w systemie 🖥️"};
-  toast("Motyw: " + nm[themeMode]);
+  const m = $("motywMenu");
+  if(m && m.style.display === "block"){ m.style.display = "none"; return; }
+  otworzMenuMotywu($("btnTheme"));
 };
+$("motywMenu").addEventListener("click", e=>{
+  const b = e.target.closest(".mm-opt"); if(!b) return;
+  setTheme(b.dataset.motyw);
+  $("motywMenu").style.display = "none";
+  const nm = {light:"dzień", sepia:"sepia", dark:"noc", auto:"jak w systemie"};
+  toast("Jasność: " + nm[themeMode]);
+});
+/* Strzałkami po liście, Escape zamyka — okienko z czterema wyborami bez obsługi
+   klawiatury byłoby jedynym takim w tej aplikacji. */
+$("motywMenu").addEventListener("keydown", e=>{
+  const opcje = [...$("motywMenu").querySelectorAll(".mm-opt")];
+  const i = opcje.indexOf(document.activeElement);
+  if(e.key === "Escape"){ e.stopPropagation(); $("motywMenu").style.display="none"; $("btnTheme").focus(); return; }
+  if(e.key === "ArrowDown" || e.key === "ArrowUp"){
+    e.preventDefault();
+    const j = i < 0 ? 0 : (i + (e.key==="ArrowDown" ? 1 : -1) + opcje.length) % opcje.length;
+    opcje[j].focus();
+  }
+});
 applyTheme();
 /* ustawienia czytania: interlinia + czcionka */
 const LHS=[1.45,1.72,2.05];
@@ -11813,10 +12218,93 @@ function kompozycjeHtml(){
   (teraz?"":'<span class="st-ptak">✓</span>')+`</button>`;
 }
 
+/* ——— USTAWIENIA W TRZECH KARTACH, NIE W JEDNYM ZWOJU ———
+
+   Okno miało dwanaście działów jeden pod drugim. Zmierzona wysokość treści:
+   1908 px na komputerze i 2091 px na telefonie, przy oknie wysokim odpowiednio
+   na 792 i 563 px. Czyli od dwóch i pół do prawie czterech ekranów przewijania
+   w linii prostej, bez żadnego drogowskazu — a przycisk „Gotowe" leżał na samym
+   DOLE tej trasy, więc zamknięcie okna wymagało przewinięcia go do końca albo
+   trafienia w tło.
+
+   Trzy karty dzielą to na porcje, których nie trzeba przewijać w nieskończoność,
+   i — co ważniejsze — mówią, CO W OGÓLE JEST w ustawieniach. Podział idzie za
+   pytaniem użytkownika, nie za kolejnością dopisywania działów:
+
+     Wygląd          — jak to wygląda i ile się mieści na ekranie
+     Notatki i dane  — co się dzieje z treścią: porządki, kopia, import
+     Pomoc           — skróty, dziennik błędów, wersja
+
+   Dwa działy zmieniły miejsce. „Oszczędzanie miejsca u góry" i „Dziennik
+   błędów" siedziały wewnątrz działu „Skróty klawiszowe" — nie z zamysłu, tylko
+   dlatego, że ktoś dopisał je na końcu istniejącego bloku. Ustawienie paska nie
+   ma nic wspólnego ze skrótami; dziennik błędów tym bardziej.
+
+   Nagłówek z kartami i stopka z „Gotowe" są przyklejone (patrz arkusz stylów),
+   więc wyjście z okna jest widoczne zawsze, na każdej wysokości przewinięcia. */
+const ST_KARTY = [
+  ["wyglad",  "Wygląd"],
+  ["dane",    "Notatki i dane"],
+  ["pomoc",   "Pomoc"]
+];
+let stKarta = lsGet(KP+"Karta", "wyglad");
+if(!ST_KARTY.some(k=>k[0]===stKarta)) stKarta = "wyglad";
+
+/** Przełącza widoczną kartę ustawień i zapamiętuje wybór na następne otwarcie. */
+function pokazKarteUstawien(id){
+  if(!ST_KARTY.some(k=>k[0]===id)) id = "wyglad";
+  stKarta = id;
+  lsSet(KP+"Karta", id);
+  document.querySelectorAll("#setBody .st-karta").forEach(k=>
+    k.classList.toggle("on", k.dataset.karta === id));
+  document.querySelectorAll("#modalSettings .st-zak").forEach(b=>{
+    const on = b.dataset.karta === id;
+    b.classList.toggle("on", on);
+    b.setAttribute("aria-selected", on ? "true" : "false");
+    b.tabIndex = on ? 0 : -1;      // wzorzec zakładek: Tab wchodzi w rząd raz
+  });
+  /* Przewinięcie na górę przy zmianie karty. Bez tego druga karta otwiera się
+     w połowie, bo okno pamięta przewinięcie z pierwszej. */
+  const okno = $("modalSettings").querySelector(".modal");
+  if(okno) okno.scrollTop = 0;
+}
+
+/** Rząd zakładek. Rysowany w nagłówku okna, żeby przyklejał się razem z nim. */
+function rysujZakladkiUstawien(){
+  const head = $("modalSettings").querySelector(".nn-head");
+  if(!head) return;
+  let rzad = head.querySelector(".st-zakladki");
+  if(!rzad){
+    rzad = document.createElement("div");
+    rzad.className = "st-zakladki";
+    rzad.setAttribute("role", "tablist");
+    head.appendChild(rzad);
+    rzad.addEventListener("click", e=>{
+      const b = e.target.closest(".st-zak"); if(!b) return;
+      pokazKarteUstawien(b.dataset.karta);
+    });
+    /* Strzałki w prawo i w lewo po zakładkach — tak działają zakładki wszędzie,
+       a bez tego z klawiatury trzeba było przechodzić przez całą zawartość karty,
+       żeby dojść do następnej. */
+    rzad.addEventListener("keydown", e=>{
+      if(e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+      e.preventDefault();
+      const i = ST_KARTY.findIndex(k=>k[0]===stKarta);
+      const j = (i + (e.key==="ArrowRight" ? 1 : -1) + ST_KARTY.length) % ST_KARTY.length;
+      pokazKarteUstawien(ST_KARTY[j][0]);
+      const cel = rzad.querySelector('.st-zak[data-karta="'+ST_KARTY[j][0]+'"]');
+      if(cel) cel.focus();
+    });
+  }
+  rzad.innerHTML = ST_KARTY.map(([id, nazwa])=>
+    '<button type="button" class="st-zak" role="tab" data-karta="'+id+'">'+esc(nazwa)+'</button>').join("");
+}
+
 function openSettings(){
   const box = $("setBody");
   box.innerHTML =
-    `<div class="st-sec">
+    `<div class="st-karta" data-karta="wyglad">
+     <div class="st-sec">
        <div class="st-lbl">Wielkość czcionki</div>
        <div class="st-fs">
          <button class="st-opt" data-fs="-">A−</button>
@@ -11831,14 +12319,9 @@ function openSettings(){
        <div class="st-hint">Zwarta mieści więcej notatek na ekranie, luźna daje więcej powietrza.</div>
      </div>
      <div class="st-sec">
-       <div class="st-lbl">Animacje</div>
-       ${optionGroup("anim", [["on","Pełne"],["ograniczone","Ograniczone"],["off","Wyłączone"]], animMode)}
-       <div class="st-hint">Ograniczone zostawiają samo wygaszanie okien. Wyłączone przydają się na starszych urządzeniach.</div>
-     </div>
-     <div class="st-sec">
-       <div class="st-lbl">Wygląd</div>
+       <div class="st-lbl">Jasność ekranu</div>
        ${optionGroup("theme", [["light","Dzień"],["sepia","Sepia"],["dark","Noc"],["auto","Jak w systemie"]], themeMode)}
-       <div class="st-hint">Dzień, sepia i noc zmieniają jasność. Kompozycja poniżej zmienia kolor — obie rzeczy działają razem.</div>
+       <div class="st-hint">To samo, co ikona ekranu w pasku górnym. Jasność i kolor działają razem: jasność tutaj, kolor w kompozycji poniżej.</div>
      </div>
      <div class="st-sec">
        <div class="st-lbl">Gotowa kompozycja</div>
@@ -11849,6 +12332,47 @@ function openSettings(){
        <div class="st-lbl">Układ listy notatek</div>
        ${optionGroup("view", [["list","Pełne karty"],["compact","Zwarta lista"]], noteView)}
      </div>
+     <div class="st-sec">
+       <div class="st-lbl">Oszczędzanie miejsca u góry</div>
+       <div class="st-row">
+         <select id="stOszczedny" aria-label="Zwarty interfejs">
+           <option value="auto">Automatycznie (na małym ekranie)</option>
+           <option value="zawsze">Zawsze</option>
+           <option value="nigdy">Nigdy</option>
+         </select>
+       </div>
+       <div class="st-hint">Zwarty pasek górny, filtry w jednym przewijanym rzędzie
+         i mniejsze przyciski. Na telefonie odzyskuje to blisko jedną trzecią ekranu
+         dla samych notatek. Nic nie znika — wszystko działa tak samo, tylko ciaśniej.</div>
+     </div>
+     <div class="st-sec">
+       <div class="st-lbl">Animacje</div>
+       ${optionGroup("anim", [["on","Pełne"],["ograniczone","Ograniczone"],["off","Wyłączone"]], animMode)}
+       <div class="st-hint">Ograniczone zostawiają samo wygaszanie okien. Wyłączone przydają się na starszych urządzeniach.</div>
+     </div>
+     </div>
+
+     <div class="st-karta" data-karta="dane">
+     <div class="st-sec">
+       <div class="st-lbl">Porządki w notatkach</div>
+       <button class="st-opt st-wide" data-act="odstepy">Uporządkuj odstępy w treści</button>
+       <div class="st-hint">Treść notatki jest wyświetlana z zachowaniem spacji, żeby Twoje własne wcięcia wyglądały tak, jak je wpisałeś. Notatki przeniesione z innego programu niosą jednak wcięcia i podziały wierszy z <b>pliku źródłowego</b> — one też są widoczne, choć nikt ich nie pisał. To narzędzie je usuwa; tekst, listy, tabele i zdjęcia zostają nietknięte.</div>
+     </div>
+     <div class="st-sec">
+       <div class="st-lbl">Kopia zapasowa</div>
+       <div class="st-ver" id="stPlikKopii"></div>
+       <button class="st-opt st-wide" data-act="plikKopii">Wskaż stały plik kopii</button>
+       <button class="st-opt st-wide" id="stPlikKopiiOff" data-act="plikKopiiOff" style="display:none">Przestań używać tego pliku</button>
+       <div class="st-hint">Zamiast pobierać co dzień nowy plik, aplikacja może <b>nadpisywać jeden wskazany</b> — na dysku nie przybywa kopii. Wskazujesz go raz. Wymaga przeglądarki Chrome, Edge, Brave lub Arc na komputerze; w Safari pozostaje zwykłe pobieranie.</div>
+     </div>
+     <div class="st-sec">
+       <div class="st-lbl">Import z JW Library</div>
+       <div class="st-ver" id="stLib"></div>
+       <div class="st-hint">Odczytanie pliku <b>.jwlibrary</b> wymaga dwóch bibliotek. Leżą w katalogu <code>lib/</code> obok aplikacji i są wgrywane razem z nią. Aplikacja <b>nie pobiera niczego z obcych serwerów</b> — nie potrafi tego zrobić.</div>
+     </div>
+     </div>
+
+     <div class="st-karta" data-karta="pomoc">
      <div class="st-sec">
        <div class="st-lbl">Skróty klawiszowe</div>
        <div class="st-keys">
@@ -11862,20 +12386,12 @@ function openSettings(){
          <div><kbd>,</kbd><span>ustawienia</span></div>
          <div><kbd>?</kbd><span>ta lista</span></div>
          <div><kbd>←</kbd> <kbd>→</kbd><span>poprzednia / następna notatka w czytniku</span></div>
+         <div><kbd>Alt</kbd>+<kbd>←</kbd> lub <kbd>Backspace</kbd><span>w czytniku: wróć do notatki, z której przyszedłeś</span></div>
          <div><kbd>Esc</kbd><span>zamknij okno lub czytnik</span></div>
        </div>
-       <div class="st-lbl">Oszczędzanie miejsca u góry</div>
-       <div class="st-row">
-         <select id="stOszczedny" aria-label="Zwarty interfejs">
-           <option value="auto">Automatycznie (na małym ekranie)</option>
-           <option value="zawsze">Zawsze</option>
-           <option value="nigdy">Nigdy</option>
-         </select>
-       </div>
-       <div class="st-hint">Zwarty pasek górny, filtry w jednym przewijanym rzędzie
-         i mniejsze przyciski. Na telefonie odzyskuje to blisko jedną trzecią ekranu
-         dla samych notatek. Nic nie znika — wszystko działa tak samo, tylko ciaśniej.</div>
-
+       <div class="st-hint">Skróty działają, gdy nie piszesz w polu tekstowym. Prawy przycisk myszy (albo przytrzymanie palcem) otwiera szybkie akcje.</div>
+     </div>
+     <div class="st-sec">
        <div class="st-lbl">Dziennik błędów</div>
        <div class="st-row">
          <button class="btn" id="stBledy" type="button">Pokaż ostatnie błędy</button>
@@ -11883,31 +12399,16 @@ function openSettings(){
        </div>
        <div class="st-hint">Na telefonie nie ma konsoli, więc aplikacja zapisuje tu ostatnie
          dwadzieścia błędów. Przy zgłaszaniu usterki skopiuj je stąd — bez nich zostaje zgadywanie.</div>
-       <div class="st-hint">Skróty działają, gdy nie piszesz w polu tekstowym. Prawy przycisk myszy (albo przytrzymanie palcem) otwiera szybkie akcje.</div>
-     </div>
-     <div class="st-sec">
-       <div class="st-lbl">Kopia zapasowa</div>
-       <div class="st-ver" id="stPlikKopii"></div>
-       <button class="st-opt st-wide" data-act="plikKopii">Wskaż stały plik kopii</button>
-       <button class="st-opt st-wide" id="stPlikKopiiOff" data-act="plikKopiiOff" style="display:none">Przestań używać tego pliku</button>
-       <div class="st-hint">Zamiast pobierać co dzień nowy plik, aplikacja może <b>nadpisywać jeden wskazany</b> — na dysku nie przybywa kopii. Wskazujesz go raz. Wymaga przeglądarki Chrome, Edge, Brave lub Arc na komputerze; w Safari pozostaje zwykłe pobieranie.</div>
-     </div>
-     <div class="st-sec">
-       <div class="st-lbl">Porządki w notatkach</div>
-       <button class="st-opt st-wide" data-act="odstepy">Uporządkuj odstępy w treści</button>
-       <div class="st-hint">Treść notatki jest wyświetlana z zachowaniem spacji, żeby Twoje własne wcięcia wyglądały tak, jak je wpisałeś. Notatki przeniesione z innego programu niosą jednak wcięcia i podziały wierszy z <b>pliku źródłowego</b> — one też są widoczne, choć nikt ich nie pisał. To narzędzie je usuwa; tekst, listy, tabele i zdjęcia zostają nietknięte.</div>
-     </div>
-     <div class="st-sec">
-       <div class="st-lbl">Import z JW Library</div>
-       <div class="st-ver" id="stLib"></div>
-       <div class="st-hint">Odczytanie pliku <b>.jwlibrary</b> wymaga dwóch bibliotek. Leżą w katalogu <code>lib/</code> obok aplikacji i są wgrywane razem z nią. Aplikacja <b>nie pobiera niczego z obcych serwerów</b> — nie potrafi tego zrobić.</div>
      </div>
      <div class="st-sec">
        <div class="st-lbl">Wersja aplikacji</div>
        <div class="st-ver" id="stWersja"></div>
        <button class="st-opt st-wide" data-act="odswiez">Pobierz najnowszą wersję</button>
        <div class="st-hint">Kasuje zapisaną kopię plików aplikacji i wczytuje ją od nowa z serwera. Przydatne, gdy po wgraniu nowej wersji na GitHub wciąż widzisz starą. <b>Notatki zostają nietknięte</b> — są w osobnej bazie na urządzeniu.</div>
+     </div>
      </div>`;
+  rysujZakladkiUstawien();
+  pokazKarteUstawien(stKarta);
   pokazPlikKopii();
   pokazStanBibliotek();
   const wyborOsz = $("stOszczedny");
@@ -15273,6 +15774,7 @@ document.addEventListener("click", e=>{
 const OKIENKA = [
   {id:"dropdown",  wyjatki:["#btnMenu", "#btnCols"]},
   {id:"colorMenu", wyjatki:["#btnColors", "#btnSettings"]},
+  {id:"motywMenu", wyjatki:["#btnTheme"]},
   {id:"readPop",   wyjatki:["[data-readbtn]"]},
   {id:"ebPop",     wyjatki:["[data-pop]"]}
 ];
