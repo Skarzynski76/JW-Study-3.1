@@ -3986,6 +3986,312 @@ html[data-theme="dark"] #noteList.v-tablica .ncard.wydUbrana .wydDzialanie:hover
   }
 }
 
+/* ============================================================
+   TRZY KOLUMNY BOCZNE JAKO JEDNA RODZINA (v2.51)
+
+   Biblia, Etykiety i Publikacje robią to samo — zawężają listę notatek — ale
+   wyglądały jak z trzech różnych programów. Zmierzone na 102 notatkach:
+
+     wiersz w Biblii i Etykietach  33 px
+     wiersz w Publikacjach         48 px      (o połowę wyższy)
+     nazwy pogrubione              tylko w Publikacjach
+     uchwyt do przenoszenia ⠿      tylko w Publikacjach, widoczny na stałe
+     ucięte nazwy                  2 z 13 w Etykietach („Wykład publicz…")
+
+   Różnica wysokości nie brała się z zamysłu, tylko z uchwytu: miał
+   min-height:28px, a to razem z wypełnieniem wiersza dawało 48 px. Palcowi te
+   28 px są potrzebne, myszy nie — więc zostają tam, gdzie nie ma kursora.
+   ============================================================ */
+
+/* ——— jedna wysokość wiersza we wszystkich trzech kolumnach ——— */
+@media (hover:hover){
+  #pubList .pubDrag{
+    min-width:18px; min-height:0;            /* to on rozpychał wiersz do 48 px */
+    opacity:0;                               /* pokazuje się dopiero pod kursorem */
+    transition:opacity var(--dur-szybko) var(--ease);
+  }
+  #pubList .item:hover .pubDrag,
+  #pubList .item.dragging .pubDrag{ opacity:.45; }
+  #pubList .item:hover .pubDrag:hover{ opacity:.85; }
+}
+/* Na dotyku uchwyt zostaje widoczny i duży — palec nie ma czym najechać,
+   a przenoszenie pozycji jest tu prawdziwą funkcją, nie ozdobą. */
+@media (hover:none){
+  #pubList .pubDrag{ min-width:22px; min-height:28px; opacity:.5; }
+}
+/* Nazwa publikacji waży tyle samo, co nazwa księgi i etykiety. */
+#pubList .item.pubCat .nm{ font-weight:500; }
+
+/* ——— ŚCIEŻKA W PUBLIKACJACH ———
+   „‹ wstecz" mówi, że można się cofnąć, ale nie mówi SKĄD. Przy trzech
+   poziomach (kategorie → roczniki → wydania) po dwóch kliknięciach nie było
+   wiadomo, czy patrzy się na roczniki Strażnicy czy na wydania rocznika. */
+#pubPanel .pubSciezka{
+  display:flex; align-items:center; flex-wrap:wrap; gap:2px;
+  padding:2px 8px 6px;
+  font-size:calc(11.5px * var(--ui,1)); line-height:1.35;
+  color:var(--muted);
+}
+#pubPanel .pubSciezka button{
+  background:none; border:0; padding:2px 4px; border-radius:6px;
+  font:inherit; color:var(--accent); cursor:pointer;
+}
+#pubPanel .pubSciezka button:hover{ background:var(--sel); }
+#pubPanel .pubSciezka .pubTeraz{ padding:2px 4px; color:var(--text); font-weight:600; }
+#pubPanel .pubSciezka .pubStrz{ opacity:.5; }
+
+/* ——— NAZWY, KTÓRE SIĘ NIE UCINAJĄ ———
+   Etykieta ma nazwę nadaną przez użytkownika i to ona jest tu treścią. Ucięta
+   w połowie („Wykład publicz…") wymaga zgadywania albo najechania kursorem,
+   czego na dotyku nie ma. Zawinięcie do dwóch wierszy kosztuje kilka pikseli
+   wysokości i tylko przy długich nazwach. */
+#tagList .item .nm,
+#pubList .item .nm{
+  white-space:normal;
+  overflow-wrap:break-word;
+  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3;
+  overflow:hidden;
+}
+/* MIĘDZY WYRAZAMI, NIE W ŚRODKU WYRAZU.
+   „overflow-wrap:anywhere" pozwala złamać wyraz w dowolnym miejscu i przy ciasnym
+   nagłówku robił z „Zebrania" napis „Zebr / ania". Wygląda to jak usterka
+   czcionki. „break-word" łamie wyraz tylko wtedy, gdy sam jeden nie mieści się
+   w wierszu — czyli praktycznie nigdy. */
+#tagList .secName{
+  flex:1 1 auto; min-width:0;
+  white-space:normal; overflow-wrap:break-word;
+  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden;
+}
+#tagList .secCnt{ flex:0 0 auto; }
+/* Liczniki ustępują nazwie: to ona jest treścią, licznik tylko ją opisuje. */
+#bookList .item .cnt,#tagList .item .cnt,#pubList .item .cnt{
+  font-size:calc(11px * var(--ui,1)); opacity:.75; min-width:1.4em; text-align:right;
+}
+/* Kropka bez nadanego koloru zostaje na miejscu — inaczej nazwy etykiet
+   kolorowych i bezbarwnych zaczynałyby się w dwóch różnych miejscach — ale
+   staje się cicha. Rząd pustych okręgów czytał się jak rząd znaków zapytania. */
+#tagList .item .tgdot.none{
+  width:6px; height:6px; opacity:.3; border-width:1px;
+}
+
+/* ——— WĘŻSZE KOLUMNY, WIĘCEJ MIEJSCA NA NOTATKI ———
+   Trzy kolumny zajmowały 730 z 1500 px, czyli dokładnie połowę ekranu; na
+   notatki — po co się tu przychodzi — zostawało 641 px. Nazwy ksiąg i kategorii
+   mieszczą się w węższym wierszu, a etykiety zawijają się do dwóch wierszy,
+   więc nie tracą nic. Kto woli szersze, przeciąga uchwyt: szerokość jest
+   zapamiętywana (od 2.51 także w kolumnie Publikacje). */
+@media (min-width:1181px){
+  /* Nie po równo, bo zawartość nie jest równa. Najdłuższa nazwa księgi
+     („Powtórzonego Prawa") i nazwy kategorii publikacji mieszczą się w 200 px,
+     a nazwy etykiet nadaje użytkownik i bywają dwa razy dłuższe — więc to
+     Etykiety dostają więcej. Suma i tak jest mniejsza niż przedtem. */
+  #colBooks{ width:200px; }
+  #colTags { width:240px; }
+  #colPubs { width:200px; }
+}
+
+/* ——— OGNISKO W KOLUMNIE WIDOCZNE OD RAZU ———
+   Pozycje kolumn są obsługiwane strzałkami (50-kolumny-klawiatura.js). Przy
+   przechodzeniu strzałką trzeba widzieć, gdzie się jest — a przeglądarka rysuje
+   swoją obwódkę tylko przy :focus-visible i różnie w różnych przeglądarkach.
+   Rysujemy własną: wyraźną, ale nieprzesłaniającą treści wiersza. */
+#bookList .item.kolOgnisko,
+#tagList .item.kolOgnisko,
+#pubList .item.kolOgnisko,
+#tagList .secHead.kolOgnisko,
+#bookList .chip-ch.kolOgnisko{
+  outline:2px solid var(--accent);
+  outline-offset:1px;
+}
+#bookList .item.kolOgnisko.active,
+#tagList .item.kolOgnisko.active,
+#pubList .item.kolOgnisko.active{
+  outline-color:#fff; outline-offset:-3px;       /* na zielonym tle biała obwódka jest widoczna */
+}
+/* Nagłówki sekcji i chipy rozdziałów też są teraz przyciskami dla klawiatury —
+   kursor ma o tym mówić. */
+#tagList .secHead{ cursor:pointer; }
+
+/* ——— PLUS W NAGŁÓWKU ETYKIET ZAMIAST DWÓCH PRZYCISKÓW ———
+   Wiersz „Nowa etykieta / Nowa sekcja" stał nad listą na stałe i zabierał jej
+   ponad czterdzieści pikseli wysokości. Etykietę tworzy się raz na jakiś czas,
+   a listę widzi się cały czas — więc zamienia się miejscami: lista dostaje
+   wysokość, tworzenie dostaje plus w nagłówku.
+
+   Przyciski zostają w stronie, tylko schowane: to w nich siedzą działania,
+   a menu pod plusem po prostu je naciska (patrz 07-appearance.js). */
+#colTags .tagBtns{ display:none; }
+#colTags h2{ display:flex; align-items:center; gap:6px; }
+.kolPlus{
+  margin-left:auto;
+  width:26px; height:26px; padding:0;
+  display:inline-flex; align-items:center; justify-content:center;
+  background:none; border:1px solid var(--border); border-radius:8px;
+  color:var(--accent); cursor:pointer;
+  transition:background var(--dur-szybko) var(--ease), border-color var(--dur-szybko) var(--ease);
+}
+.kolPlus .ic{ width:15px; height:15px; }
+.kolPlus:hover{ background:var(--sel); border-color:var(--accent2); }
+
+/* ——— NAZWA MA PIERWSZEŃSTWO PRZED MEBLAMI WIERSZA ———
+   Zmierzony wiersz etykiety w sekcji miał 188 px, z czego na nazwę zostawało 65.
+   Resztę brały: uchwyt przenoszenia 22 px, kropka koloru 10 px, przycisk ⋯ 24 px,
+   licznik 15 px i cztery odstępy po 8 px. Uchwyt i ⋯ są NIEWIDOCZNE, dopóki nie
+   ma na wierszu kursora — ale miejsce zajmowały zawsze. Dwa niewidoczne elementy
+   zabierały nazwie więcej miejsca, niż sama dostawała.
+
+   Nie chowamy ich z układu (treść skakałaby pod kursorem) — po prostu zajmują
+   tyle, ile naprawdę potrzebują. */
+#tagList .item{ gap:6px; }
+#tagList .item .more{ padding:0 1px; }
+#tagList .item .nm{ flex:1 1 auto; min-width:0; }
+@media (hover:hover){
+  /* min-width:22px i min-height:28px to rozmiar pod palec — ustawiony w regule
+     „Uchwyt ma być na tyle duży, żeby dało się w niego trafić palcem". Tam gdzie
+     jest kursor, palca nie ma, a te 22 px odbierały nazwie etykiety więcej
+     miejsca, niż zajmował licznik. */
+  #tagList .item .dragOrd{ min-width:14px; min-height:0; margin-left:-5px; }
+  #tagList .item .dragOrd .ic{ width:13px; height:13px; }
+}
+
+/* ——— STRZAŁKA POWROTU W CZYTNIKU (v2.52) ———
+   Powiązane notatki otwierają się w tym samym czytniku, więc dotąd jedynym
+   wyjściem był ✕ — i prowadził na listę, a nie do notatki, z której się przyszło.
+   Strzałka stoi po lewej stronie belki, symetrycznie do ✕ po prawej, i pojawia
+   się dopiero wtedy, gdy jest gdzie wracać. */
+#fsWrap .fsBackInline{
+  position:absolute;
+  top:clamp(14px, 3vw, 26px);
+  left:clamp(2px, 1.5vw, 12px);
+  width:32px; height:32px; padding:0;
+  border:none; border-radius:50%;
+  background:#fff; color:#1e5b46;
+  box-shadow:0 2px 6px rgba(0,0,0,.3);
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; z-index:4;
+}
+#fsWrap .fsBackInline .ic{ width:18px; height:18px; }
+#fsWrap .fsBackInline:hover{ background:#eef2ef; }
+#fsWrap .fsBackInline:active{ transform:scale(.92); }
+/* Tytuł ustępuje strzałce tyle miejsca, ile ona zajmuje — inaczej wchodziłby pod nią. */
+#fsWrap .nhead:has(.fsBackInline) .ntitle{ padding-left:34px; }
+@media (max-width:620px){
+  #fsWrap .fsBackInline{ top:12px; left:2px; width:30px; height:30px; }
+  #fsWrap .nhead:has(.fsBackInline) .ntitle{ padding-left:30px; }
+}
+
+/* ============================================================
+   OKNO EDYCJI: TEKST W ROLI GŁÓWNEJ (v2.53)
+
+   Zmierzone w trybie edycji, na tej samej notatce:
+
+                              komputer   tablet   telefon
+     nad tekstem               366 px     362 px   323 px   (41% / 31% / 38% okna)
+     na tekst zostaje          378 px     633 px   354 px   → 13 / 23 / 13 wierszy
+
+   Nad tekstem stało PIĘĆ pasm, z których przy pisaniu przydaje się jedno:
+
+     125 px  belka z tytułem      — potrzebna, ale miała podwójne wypełnienie:
+                                    34 px pasma + 18 px samego tytułu
+      39 px  publikacja i data    — przy pisaniu nie mówi nic nowego
+      22 px  etykiety             — jak wyżej
+      43 px  „44 słów · Spis · Znajdź" — to pasek DO CZYTANIA. Kto pisze,
+                                    nie szuka w tekście i nie liczy słów
+      52 px  pasek narzędzi       — jedyne pasmo, które przy pisaniu pracuje
+
+   Pod tekstem było jeszcze gorzej: 90 px pustego wypełnienia (rezerwa na
+   przyklejony pasek dolny, przy edycji niepotrzebna) i 54 px odstępu nad samym
+   paskiem. Razem ponad 140 px pustego miejsca w miejscu, gdzie właśnie się pisze.
+
+   Wszystko poniżej dotyczy WYŁĄCZNIE stanu edycji. Widok czytania zostaje bez
+   zmian — tam licznik słów, „Znajdź" i spis treści są na swoim miejscu.
+   ============================================================ */
+
+/* ——— pasma, które przy pisaniu nie pracują ——— */
+#fsWrap .ncard.editing .fsBar,
+#fsWrap .ncard.editing .fsFind,
+#fsWrap .ncard.editing .fsToc,
+#fsWrap .ncard.editing .nmeta2,
+#fsWrap .ncard.editing .chips,
+#fsWrap .ncard.editing .wysUchwyt,
+#fsWrap .ncard.editing .powiazane{ display:none!important; }
+
+/* ——— belka tytułu bez podwójnego wypełnienia ———
+   Tytuł zostaje (jest edytowalny), ale przestaje mieć własne wypełnienie
+   dodane do wypełnienia pasma. */
+#fsWrap .ncard.editing .nhead{
+  padding:10px 44px 8px 12px;          /* z prawej miejsce na ✕, z lewej na ← */
+  min-height:0;
+}
+#fsWrap .ncard.editing .ntitle{
+  padding:0;
+  font-size:calc(var(--noteFs, 16px) + 2px);
+  line-height:1.3;
+  -webkit-line-clamp:unset;            /* przy pisaniu tytuł ma być widoczny cały */
+  display:block;
+}
+#fsWrap .ncard.editing .fsBackInline,
+#fsWrap .ncard.editing .fsCloseInline{ top:6px; }
+
+/* ——— pasek narzędzi bliżej tekstu ——— */
+#fsWrap .ncard.editing .editbar{
+  margin:6px 12px 4px;
+  padding:4px 8px;
+}
+#fsWrap .ncard.editing .editbar .ebSel,
+#fsWrap .ncard.editing .editbar select{ padding-top:3px; padding-bottom:3px; }
+
+/* ——— tekst dostaje to, co zostało ———
+   90 px wypełnienia u dołu to rezerwa na przyklejony pasek w trybie czytania.
+   Przy pisaniu pasek nie jest przyklejony, więc rezerwa jest pustym miejscem
+   dokładnie tam, gdzie stoi kursor. */
+#fsWrap .ncard.editing .ncontent{
+  padding:10px 16px 14px;
+  margin-top:0;
+}
+#fsWrap .ncard.editing .ntools{
+  margin-top:6px;
+  padding-top:6px;
+  border-top:1px solid var(--border);
+}
+
+/* ——— telefon: dolny pasek w jednym wierszu ———
+   Przy 390 px zawijał się na dwa wiersze i zabierał 91 px — na telefonie, gdzie
+   miejsca jest najmniej. Zamiast zawijać, przewija się w poziomie. */
+@media (max-width:620px){
+  #fsWrap .ncard.editing .nhead{ padding:8px 38px 6px 38px; }
+  #fsWrap .ncard.editing .ncontent{ padding:8px 12px 12px; }
+  #fsWrap .ncard.editing .ntools{
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  #fsWrap .ncard.editing .ntools::-webkit-scrollbar{ display:none; }
+  #fsWrap .ncard.editing .ntools .btnrow{ flex-wrap:nowrap; }
+  #fsWrap .ncard.editing .editbar{ margin:4px 8px 2px; }
+}
+
+/* ——— telefon: koniec z rezerwą pod strzałki ‹ › ———
+   Wyżej (przy .fsNav) pasek dolny dostaje 52 px zapasu, żeby pływające strzałki
+   „poprzednia / następna notatka" nie stały na jego przyciskach. Przy pisaniu
+   tych strzałek nie ma po co pokazywać — skok do innej notatki w środku
+   redagowania to nie jest ruch, którego ktoś chce — więc i rezerwy nie ma po co
+   trzymać. Bez tego 52 px pustki siedziało dokładnie tam, gdzie telefon ma
+   najmniej miejsca.
+
+   Strzałki są rodzeństwem okna, nie jego wnętrzem, dlatego stan edycji trzeba
+   wyłuskać z góry przez :has() (używane w tym arkuszu już wcześniej).
+
+   „!important" jest tu konieczne, nie na wyrost: updateFsNav() w 10-reader.js
+   wpisuje strzałkom display prosto w atrybut style, a styl z atrybutu wygrywa
+   z każdym arkuszem. Bez tego reguła nie działa w ogóle. */
+#modalFs:has(#fsWrap .ncard.editing) .fsNav{ display:none!important; }
+@media (max-width:620px){
+  #fsWrap .ncard.editing .ntools{ padding-bottom:8px; }
+}
+
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -3994,7 +4300,7 @@ html[data-theme="dark"] #noteList.v-tablica .ncard.wydUbrana .wydDzialanie:hover
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.50</span></div>
+      <div class="brand-name">JW Study <span class="ver">v2.53</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -4055,7 +4361,7 @@ html[data-theme="dark"] #noteList.v-tablica .ncard.wydUbrana .wydDzialanie:hover
   <div class="colResizer" data-c="colBooks" title="Przeciągnij, aby zmienić szerokość"></div>
   <div class="col" id="colTags">
     <div id="tagPanel">
-      <h2><button class="colToggle" data-c="colTags" title="Zwiń / rozwiń">⟨⟨</button>Etykiety</h2>
+      <h2><button class="colToggle" data-c="colTags" title="Zwiń / rozwiń">⟨⟨</button>Etykiety<button class="kolPlus" id="btnTagPlus" title="Dodaj etykietę albo sekcję" aria-label="Dodaj etykietę albo sekcję"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></h2>
       <div class="tagBtns">
         <button id="btnNewTag" title="Utwórz nową etykietę"><svg class="ic tb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span class="tb-txt">Nowa etykieta</span></button>
         <button id="btnNewSec" title="Grupuj etykiety w sekcje, np. Kongresy"><svg class="ic tb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 7.4A1.6 1.6 0 0 1 5.1 5.8h3.7l1.9 2.1h8.2a1.6 1.6 0 0 1 1.6 1.6v8.1a1.6 1.6 0 0 1-1.6 1.6H5.1a1.6 1.6 0 0 1-1.6-1.6z"/></svg><span class="tb-txt">Nowa sekcja</span></button>
@@ -4066,7 +4372,8 @@ html[data-theme="dark"] #noteList.v-tablica .ncard.wydUbrana .wydDzialanie:hover
   <div class="colResizer" data-c="colTags" title="Przeciągnij, aby zmienić szerokość"></div>
   <div class="col" id="colPubs">
     <div id="pubPanel">
-      <h2 class="pubTitle">Publikacje <span class="pubActs"><span id="pubReset" class="pubReset" style="display:none" title="Przywróć domyślną kolejność">↺</span><span id="pubBack" class="pubBack" style="display:none">‹ wstecz</span></span><button class="colToggle" data-c="colPubs" title="Zwiń / rozwiń">⟨⟨</button></h2>
+      <h2 class="pubTitle">Publikacje <span class="pubActs"><span id="pubReset" class="pubReset" style="display:none" title="Przywróć domyślną kolejność">↺</span></span><button class="colToggle" data-c="colPubs" title="Zwiń / rozwiń">⟨⟨</button></h2>
+      <nav class="pubSciezka" id="pubSciezka" aria-label="Gdzie jesteś w publikacjach"></nav>
       <div class="list" id="pubList"></div>
     </div>
   </div>
@@ -5232,10 +5539,38 @@ function clearPubOrder(){ delete pubOrder[pubOrderKey()]; savePubOrder(); render
  * kategorie → roczniki (albo pojedyncze publikacje) → wydania.
  * Stan poziomu trzyma pubView, własną kolejność pozycji — pubOrder.
  */
+/* ——— ŚCIEŻKA W PANELU PUBLIKACJI ———
+   Panel ma trzy poziomy: kategorie → roczniki → wydania. Wcześniej powrót
+   prowadził przycisk „‹ wstecz" w nagłówku. Mówił, że można się cofnąć, ale nie
+   mówił SKĄD: po dwóch kliknięciach nie było wiadomo, czy patrzy się na roczniki
+   Strażnicy, czy na wydania jednego rocznika. Ścieżka mówi jedno i drugie —
+   i pozwala skoczyć wprost na wybrany poziom, a nie tylko o jeden w górę. */
+function rysujSciezkePub(){
+  const el = $("pubSciezka"); if(!el) return;
+  if(!pubView.cat){ setHtml(el, ""); return; }   // na pierwszym poziomie nie ma czego pokazywać
+  const nazwaKat = (PUB_CATS.find(c=>c.id===pubView.cat) || {name:"Inne"}).name;
+  const strz = '<span class="pubStrz">›</span>';
+  let html = '<button type="button" data-poziom="kat">Publikacje</button>' + strz;
+  if(pubView.year){
+    html += '<button type="button" data-poziom="rok">' + esc(nazwaKat) + '</button>' + strz
+          + '<span class="pubTeraz">' + esc(pubView.year === "—" ? "Bez rocznika" : pubView.year) + '</span>';
+  } else {
+    html += '<span class="pubTeraz">' + esc(nazwaKat) + '</span>';
+  }
+  if(!setHtml(el, html)) return;                 // ten sam napis → zdarzenia już podpięte
+  el.querySelectorAll("button").forEach(b=>{
+    b.onclick = ()=>{
+      if(b.dataset.poziom === "kat") pubView = {cat:null, year:null};
+      else pubView.year = null;
+      renderPubPanel();
+    };
+  });
+}
 function renderPubPanel(){
   const el=$("pubList"); if(!el) return;
   const base = notes.filter(n=>!n.del && !n.b && noteMatchesTag(n,filt.tag) && noteMatchesQuery(n));
-  const back=$("pubBack"), rst=$("pubReset");
+  const rst=$("pubReset");
+  rysujSciezkePub();
   const grip = '<span class="pubDrag" title="Przeciągnij, aby zmienić kolejność">'+IC_GRIP+'</span>';
   /* Publikacja, w kontekście której jesteśmy. Liczona RAZ na przerysowanie panelu —
      wcześniej wołana w pętli po publikacjach, czyli przy każdym renderowaniu tyle razy,
@@ -5244,7 +5579,6 @@ function renderPubPanel(){
   let html="";
   if(!pubView.cat){
     // POZIOM 1: kategorie
-    back.style.display="none";
     const cats={};
     base.forEach(n=>{ const c=pubCatOf(n); if(!cats[c.id]) cats[c.id]={name:c.name,byYear:c.byYear,cnt:0}; cats[c.id].cnt++; });
     const keys=applyPubOrder(Object.keys(cats).sort((a,b)=>cats[b].cnt-cats[a].cnt || cats[a].name.localeCompare(cats[b].name,"pl")));
@@ -5254,7 +5588,6 @@ function renderPubPanel(){
     });
   } else if(!pubView.year){
     // POZIOM 2: roczniki albo poszczególne publikacje
-    back.style.display=""; back.textContent="‹ Publikacje";
     const inCat = base.filter(n=>pubCatOf(n).id===pubView.cat);
     const cat = PUB_CATS.find(c=>c.id===pubView.cat) || {byYear:false, name:"Inne"};
     if(cat.byYear){
@@ -5276,7 +5609,6 @@ function renderPubPanel(){
     }
   } else {
     // POZIOM 3: wydania w wybranym roczniku
-    back.style.display=""; back.textContent="‹ "+(PUB_CATS.find(c=>c.id===pubView.cat)||{name:""}).name;
     const inYear = base.filter(n=>pubCatOf(n).id===pubView.cat && (pubYearOf(n)||"—")===pubView.year);
     const items={};
     inYear.forEach(n=>{ const k=pubKeyOf(n); items[k]=(items[k]||0)+1; });
@@ -5605,16 +5937,39 @@ function renderQuickFilters(base){
  * @param {number} ileEtykiet
  * @param {number} sumaZEtykiet  notatki widoczne przez etykiety tej sekcji
  */
-function licznikSekcji(s, ileEtykiet, sumaZEtykiet){
+/**
+ * To samo co licznikSekcji, ale pełnymi słowami — dla podpowiedzi pod kursorem
+ * i dla czytnika ekranu. Skróty („zakł.", „etyk.", „not.") mieszczą się w wąskiej
+ * kolumnie, ale czytnik ekranu wymawia je jako sylaby.
+ */
+function opisSekcji(s, ileEtykiet, sumaZEtykiet){
   const zakladki = (typeof secTabsFor==="function") ? secTabsFor(s.id) : [];
   const zZakladek = (typeof secTabCount==="function")
     ? zakladki.reduce((a,z)=>a+secTabCount(z.id), 0) : 0;
-  const czesci = [];
-  if(zakladki.length) czesci.push(zakladki.length + (zakladki.length===1 ? " zakładka" : " zakł."));
-  if(ileEtykiet) czesci.push(ileEtykiet + (ileEtykiet===1 ? " etykieta" : " etyk."));
   const razem = Math.max(sumaZEtykiet, zZakladek);
-  if(!czesci.length) return String(razem || 0);
-  return czesci.join(" · ") + (razem ? " · " + razem : "");
+  const slowo = (n, jedna, kilka, wiele)=>
+    n===1 ? jedna : (n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? kilka : wiele);
+  const czesci = [];
+  if(zakladki.length) czesci.push(zakladki.length+" "+slowo(zakladki.length,"zakładka","zakładki","zakładek"));
+  if(ileEtykiet)      czesci.push(ileEtykiet+" "+slowo(ileEtykiet,"etykieta","etykiety","etykiet"));
+  czesci.push(razem+" "+slowo(razem,"notatka","notatki","notatek"));
+  return czesci.join(" · ");
+}
+function licznikSekcji(s, sumaZEtykiet){
+  const zakladki = (typeof secTabsFor==="function") ? secTabsFor(s.id) : [];
+  const zZakladek = (typeof secTabCount==="function")
+    ? zakladki.reduce((a,z)=>a+secTabCount(z.id), 0) : 0;
+  /* JEDNA LICZBA: notatki. Dokładnie to, co pokazują liczniki w kolumnach Biblia
+     i Publikacje — więc liczba w tym samym miejscu znaczy w całej aplikacji to
+     samo i nie trzeba się zastanawiać.
+
+     Było tu „3 etyk. · 3": dwie takie same liczby obok siebie, z których druga
+     znaczyła coś zupełnie innego niż pierwsza. Rozpisanie ich pełnymi słowami
+     („3 etyk. · 3 not.") usunęło zagadkę, ale zabrało 97 z 198 pikseli nagłówka —
+     na nazwę sekcji zostawało dwadzieścia i łamała się w środku wyrazu:
+     „Zebr / ania". Pełny rozkład jest w podpowiedzi i tam nie zajmuje miejsca
+     nikomu. */
+  return String(Math.max(sumaZEtykiet, zZakladek) || 0);
 }
 
 /* ================= KOLUMNA 1: ZAKŁADKI ================= */
@@ -5623,7 +5978,11 @@ function renderTags(){
   const counts = {}; let untagged=0;
   base.forEach(n=>{ if(!n.tg.length)untagged++; n.tg.forEach(t=>counts[t]=(counts[t]||0)+1); });
   const el = $("tagList");
-  let html = tagItem("all","Wszystkie",base.length) + tagItem("none","Bez etykiety",untagged);
+  /* „Bez etykiety" pokazujemy tylko wtedy, gdy takie notatki istnieją — albo gdy
+     ten filtr jest właśnie włączony, bo inaczej nie dałoby się go wyłączyć.
+     Pozycja z zerem uczy omijać wzrokiem miejsce, w którym czasem coś jest. */
+  let html = tagItem("all","Wszystkie",base.length);
+  if(untagged || String(filt.tag)==="none") html += tagItem("none","Bez etykiety",untagged);
   // ——— SEKCJE (grupy etykiet) ———
   const secs = sections.slice().sort((a,b)=>(a.ord??0)-(b.ord??0));
   secs.forEach(s=>{
@@ -5640,7 +5999,7 @@ function renderTags(){
     html += `<div class="secHead${s.open===false?" closed":""}" data-sec="${s.id}"${sc}>
       <span class="secArr">${s.open===false?"▸":"▾"}</span>
       <span class="secName">${esc(s.name)}</span>
-      <span class="secCnt">${licznikSekcji(s, inside.length, sum)}</span>
+      <span class="secCnt" title="${esc(opisSekcji(s, inside.length, sum))}">${licznikSekcji(s, sum)}</span>
       <span class="secMore" title="Opcje sekcji">${IC_DOTS}</span></div>`;
     if(s.open!==false){
       // zakładki sekcji nad etykietami — to one porządkują jej zawartość
@@ -6000,7 +6359,7 @@ function tagItem(key,name,cnt,user,color,inSection,secId){
   const uchwyt = user ? '<span class="dragOrd" title="Przeciągnij, aby zmienić kolejność">'+IC_GRIP+'</span>' : "";
   const atryb = user ? ` data-droppable="1" data-ord="${key}"` : "";
   return `<div class="item ${active?"active":""} ${cnt?"":"zero"}${inSection?" inSec":""}" data-k="${key}"${atryb}>
-    ${uchwyt}${dot}<span class="nm">${esc(name)}</span>${user?'<span class="more" title="Opcje etykiety">'+IC_DOTS+'</span>':""}<span class="cnt">${cnt}</span></div>`;
+    ${uchwyt}${dot}<span class="nm" title="${esc(name)}">${esc(name)}</span>${user?'<span class="more" title="Opcje etykiety">'+IC_DOTS+'</span>':""}<span class="cnt">${cnt}</span></div>`;
 }
 function cmpTags(a,b){
   const ao=a.ord!==undefined, bo=b.ord!==undefined;
@@ -6100,11 +6459,33 @@ function createTag(name){
   saveTags();
   return t;
 }
-$("pubBack").onclick = ()=>{
-  if(pubView.year) pubView.year=null; else pubView.cat=null;
-  renderPubPanel();
-};
 $("pubReset").onclick = ()=> clearPubOrder();
+/* ——— DODAWANIE Z NAGŁÓWKA KOLUMNY ———
+   Dwa przyciski, „Nowa etykieta" i „Nowa sekcja", stały nad listą na stałe
+   i zabierały jej ponad czterdzieści pikseli wysokości — na czynności robione
+   raz na jakiś czas. Teraz jest tam plus, a pod nim jedno i drugie.
+
+   Same przyciski zostają w stronie (ukryte) i to one nadal trzymają działania:
+   menu tylko je naciska. Przepisanie ich treści tutaj znaczyłoby dwa miejsca
+   z tą samą logiką, a jedno z nich zawsze zostaje w tyle. */
+if($("btnTagPlus")) $("btnTagPlus").onclick = e=>{
+  e.stopPropagation();
+  const dd = $("dropdown");
+  if(dd.style.display==="block" && dd.dataset.rodzaj==="tagPlus"){ dd.style.display="none"; return; }
+  dd.dataset.rodzaj = "tagPlus";
+  dd.innerHTML =
+    '<div data-plus="tag">' + ICO.tag + 'Nowa etykieta</div>' +
+    '<div data-plus="sec">' + ICO.bookmark + 'Nowa sekcja</div>';
+  dd.style.display = "block";
+  if(typeof oznaczPozycjeMenu==="function") oznaczPozycjeMenu(dd);
+  placeDropdown(dd, $("btnTagPlus"));
+  dd.onclick = ev=>{
+    const it = ev.target.closest("[data-plus]"); if(!it) return;
+    dd.style.display = "none";
+    $(it.dataset.plus==="tag" ? "btnNewTag" : "btnNewSec").click();
+  };
+};
+
 loadPubOrder();
 $("btnNewSec").onclick = createSection;
 $("btnNewTag").onclick = async ()=>{
@@ -6881,6 +7262,10 @@ function renderAll(){
       if(el) nazwijPrzyciskiIkonowe(el);
     });
   }
+  /* Wędrujący tabindeks w kolumnach bocznych nadajemy od nowa: przerysowanie
+     zbudowało nowe pozycje, a wraz ze starymi przepadła cała wiedza o tym,
+     która z nich jest osiągalna Tabem. Patrz 50-kolumny-klawiatura.js. */
+  if(typeof kolOdswiezKlawiature==="function") kolOdswiezKlawiature();
 }
 
 </script>
@@ -6893,6 +7278,21 @@ function renderAll(){
 /* ================= NOTATKA NA PEŁNYM EKRANIE ================= */
 let fsGuid = null;
 let fsNavList = [];
+/* ——— ŚLAD, PO KTÓRYM DA SIĘ WRÓCIĆ ———
+
+   Powiązane notatki otwierają się w TYM SAMYM czytniku: fsGuid zmienia wartość,
+   a poprzednia notatka przestaje istnieć dla aplikacji. Kto wszedł z notatki A
+   w powiązaną B, przeczytał ją i nacisnął ✕, wracał na listę — do A trzeba było
+   dojść od nowa, a przy kilku tysiącach notatek to nie drobiazg. Zniechęca do
+   korzystania z powiązań, czyli do jedynej rzeczy w tej aplikacji, która
+   przypomina o tym, czego nikt nie szukał.
+
+   Ślad trzyma odwiedzone notatki w kolejności wchodzenia. Rośnie tylko przy
+   SKOKACH (powiązana notatka, odnośnik) — nie przy przeglądaniu strzałkami
+   w przód i w tył, bo tam ruch jest liniowy i strzałka wstecz już istnieje.
+   Zamknięcie czytnika ślad kasuje: wchodząc z listy na nowo, nie ma dokąd wracać. */
+let fsSlad = [];
+const FS_SLAD_MAX = 30;        // dłuższego nikt nie przejdzie palcem, a pamięć ma swój koszt
 let fsListDirty = false;
 /**
  * Otwiera notatkę na pełnym ekranie (czytnik): typografia do czytania, spis treści
@@ -6903,6 +7303,17 @@ function openFs(n){
   // jeśli notatka jest właśnie edytowana — zapisz treść (ze zdjęciami), zanim przerysujemy pełny ekran
   const ec = document.querySelector('.ncard.editing[data-g="'+n.g+'"] .ncontent');
   if(ec) commitLiveEdit(ec);
+  /* Skok z otwartej notatki do innej zostawia ślad. Otwarcie z listy zaczyna
+     od nowa — inaczej ✕ z pierwszej notatki cofałoby do czegoś, czego
+     użytkownik w tej sesji czytania nie widział. */
+  const juzOtwarty = !!fsGuid && $("modalFs").classList.contains("show");
+  if(juzOtwarty && fsGuid !== n.g){
+    saveReadPos();                       // wracając, ma wrócić w to samo miejsce tekstu
+    fsSlad.push(fsGuid);
+    if(fsSlad.length > FS_SLAD_MAX) fsSlad.shift();
+  } else if(!juzOtwarty){
+    fsSlad.length = 0;
+  }
   fsGuid = n.g; renderFs(); openModal("modalFs");
   acquireWake(); updateFsNav();
   const fm=$("modalFs").querySelector(".fsmodal"); if(fm) fm.scrollTop=0;
@@ -6922,6 +7333,21 @@ function renderFs(){
     x.className = "fsCloseInline"; x.type="button"; x.setAttribute("aria-label","Zamknij"); x.textContent = "✕"; x.title = "Zamknij";
     x.onclick = closeFs;
     nh.appendChild(x);
+    /* Strzałka powrotu pokazuje się DOPIERO wtedy, gdy jest gdzie wracać.
+       Wyjście zawsze widoczne, ale nieczynne, uczy go nie próbować. W podpowiedzi
+       stoi tytuł notatki, do której prowadzi — żeby nie trzeba było naciskać,
+       aby się dowiedzieć. */
+    if(fsSlad.length){
+      const skad = notes.find(y=>y.g===fsSlad[fsSlad.length-1]);
+      const opis = "Wróć do: " + ((skad && (skad.t||"").trim()) ||
+        (skad && typeof refLabel==="function" ? refLabel(skad) : "") || "poprzedniej notatki");
+      const b = document.createElement("button");
+      b.className = "fsBackInline"; b.type = "button";
+      b.setAttribute("aria-label", opis); b.title = opis;
+      b.innerHTML = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+      b.onclick = fsWroc;
+      nh.insertBefore(b, nh.firstChild);
+    }
   }
   // jeden przycisk „Aa" — ustawienia czytania (rozmiar, interlinia, szerokość, czcionka, tło)
   const br = card.querySelector(".btnrow");
@@ -7102,7 +7528,22 @@ function restoreReadPos(g){
     toast("Wrócono do miejsca, gdzie skończyłeś");
   }, 80);
 }
-function closeFs(){ saveReadPos(); fsGuid = null; closeModal("modalFs"); releaseWake(); updateFsNav(); const p=$("readPop"); if(p) p.style.display="none"; if(fsListDirty){ fsListDirty=false; renderNotes(); } }
+/**
+ * Krok wstecz po śladzie. Gdy śladu nie ma — zamyka czytnik, czyli robi to,
+ * czego użytkownik oczekuje od jedynego wyjścia.
+ *
+ * Notatka ze śladu mogła w międzyczasie wylądować w koszu. Wtedy cofamy się
+ * dalej, zamiast pokazywać pustą stronę albo zamykać czytnik bez powodu.
+ */
+function fsWroc(){
+  if(!fsSlad.length){ closeFs(); return; }
+  saveReadPos();
+  const g = fsSlad.pop();
+  const n = notes.find(x=>x.g===g && !x.del);
+  if(!n){ fsWroc(); return; }
+  fsGuid = g; renderFs(); updateFsNav(); updateFsProgress();
+}
+function closeFs(){ saveReadPos(); fsSlad.length = 0; fsGuid = null; closeModal("modalFs"); releaseWake(); updateFsNav(); const p=$("readPop"); if(p) p.style.display="none"; if(fsListDirty){ fsListDirty=false; renderNotes(); } }
 /* ===== CZYTNIK: nawigacja, panel Aa, pasek postępu, wake lock ===== */
 function fsGo(dir){
   if(!fsGuid) return;
@@ -7286,7 +7727,18 @@ try{ noteFs = Math.min(FS_MAX, Math.max(FS_MIN, +(lsGet(KP+"Font", FS_BAZA)||FS_
 applyFs();
 /* szerokość czytania (marginesy) w otwartej notatce: wąski / komfort / pełny */
 const FSW = ["620px","760px","100%"];
-let fsWidth = 1; try{ fsWidth = Math.min(2, Math.max(0, +(localStorage.getItem(KP+"FsW")))); if(isNaN(fsWidth)) fsWidth=1; }catch(e){ fsWidth=1; }
+/* Odczyt przez lsGet z wartością domyślną, a NIE przez localStorage.getItem.
+   Przy pustej pamięci getItem oddaje null, +null to 0, a 0 nie jest NaN — więc
+   zabezpieczenie „if(isNaN)" nigdy się nie odpalało i każdy nowy użytkownik
+   dostawał „wąski" (620 px) zamiast zapowiedzianego w kodzie „komfort" (760 px).
+   Na komputerze to 140 px tekstu mniej w każdym wierszu, bez żadnego wyboru
+   z jego strony. Sprawdzamy też kształt zapisu, żeby śmieć w pamięci nie
+   przechodził jako numer wyboru. */
+let fsWidth = 1;
+try{
+  const zapisFsW = String(lsGet(KP+"FsW", "1")).trim();
+  fsWidth = /^[012]$/.test(zapisFsW) ? +zapisFsW : 1;
+}catch(e){ fsWidth = 1; }
 function applyFsWidth(){ document.documentElement.style.setProperty("--fsMax", FSW[fsWidth]||"760px"); }
 applyFsWidth();
 $("fMinus").onclick = ()=>{ noteFs = Math.max(FS_MIN, noteFs-1); lsSetSoon(KP+"Font", noteFs); applyFs(); toast("Wielkość: "+noteFs+" px"); };
@@ -10936,17 +11388,31 @@ odswiezUkryteKolumny();     // pasek musi znać stan zapamiętany z poprzedniej 
 function applyColWidths(){
   try{
     const w = JSON.parse(localStorage.getItem(KP+"Widths")||"{}");
+    /* Te same granice, jakich pilnuje przeciąganie uchwytu.
+       Szerokość ustawiona na dużym monitorze wracała na małym laptopie
+       nietknięta: trzy kolumny po 300 px zabierały 900 px i na notatki nie
+       zostawało nic. Zapamiętane ustawienie ma wracać, ale nie może zjeść
+       ekranu, na którym się nie mieści. */
+    const min = 120, max = Math.min(560, Math.max(160, innerWidth - 340));
     ["colBooks","colTags","colPubs"].forEach(id=>{
-      const c=$(id); c.style.minWidth="0";
-      if(w[id]) c.style.width=w[id]+"px";
+      const c=$(id); if(!c) return;
+      c.style.minWidth="0";
+      if(w[id]) c.style.width = Math.max(min, Math.min(max, w[id])) + "px";
     });
   }catch(e){}
 }
 function saveColWidths(){
-  lsSet(KP+"Widths", JSON.stringify({
-    colBooks: parseInt($("colBooks").style.width)||$("colBooks").offsetWidth,
-    colTags: parseInt($("colTags").style.width)||$("colTags").offsetWidth
-  }));
+  /* WSZYSTKIE TRZY KOLUMNY, nie dwie.
+     Kolumna Publikacje dała się przeciągnąć, ale jej szerokość nie była
+     zapisywana — po odświeżeniu strony wracała do domyślnej. Ustawienie, które
+     nie przeżywa odświeżenia, wygląda jak zepsute przeciąganie: użytkownik
+     ustawia to samo za każdym razem i w końcu przestaje. */
+  const szer = {};
+  ["colBooks","colTags","colPubs"].forEach(id=>{
+    const c = $(id); if(!c) return;
+    szer[id] = parseInt(c.style.width) || c.offsetWidth;
+  });
+  lsSet(KP+"Widths", JSON.stringify(szer));
 }
 applyColWidths();
 /* przycisk „Kolumny" w pasku górnym */
@@ -15390,6 +15856,167 @@ function wykonajZMenuNotatki(x, n, kotwica){
 </script>
 <script>
 /* ==========================================================================
+   JW Study — kolumny-klawiatura.js
+   TRZY KOLUMNY BOCZNE DO OBSŁUGI Z KLAWIATURY
+
+   Sprawdzone na 102 notatkach: z osiemdziesięciu dwóch pozycji w kolumnach
+   Biblia, Etykiety i Publikacje **ani jedna** nie dawała się wybrać
+   z klawiatury. Wszystkie są zwykłymi elementami div z podpiętym kliknięciem,
+   więc Tab je pomijał, a czytnik ekranu wymawiał je jako tekst bez znaczenia.
+   Aplikacja działała wyłącznie dla myszy i palca.
+
+   DLACZEGO NIE PO PROSTU tabindex="0" NA KAŻDEJ POZYCJI
+
+   Bo w kolumnie Biblia jest ich sześćdziesiąt osiem. Przejście Tabem od
+   wyszukiwarki do listy notatek wymagałoby wtedy siedemdziesięciu naciśnięć,
+   a klawisz Tab przestałby służyć do czego służy — do przechodzenia MIĘDZY
+   częściami strony.
+
+   Robimy to tak, jak od dawna robią to listy w systemach: DO KOLUMNY WCHODZI
+   SIĘ RAZ, a wewnątrz chodzi się strzałkami. Ognisko dostaje jedna pozycja
+   (ta wybrana albo pierwsza), pozostałe mają tabindex="-1" i są osiągalne
+   wyłącznie strzałkami. Nazywa się to wędrującym tabindeksem i jest tym samym,
+   co robi lista plików w każdym systemie.
+
+     Tab / Shift+Tab   wchodzi do kolumny i wychodzi z niej
+     ↓ ↑               następna / poprzednia pozycja
+     → ←               rozwija i zwija księgę (albo sekcję etykiet)
+     Home / End        pierwsza / ostatnia pozycja
+     Enter / Spacja    wybiera — dokładnie to, co kliknięcie
+     Escape            wraca do wyszukiwarki
+
+   Zdarzenia obsługujemy NA POJEMNIKU kolumny, nie na pozycjach. Listy są
+   przerysowywane po każdej zmianie filtra, więc nasłuch podpięty do pozycji
+   trzeba by podpinać od nowa za każdym razem — a jedno przeoczenie zostawiłoby
+   kolumnę bez klawiatury, znowu po cichu.
+   ========================================================================== */
+"use strict";
+
+const KOL_LISTY = ["bookList", "tagList", "pubList"];
+/* Co w kolumnie jest „pozycją do wybrania". Nagłówki sekcji i chipy rozdziałów
+   też — bo też się w nie klika, a klawiatura nie może być uboższa od myszy. */
+const KOL_POZYCJA = ".item, .secHead, .chip-ch";
+
+/** Pozycje danej listy w kolejności, w jakiej stoją na ekranie. */
+function kolPozycje(lista){
+  return [...lista.querySelectorAll(KOL_POZYCJA)].filter(el=>el.offsetParent !== null);
+}
+
+/**
+ * Wędrujący tabindeks: dokładnie JEDNA pozycja w kolumnie jest osiągalna Tabem.
+ *
+ * Wybrana, a gdy nic nie jest wybrane — pierwsza. Wołane po każdym
+ * przerysowaniu, bo przerysowanie tworzy nowe elementy i cała ta wiedza ginie.
+ */
+function kolOdswiezTabindeksy(lista){
+  const poz = kolPozycje(lista);
+  if(!poz.length) return;
+  const wybrana = poz.find(el=>el.classList.contains("active")) || poz[0];
+  poz.forEach(el=>{
+    el.setAttribute("tabindex", el === wybrana ? "0" : "-1");
+    /* Rola mówi czytnikowi ekranu, że to przycisk zawężający listę, a nie napis.
+       aria-pressed mówi, czy zawężenie jest właśnie włączone — bez tego stan
+       „wybrana" istniał wyłącznie jako kolor tła. */
+    if(!el.hasAttribute("role")) el.setAttribute("role", "button");
+    if(el.classList.contains("secHead")){
+      el.setAttribute("aria-expanded", String(!el.classList.contains("closed")));
+    } else {
+      el.setAttribute("aria-pressed", String(el.classList.contains("active")));
+    }
+  });
+}
+/** Odświeża wszystkie trzy kolumny. Wołane z renderAll. */
+function kolOdswiezKlawiature(){
+  KOL_LISTY.forEach(id=>{ const el = document.getElementById(id); if(el) kolOdswiezTabindeksy(el); });
+}
+
+/** Przenosi ognisko na pozycję i czyni ją tą jedną osiągalną Tabem. */
+function kolUstawOgnisko(lista, el){
+  if(!el) return;
+  kolPozycje(lista).forEach(x=>x.setAttribute("tabindex", x === el ? "0" : "-1"));
+  el.focus();
+  /* Przewijamy najkrótszą drogą — „nearest" nie skacze listą, gdy pozycja i tak
+     jest widoczna. Skok przy każdej strzałce gubi orientację. */
+  if(el.scrollIntoView) el.scrollIntoView({block:"nearest"});
+}
+
+KOL_LISTY.forEach(id=>{
+  const lista = document.getElementById(id);
+  if(!lista) return;
+
+  /* Ognisko w kolumnie ma być widoczne także wtedy, gdy przyszło z klawiatury —
+     przeglądarka rysuje obwódkę tylko przy :focus-visible, a przy przewijaniu
+     strzałkami trzeba wiedzieć, gdzie się jest. Klasa robi to jawnie. */
+  lista.addEventListener("focusin", e=>{
+    const poz = e.target.closest && e.target.closest(KOL_POZYCJA);
+    if(poz) poz.classList.add("kolOgnisko");
+  });
+  lista.addEventListener("focusout", e=>{
+    const poz = e.target.closest && e.target.closest(KOL_POZYCJA);
+    if(poz) poz.classList.remove("kolOgnisko");
+  });
+
+  lista.addEventListener("keydown", e=>{
+    const teraz = e.target.closest && e.target.closest(KOL_POZYCJA);
+    if(!teraz) return;
+    const poz = kolPozycje(lista);
+    const i = poz.indexOf(teraz);
+    if(i < 0) return;
+
+    switch(e.key){
+      case "ArrowDown":
+        e.preventDefault(); kolUstawOgnisko(lista, poz[Math.min(i + 1, poz.length - 1)]); return;
+      case "ArrowUp":
+        e.preventDefault(); kolUstawOgnisko(lista, poz[Math.max(i - 1, 0)]); return;
+      case "Home":
+        e.preventDefault(); kolUstawOgnisko(lista, poz[0]); return;
+      case "End":
+        e.preventDefault(); kolUstawOgnisko(lista, poz[poz.length - 1]); return;
+      case "Enter":
+      case " ":
+        /* Spacja na elemencie, który nie jest przyciskiem, przewija stronę —
+           dlatego zatrzymujemy ją, zanim to zrobi. */
+        e.preventDefault(); teraz.click(); return;
+      case "Escape":
+        e.preventDefault();
+        /* stopPropagation nie jest tu ozdobą.
+           Skrót globalny (23-shortcuts.js) na Escape robi m.in. to:
+               if(document.activeElement===$("search")) $("search").blur();
+           czyli zdejmuje ognisko z wyszukiwarki. Bez zatrzymania zdarzenia
+           nasze „wróć do wyszukiwarki" i tamto „wyjdź z wyszukiwarki"
+           wykonywały się jedno po drugim i ognisko lądowało na pustym body —
+           użytkownik tracił miejsce w liście i nie zyskiwał wyszukiwarki. */
+        e.stopPropagation();
+        { const s = document.getElementById("search"); if(s) s.focus(); }
+        return;
+      case "ArrowRight":
+      case "ArrowLeft": {
+        /* Strzałki w bok rozwijają to, co się rozwija: księgę z rozdziałami
+           i sekcję etykiet. Tam, gdzie nie ma czego rozwinąć, nie robią nic —
+           lepiej niż udawać, że coś się stało. */
+        const rozwijalna = teraz.classList.contains("secHead")
+          || (teraz.classList.contains("item") && teraz.querySelector(".arr"));
+        if(!rozwijalna) return;
+        const otwarta = teraz.classList.contains("secHead")
+          ? !teraz.classList.contains("closed")
+          : teraz.querySelector(".arr").textContent.indexOf("▾") >= 0;
+        if((e.key === "ArrowRight") !== otwarta){ e.preventDefault(); teraz.click(); }
+        return;
+      }
+    }
+  });
+});
+
+/* Po każdym przerysowaniu kolumn wędrujący tabindeks trzeba nadać od nowa.
+   Woła nas renderAll (09-notes.js) — tak jak woła pozostałe moduły dopisane
+   później. Podmienianie renderAll z tego miejsca byłoby krótsze, ale wtedy
+   kolejność wywołań zależałaby od kolejności wczytywania modułów, a ta jest
+   w tym projekcie częścią kontraktu, nie przypadkiem. */
+kolOdswiezKlawiature();
+
+</script>
+<script>
+/* ==========================================================================
    JW Study — shortcuts.js
    Skróty klawiszowe
    ========================================================================== */
@@ -15406,6 +16033,13 @@ document.addEventListener("keydown", e=>{
     return;
   }
   if(fsGuid && !typing){
+    /* Alt+← i Backspace cofają PO ŚLADZIE odwiedzonych notatek (powiązane),
+       a nie po liście. Samo ← jest zajęte przez przeglądanie listy w tył i tak
+       zostaje — to dwa różne ruchy: „poprzednia notatka na liście" i „ta, z której
+       tu przyszedłem". Skróty są te same, co w przeglądarce. */
+    if((e.altKey && e.key==="ArrowLeft") || e.key==="Backspace"){
+      if(typeof fsSlad!=="undefined" && fsSlad.length){ e.preventDefault(); fsWroc(); return; }
+    }
     if(e.key==="ArrowRight"||e.key==="PageDown"){ e.preventDefault(); fsGo(1); return; }
     if(e.key==="ArrowLeft"||e.key==="PageUp"){ e.preventDefault(); fsGo(-1); return; }
   }
