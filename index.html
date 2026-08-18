@@ -3818,6 +3818,174 @@ html[data-theme="dark"] #dropdown .bk-box.warn:hover{ background:#2e2517; }
   flex-shrink:0;
 }
 
+/* ============================================================
+   KARTECZKA PODNIESIONA DO A6 JAKO OKNO DO CZYTANIA (v2.50)
+
+   Do tej pory podniesiona karteczka była po prostu tą samą karteczką, tylko
+   większą: tytuł na białym tle, uchwyt do przeciągania w prawym górnym rogu
+   (czyli tam, gdzie ręka szuka krzyżyka), wiersz drobnych plakietek i rząd
+   sześciu nierozpoznawalnych ikon u dołu. Powiększenie dawało więcej tekstu,
+   ale nie dawało poczucia, że coś się OTWORZYŁO — a więc i nie podpowiadało,
+   jak to zamknąć.
+
+   Teraz A6 wygląda jak okno: pasek z tytułem i dwoma wyjściami, pod nim skąd
+   notatka pochodzi i gdzie dokładnie leży, kreska, treść, a na dole pięć
+   podpisanych działań. Karteczki w siatce zostają bez zmian — wszystkie reguły
+   niżej dotyczą wyłącznie stanu „wydobyta".
+   ============================================================ */
+#noteList.v-tablica .ncard.wydobyta.wydUbrana{
+  --wydPasekTlo:#e8ece5;
+  --wydPasekTekst:#1e4b39;
+  --wydPasekLinia:rgba(30,75,57,.16);
+  display:flex; flex-direction:column;
+  padding:0;                       /* pasek i stopka sięgają krawędzi */
+  overflow:hidden;                 /* zaokrąglenie obcina pasek razem z kartą */
+  border-radius:16px;
+  cursor:default;                  /* zamyka się przyciskiem, nie kliknięciem w tekst */
+}
+html[data-theme="sepia"] #noteList.v-tablica .ncard.wydobyta.wydUbrana{
+  --wydPasekTlo:#ecdfc2; --wydPasekTekst:#5b4726; --wydPasekLinia:rgba(91,71,38,.18);
+}
+html[data-theme="dark"] #noteList.v-tablica .ncard.wydobyta.wydUbrana{
+  --wydPasekTlo:#282d29; --wydPasekTekst:#cfe6da; --wydPasekLinia:rgba(207,230,218,.14);
+}
+
+/* ——— pasek u góry ——— */
+#noteList.v-tablica .ncard.wydUbrana .nhead{
+  display:flex; align-items:flex-start; gap:4px;
+  margin:0; padding:11px 8px 11px 4px;
+  background:var(--wydPasekTlo);
+  border-bottom:1px solid var(--wydPasekLinia);
+  flex:0 0 auto;
+}
+#noteList.v-tablica .ncard.wydUbrana .nhead .drag{ display:none; }   /* przeciąganie należy do siatki */
+#noteList.v-tablica .ncard.wydUbrana .ntitle{
+  flex:1 1 auto; min-width:0;
+  margin:1px 2px 0;
+  font-size:calc(var(--noteFs,14px) + 2px);
+  font-weight:750; line-height:1.28;
+  color:var(--wydPasekTekst);
+  -webkit-line-clamp:2;
+  cursor:pointer;                  /* dotknięcie tytułu otwiera pełny ekran */
+}
+#noteList.v-tablica .ncard.wydUbrana .wydIko{
+  flex:0 0 auto;
+  width:34px; height:34px; padding:0;
+  display:inline-flex; align-items:center; justify-content:center;
+  background:transparent; border:0; border-radius:10px;
+  color:var(--wydPasekTekst); opacity:.72; cursor:pointer;
+}
+#noteList.v-tablica .ncard.wydUbrana .wydIko .ic{ width:20px; height:20px; }
+#noteList.v-tablica .ncard.wydUbrana .wydIko:hover{ opacity:1; background:rgba(0,0,0,.06); }
+html[data-theme="dark"] #noteList.v-tablica .ncard.wydUbrana .wydIko:hover{ background:rgba(255,255,255,.08); }
+
+/* ——— skąd notatka pochodzi i gdzie leży ——— */
+#noteList.v-tablica .ncard.wydUbrana .nmeta2{ display:none!important; }  /* zastąpiony wierszem niżej */
+#noteList.v-tablica .ncard.wydUbrana .wysUchwyt{ display:none; }         /* wysokość rządzi się sama */
+#noteList.v-tablica .ncard.wydUbrana .wydMeta{
+  flex:0 0 auto;
+  /* Kreska jest WCIĘTA, nie od krawędzi do krawędzi: kończy się tam, gdzie
+     kończy się tekst pod nią, więc dzieli treść, a nie przecina okno. */
+  margin:0 15px;
+  padding:13px 0 11px;
+  border-bottom:1px solid var(--border);
+  display:flex; flex-direction:column; gap:9px;
+}
+/* Plakietka publikacji bierze cały wiersz: to nazwa lekcji albo artykułu,
+   często długa, i ucięta w połowie nic nie mówi. */
+#noteList.v-tablica .ncard.wydUbrana .wydZrodlo{
+  display:inline-flex; align-items:center; gap:7px;
+  align-self:flex-start; max-width:100%;
+  padding:5px 11px;
+  background:var(--sel); border:1px solid var(--border); border-radius:9px;
+  font-size:calc(var(--noteFs,14px) - 1px); line-height:1.25;
+  color:var(--text); opacity:.9;
+}
+#noteList.v-tablica .ncard.wydUbrana .wydZrodlo .ic{ width:15px; height:15px; opacity:.6; }
+#noteList.v-tablica .ncard.wydUbrana .wydZrodlo span{
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+#noteList.v-tablica .ncard.wydUbrana .wydWiersz{
+  display:flex; align-items:center; gap:10px;
+}
+/* Werset jest odnośnikiem i ma tak wyglądać — podkreślenie mówi „to prowadzi
+   dalej" wyraźniej niż plakietka, którą łatwo wziąć za etykietę. */
+#noteList.v-tablica .ncard.wydUbrana .wydRef{
+  padding:0; background:none; border:0;
+  font-size:calc(var(--noteFs,14px) + 1px); font-weight:600;
+  color:var(--accent); text-decoration:underline; text-underline-offset:3px;
+  cursor:pointer;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+#noteList.v-tablica .ncard.wydUbrana .wydRef.bezLinku{
+  color:var(--muted); text-decoration:none;
+}
+#noteList.v-tablica .ncard.wydUbrana .wydData{
+  margin-left:auto; flex:0 0 auto;
+  display:inline-flex; align-items:center; gap:6px;
+  font-size:calc(var(--noteFs,14px) - 1px); color:var(--muted);
+}
+#noteList.v-tablica .ncard.wydUbrana .wydData .ic{ width:14px; height:14px; }
+#noteList.v-tablica .ncard.wydUbrana .chips{ padding:0 15px 10px; margin:0; }
+
+/* ——— treść ——— */
+#noteList.v-tablica .ncard.wydUbrana .ncontent{
+  flex:1 1 auto; min-height:0;
+  padding:14px 15px 16px;
+  overflow:auto;
+  -webkit-line-clamp:unset; display:block;
+  line-height:1.55;
+}
+/* Akapity dostają oddech. Zbite jeden pod drugim czytały się jak jeden blok,
+   a to są osobne myśli — w mowie oddzielone pauzą. */
+#noteList.v-tablica .ncard.wydUbrana .ncontent > div + div,
+#noteList.v-tablica .ncard.wydUbrana .ncontent > p + p{ margin-top:.85em; }
+
+/* ——— stopka z podpisanymi działaniami ——— */
+#noteList.v-tablica .ncard.wydUbrana .ntools{ display:none!important; }  /* zastąpiony stopką */
+#noteList.v-tablica .ncard.wydUbrana .wydStopka{
+  flex:0 0 auto;
+  display:flex; align-items:stretch;
+  border-top:1px solid var(--border);
+  background:var(--tloKarty, var(--panel));
+}
+#noteList.v-tablica .ncard.wydUbrana .wydDzialanie{
+  flex:1 1 auto; min-width:0;
+  display:flex; flex-direction:row; align-items:center; justify-content:center; gap:6px;
+  padding:11px 2px;
+  background:none; border:0; border-left:1px solid var(--border);
+  /* O trzy punkty mniej niż treść. Przy dwóch „Pełny ekran" nie mieściło się
+     i zostawało z niego „Pełny e…" — podpis ucięty w połowie jest gorszy niż
+     brak podpisu, bo trzeba go odgadywać za każdym razem. */
+  color:var(--muted); font-size:calc(var(--noteFs,14px) - 3px); font-weight:500;
+  cursor:pointer; white-space:nowrap;
+}
+#noteList.v-tablica .ncard.wydUbrana .wydDzialanie:first-child{ border-left:0; }
+#noteList.v-tablica .ncard.wydUbrana .wydDzialanie .ic{ width:17px; height:17px; flex:0 0 auto; }
+#noteList.v-tablica .ncard.wydUbrana .wydDzialanie span{
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  /* Podpis nie może być celem naciśnięcia.
+     Obsługa działań w karcie czyta „data-act" z e.target, a nie z rodzica —
+     tak samo jak dla ikon, które mają pointer-events:none od zawsze. Bez tego
+     naciśnięcie w SAM NAPIS nie robiło nic, a naciśnięcie obok napisu działało.
+     Usterka nie do zgadnięcia z ekranu i nie do zauważenia myszą, którą trafia
+     się w środek przycisku. */
+  pointer-events:none;
+}
+#noteList.v-tablica .ncard.wydUbrana .wydDzialanie:hover{ color:var(--text); background:rgba(0,0,0,.03); }
+html[data-theme="dark"] #noteList.v-tablica .ncard.wydUbrana .wydDzialanie:hover{ background:rgba(255,255,255,.05); }
+/* Włączone przypięcie i ulubione świecą tym samym kolorem co w pasku karty. */
+#noteList.v-tablica .ncard.wydUbrana .wydDzialanie.wl{ color:var(--accent); }
+
+/* Na wąskiej kartce podpisy schodzą pod ikony — pięć napisów w jednym rzędzie
+   zmieściłoby się tylko po skróceniu ich do nieczytelnych ogonków. */
+@media (max-width:420px){
+  #noteList.v-tablica .ncard.wydUbrana .wydDzialanie{
+    flex-direction:column; gap:3px; padding:8px 2px;
+    font-size:calc(var(--noteFs,14px) - 4px);
+  }
+}
+
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -3826,7 +3994,7 @@ html[data-theme="dark"] #dropdown .bk-box.warn:hover{ background:#2e2517; }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.48</span></div>
+      <div class="brand-name">JW Study <span class="ver">v2.50</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -4202,6 +4370,27 @@ let idb = null;
  */
 const $ = id => document.getElementById(id);
 
+/**
+ * Kolejny wolny numer w liście rekordów — zawsze o jeden większy od największego.
+ *
+ * Wygląda na pracę dla Math.max(0, ...lista.map(…)) i tak było napisane
+ * w sześciu miejscach. Rozsypywanie tablicy na argumenty ma jednak twardy
+ * kres: przy około stu tysiącach elementów przeglądarka przerywa wywołanie
+ * przepełnieniem stosu. Notatki i etykiety mają limity przy wczytywaniu kopii,
+ * ale zakładki i szablony nie miały — spreparowany plik wywracał wtedy import.
+ * Pętla nie ma kresu i kosztuje tyle samo.
+ *
+ * @param {Array} lista
+ * @param {string} [pole="id"]
+ * @returns {number}
+ */
+function nastepnyNumer(lista, pole){
+  const p = pole || "id";
+  let max = 0;
+  for(const x of (lista||[])){ const v = Number(x && x[p]); if(isFinite(v) && v > max) max = v; }
+  return max + 1;
+}
+
 /* ——— zapis do localStorage bez zbędnych operacji ———
    Przeglądarka zapisuje localStorage synchronicznie na dysk, więc każdy zapis blokuje wątek.
    lsSet pomija zapis, gdy wartość się nie zmieniła; lsSetSoon dodatkowo skleja serie zmian
@@ -4262,6 +4451,44 @@ function lsFlush(){
 addEventListener("pagehide", lsFlush);
 document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="hidden") lsFlush(); });
 
+/* ——— ROZKŁADANIE CUDZEGO HTML-a NA DRZEWO ———
+
+   Żeby przejrzeć obcy HTML, trzeba go najpierw rozłożyć. Naturalny odruch to
+   `document.createElement("div").innerHTML = html` — element wisi poza stroną,
+   więc wygląda niegroźnie. NIE JEST NIEGROŹNY.
+
+   Przeglądarka nie czeka z pracą na wstawienie elementu do strony: już przy
+   samym przypisaniu innerHTML zaczyna pobierać zasoby i uruchamia procedury
+   zdarzeń. Sprawdzone w Chromium — kod z tych trzech zapisów wykonał się, choć
+   element nigdy nie trafił do dokumentu:
+
+       obrazek z nieistniejącym adresem i procedurą onerror
+       znacznik source w video, też z procedurą onerror
+       details z atrybutem open i procedurą ontoggle
+
+   (Zapisane słowami z rozmysłem. Wpisane wprost, z cudzysłowem, wyglądają jak
+   atrybut z kodem w treści strony — a wersja jednoplikowa wkleja ten komentarz
+   do index.html i kontrola „atrybuty z kodem" słusznie by się o nie potknęła.)
+
+   Sito sanitize() jest zbudowane na białej liście i jego WYNIK był czysty —
+   ale obcy kod wykonywał się w drodze, zanim sito zdążyło cokolwiek przepisać.
+   Treść notatki z cudzej kopii JSON idzie właśnie przez sanitize(), więc
+   wystarczyło wczytać kopię „od znajomego". Polityka bezpieczeństwa treści tu
+   nie pomaga: script-src ma 'unsafe-inline' (potrzebne wersji jednoplikowej),
+   a to obejmuje procedury w atrybutach.
+
+   DOMParser buduje dokument BEZWŁADNY: bez okna, bez pobierania zasobów, bez
+   procedur zdarzeń. Węzły są normalnie widoczne dla sita, żaden się nie budzi.
+
+   Każde miejsce, w którym rozkładamy HTML z zewnątrz, ma używać tej funkcji.
+   Pilnuje tego testy/audyt.js.
+
+   @param {string} html
+   @returns {HTMLElement} ciało bezwładnego dokumentu z gotowym drzewem */
+function parsujBezwladnie(html){
+  return new DOMParser().parseFromString("<body>" + (html==null ? "" : html), "text/html").body;
+}
+
 /* ——— drobne pomocniki oszczędzające pracę przeglądarki ———
    Ustawienie tej samej wartości i tak unieważnia układ strony, więc najpierw sprawdzamy,
    czy cokolwiek się zmieniło. */
@@ -4319,13 +4546,21 @@ async function idbBulkChunked(store,items){
  * Teraz czyszczenie i zapis dzieją się w JEDNEJ transakcji: albo wchodzi
  * całość, albo baza zostaje dokładnie taka, jaka była.
  *
+ * W transakcji jest KOMPLET tego, co składa się na kopię. Do wydania 2.48
+ * zakładki sekcji zapisywały się osobno, już po niej, a szablony nie
+ * zapisywały się wcale — więc nieudany zapis mógł zostawić notatki z pliku
+ * i zakładki sprzed niego, a szablony zostawały cudze nawet przy zapisie
+ * udanym. „Wszystko albo nic" musi obejmować wszystko.
+ *
  * @param {Note[]} noweNotes
  * @param {Tag[]} noweTags
  * @param {Object[]} noweSekcje
- * @param {Object[]} noweZakladki
+ * @param {Object[]} noweZakladki       zakładki publikacji
+ * @param {Object[]} [noweZakladkiSekcji]
+ * @param {Object[]} [noweSzablony]
  * @returns {Promise<boolean>}
  */
-function idbZastapWszystko(noweNotes, noweTags, noweSekcje, noweZakladki){
+function idbZastapWszystko(noweNotes, noweTags, noweSekcje, noweZakladki, noweZakladkiSekcji, noweSzablony){
   return new Promise((res, rej)=>{
     if(!idb) return res(false);
     let tx;
@@ -4343,6 +4578,8 @@ function idbZastapWszystko(noweNotes, noweTags, noweSekcje, noweZakladki){
       for(const t of noweTags)  st.put(t);
       sm.put(noweSekcje,   "sections");
       sm.put(noweZakladki, "pubTabs");
+      sm.put(Array.isArray(noweZakladkiSekcji) ? noweZakladkiSekcji : [], "secTabs");
+      sm.put(Array.isArray(noweSzablony)       ? noweSzablony       : [], "szablony");
     }catch(e){
       try{ tx.abort(); }catch(_){}
       rej(e);
@@ -5499,7 +5736,7 @@ let dragTagId = null;
    Etykieta należy do sekcji przez pole t.sec (id sekcji). */
 let sections = [];
 function saveSections(){ if(idb) idbPut("meta", sections, "sections").catch(e=>reportSaveError(e,"sekcje")); }
-function nextSecId(){ return Math.max(0, ...sections.map(s=>s.id||0)) + 1; }
+function nextSecId(){ return nastepnyNumer(sections); }
 async function createSection(){
   const name = await askText({title:"Nowa sekcja", placeholder:"np. Kongresy", okLabel:"Utwórz",
     hint:"Sekcja grupuje etykiety — potem przeniesiesz je przez menu ⋯ przy etykiecie."});
@@ -6159,7 +6396,10 @@ function zdejmijPodswietlenie(korzen){
 }
 function hilite(html){
   if(!query) return html;
-  const tmp = document.createElement("div"); tmp.innerHTML = html;
+  /* Bezwładnie — treść notatki jest wprawdzie już przesiana, ale ta funkcja
+     idzie po KAŻDEJ widocznej karcie przy każdym wyszukiwaniu i nie ma powodu,
+     żeby jedno przeoczenie w sicie stawało się od razu wykonanym kodem. */
+  const tmp = parsujBezwladnie(html);
   podswietlWElemencie(tmp);
   return tmp.innerHTML;
 }
@@ -6443,6 +6683,29 @@ function noteCardChips(n){
   return `<div class="chips">${n.tg.map(chip).join("")}</div>`;
 }
 
+/* ——— LISTA WYBORU ETYKIET NA KARCIE — WYPEŁNIANA DOPIERO PRZED UŻYCIEM ———
+
+   Każda karta ma listę wyboru ze WSZYSTKIMI etykietami. Przy sześćdziesięciu
+   widocznych kartach i stu dwudziestu etykietach to 7 200 pozycji <option>
+   w drzewie strony — POŁOWA WSZYSTKICH ELEMENTÓW — i nikt ich nie ogląda,
+   dopóki nie rozwinie listy. Liczba rośnie iloczynem: karty × etykiety, więc
+   sama się nie zatrzyma.
+
+   Karta dostaje więc listę pustą, a pozycje wchodzą do niej przy pierwszym
+   dotknięciu albo przed odczytem wybranej wartości. Znacznik data-puste mówi,
+   że lista czeka; po wypełnieniu znika, żeby nie robić tego dwa razy. */
+function wypelnijListeEtykiet(sel){
+  if(sel && sel.dataset.puste){
+    delete sel.dataset.puste;
+    sel.innerHTML = tags.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join("");
+  }
+  return sel;
+}
+/** Lista wyboru etykiet w tej karcie, na pewno już wypełniona. */
+function listaEtykietKarty(karta){
+  return wypelnijListeEtykiet(karta.querySelector('[data-role="tagsel"]'));
+}
+
 /* dolny pasek: ikony działań + wiersz zarządzania etykietami */
 function noteCardTools(n){
   return `<div class="ntools">
@@ -6455,7 +6718,7 @@ function noteCardTools(n){
          <button class="sbtn ico more-btn" data-act="more" title="Więcej działań">${ICO.dots}</button>
        </div>
        <div class="tagrow">
-         <select data-role="tagsel" title="Wybierz zakładkę">${tags.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join("")}</select>
+         <select data-role="tagsel" data-puste="1" title="Wybierz zakładkę"></select>
          <button class="sbtn mini" data-act="tagtoggle" title="Dodaj do wybranej zakładki lub usuń z niej">± Dodaj/usuń</button>
          <button class="sbtn mini" data-act="tagmove" title="Notatka zostanie tylko w wybranej zakładce">→ Przenieś</button>
          <input type="text" data-role="newtag" placeholder="Nowa etykieta">
@@ -6491,6 +6754,13 @@ function noteCard(n){
   if(typeof zastosujWysokosc==="function") zastosujWysokosc(d, n);
   if(typeof zastosujTloNotatki==="function") zastosujTloNotatki(d, n);
   if(typeof przygotujPrzewijanie==="function") przygotujPrzewijanie(d);
+  /* Lista etykiet wypełnia się przy pierwszym sięgnięciu po nią — dotknięciem,
+     ogniskiem z klawiatury albo strzałką. Wszystkie trzy drogi prowadzą do tej
+     samej funkcji, więc żadna nie zastaje listy pustej. */
+  const obudzListe = e=>{ if(e.target.closest && e.target.closest('[data-role="tagsel"]')) wypelnijListeEtykiet(e.target.closest('[data-role="tagsel"]')); };
+  d.addEventListener("pointerdown", obudzListe, true);
+  d.addEventListener("focusin", obudzListe, true);
+  d.addEventListener("keydown", obudzListe, true);
   d.addEventListener("click", e=>{
     if(e.target.dataset.untag){ untag(n, +e.target.dataset.untag); return; }
     if(e.target.closest(".ntitle") && !e.target.isContentEditable){ touchAccess(n); if(!fsGuid) openFs(n); return; }
@@ -6563,11 +6833,11 @@ function noteCard(n){
     else if(act==="edit") toggleEdit(d, n);
     else if(act==="del") delNote(n);
     else if(act==="tagtoggle"){
-      const tid = +d.querySelector('[data-role="tagsel"]').value;
+      const tid = +listaEtykietKarty(d).value;
       if(n.tg.includes(tid)) untag(n, tid); else addTag(n, tid);
     }
     else if(act==="tagmove"){
-      const tid = +d.querySelector('[data-role="tagsel"]').value;
+      const tid = +listaEtykietKarty(d).value;
       pushUndo({type:"note", label:"przeniesienie do zakładki", before:cloneNote(n)});
       n.tg = [tid]; n.tgd = true; markDirty(n); renderAll();
       toast("Notatka jest teraz tylko w „"+(tags.find(t=>t.id===tid)||{}).name+"”");
@@ -8568,7 +8838,10 @@ function bezpiecznyKolor(v){
   return /^#[0-9a-f]{3,8}$/i.test(v) || /^rgba?\([\d\s.,%]+\)$/i.test(v) || /^[a-z]{3,20}$/i.test(v);
 }
 function sanitize(html){
-  const tmp=document.createElement("div"); tmp.innerHTML=html;
+  /* Rozkładamy w dokumencie bezwładnym, nie przez innerHTML — inaczej ładunek
+     w rodzaju <img onerror=…> wykonałby się w chwili parsowania, czyli zanim
+     ta biała lista w ogóle ruszy. Wyjaśnienie przy parsujBezwladnie w 01-core. */
+  const tmp=parsujBezwladnie(html);
   const out=document.createElement("div");
   (function walk(src,dst){
     src.childNodes.forEach(node=>{
@@ -8608,8 +8881,18 @@ function sanitize(html){
         else if(tag==="H2"||tag==="H3"){ const h=document.createElement(tag.toLowerCase()); walk(node,h); dst.appendChild(h); }
         else if(tag==="BLOCKQUOTE"){ const q=document.createElement("blockquote"); walk(node,q); dst.appendChild(q); }
         else if(tag==="IMG"){
-          const src=node.getAttribute("src")||"";
-          if(src.startsWith("data:image")||src.startsWith("http")){
+          const src=(node.getAttribute("src")||"").trim();
+          /* TYLKO ZDJĘCIA RASTROWE I ADRESY SIECIOWE.
+             Wcześniej wystarczyło, że adres zaczyna się od „data:image" — a to
+             obejmuje też „data:image/svg+xml", czyli dokument, który potrafi
+             mieć w środku własne procedury zdarzeń. W samym znaczniku <img>
+             przeglądarka ich nie uruchamia, więc dziury tu nie było; ale ten
+             sam adres wystawiony gdzie indziej (tło w arkuszu, otwarcie
+             w nowej karcie) przestaje być tylko obrazkiem. Nie ma czego
+             bronić: zdjęcia wstawiane w aplikacji powstają z płótna jako
+             data:image/jpeg, a niczego innego kod nigdy nie tworzy.
+             Sprawdzane w testy/przegladarka/sito.js. */
+          if(/^data:image\/(png|jpe?g|gif|webp|avif)[;,]/i.test(src) || /^https?:\/\//i.test(src)){
             const im=document.createElement("img"); im.src=src;
             let keep=(node.className||"").split(/\s+/).filter(c=>/^img-(s|m|l|left|right|center|inline)$/.test(c));
             // jeśli zdjęcie nie ma ustawionego opływu — nadaj domyślny (pływa w prawo), żeby tekst je opływał
@@ -8649,8 +8932,9 @@ function sanitize(html){
   return out.innerHTML;
 }
 function htmlToPlain(html){
-  const tmp=document.createElement("div");
-  tmp.innerHTML=html;
+  /* Też bezwładnie: ta funkcja bywa wołana na treści JESZCZE nieoczyszczonej
+     (podgląd różnic przy imporcie, porównywanie z kopią z JW Library). */
+  const tmp=parsujBezwladnie(html);
   let out="";
   (function walk(nd){
     nd.childNodes.forEach(ch=>{
@@ -9860,9 +10144,14 @@ function exportTagPdf(t){
    ========================================================================== */
 "use strict";
 /* ================= KOPIA DO CHMURY ================= */
+/* Zawartość kopii bierze się WYŁĄCZNIE z daneKopii() — patrz komentarz przy tej
+   funkcji. Do wydania 2.48 stało tu własne {tags, notes, sections}, więc kopia
+   z chmury cicho gubiła zakładki publikacji, zakładki sekcji i wszystkie
+   szablony: notatki po przeniesieniu były, a porządek, który ktoś sobie zrobił,
+   znikał bez śladu i bez ostrzeżenia. Dwie drogi zapisu muszą zapisywać to samo. */
 async function shareBackup(){
   const name = "moje-notatki-kopia-"+new Date().toISOString().substring(0,10)+".json";
-  const blob = new Blob([JSON.stringify({tags,notes,sections})],{type:"application/json"});
+  const blob = new Blob([JSON.stringify(daneKopii())],{type:"application/json"});
   // 1. iPad/iPhone i telefony: systemowy arkusz udostępniania (OneDrive, iCloud Drive, Dysk Google…)
   try{
     const file = new File([blob], name, {type:"application/json"});
@@ -9913,6 +10202,12 @@ const KLUCZ_UCHWYT_KOPII = "kopiaPlik";
 const MAX_KOPIA_JSON = 300 * 1024 * 1024;
 const MAX_NOTATEK    = 200000;
 const MAX_ETYKIET    = 5000;
+/* Zakładki i szablony też potrzebują kresu. Nie ze względu na miejsce — jest ich
+   z natury mało — tylko dlatego, że każdą dokładaną trzeba dopasować do tych,
+   które już są. Bez limitu spreparowany plik ze stoma tysiącami zakładek
+   zamieniał wczytanie kopii w zawieszenie karty. */
+const MAX_ZAKLADEK   = 20000;
+const MAX_SZABLONOW  = 2000;
 
 /** Czy ta przeglądarka pozwala pisać do wskazanego pliku. */
 function stalyPlikDostepny(){
@@ -10040,7 +10335,7 @@ function mergeBackup(data, takeLayout, nadpisuj){
   (data.tags||[]).forEach(t=>{
     let mine=tags.find(x=>norm(x.name)===norm(t.name));
     if(!mine){
-      mine={id: Math.max(0,...tags.map(x=>x.id))+1, name:t.name, color:t.color, nw:true};
+      mine={id: nastepnyNumer(tags), name:t.name, color:t.color, nw:true};
       if(t.sec!==undefined && secMap[t.sec]!==undefined) mine.sec=secMap[t.sec];
       if(t.ord!==undefined) mine.ord=t.ord;
       tags.push(mine); st.tagsAdded++;
@@ -10061,7 +10356,7 @@ function mergeBackup(data, takeLayout, nadpisuj){
       if(!t || !t.ks || !t.name) return;
       let mine=pubTabs.find(x=>x.ks===t.ks && norm(x.name)===norm(t.name));
       if(!mine){
-        mine={id: Math.max(0,...pubTabs.map(x=>+x.id||0))+1, ks:t.ks, name:t.name,
+        mine={id: nastepnyNumer(pubTabs), ks:t.ks, name:t.name,
               ord:(t.ord!==undefined?t.ord:pubTabs.filter(x=>x.ks===t.ks).length)};
         pubTabs.push(mine); st.tabsAdded=(st.tabsAdded||0)+1;
       } else if(takeLayout && t.ord!==undefined){ mine.ord=t.ord; }
@@ -10078,7 +10373,7 @@ function mergeBackup(data, takeLayout, nadpisuj){
       const docelowaSekcja = (z.sec!==undefined && secMap[z.sec]!==undefined) ? secMap[z.sec] : z.sec;
       let mine = secTabs.find(x=>x.sec===docelowaSekcja && norm(x.name)===norm(z.name));
       if(!mine){
-        mine = {id: Math.max(0,...secTabs.map(x=>+x.id||0))+1, sec: docelowaSekcja, name: z.name,
+        mine = {id: nastepnyNumer(secTabs), sec: docelowaSekcja, name: z.name,
                 ord: (z.ord!==undefined ? z.ord : secTabs.filter(x=>x.sec===docelowaSekcja).length)};
         if(z.color) mine.color = z.color;
         secTabs.push(mine); st.zakSekAdded = (st.zakSekAdded||0)+1;
@@ -10090,6 +10385,19 @@ function mergeBackup(data, takeLayout, nadpisuj){
     });
     if(st.zakSekAdded) saveSecTabs();
   }
+  /* 3c) Etykiety przypisane do zakładek sekcji muszą wskazywać zakładkę
+     PRZENUMEROWANĄ, dokładnie tak jak same notatki niżej.
+
+     Do wydania 2.48 ten kawałek leżał wewnątrz obsługi szablonów, więc
+     wykonywał się TYLKO wtedy, gdy kopia miała tablicę „szablony". Kopia ze
+     starszej wersji albo z „Zapisz kopię w chmurze" (która szablonów nie
+     zapisywała) zostawiała etykietę z numerem zakładki OBCEGO urządzenia —
+     czyli wskazującą na inną zakładkę albo na nic. */
+  (Array.isArray(data.tags)?data.tags:[]).forEach(t=>{
+    if(t.stb===undefined || tagMap[t.id]===undefined) return;
+    const moja = tags.find(x=>x.id===tagMap[t.id]);
+    if(moja && zakMap[t.stb]!==undefined) moja.stb = zakMap[t.stb];
+  });
   /* Szablony dokładamy po nazwie — powtórki nie mają sensu, a nadpisywanie
      cudzym szablonem tego, co użytkownik u siebie poprawił, byłoby stratą. */
   if(typeof szablony!=="undefined" && Array.isArray(data.szablony)){
@@ -10100,7 +10408,11 @@ function mergeBackup(data, takeLayout, nadpisuj){
       if(!nazwa) return;
       if(szablony.some(x=>norm(x.nazwa)===norm(nazwa))) return;
       szablony.push({
-        id: Date.now() + Math.floor(Math.random()*1000),
+        /* Numer po największym, jaki już jest. Poprzednio było
+           Date.now()+losowa(1000): przy dokładaniu kilkunastu szablonów naraz
+           wszystkie mają tę samą milisekundę, więc dwa mogły dostać ten sam
+           numer — a numer jest tym, po czym się je usuwa i przemianowuje. */
+        id: nastepnyNumer(szablony),
         nazwa: nazwa.slice(0,60),
         tytul: typeof z.tytul==="string" ? z.tytul.slice(0,200) : "",
         tresc: typeof z.tresc==="string" ? z.tresc.slice(0,20000) : "",
@@ -10109,12 +10421,6 @@ function mergeBackup(data, takeLayout, nadpisuj){
       doszlo++;
     });
     if(doszlo){ saveSzablony(); st.szablonyAdded = doszlo; }
-    /* Etykiety przypisane do zakładek też muszą wskazywać właściwą. */
-    (Array.isArray(data.tags)?data.tags:[]).forEach(t=>{
-      if(t.stb===undefined || tagMap[t.id]===undefined) return;
-      const moja = tags.find(x=>x.id===tagMap[t.id]);
-      if(moja && zakMap[t.stb]!==undefined) moja.stb = zakMap[t.stb];
-    });
   }
 
   // 4) notatki — po identyfikatorze; przy konflikcie wygrywa NOWSZA data zmiany
@@ -10204,10 +10510,35 @@ async function wczytajKopieZTekstu(tekstPliku){
       if(z.color!=null && !kolorBezpieczny(z.color)) delete z.color;
       return true;
     });
+    /* Szablony przesiewamy TUTAJ, w jednym miejscu z resztą — a nie dopiero
+       przy scalaniu. Droga „Zastąp wszystko" scalania nie wykonuje, więc
+       wcześniej szablony z pliku nie były sprawdzane przez nikogo. */
+    if(Array.isArray(data.szablony)) data.szablony = data.szablony.reduce((lista, z)=>{
+      if(!z || typeof z!=="object") return lista;
+      const nazwa = typeof z.nazwa==="string" ? z.nazwa.trim() : "";
+      if(!nazwa) return lista;
+      lista.push({
+        id: isFinite(Number(z.id)) ? Number(z.id) : lista.length+1,
+        nazwa: nazwa.slice(0,60),
+        tytul: typeof z.tytul==="string" ? z.tytul.slice(0,200) : "",
+        /* Treść szablonu jest CZYSTYM TEKSTEM — trafia do <textarea>, nie do
+           innerHTML. Odcinamy znaczniki, żeby przypadkiem nie zaczęła kiedyś
+           udawać HTML-a, gdyby okno nowej notatki zmieniło się w edytor. */
+        tresc: typeof z.tresc==="string" ? z.tresc.replace(/<[^>]*>/g,"").slice(0,20000) : "",
+        ord: isFinite(Number(z.ord)) ? Number(z.ord) : lista.length*10
+      });
+      return lista;
+    }, []);
+
     if(data.notes.length > MAX_NOTATEK)
       throw new Error("Plik zawiera "+data.notes.length+" notatek, a dopuszczalne jest do "+MAX_NOTATEK);
     if(data.tags.length > MAX_ETYKIET)
       throw new Error("Plik zawiera "+data.tags.length+" etykiet, a dopuszczalne jest do "+MAX_ETYKIET);
+    const ileZakladek = (data.pubTabs||[]).length + (data.secTabs||[]).length;
+    if(ileZakladek > MAX_ZAKLADEK)
+      throw new Error("Plik zawiera "+ileZakladek+" zakładek, a dopuszczalne jest do "+MAX_ZAKLADEK);
+    if((data.szablony||[]).length > MAX_SZABLONOW)
+      throw new Error("Plik zawiera "+data.szablony.length+" szablonów, a dopuszczalne jest do "+MAX_SZABLONOW);
     if(!data.notes.length && !data.tags.length) throw new Error("Plik nie zawiera ani jednej czytelnej notatki lub etykiety");
   }catch(err){ toastErr("Nie wczytano kopii: "+err.message); return; }
 
@@ -10280,10 +10611,15 @@ async function wczytajKopieZTekstu(tekstPliku){
       .filter(x=>x&&typeof x==="object"&&x.ks&&typeof x.name==="string"&&x.name.trim());
     const noweZakladkiSekcji = (Array.isArray(data.secTabs)?data.secTabs:[])
       .filter(x=>x&&typeof x==="object"&&typeof x.name==="string"&&x.name.trim());
+    /* Szablony też są zawartością kopii. Wcześniej ta droga ich nie ruszała:
+       po „Zastąp wszystko" wszystko było z pliku, a szablony zostawały stare —
+       czyli z urządzenia, którego reszty danych już nie ma. */
+    const noweSzablony = Array.isArray(data.szablony) ? data.szablony : [];
 
     let kontrola = null;
     if(idb){
-      await idbZastapWszystko(noweNotes, noweTags, noweSekcje, noweZakladki);
+      await idbZastapWszystko(noweNotes, noweTags, noweSekcje, noweZakladki,
+                              noweZakladkiSekcji, noweSzablony);
       kontrola = await sprawdzZapis(noweNotes.length, noweTags.length);
       if(kontrola && !kontrola.zgadza){
         showInfo("Zapis niepełny",
@@ -10295,9 +10631,14 @@ async function wczytajKopieZTekstu(tekstPliku){
       }
     }
     // dopiero teraz, po potwierdzonym zapisie, podmieniamy to, co widać
+    /* Zapis do bazy zrobiła już transakcja wyżej — tutaj tylko zrównujemy z nią
+       pamięć aplikacji. Żadnego save…() z osobna: to właśnie osobny zapis
+       zakładek sekcji wyłamywał je z „wszystko albo nic". */
     notes = noweNotes; tags = noweTags; sections = noweSekcje;
-    if(typeof pubTabs!=="undefined") pubTabs = noweZakladki;
-    if(typeof secTabs!=="undefined"){ secTabs = noweZakladkiSekcji; saveSecTabs(); }
+    if(typeof pubTabs!=="undefined")  pubTabs  = noweZakladki;
+    if(typeof secTabs!=="undefined")  secTabs  = noweZakladkiSekcji;
+    if(typeof szablony!=="undefined"){ szablony = noweSzablony;
+      if(typeof rysujSzablony==="function") rysujSzablony(); }
     renderAll();
     showInfo("Zastąpiono dane",
       `Zapisano i sprawdzono w bazie urządzenia:<br>`+
@@ -10305,6 +10646,8 @@ async function wczytajKopieZTekstu(tekstPliku){
       `• Etykiet: <b>${kontrola ? kontrola.etykiety : noweTags.length}</b>`+
       (noweSekcje.length ? `<br>• Sekcji: <b>${noweSekcje.length}</b>` : "")+
       (noweZakladki.length ? `<br>• Zakładek w publikacjach: <b>${noweZakladki.length}</b>` : "")+
+      (noweZakladkiSekcji.length ? `<br>• Zakładek w sekcjach: <b>${noweZakladkiSekcji.length}</b>` : "")+
+      (noweSzablony.length ? `<br>• Szablonów: <b>${noweSzablony.length}</b>` : "")+
       (kontrola ? "" : "<br><br><i>Baza urządzenia niedostępna — dane działają do zamknięcia karty.</i>"));
   }catch(err){
     console.warn("Wczytywanie kopii nie powiodło się", err);
@@ -11223,7 +11566,7 @@ async function loadPubTabs(){
   // sito: rekord bez nazwy albo bez publikacji jest bezużyteczny
   pubTabs = pubTabs.filter(t=>t && typeof t==="object" && t.ks && typeof t.name==="string" && t.name.trim());
 }
-function nextPubTabId(){ return Math.max(0, ...pubTabs.map(t=>+t.id||0)) + 1; }
+function nextPubTabId(){ return nastepnyNumer(pubTabs); }
 
 /** Zakładki danej publikacji, w zapamiętanej kolejności. */
 function pubTabsFor(ks){
@@ -11885,8 +12228,9 @@ function secTabRowsHtml(secId){
  */
 function oczyscOdstepy(html){
   if(typeof html!=="string" || !html.trim()) return html;
-  const korzen = document.createElement("div");
-  korzen.innerHTML = html;
+  /* Bezwładnie — patrz parsujBezwladnie w 01-core. Porządki bywają robione
+     na notatkach świeżo przeniesionych z OneNote, czyli na treści z zewnątrz. */
+  const korzen = parsujBezwladnie(html);
 
   /* 1. Odstępy między znacznikami — wcięcia i podziały wierszy z pliku źródłowego.
         To one odpowiadają za większość pustych miejsc. */
@@ -13525,9 +13869,120 @@ function rozmiarWydobycia(lista, maleRect){
   return {szer:Math.round(szer), wys:Math.round(wys)};
 }
 
+/* ==========================================================================
+   OPRAWA KARTECZKI PODNIESIONEJ DO A6
+
+   Karteczka w siatce i karteczka podniesiona do A6 to dwie różne rzeczy, choć
+   ten sam element. W siatce liczy się gęstość: tytuł, początek treści, nic
+   więcej. Po podniesieniu robi się z niej OKNO DO CZYTANIA — i wtedy brakowało
+   jej wszystkiego, co okno mieć powinno: paska z tytułem, wyraźnego wyjścia
+   i podpisanych przycisków. Uchwyt do przeciągania świecił w prawym górnym
+   rogu na miejscu, gdzie ręka szuka krzyżyka, a pasek na dole był rzędem
+   sześciu nierozpoznawalnych ikon.
+
+   Oprawa powstaje DOPIERO przy podnoszeniu i znika przy odkładaniu. Gdyby
+   siedziała w każdej karcie na zapas, sześćdziesiąt kart w siatce nosiłoby
+   sześćdziesiąt niewidocznych pasków — dokładnie ten rodzaj rozrostu, który
+   pilnuje testy/przegladarka/drzewo.js.
+
+   Przyciski na dole i ⋮ w pasku mają te same „data-act", co pasek zwykłej
+   karty, więc obsługuje je nasłuch z 09-notes.js — bez ani jednej nowej
+   ścieżki w kodzie działań. Nowe są tylko dwa wyjścia (← i ✕), bo odkładanie
+   karteczki należy do tego modułu.
+   ========================================================================== */
+const WYD_MIESIACE = ["sty","lut","mar","kwi","maj","cze","lip","sie","wrz","paź","lis","gru"];
+/** Data w postaci „19 sie 2017" — krócej i czytelniej niż zapis rokiem naprzód. */
+function wydDataKrotka(iso){
+  const s = String(iso||"");
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(!m) return s.substring(0,10);
+  return Number(m[3]) + " " + (WYD_MIESIACE[Number(m[2]) - 1] || "") + " " + m[1];
+}
+/** Skąd notatka pochodzi: lekcja albo artykuł, a gdy tego nie ma — nazwa publikacji. */
+function wydZrodloNotatki(n){
+  if(n.pub && String(n.pub).trim()) return String(n.pub).trim();
+  if(n.ks && typeof pubFullName === "function") return pubFullName(n.ks);
+  return "";
+}
+function wydIko(nazwa, ikona, opis, dodatkowe){
+  return `<button class="wydIko" ${nazwa} title="${esc(opis)}" aria-label="${esc(opis)}"`
+       + `${dodatkowe||""}>${ikona}</button>`;
+}
+/**
+ * Zakłada oprawę: pasek u góry, wiersz pochodzenia i podpisaną stopkę.
+ * @param {HTMLElement} karta
+ */
+function ubierzKarteczke(karta){
+  if(karta.classList.contains("wydUbrana")) return;
+  const n = notes.find(x=>x.g === karta.dataset.g);
+  if(!n) return;
+  const glowa = karta.querySelector(".nhead");
+  if(!glowa) return;
+
+  /* ——— pasek u góry: wyjście, tytuł, menu, zamknięcie ——— */
+  glowa.insertAdjacentHTML("afterbegin",
+    wydIko('data-wyd="wroc"', _svg('<path d="M15 5l-7 7 7 7"/>'), "Wróć na tablicę"));
+  /* W pasku kropki stoją w pionie, w stopce w poziomie — tak jak w systemie:
+     pionowe znaczą „menu tego okna", poziome „więcej w tym rzędzie". */
+  const kropkiPion = _svg('<circle cx="12" cy="5" r="1.6" fill="currentColor" stroke="none"/>'
+    + '<circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/>'
+    + '<circle cx="12" cy="19" r="1.6" fill="currentColor" stroke="none"/>');
+  glowa.insertAdjacentHTML("beforeend",
+    wydIko('data-act="more"', kropkiPion, "Więcej działań")
+    + wydIko('data-wyd="zamknij"', _svg('<path d="M6 6l12 12M18 6L6 18"/>'), "Zamknij karteczkę"));
+
+  /* ——— wiersz pochodzenia: publikacja, werset, data ———
+     Buduje się osobno, a nie przez przestawianie plakietek z listy: tam ten
+     wiersz jest zbiorem drobiazgów obok siebie, a tutaj ma dwa poziomy —
+     najpierw skąd notatka jest, potem gdzie dokładnie i kiedy powstała. */
+  const zrodlo = wydZrodloNotatki(n);
+  const ref    = (typeof refLabel === "function") ? refLabel(n) : "";
+  const link   = (typeof finderUrl === "function") ? finderUrl(n) : null;
+  const data   = wydDataKrotka(n.mo || n.cr);
+  const kalendarz = _svg('<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M8 3v3M16 3v3M3.5 10h17"/>');
+  const wersetHtml = ref
+    ? (link
+        ? `<a class="wydRef" href="${link}" target="_blank" rel="noopener noreferrer" data-act="openref" title="Otwórz w JW Library">${esc(ref)}</a>`
+        : `<span class="wydRef bezLinku">${esc(ref)}</span>`)
+    : `<button class="wydRef bezLinku" data-act="assignref" title="Przypisz werset — utworzy odnośnik do JW Library">Przypisz werset</button>`;
+  glowa.insertAdjacentHTML("afterend",
+    `<div class="wydMeta">`
+    + (zrodlo ? `<div class="wydZrodlo" title="${esc(zrodlo)}">${ICO.book}<span>${esc(zrodlo)}</span></div>` : "")
+    + `<div class="wydWiersz">${wersetHtml}`
+    + `<span class="wydData">${kalendarz}${esc(data)}</span></div>`
+    + `</div>`);
+
+  /* ——— stopka: te same działania co na pasku karty, ale z podpisami ———
+     Pięć zamiast sześciu: wybór zakładki zostaje na pasku listy, bo w oknie do
+     czytania jest po nic — a szósta pozycja odbierała pozostałym miejsce na
+     podpis. */
+  const dol = [
+    {act:"edit", ikona:ICO.edit,  napis:"Edytuj",      opis:"Edytuj notatkę"},
+    {act:"fs",   ikona:ICO.fs,    napis:"Pełny ekran", opis:"Otwórz na pełnym ekranie"},
+    {act:"pin",  ikona:ICO.pin,   napis:n.pin ? "Odepnij" : "Przypnij",
+     opis:n.pin ? "Odepnij z góry" : "Przypnij na górze", wl:n.pin},
+    {act:"fav",  ikona:ICO.star,  napis:"Ulubione",
+     opis:n.fav ? "Usuń z ulubionych" : "Dodaj do ulubionych", wl:n.fav},
+    {act:"more", ikona:ICO.dots,  napis:"Więcej",      opis:"Więcej działań"}
+  ];
+  karta.insertAdjacentHTML("beforeend",
+    `<div class="wydStopka">`
+    + dol.map(x=>`<button class="wydDzialanie${x.wl ? " wl" : ""}" data-act="${x.act}" `
+        + `title="${esc(x.opis)}">${x.ikona}<span>${esc(x.napis)}</span></button>`).join("")
+    + `</div>`);
+
+  karta.classList.add("wydUbrana");
+}
+/** Zdejmuje oprawę — karta wraca do postaci, w jakiej stoi w siatce. */
+function rozbierzKarteczke(karta){
+  if(!karta) return;
+  karta.classList.remove("wydUbrana");
+  karta.querySelectorAll(".wydIko, .wydMeta, .wydStopka").forEach(el=>el.remove());
+}
+
 /** Czy w karteczce da się teraz cokolwiek chwycić poza samą treścią. */
 function pomijaneWydobycie(cel){
-  return !!(cel.closest("button, a, select, input, textarea, .ntools, .drag, .dragOrd, .wysUchwyt"));
+  return !!(cel.closest("button, a, select, input, textarea, .ntools, .drag, .dragOrd, .wysUchwyt, .wydStopka, .wydMeta"));
 }
 
 function schowajKarteczke(natychmiast){
@@ -13536,6 +13991,7 @@ function schowajKarteczke(natychmiast){
   _wydobyta = null;
   const r = podkladka.getBoundingClientRect();
   const rl = karta.offsetParent ? karta.offsetParent.getBoundingClientRect() : {top:0,left:0};
+  rozbierzKarteczke(karta);       // oprawa znika od razu — ma nie jechać razem z kartą
   const wroc = ()=>{
     karta.classList.remove("wydobyta", "wRuchuWydobycia");
     karta.style.position = karta.style.top = karta.style.left =
@@ -13601,6 +14057,10 @@ function wydobadzKarteczke(karta){
     karta.style.width  = szer + "px";
     karta.style.height = wys  + "px";
   });
+  /* Oprawę zakładamy od razu, nie po ruchu: pasek i stopka mają rosnąć razem
+     z kartą, a nie doskakiwać do niej po ćwierć sekundy. */
+  ubierzKarteczke(karta);
+
   setTimeout(()=>{
     karta.classList.remove("wRuchuWydobycia");
     if(typeof oznaczPrzewijanie==="function"){
@@ -13657,6 +14117,17 @@ document.addEventListener("click", e=>{
 /* Przerysowanie listy buduje karty od nowa — wydobyta karta przestałaby wtedy
    istnieć, a podkładka zostałaby pustym miejscem. */
 document.addEventListener("keydown", e=>{ if(e.key==="Escape" && _wydobyta) schowajKarteczke(); });
+
+/* Dwa wyjścia z paska: strzałka i krzyżyk. Robią to samo — odkładają karteczkę
+   na miejsce. Ta sama rzecz pod dwiema ikonami nie jest niedopatrzeniem: ręka
+   szuka strzałki, gdy myśli „wracam", i krzyżyka, gdy myśli „zamykam". Reszta
+   przycisków paska i stopki ma zwykłe „data-act" i obsługuje je 09-notes.js. */
+document.addEventListener("click", e=>{
+  const cel = e.target && e.target.closest ? e.target.closest("[data-wyd]") : null;
+  if(!cel) return;
+  e.preventDefault(); e.stopPropagation();
+  schowajKarteczke();
+});
 
 /* ==========================================================================
    DLACZEGO NIE MA TU DWÓCH DOTKNIĘĆ

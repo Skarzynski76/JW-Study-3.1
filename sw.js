@@ -1,13 +1,32 @@
-const CACHE = 'jwstudy-v248s';
-/* Rdzeń: dokument + wszystkie moduły CSS i JS — bez nich aplikacja nie ruszy offline. */
+const CACHE = 'jwstudy-v250s';
+/* Rdzeń: dokument + wszystkie arkusze i moduły — bez nich aplikacja nie ruszy offline.
+
+   TA LISTA JEST WYPISYWANA PRZEZ NARZĘDZIE. Nie dopisuj do niej ręcznie.
+
+   Przyczyna: przez kilka wydań lista była pisana ręcznie i zostawała w tyle.
+   Nie było w niej ANI JEDNEGO arkusza stylów, a moduły kończyły się na 44 —
+   45..49 dopisano do index.html i nikt nie wrócił tutaj. Bez sieci aplikacja
+   wstawała wtedy naga: bez układu, bez kolorów, bez podmenu notatki, bez
+   przypomnień i bez paska powtórek. Nie było tego widać przy sprawdzaniu, bo
+   przez pierwsze ~10 minut po wizycie te pliki podaje własna pamięć
+   przeglądarki — usterka pokazywała się dopiero u użytkownika.
+
+   Odświeżenie listy:   node narzedzia/offline.js
+   Pilnuje jej:         testy/audyt.js (kontrola „pamięć offline") */
 const CORE = [
   './', './index.html'
 ];
 /* Dodatki: ikony, manifest i biblioteki importu (jeśli wgrane do lib/).
-   Brak któregokolwiek nie może zablokować zapisu offline — stąd osobna lista. */
+   Brak któregokolwiek nie może zablokować zapisu offline — stąd osobna lista.
+
+   Jest tu też onenote.html. Sama strona bez sieci niczego nie przeniesie,
+   bo rozmawia z serwerem Microsoftu — ale zapisana otwiera się i mówi, co
+   robić. Niezapisana daje błąd przeglądarki, z którego nie wynika, że rzecz
+   po prostu wymaga internetu. */
 const EXTRA = [
   './lib/jszip.min.js', './lib/sql-wasm.js', './lib/sql-wasm.wasm',
   './manifest.webmanifest',
+  './onenote.html',
   './icon-192.png', './icon-512.png', './icon-maskable-512.png',
   './apple-touch-icon.png', './favicon-32.png'
 ];
