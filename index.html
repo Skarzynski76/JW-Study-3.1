@@ -4543,11 +4543,13 @@ html[data-theme="dark"] #motywMenu{ box-shadow:0 18px 48px rgba(0,0,0,.55); }
    żadnych obliczeń wysokości. Ujemne marginesy i dopełnienie odtwarzają
    wewnętrzny odstęp okna: bez nich przyklejony nagłówek pokazywałby przy
    przewijaniu wąskie paski treści po bokach. */
-#modalSettings .modal{
+#modalSettings .modal,
+#modalHist .modal{
   padding-top:0;
   padding-bottom:0;
 }
-#modalSettings .nn-head{
+#modalSettings .nn-head,
+#modalHist .nn-head{
   position:sticky; top:0; z-index:3;
   display:block;
   margin:0 calc(-1 * var(--sp-5)) 14px;
@@ -4555,8 +4557,10 @@ html[data-theme="dark"] #motywMenu{ box-shadow:0 18px 48px rgba(0,0,0,.55); }
   background:var(--panel);
   border-bottom:1px solid var(--border);
 }
-#modalSettings .nn-head h3{ margin:0 0 12px; }
-#modalSettings .btnrow{
+#modalSettings .nn-head h3,
+#modalHist .nn-head h3{ margin:0 0 12px; }
+#modalSettings .btnrow,
+#modalHist .btnrow{
   position:sticky; bottom:0; z-index:3;
   margin:18px calc(-1 * var(--sp-5)) 0!important;
   padding:12px var(--sp-5) var(--sp-4);
@@ -4567,11 +4571,13 @@ html[data-theme="dark"] #motywMenu{ box-shadow:0 18px 48px rgba(0,0,0,.55); }
 /* ——— rząd zakładek ———
    Zakładki siedzą w nagłówku, więc przyklejają się razem z tytułem: wiadomo
    przez cały czas, w której części ustawień się jest. */
-#modalSettings .st-zakladki{
+#modalSettings .st-zakladki,
+#modalHist .st-zakladki{
   display:flex; gap:4px;
   margin-bottom:-1px;                 /* linia karty zlewa się z linią nagłówka */
 }
-#modalSettings .st-zak{
+#modalSettings .st-zak,
+#modalHist .st-zak{
   flex:1;
   border:0; border-bottom:2px solid transparent;
   background:transparent; color:var(--muted);
@@ -4579,9 +4585,12 @@ html[data-theme="dark"] #motywMenu{ box-shadow:0 18px 48px rgba(0,0,0,.55); }
   font-size:calc(13px * var(--uiw, 1)); font-weight:600;
   cursor:pointer; white-space:nowrap;
 }
-#modalSettings .st-zak:hover{ background:var(--sel); color:var(--text); }
-#modalSettings .st-zak:focus-visible{ outline:2px solid var(--accent); outline-offset:-2px; }
-#modalSettings .st-zak.on{
+#modalSettings .st-zak:hover,
+#modalHist .st-zak:hover{ background:var(--sel); color:var(--text); }
+#modalSettings .st-zak:focus-visible,
+#modalHist .st-zak:focus-visible{ outline:2px solid var(--accent); outline-offset:-2px; }
+#modalSettings .st-zak.on,
+#modalHist .st-zak.on{
   color:var(--accent);
   border-bottom-color:var(--accent);
 }
@@ -4795,6 +4804,238 @@ html[data-theme="dark"] #bookList .item.active .cnt,
 html[data-theme="dark"] #tagList .item.active .cnt,
 html[data-theme="dark"] #pubList .item.active .cnt{ color:rgba(13,33,25,.82); }
 
+
+/* ============================================================
+   OKNO HISTORII WERSJI (v2.57)
+
+   Rama, przyklejony nagłówek z zakładkami i przyklejona stopka są wspólne
+   z oknem ustawień — dopisane do tamtych reguł, a nie skopiowane, bo to ten
+   sam rodzaj okna i ma się zachowywać identycznie.
+   ============================================================ */
+#modalHist .modal{ width:min(680px, 94vw); }
+#histLista, #histPorownanie{ padding-top:2px; }
+.histPusto{
+  color:var(--muted); font-size:calc(13px * var(--uiw, 1)); line-height:1.5;
+  padding:18px 2px;
+}
+
+/* ——— wiersz wersji ———
+   Data jest tu treścią, nie ozdobą, więc dostaje wagę i pełny kontrast;
+   liczba słów i „wczoraj" to opis drugiego planu. */
+.histWiersz{
+  display:flex; align-items:center; gap:10px;
+  padding:10px 2px;
+  border-bottom:1px solid var(--border);
+}
+.histWiersz:last-child{ border-bottom:0; }
+.histKiedy{ display:flex; flex-direction:column; gap:2px; min-width:0; flex:1 1 auto; }
+.histKiedy b{ font-size:calc(13.5px * var(--uiw, 1)); font-variant-numeric:tabular-nums; }
+.histKiedy span{ font-size:calc(11.5px * var(--uiw, 1)); color:var(--muted); }
+.histZdj{ color:var(--accent); }
+.histAkcje{ display:flex; gap:6px; flex:0 0 auto; }
+.histAkcje .btn{ padding:6px 11px; font-size:calc(12.5px * var(--uiw, 1)); }
+.histInfo{ font-size:calc(11.5px * var(--uiw, 1)); color:var(--muted); }
+/* Wiersz „Teraz" to punkt odniesienia, nie wersja do przywrócenia — ma się
+   odcinać, żeby nikt nie szukał przy nim przycisków. */
+.histWiersz.histTeraz{
+  background:var(--sel); border-radius:10px; padding:10px;
+  border-bottom:0; margin-bottom:6px;
+}
+
+/* ——— karta „Porównaj" ——— */
+.histWybor{ display:flex; gap:10px; flex-wrap:wrap; padding:4px 0 10px; }
+.histWybor label{
+  display:flex; flex-direction:column; gap:4px; flex:1 1 220px; min-width:0;
+  font-size:calc(11.5px * var(--uiw, 1)); color:var(--muted); font-weight:600;
+  text-transform:uppercase; letter-spacing:.04em;
+}
+.histWybor select{ width:100%; }
+.histBilans{
+  display:flex; gap:12px; align-items:center; flex-wrap:wrap;
+  padding:8px 0; font-size:calc(12.5px * var(--uiw, 1)); font-weight:600;
+}
+.histPlus{ color:#1c7a4f; }
+.histMinus{ color:#a8332c; }
+html[data-theme="dark"] .histPlus{ color:#5fd3a0; }
+html[data-theme="dark"] .histMinus{ color:#f08a82; }
+
+/* ——— sam tekst różnic ———
+   Dodane i usunięte oznaczamy DWOMA znakami naraz: kolorem tła i krojem
+   (przekreślenie przy usuniętym). Sam kolor wykluczyłby osoby, które go nie
+   rozróżniają — a to jest okno, w którym decyduje się, co przywrócić. */
+.histDiff{
+  border:1px solid var(--border); border-radius:12px;
+  padding:12px 14px;
+  max-height:46vh; overflow:auto;
+  line-height:1.6; font-size:calc(14px * var(--uiw, 1));
+  white-space:normal; overflow-wrap:break-word;
+  background:var(--panel);
+}
+.histDiff ins{
+  background:rgba(28,122,79,.14); color:inherit;
+  text-decoration:none; border-radius:3px; padding:0 2px;
+  box-shadow:inset 0 -2px 0 rgba(28,122,79,.5);
+}
+.histDiff del{
+  background:rgba(168,51,44,.12); color:inherit;
+  text-decoration:line-through; border-radius:3px; padding:0 2px;
+}
+html[data-theme="dark"] .histDiff ins{ background:rgba(95,211,160,.18); box-shadow:inset 0 -2px 0 rgba(95,211,160,.55); }
+html[data-theme="dark"] .histDiff del{ background:rgba(240,138,130,.16); }
+.histLegenda{
+  padding:8px 2px 2px;
+  font-size:calc(11.5px * var(--uiw, 1)); line-height:1.5; color:var(--muted);
+}
+.histLegenda ins, .histLegenda del{ padding:0 3px; border-radius:3px; }
+.histLegenda ins{ background:rgba(28,122,79,.14); text-decoration:none; }
+.histLegenda del{ background:rgba(168,51,44,.12); }
+/* Znacznik po zdjęciu, którego historia nie przechowuje. */
+.verImgNote{
+  display:inline-block; padding:1px 7px; margin:0 2px;
+  border:1px dashed var(--border); border-radius:8px;
+  font-size:.85em; color:var(--muted);
+}
+@media (max-width:620px){
+  /* Na telefonie data i przyciski nie mieszczą się w jednym wierszu. */
+  .histWiersz{ flex-wrap:wrap; }
+  .histAkcje{ width:100%; }
+  .histAkcje .btn{ flex:1; }
+  .histDiff{ max-height:40vh; }
+}
+
+
+/* ============================================================
+   CENTRUM STUDIUM (v2.58)
+
+   Panel zajmuje miejsce listy notatek, więc musi mieć jej zachowanie:
+   własne przewijanie, rezerwę pod paskiem u góry i taki sam wewnętrzny odstęp.
+   Wszystko inne jest inne — to nie lista, a odpowiedź na pytanie „co dzisiaj".
+   ============================================================ */
+#centrum{
+  flex:1 1 auto; min-height:0;
+  overflow:auto; -webkit-overflow-scrolling:touch;
+  /* Rezerwa pod paskiem nad listą — ta sama zmienna, z której korzysta lista,
+     żeby pierwszy kafelek nie schował się pod filtrami. */
+  padding:calc(10px + var(--wysPaska, 0px)) 14px 40px;
+}
+#centrum[hidden]{ display:none; }
+
+/* ——— nagłówek: co to jest i jak z tego wyjść ——— */
+.cenNagl{
+  display:flex; align-items:flex-end; gap:12px; flex-wrap:wrap;
+  padding:2px 2px 14px;
+}
+.cenTyt{ display:flex; flex-direction:column; gap:2px; flex:1 1 auto; min-width:0; }
+.cenTyt b{ font-size:calc(19px * var(--uiw, 1)); letter-spacing:-.015em; }
+.cenTyt span{ font-size:calc(12.5px * var(--uiw, 1)); color:var(--muted); }
+
+/* ——— „Kontynuuj ostatnie studium" ———
+   Jedna rzecz robiona najczęściej dostaje osobny, szeroki przycisk nad siatką.
+   Gdyby siedziała jako wiersz w jednej z sekcji, trzeba by jej szukać wzrokiem
+   wśród sześciu innych tytułów. */
+.cenDalej{
+  display:flex; align-items:center; gap:14px; width:100%;
+  text-align:left; cursor:pointer;
+  margin:0 0 16px; padding:14px 16px;
+  border:1px solid var(--accent2); border-radius:16px;
+  background:var(--sel); color:var(--text);
+  transition:transform var(--dur-szybko) var(--ease), box-shadow var(--dur-szybko) var(--ease);
+}
+.cenDalej:hover{ box-shadow:var(--cien-2); }
+.cenDalej:active{ transform:scale(.995); }
+.cenDalej:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+.cenDalejIko{ display:flex; flex:0 0 auto; color:var(--accent); }
+.cenDalejIko .ic{ width:26px; height:26px; }
+.cenDalejTxt{ display:flex; flex-direction:column; gap:3px; flex:1 1 auto; min-width:0; }
+.cenDalejTxt b{ font-size:calc(14.5px * var(--uiw, 1)); color:var(--accent); }
+.cenDalejTxt > span{
+  font-size:calc(13px * var(--uiw, 1)); line-height:1.4;
+  /* Tytuł notatki bywa długi; dwa wiersze wystarczą do rozpoznania. */
+  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden;
+}
+.cenDalejStrz{ flex:0 0 auto; font-size:22px; color:var(--muted); }
+
+/* ——— siatka sekcji ———
+   Kolumny dobierają się do szerokości: przy jednej kolumnie notatek na telefonie
+   sekcje idą jedna pod drugą, na monitorze stają po dwie albo trzy. Minimum
+   260 px, bo poniżej tytuły notatek zaczynają się łamać po dwa słowa. */
+.cenSiatka{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));
+  gap:12px;
+  align-items:start;
+}
+.cenKarta{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:12px 12px 8px;
+  box-shadow:var(--cien-1, 0 1px 2px rgba(0,0,0,.05));
+}
+.cenKarta h3{
+  display:flex; align-items:center; gap:8px;
+  margin:0 0 8px; padding:0 2px;
+  font-size:calc(12.5px * var(--uiw, 1)); font-weight:700;
+  text-transform:uppercase; letter-spacing:.05em;
+  color:var(--text);
+}
+.cenKarta h3 .ic{ width:16px; height:16px; color:var(--accent); flex:0 0 auto; }
+.cenKarta h3 > span:first-of-type{ flex:1 1 auto; min-width:0; }
+.cenLicz{
+  font-size:calc(10.5px * var(--uiw, 1)); font-weight:600;
+  text-transform:none; letter-spacing:0; color:var(--muted);
+  flex:0 0 auto;
+}
+.cenLista{ display:flex; flex-direction:column; }
+
+/* ——— pozycja: cały wiersz jest przyciskiem ———
+   Nie link w tekście, a cały wiersz: na dotyku nie ma jak trafić w słowo,
+   a tu każda pozycja prowadzi dokładnie w jedno miejsce. */
+.cenPoz{
+  display:flex; align-items:baseline; gap:8px;
+  width:100%; text-align:left; cursor:pointer;
+  border:0; background:none; color:var(--text);
+  padding:7px 8px; margin:0 -6px;
+  border-radius:9px;
+  font-size:calc(13.5px * var(--uiw, 1)); line-height:1.35;
+}
+.cenPoz:hover{ background:var(--sel); }
+.cenPoz:active{ background:var(--sel); }
+.cenPoz:focus-visible{ outline:2px solid var(--accent); outline-offset:-2px; }
+.cenNazwa{
+  flex:1 1 auto; min-width:0;
+  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden;
+  overflow-wrap:break-word;
+}
+.cenOpis{
+  flex:0 0 auto;
+  font-size:calc(11px * var(--uiw, 1)); color:var(--text); opacity:.66;
+  font-variant-numeric:tabular-nums; white-space:nowrap;
+}
+html[data-theme="sepia"] .cenOpis{ opacity:.8; }
+
+.cenPusto{
+  display:flex; flex-direction:column; gap:8px;
+  padding:24px 4px; max-width:56ch;
+  font-size:calc(13.5px * var(--uiw, 1)); line-height:1.55; color:var(--muted);
+}
+.cenPusto b{ color:var(--text); font-size:calc(15px * var(--uiw, 1)); }
+
+/* Przycisk domku w pasku: wciśnięty, gdy Centrum jest na wierzchu — pasek ma
+   mówić, w którym z dwóch widoków się jest. */
+#btnCentrum.on{ background:rgba(255,255,255,.22); }
+#btnCentrum[hidden]{ display:none; }
+
+@media (max-width:620px){
+  #centrum{ padding-left:12px; padding-right:12px; }
+  .cenSiatka{ grid-template-columns:1fr; }
+  .cenTyt b{ font-size:calc(17px * var(--uiw, 1)); }
+  /* Na telefonie opis pod nazwą, nie obok — w jednym wierszu nie ma miejsca
+     na tytuł notatki i „3 dni temu" naraz. */
+  .cenPoz{ flex-direction:column; gap:2px; align-items:flex-start; }
+  .cenOpis{ white-space:normal; }
+}
+
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -4803,7 +5044,7 @@ html[data-theme="dark"] #pubList .item.active .cnt{ color:rgba(13,33,25,.82); }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.55</span></div>
+      <div class="brand-name">JW Study <span class="ver">v2.58</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -4834,6 +5075,7 @@ html[data-theme="dark"] #pubList .item.active .cnt{ color:rgba(13,33,25,.82); }
   <!-- Pięć przycisków widoku w jednej grupie: stykają się bokami, więc
        zamiast pięciu odstępów jest jeden, a wzrokowo tworzą jedną rzecz. -->
   <div class="ikony-grupa" role="group" aria-label="Widok">
+    <button class="btn ico-btn" id="btnCentrum" title="Centrum studium (H)" aria-label="Centrum studium" aria-pressed="false"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 11.5 12 4l8.5 7.5"/><path d="M5.5 10.5V20h13v-9.5"/><path d="M10 20v-5.5h4V20"/></svg></button>
     <button class="btn ico-btn" id="btnSettings" title="Ustawienia (,)"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.1"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a1.9 1.9 0 1 1-2.7 2.7l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5v.2a1.9 1.9 0 1 1-3.8 0V21a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a1.9 1.9 0 1 1-2.7-2.7l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a1.9 1.9 0 1 1 0-3.8h.2a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a1.9 1.9 0 1 1 2.7-2.7l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a1.9 1.9 0 1 1 3.8 0v.2a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a1.9 1.9 0 1 1 2.7 2.7l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1h.2a1.9 1.9 0 1 1 0 3.8H21a1.6 1.6 0 0 0-1.5 1z"/></svg></button>
     <button class="btn ico-btn" id="btnTheme" title="Motyw"></button>
     <button class="btn ico-btn" id="btnCols" title="Pokaż lub ukryj kolumny"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="2"/><path d="M9 4.5v15M15 4.5v15"/></svg></button>
@@ -4926,6 +5168,11 @@ html[data-theme="dark"] #pubList .item.active .cnt{ color:rgba(13,33,25,.82); }
       </div>
       <div id="counts"></div>
     </div>
+    <!-- Centrum studium. Rodzeństwo listy, nie jej zawartość: lista ma własne
+         przewijanie i pamięć położenia, których nie wolno zgubić przy każdym
+         zajrzeniu do Centrum. Widoczne jest zawsze dokładnie jedno z dwojga —
+         pilnuje tego centrumOdswiez() w 52-centrum.js. -->
+    <div id="centrum" hidden></div>
     <div class="list" id="noteList"></div>
   </div>
 </main>
@@ -5148,6 +5395,24 @@ html[data-theme="dark"] #pubList .item.active .cnt{ color:rgba(13,33,25,.82); }
 </div>
 
 <script id="APPDATA" type="text/plain">H4sIAMivU2oC/6tWKklML1ayio7VUcrLL0mFMouLkv0Sc1OVrJSUdJTKlKyMagHDyHnYKQAAAA==</script>
+<!-- Historia wersji notatki. Ta sama budowa co okno ustawień (przyklejony
+     nagłówek z zakładkami, przyklejona stopka z wyjściem), bo to ten sam
+     rodzaj okna: dużo treści do przewijania i wyjście, które musi być
+     widoczne przez cały czas. -->
+<div class="overlay" id="modalHist">
+  <div class="modal" role="dialog" aria-label="Historia wersji">
+    <div class="nn-head">
+      <h3>Historia wersji</h3>
+      <div class="st-zakladki" id="histZakladki" role="tablist"></div>
+    </div>
+    <div id="histLista"></div>
+    <div id="histPorownanie" style="display:none"></div>
+    <div class="btnrow" style="justify-content:flex-end">
+      <button class="btn primary" data-zamknij="modalHist">Zamknij</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="modalSettings">
   <div class="modal" role="dialog" aria-label="Ustawienia">
     <div class="nn-head"><h3>Ustawienia</h3></div>
@@ -5318,14 +5583,27 @@ function setHtml(el, html){ if(el && el.innerHTML !== html){ el.innerHTML = html
    ========================================================================== */
 "use strict";
 /* ================= IndexedDB ================= */
+/* Wersja bazy 2 (od wydania 2.57): doszedł magazyn „wersje" z historią zmian
+   notatek. Wcześniej historia mieszkała w pamięci ustawień, która ma około
+   pięciu megabajtów na CAŁĄ aplikację — przy kilkuset notatkach zajmowała ją
+   w całości i przestawały zapisywać się zwykłe ustawienia.
+
+   Każdy magazyn zakładamy warunkowo. Podniesienie numeru wersji uruchamia
+   `onupgradeneeded` także u kogoś, kto ma już bazę z czterema magazynami —
+   bezwarunkowe `createObjectStore` przerwałoby wtedy całą aktualizację
+   błędem „store already exists", a wraz z nią odczyt notatek. */
 function idbOpen(){return new Promise((res,rej)=>{
-  const r = indexedDB.open(DBNAME, 1);
+  const r = indexedDB.open(DBNAME, 2);
   r.onupgradeneeded = e=>{
     const d = e.target.result;
-    d.createObjectStore("notes",{keyPath:"g"});
-    d.createObjectStore("tags",{keyPath:"id"});
-    d.createObjectStore("meta");
-    d.createObjectStore("files");
+    const zaloz = (nazwa, opcje)=>{
+      if(!d.objectStoreNames.contains(nazwa)) d.createObjectStore(nazwa, opcje);
+    };
+    zaloz("notes", {keyPath:"g"});
+    zaloz("tags",  {keyPath:"id"});
+    zaloz("meta");
+    zaloz("files");
+    zaloz("wersje", {keyPath:"g"});
   };
   r.onsuccess = e=>res(e.target.result);
   r.onerror = e=>rej(e);
@@ -7751,6 +8029,10 @@ function renderAll(){
   if(typeof resetLicznikowZakladek==="function") resetLicznikowZakladek();
   visibleCount=60;
   renderTags(); renderBooks(); renderNotes();
+  /* Centrum studium albo lista — nigdy oba i nigdy żadne. Decyzja zapada TU,
+     po każdej zmianie filtrów, bo tylko wtedy jest pewne, że stan filtrów
+     i widok kolumny się nie rozjadą. */
+  if(typeof centrumOdswiez === "function") centrumOdswiez();
   if(fsGuid) renderFs();
   /* Nazwy dla czytnika ekranu nadajemy od razu po przerysowaniu. Obserwator
      zmian też je nada, ale dopiero po oddaniu sterowania — a wtedy przez chwilę
@@ -8506,6 +8788,16 @@ async function delNote(n){
   n.del=true; n.delAt=new Date().toISOString(); markDirty(n); renderAll(); toast("Notatka w koszu");
 }
 const TRASH_DAYS = 30;
+/* Trwałe skasowanie notatki musi zabrać ze sobą JEJ HISTORIĘ WERSJI.
+   Inaczej w bazie zostawałby dziennik zmian notatki, której już nie ma:
+   niewidoczny, niedostępny i zajmujący miejsce na zawsze. Trzy miejsca kasują
+   notatki trwale (pojedynczo, przy opróżnianiu kosza i po trzydziestu dniach),
+   więc kasowanie jest tu w jednym pomocniku, a nie powtórzone trzy razy. */
+function zapomnijNotatke(g){
+  if(!g) return;
+  if(idb) idbDelKey("notes", g).catch(()=>{});
+  if(typeof wersjeUsun === "function") wersjeUsun(g);
+}
 function trashList(){ return notes.filter(n=>n.del); }
 function daysLeft(n){ if(!n.delAt) return TRASH_DAYS; const passed=(Date.now()-new Date(n.delAt).getTime())/86400000; return Math.max(0, Math.ceil(TRASH_DAYS-passed)); }
 function purgeOldTrash(){
@@ -8514,7 +8806,7 @@ function purgeOldTrash(){
     if(n.del){
       if(!n.delAt){ n.delAt=new Date().toISOString(); saveNote(n); }   // stare usunięcia — daj im pełne 30 dni od teraz
       const passed=(now-new Date(n.delAt).getTime())/86400000;
-      if(passed>=TRASH_DAYS){ if(idb) idbDelKey("notes", n.g).catch(()=>{}); removed++; return; }
+      if(passed>=TRASH_DAYS){ zapomnijNotatke(n.g); removed++; return; }
     }
     keep.push(n);
   });
@@ -8525,13 +8817,13 @@ function restoreNote(n){
 }
 function purgeNote(n){
   const i=notes.indexOf(n);
-  if(i>=0){ notes.splice(i,1); if(idb) idbDelKey("notes", n.g).catch(()=>{}); }
+  if(i>=0){ notes.splice(i,1); zapomnijNotatke(n.g); }
   bumpDirty(); renderTrash(); toast("Usunięto na stałe");
 }
 async function emptyTrash(){
   const list=trashList(); if(!list.length){ toast("Kosz jest pusty"); return; }
   if(!(await askConfirm("Opróżnić kosz?", "Wszystkie notatki z kosza ("+list.length+") zostaną usunięte <b>na stałe</b>. Tej operacji nie można cofnąć.", {okLabel:"Usuń na stałe", danger:true}))) return;
-  list.forEach(n=>{ const i=notes.indexOf(n); if(i>=0) notes.splice(i,1); if(idb) idbDelKey("notes", n.g).catch(()=>{}); });
+  list.forEach(n=>{ const i=notes.indexOf(n); if(i>=0) notes.splice(i,1); zapomnijNotatke(n.g); });
   bumpDirty(); renderTrash(); renderAll(); toast("Kosz opróżniony");
 }
 function renderTrash(){
@@ -9491,59 +9783,11 @@ async function openReplace(ce){
   if(count){ commitLiveEdit(ce); toast("Zamieniono: "+count+(count===1?" miejsce":" miejsc")); }
   else toast("Nie znaleziono: "+find);
 }
-/* ===== HISTORIA WERSJI ===== */
-const VER_KEY = KP+"Versions";
-function versionsAll(){ try{ return JSON.parse(localStorage.getItem(VER_KEY)||"{}"); }catch(e){ return {}; } }
-/* Wersje trzymamy BEZ zdjęć — pamięć ustawień ma tylko ~5 MB,
-   a jedno zdjęcie w treści zajęłoby jej znaczną część. */
-function stripImagesForVersion(html){
-  return (html||"").replace(/<img[^>]*>/gi, '<span class="verImgNote">[zdjęcie — nie jest zapisywane w historii]</span>');
-}
-function saveVersion(n){
-  if(!n || !n.h) return;
-  const light = stripImagesForVersion(n.h);
-  if(light.length > 200000) return;                       // pojedyncza wersja > ~200 KB — pomijamy
-  const all=versionsAll();
-  const list=all[n.g]||[];
-  if(list.length && list[0].h===light) return;            // bez zmian — nie zapisuj
-  list.unshift({t:new Date().toISOString(), h:light, ttl:n.t||"", img:/\<img/i.test(n.h)});
-  all[n.g]=list.slice(0,10);                              // 10 ostatnich wersji
-  const keys=Object.keys(all); if(keys.length>40) delete all[keys[0]];
-  // zapis z zabezpieczeniem: gdy brak miejsca, kasujemy najstarsze wpisy i próbujemy ponownie
-  for(let attempt=0; attempt<6; attempt++){
-    try{ localStorage.setItem(VER_KEY, JSON.stringify(all)); return; }
-    catch(e){
-      const ks=Object.keys(all);
-      if(!ks.length) return;
-      delete all[ks[0]];
-    }
-  }
-}
-async function openHistory(ce){
-  const card=ce.closest(".ncard"); const n=notes.find(x=>x.g===card.dataset.g); if(!n) return;
-  const list=(versionsAll()[n.g])||[];
-  if(!list.length){ showInfo("Historia wersji", "Nie ma jeszcze zapisanych wcześniejszych wersji tej notatki.<br><br>Wersja zapisuje się przy każdym zakończeniu edycji — wróć tu po kolejnych zmianach."); return; }
-  const dd=$("dropdown");
-  dd.innerHTML=`<div class="dd-lbl">Przywróć wcześniejszą wersję</div>`+
-    list.map((v,i)=>{
-      const d=new Date(v.t); const when=d.toLocaleDateString("pl")+" "+d.toTimeString().slice(0,5);
-      const words=(v.h.replace(/<[^>]*>/g," ").match(/\S+/g)||[]).length;
-      return `<div data-ver="${i}">🕓 ${when} <span style="color:var(--muted);font-size:11.5px">· ${words} słów</span></div>`;
-    }).join("");
-  dd.style.display="block";
-  placeDropdown(dd, ce);
-  dd.onclick=async ev=>{
-    const it=ev.target.closest("[data-ver]"); if(!it) return;
-    dd.style.display="none";
-    const v=list[+it.dataset.ver];
-    const imgWarn = v.img ? "<br><br>⚠️ Ta wersja zawierała <b>zdjęcia</b> — historia ich nie przechowuje (zajmowałyby zbyt dużo miejsca), więc po przywróceniu trzeba je wstawić ponownie." : "";
-    if(!(await askConfirm("Przywrócić tę wersję?", "Obecna treść notatki zostanie zastąpiona wersją z "+new Date(v.t).toLocaleString("pl")+".<br><br>Bieżącą wersję zapiszemy w historii, więc będzie można wrócić."+imgWarn, {okLabel:"Przywróć", danger:!!v.img}))) return;
-    saveVersion(n);
-    pushUndo({type:"note", label:"przywrócenie wersji", before:cloneNote(n)});
-    n.h=v.h; n.c=htmlToPlain(v.h); markDirty(n); renderAll();
-    toast("Przywrócono wcześniejszą wersję");
-  };
-}
+/* ===== HISTORIA WERSJI =====
+   Cała historia wersji — zapis, ścieranie starszych, okno z listą dat
+   i porównywanie — mieszka teraz w 51-historia.js. Tu została tylko ta
+   wzmianka, żeby nie szukać jej w edytorze: pozycja „Historia wersji…"
+   w menu ⋯ woła openHistory() z tamtego modułu. */
 function blockOf(node, ce){
   let el = node && node.nodeType===3 ? node.parentNode : node;
   while(el && el!==ce && el.parentNode){
@@ -12522,6 +12766,24 @@ function rysujZakladkiUstawien(){
     '<button type="button" class="st-zak" role="tab" data-karta="'+id+'">'+esc(nazwa)+'</button>').join("");
 }
 
+/** Podsumowanie miejsca zajmowanego przez historię wersji. */
+async function pokazMiejsceWersji(){
+  const el = $("stWersje"); if(!el) return;
+  if(typeof wersjeMiejsce !== "function"){ el.textContent = "—"; return; }
+  const m = await wersjeMiejsce();
+  if(!m.wersji){ el.textContent = "Brak zapisanych wersji"; return; }
+  /* Znaki, nie bajty: treść jest tekstem, a liczba znaków jest tu uczciwsza niż
+     przeliczanie na kilobajty przy nieznanym kodowaniu. Przybliżenie w nawiasie
+     wystarcza do odpowiedzi „czy to dużo". */
+  const kb = m.znakow / 1024;
+  const ile = kb < 1 ? "mniej niż 1 kB"
+            : kb < 1024 ? Math.round(kb) + " kB"
+            : (kb / 1024).toFixed(1) + " MB";
+  el.textContent = m.wersji + (m.wersji === 1 ? " wersja" : " wersji")
+    + " w " + m.notatek + (m.notatek === 1 ? " notatce" : " notatkach")
+    + " · około " + ile;
+}
+
 function openSettings(){
   const box = $("setBody");
   box.innerHTML =
@@ -12549,6 +12811,17 @@ function openSettings(){
        <div class="st-lbl">Gotowa kompozycja</div>
        <div class="st-komp">${kompozycjeHtml()}</div>
        <div class="st-hint">Jeden kolor na <b>cały interfejs</b>: pasek górny, kolumny, belki notatek i podświetlenia. Kolory poszczególnych kolumn osobno ustawisz pod ikoną palety w pasku górnym.</div>
+     </div>
+     <div class="st-sec">
+       <div class="st-lbl">Centrum studium na starcie</div>
+       ${optionGroup("centrum", [["1","Pokazuj"],["0","Nie pokazuj"]],
+                     (typeof centrWlaczone!=="undefined" && centrWlaczone) ? "1" : "0")}
+       <div class="st-hint">Po uruchomieniu kolumna notatek pokazuje podsumowanie: co jest
+         na dziś do powtórki, na czym skończyłeś, co niedokończone, ostatnio używane wersety
+         i publikacje. Pierwsze kliknięcie etykiety, księgi albo szukanie przełącza na zwykłą
+         listę. Do Centrum wracasz przyciskiem <b>domku</b> w pasku górnym albo klawiszem
+         <b>H</b>. Nic nie jest tu dodatkowo zliczane — wszystko liczy się z danych, które
+         notatki już mają.</div>
      </div>
      <div class="st-sec">
        <div class="st-lbl">Układ listy notatek</div>
@@ -12588,6 +12861,18 @@ function openSettings(){
        <div class="st-hint">Zamiast pobierać co dzień nowy plik, aplikacja może <b>nadpisywać jeden wskazany</b> — na dysku nie przybywa kopii. Wskazujesz go raz. Wymaga przeglądarki Chrome, Edge, Brave lub Arc na komputerze; w Safari pozostaje zwykłe pobieranie.</div>
      </div>
      <div class="st-sec">
+       <div class="st-lbl">Historia wersji notatek</div>
+       <div class="st-ver" id="stWersje">liczę…</div>
+       <button class="st-opt st-wide" data-act="wersjeCzysc">Wyczyść całą historię wersji</button>
+       <div class="st-hint">Przy każdym zakończeniu edycji (nie częściej niż raz na pięć minut)
+         odkłada się poprzednia treść notatki. Historię otwierasz w edytorze: <b>⋯ → Historia
+         wersji…</b> — z listy dat da się wrócić do dawnej treści albo porównać dwie wersje.
+         Do <b>50 wersji</b> na notatkę; starsze ścierają się same (z ostatniego tygodnia
+         wszystkie, dalej po jednej na dzień, jeszcze dalej po jednej na miesiąc).
+         Historia <b>nie wchodzi do kopii zapasowej</b> i <b>nie przechowuje zdjęć</b> — kopia
+         ma być przenośna, a jedno zdjęcie waży więcej niż setka wersji tekstu.</div>
+     </div>
+     <div class="st-sec">
        <div class="st-lbl">Import z JW Library</div>
        <div class="st-ver" id="stLib"></div>
        <div class="st-hint">Odczytanie pliku <b>.jwlibrary</b> wymaga dwóch bibliotek. Leżą w katalogu <code>lib/</code> obok aplikacji i są wgrywane razem z nią. Aplikacja <b>nie pobiera niczego z obcych serwerów</b> — nie potrafi tego zrobić.</div>
@@ -12605,6 +12890,7 @@ function openSettings(){
          <div><kbd>P</kbd><span>przypnij na górze</span></div>
          <div><kbd>0</kbd><span>wszystkie notatki — zdejmuje szukanie i filtry</span></div>
          <div><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd><span>chowanie kolumn: Biblia / Etykiety / Publikacje</span></div>
+         <div><kbd>H</kbd><span>Centrum studium / lista notatek</span></div>
          <div><kbd>,</kbd><span>ustawienia</span></div>
          <div><kbd>?</kbd><span>ta lista</span></div>
          <div><kbd>←</kbd> <kbd>→</kbd><span>poprzednia / następna notatka w czytniku</span></div>
@@ -12642,6 +12928,10 @@ function openSettings(){
             : e.target.value==="zawsze" ? "Zwarty pasek zawsze" : "Pełny pasek zawsze");
     };
   }
+  /* Miejsce zajmowane przez historię liczymy po otwarciu okna, nie przy starcie
+     aplikacji: to przejście po całym magazynie wersji i nie ma powodu robić go
+     komuś, kto do ustawień nie zagląda. */
+  pokazMiejsceWersji();
   const pole = $("stWersja");
   if(pole){
     const znak = document.querySelector(".brand-name .ver");
@@ -12683,6 +12973,19 @@ function openSettings(){
       zapomnijPlikKopii().then(pokazPlikKopii);
       return;
     }
+    if(act && act.dataset.act==="wersjeCzysc"){
+      askConfirm("Wyczyścić historię wersji?",
+        "Wszystkie zapisane wcześniejsze wersje notatek zostaną usunięte. "
+        + "<b>Same notatki zostają nietknięte</b> — kasujemy tylko dziennik zmian, "
+        + "czyli możliwość powrotu do dawnej treści.",
+        {okLabel:"Wyczyść", danger:true}).then(async ok=>{
+          if(!ok) return;
+          await wersjeWyczysc();
+          pokazMiejsceWersji();
+          toastOk("Historia wersji wyczyszczona");
+        });
+      return;
+    }
     if(act && act.dataset.act==="odswiez"){
       askConfirm("Pobrać najnowszą wersję?",
         "Zapisana kopia plików aplikacji zostanie skasowana i pobrana od nowa z serwera.<br><br>Notatki, etykiety i zakładki <b>zostają nietknięte</b>.",
@@ -12691,6 +12994,14 @@ function openSettings(){
     }
     const opt = e.target.closest(".st-opt[data-v]");
     if(!opt) return;
+    if(opt.closest('[data-grp="centrum"]')){
+      centrumUstawWlaczone(opt.dataset.v === "1");
+      opt.parentElement.querySelectorAll(".st-opt").forEach(b=>b.classList.remove("on"));
+      opt.classList.add("on");
+      toastOk(opt.dataset.v === "1" ? "Centrum studium będzie się pokazywać"
+                                    : "Centrum studium wyłączone");
+      return;
+    }
     const grp = opt.closest("[data-grp]").dataset.grp, v = opt.dataset.v;
     if(grp==="dens") setDensity(v);
     else if(grp==="anim") setAnim(v);
@@ -15007,6 +15318,17 @@ const A6_ZAPAS = 1.3;
 /* O tyle wydobyta karteczka musi być większa od tej, która stała w rzędzie.
    Poniżej tego progu „powiększenie" wygląda jak pomyłka. */
 const WYD_MIN_WZROST = 1.12;
+/* Poszerzenie względem czystej proporcji A6 (v2.56).
+   Sama kartka A6 jest wąska: przy wysokości 667 px wychodziło 472 px szerokości,
+   czyli wiersz tekstu na 470 px. Notatki ze studium mają zwykle jeden akapit
+   ciągły, a nie kolumnę wiersza poezji — piętnaście procent szerokości to około
+   siedemdziesięciu pikseli, czyli osiem–dziewięć znaków więcej w wierszu.
+
+   Poszerzamy TYLKO szerokość, wysokości nie ruszamy: kartka przestaje być
+   dokładnym A6 (proporcja 1:1,41 → 1:1,23), ale to szerokości brakowało.
+   Wszystkie ograniczenia poniżej działają jak wcześniej — na wąskim ekranie
+   karteczka po prostu nie ma gdzie się poszerzyć i zostaje jak była. */
+const WYD_POSZERZENIE = 1.15;
 
 /**
  * Docelowy rozmiar wydobytej karteczki: kartka A6 postawiona pionowo.
@@ -15037,12 +15359,12 @@ function rozmiarWydobycia(lista, maleRect){
 
   let wys = Math.min(520 * A6_ZAPAS, Math.max(300 * A6_ZAPAS, ob.wys * 0.66 * A6_ZAPAS));
   wys = Math.min(wys, maxWys);
-  let szer = wys / A6_STOSUNEK;
+  let szer = wys / A6_STOSUNEK * WYD_POSZERZENIE;
 
   /* Gwarancja wzrostu — najpierw wysokość, potem szerokość. */
   if(maleRect){
     const chcianaWys = maleRect.height * WYD_MIN_WZROST;
-    if(wys < chcianaWys){ wys = Math.min(chcianaWys, maxWys); szer = wys / A6_STOSUNEK; }
+    if(wys < chcianaWys){ wys = Math.min(chcianaWys, maxWys); szer = wys / A6_STOSUNEK * WYD_POSZERZENIE; }
     const chcianaSzer = maleRect.width * WYD_MIN_WZROST;
     if(szer < chcianaSzer) szer = chcianaSzer;
   }
@@ -16741,6 +17063,1082 @@ kolOdswiezKlawiature();
 </script>
 <script>
 /* ==========================================================================
+   JW Study — historia.js
+   HISTORIA WERSJI NOTATKI I PORÓWNYWANIE WERSJI
+
+   CO BYŁO NIE TAK
+
+   Historia istniała od dawna, ale mieszkała w pamięci ustawień
+   (localStorage) i trzymała dziesięć wersji na notatkę:
+
+     • Pamięć ustawień ma około PIĘCIU MEGABAJTÓW na całą aplikację i jest
+       dzielona ze wszystkim innym: filtrami, szerokościami kolumn, wyborem
+       motywu, ostatnim widokiem. Historia dwustu notatek zajmowała ją całą,
+       a wtedy przestawały zapisywać się USTAWIENIA — objaw wyglądał jak
+       „aplikacja zapomina, gdzie byłem", a przyczyna leżała w historii.
+       Kod miał na to obejście: przy braku miejsca kasował najstarsze wpisy
+       w pętli. Czyli historia sama się okradała, w milczeniu.
+     • Dziesięć wersji to jedno dłuższe posiedzenie. Notatka pisana przez rok
+       nie miała jak zachować śladu sprzed miesiąca.
+     • Nie było jak POKAZAĆ, co się między wersjami zmieniło. Przywrócenie
+       wersji było skokiem w ciemno: albo pamiętasz, co tam było, albo
+       przywracasz i patrzysz.
+
+   JAK JEST TERAZ
+
+   Wersje leżą w bazie notatek (IndexedDB, magazyn „wersje"), która liczy się
+   w setkach megabajtów, a nie w pojedynczych. Na notatkę pięćdziesiąt wersji,
+   z rozsądnym ścieraniem starszych. Do tego okno z listą dat, przywracaniem
+   i PORÓWNANIEM: dwie wersje do wyboru i podświetlone różnice słowo w słowo.
+
+   TRZY DECYZJE, KTÓRE WARTO ZNAĆ
+
+   1. Wersje NIE WCHODZĄ do kopii zapasowej. Kopia ma przenosić notatki na
+      inne urządzenie i ma się dać wysłać — historia zwiększyłaby ją
+      kilkukrotnie, a przenoszenie cudzej historii edycji niczemu nie służy.
+      Notatki są w kopii kompletne; historia jest lokalnym dziennikiem pracy.
+   2. Wersje NIE ZAWIERAJĄ ZDJĘĆ. Zdjęcie w treści to zwykle setki kilobajtów
+      wklejone wprost w tekst; pięćdziesiąt wersji notatki ze zdjęciem to
+      dziesiątki megabajtów na jedną notatkę. W miejscu zdjęcia zostaje
+      wyraźny znacznik, a przy przywracaniu — ostrzeżenie.
+   3. Porównanie liczy się na CZYSTYM TEKŚCIE, nie na znacznikach HTML.
+      Różnica w rodzaju „pogrubiono jedno słowo" się w nim nie pokaże, ale
+      za to nie pokażą się też różnice, których nikt nie widzi w notatce.
+      Alternatywa — porównywanie znaczników — dawała listę zmian typu
+      „<div> → <p>", zupełnie nieczytelną.
+   ========================================================================== */
+"use strict";
+
+/* Ile wersji na notatkę. Pięćdziesiąt przy ścieraniu opisanym niżej sięga
+   kilku miesięcy wstecz, a waży tyle co kilka zdjęć. */
+const WERSJE_MAX = 50;
+/* Nie częściej niż raz na tyle minut. Jedno posiedzenie przy notatce to
+   zwykle kilka wejść w edycję po kolei — bez tego progu zjadałoby połowę
+   historii, a wszystkie wpisy różniłyby się jednym zdaniem. */
+const WERSJE_ODSTEP_MIN = 5;
+/* Największa wersja, jaką warto trzymać. Notatka na 300 KB czystego tekstu
+   to około pięćdziesięciu stron — takiej nie pisze się w tym oknie. */
+const WERSJA_MAX_ZNAKOW = 300000;
+/* Klucz starej historii w pamięci ustawień — do przeniesienia i skasowania. */
+const WERSJE_STARY_KLUCZ = KP + "Versions";
+
+/* ——— PODSTAWA: CZYTANIE I ZAPIS ——— */
+
+/** Lista wersji notatki, od najnowszej. Zawsze tablica. */
+async function wersjeNotatki(g){
+  if(!idb || !g) return [];
+  try{
+    const rec = await idbGet("wersje", g);
+    return (rec && Array.isArray(rec.lista)) ? rec.lista : [];
+  }catch(e){ return []; }
+}
+
+/** Zdjęcia wychodzą z wersji — patrz decyzja 2 w nagłówku pliku. */
+function wersjaBezZdjec(html){
+  return String(html || "").replace(/<img[^>]*>/gi,
+    '<span class="verImgNote">[zdjęcie — nie jest zapisywane w historii]</span>');
+}
+
+/**
+ * ŚCIERANIE STARSZYCH WERSJI.
+ *
+ * Zwykłe „trzymaj ostatnie pięćdziesiąt" ma wadę: intensywny tydzień pracy
+ * wypycha z historii cały poprzedni rok. A po roku nie szuka się wersji
+ * z dokładnością do minuty — szuka się „jak to wyglądało w maju".
+ *
+ * Dlatego gęstość maleje z wiekiem:
+ *   • ostatnie 7 dni — wszystkie wersje,
+ *   • od 7 dni do 2 miesięcy — po jednej na dzień (najnowsza z danego dnia),
+ *   • starsze — po jednej na miesiąc.
+ * Na końcu i tak obowiązuje górna granica liczby wpisów.
+ *
+ * @param {Array} lista wersje od najnowszej
+ * @param {number} terazMs czas odniesienia (podawany, żeby dało się to sprawdzić testem)
+ */
+function wersjeProzchudz(lista, terazMs){
+  const teraz = terazMs || Date.now();
+  const DZIEN = 86400000;
+  const widziane = new Set();
+  const wynik = [];
+  for(const v of lista){
+    const ms = Date.parse(v.t);
+    const wiek = teraz - (isNaN(ms) ? teraz : ms);
+    let kubelek;
+    if(wiek <= 7 * DZIEN)        kubelek = "s" + wynik.length;      // każda osobno
+    else if(wiek <= 60 * DZIEN)  kubelek = String(v.t).slice(0, 10); // rrrr-mm-dd
+    else                         kubelek = String(v.t).slice(0, 7);  // rrrr-mm
+    if(widziane.has(kubelek)) continue;
+    widziane.add(kubelek);
+    wynik.push(v);
+    if(wynik.length >= WERSJE_MAX) break;
+  }
+  return wynik;
+}
+
+/**
+ * Dopisuje BIEŻĄCĄ (jeszcze niezmienioną) treść notatki do historii.
+ * Wołane PRZED nadpisaniem n.h nową treścią — dzięki temu w historii ląduje
+ * to, co było, a nie to, co właśnie powstało.
+ *
+ * Nazwa „saveVersion" zostaje, bo wołają ją trzy inne moduły.
+ */
+function saveVersion(n){
+  if(!n || !n.h || !idb) return;
+  const light = wersjaBezZdjec(n.h);
+  if(light.length > WERSJA_MAX_ZNAKOW) return;
+  (async ()=>{
+    try{
+      const lista = await wersjeNotatki(n.g);
+      /* Bez zmian — nie ma czego zapisywać. */
+      if(lista.length && lista[0].h === light) return;
+      /* Próg czasowy. Pomijamy NOWY wpis, a nie zastępujemy najstarszego:
+         w historii ma zostać stan sprzed posiedzenia, bo do niego się wraca.
+         Zastępowanie skasowałoby właśnie tę wersję, która jest potrzebna. */
+      if(lista.length){
+        const wiek = Date.now() - Date.parse(lista[0].t);
+        if(isFinite(wiek) && wiek < WERSJE_ODSTEP_MIN * 60000) return;
+      }
+      const nowa = {t:new Date().toISOString(), h:light, ttl:n.t || "",
+                    img:/<img/i.test(n.h)};
+      const pelna = wersjeProzchudz([nowa, ...lista]);
+      await idbPut("wersje", {g:n.g, lista:pelna});
+    }catch(e){ /* historia nie może przeszkodzić w zapisaniu notatki */ }
+  })();
+}
+
+/** Kasuje historię notatki — wołane przy trwałym usunięciu notatki. */
+async function wersjeUsun(g){
+  if(!idb || !g) return;
+  try{ await idbDelKey("wersje", g); }catch(e){}
+}
+
+/** Ile miejsca zajmuje historia. Do pokazania w Ustawieniach. */
+async function wersjeMiejsce(){
+  if(!idb) return {notatek:0, wersji:0, znakow:0};
+  try{
+    const all = await idbAll("wersje");
+    let wersji = 0, znakow = 0;
+    all.forEach(r=>{
+      (r.lista || []).forEach(v=>{ wersji++; znakow += (v.h || "").length; });
+    });
+    return {notatek:all.length, wersji, znakow};
+  }catch(e){ return {notatek:0, wersji:0, znakow:0}; }
+}
+
+/** Czyści całą historię — na wypadek, gdyby ktoś chciał odzyskać miejsce. */
+async function wersjeWyczysc(){
+  if(!idb) return;
+  const all = await idbAll("wersje").catch(()=>[]);
+  for(const r of all) await idbDelKey("wersje", r.g).catch(()=>{});
+}
+
+/**
+ * PRZENIESIENIE STAREJ HISTORII Z PAMIĘCI USTAWIEŃ.
+ *
+ * Robione raz, przy pierwszym uruchomieniu nowej wersji. Po przeniesieniu
+ * stary klucz jest kasowany — i to jest połowa korzyści: zwalnia się do
+ * kilku megabajtów pamięci ustawień, którą historia zajmowała.
+ *
+ * Kolejność jest ostrożna: najpierw zapis do bazy, potem kasowanie starego.
+ * Odwrotnie — przy błędzie zapisu historia przepadłaby bez śladu.
+ */
+async function wersjePrzenies(){
+  if(!idb) return 0;
+  let stare;
+  try{ stare = JSON.parse(localStorage.getItem(WERSJE_STARY_KLUCZ) || "null"); }
+  catch(e){ stare = null; }
+  if(!stare || typeof stare !== "object") return 0;
+  let ile = 0;
+  for(const g of Object.keys(stare)){
+    const listaStara = Array.isArray(stare[g]) ? stare[g] : [];
+    if(!listaStara.length) continue;
+    try{
+      const juz = await wersjeNotatki(g);
+      /* Scalamy po czasie, żeby powtórne uruchomienie migracji nie zdublowało
+         wpisów, a ewentualne nowe wersje nie zostały nadpisane starymi. */
+      const razem = [...juz, ...listaStara]
+        .filter(v=>v && v.t && v.h)
+        .sort((a, b)=>String(b.t).localeCompare(String(a.t)));
+      const bezPowtorek = [];
+      const czasy = new Set();
+      for(const v of razem){ if(czasy.has(v.t)) continue; czasy.add(v.t); bezPowtorek.push(v); }
+      await idbPut("wersje", {g, lista:wersjeProzchudz(bezPowtorek)});
+      ile += listaStara.length;
+    }catch(e){ return ile; }      // nie kasujemy starego, gdy zapis nie wyszedł
+  }
+  try{ localStorage.removeItem(WERSJE_STARY_KLUCZ); }catch(e){}
+  return ile;
+}
+
+/* ——— RÓŻNICE SŁOWO W SŁOWO ——— */
+
+/** Tekst na słowa, z zachowaniem podziału na akapity jako osobnych „słów". */
+function naSlowa(tekst){
+  return String(tekst || "")
+    .replace(/\r/g, "")
+    .split(/(\n+|\s+)/)
+    .filter(s=>s !== "" && !/^[ \t]+$/.test(s))
+    .map(s=>/^\n+$/.test(s) ? "\n" : s);
+}
+
+/* Ile najwyżej kroków edycji szukamy. Koszt szukania rośnie z kwadratem tej
+   liczby, więc jest to zawór bezpieczeństwa, nie ustawienie jakości: przy 3000
+   przepisana od zera notatka na 2500 słów liczyła się 1,2 SEKUNDY, czyli okno
+   otwierało się z wyraźnym zawahaniem. Przy 1200 to ułamek tego, a zwykła
+   poprawka w notatce ma kilkanaście kroków i mieści się w kilku milisekundach. */
+const ROZNICE_GRANICA = 1200;
+
+/**
+ * NAJKRÓTSZA ŚCIEŻKA EDYCJI (algorytm Myersa) na dowolnych tablicach.
+ *
+ * Zwraca listę kroków [typ, element] albo null, gdy różnic jest więcej niż
+ * granica — wtedy woła się mnie po raz drugi, na akapitach zamiast słów.
+ *
+ * Brakujące przekątne trzeba czytać jako MINUS NIESKOŃCZONOŚĆ, nie jako zero.
+ * Pierwsza wersja tej funkcji używała `map.get(k) || 0` i przy dwóch zupełnie
+ * różnych tekstach cofanie po ścieżce wychodziło na złą przekątną: „Zupełnie
+ * inny tekst tutaj" kontra „Nic wspólnego z poprzednim" dawało w wyniku słowo
+ * „Zupełnie" trzy razy, a „tutaj" oznaczone jako wspólne z „poprzednim".
+ */
+function myersKroki(a, b, granica){
+  const N = a.length, M = b.length;
+  const MAX = Math.min(N + M, granica);
+  const v = new Map([[1, 0]]);
+  const g = (map, k)=>map.has(k) ? map.get(k) : -Infinity;
+  const slady = [];
+  let koniec = -1;
+  for(let d = 0; d <= MAX && koniec < 0; d++){
+    slady.push(new Map(v));            // stan PRZED krokiem d — potrzebny przy cofaniu
+    for(let k = -d; k <= d; k += 2){
+      const wDol = (k === -d) || (k !== d && g(v, k - 1) < g(v, k + 1));
+      let x = wDol ? g(v, k + 1) : g(v, k - 1) + 1;
+      if(!isFinite(x)) x = 0;
+      let y = x - k;
+      while(x < N && y < M && a[x] === b[y]){ x++; y++; }
+      v.set(k, x);
+      if(x >= N && y >= M){ koniec = d; break; }
+    }
+  }
+  if(koniec < 0) return null;
+  /* Cofanie po zapisanych stanach: dla danego d najpierw zdejmujemy wspólny
+     odcinek (przekątną), potem jeden krok edycji — odwrotnie niż szło szukanie. */
+  const kroki = [];
+  let x = N, y = M;
+  for(let d = koniec; d > 0; d--){
+    const vp = slady[d];
+    const k = x - y;
+    const wDol = (k === -d) || (k !== d && g(vp, k - 1) < g(vp, k + 1));
+    const kPrev = wDol ? k + 1 : k - 1;
+    let xPrev = g(vp, kPrev);
+    if(!isFinite(xPrev)) xPrev = 0;
+    const yPrev = xPrev - kPrev;
+    while(x > xPrev && y > yPrev){ kroki.push(["=", a[x - 1]]); x--; y--; }
+    if(wDol) kroki.push(["+", b[yPrev]]);
+    else     kroki.push(["-", a[xPrev]]);
+    x = xPrev; y = yPrev;
+  }
+  while(x > 0 && y > 0){ kroki.push(["=", a[x - 1]]); x--; y--; }
+  while(x > 0) kroki.push(["-", a[--x]]);
+  while(y > 0) kroki.push(["+", b[--y]]);
+  kroki.reverse();
+  return kroki;
+}
+
+/**
+ * RÓŻNICA SŁOWO W SŁOWO między dwiema tablicami słów.
+ * Zwraca listę odcinków: {typ:"=", "-" albo "+", slowa:[...]}.
+ *
+ * Dlaczego Myers, a nie proste „porównaj wiersz do wiersza": wstawienie jednego
+ * zdania na początku notatki przesuwa wszystko poniżej i porównanie
+ * pozycja-do-pozycji pokazałoby CAŁĄ notatkę jako zmienioną. Myers znajduje
+ * najdłuższy wspólny podciąg, więc pokazuje to jedno zdanie.
+ *
+ * Gdy notatka została przepisana od zera, dokładne szukanie po słowach jest
+ * i kosztowne, i bezużyteczne — każde słowo inne. Wtedy schodzimy na poziom
+ * AKAPITÓW: widać, które akapity wymieniono, a to jest cała informacja, jaka
+ * w takiej sytuacji istnieje. Dopiero gdy i to nie wyjdzie, mówimy wprost:
+ * cała stara treść usunięta, cała nowa dodana.
+ */
+function roznicaSlow(staraTab, nowaTab){
+  const a = staraTab, b = nowaTab;
+  /* Wspólny początek i koniec odcinamy od razu — to najtańsza część roboty
+     i przy zwykłej poprawce zostaje po niej kilka słów do porównania. */
+  let p = 0;
+  while(p < a.length && p < b.length && a[p] === b[p]) p++;
+  let s = 0;
+  while(s < a.length - p && s < b.length - p
+        && a[a.length - 1 - s] === b[b.length - 1 - s]) s++;
+  const aSrodek = a.slice(p, a.length - s);
+  const bSrodek = b.slice(p, b.length - s);
+
+  const wynik = [];
+  const dopisz = (typ, slowa)=>{
+    if(!slowa.length) return;
+    const ost = wynik[wynik.length - 1];
+    if(ost && ost.typ === typ) ost.slowa.push(...slowa);
+    else wynik.push({typ, slowa:[...slowa]});
+  };
+  dopisz("=", a.slice(0, p));
+
+  if(!aSrodek.length || !bSrodek.length){
+    dopisz("-", aSrodek);
+    dopisz("+", bSrodek);
+  }else{
+    const kroki = myersKroki(aSrodek, bSrodek, ROZNICE_GRANICA);
+    if(kroki){
+      kroki.forEach(([typ, slowo])=>dopisz(typ, [slowo]));
+    }else{
+      const naAkapity = (tab)=>{
+        const ak = [[]];
+        tab.forEach(w=>{ if(w === "\n") ak.push([]); else ak[ak.length - 1].push(w); });
+        return ak.map(x=>x.join(" ")).filter(x=>x !== "");
+      };
+      const aA = naAkapity(aSrodek), bA = naAkapity(bSrodek);
+      const krokiA = (aA.length && bA.length) ? myersKroki(aA, bA, ROZNICE_GRANICA) : null;
+      if(krokiA){
+        krokiA.forEach(([typ, akapit], i)=>{
+          if(i) dopisz(typ, ["\n"]);
+          dopisz(typ, akapit.split(" "));
+        });
+      }else{
+        dopisz("-", aSrodek);
+        dopisz("+", bSrodek);
+      }
+    }
+  }
+  dopisz("=", a.slice(a.length - s));
+  return wynik;
+}
+
+/**
+ * Odcinki różnic na HTML do pokazania.
+ *
+ * Odstęp między odcinkami wychodzi NA ZEWNĄTRZ znaczników. Gdy siedział
+ * w środku, zdanie „…wrócił z pola. Sługa nie kłócił…" pokazywało się jako
+ * „…z pola.Sługa nie kłócił…": spacja przed wstawionym fragmentem należała do
+ * poprzedniego odcinka, a ten kończył się na kropce. Teraz spacja jest
+ * doklejana pomiędzy, więc widać ją niezależnie od tego, gdzie wypadła granica.
+ */
+function roznicaHtml(odcinki){
+  const znacznik = {"=":"span", "-":"del", "+":"ins"};
+  const czesci = [];
+  odcinki.forEach(o=>{
+    const t = znacznik[o.typ] || "span";
+    /* Akapit („\n") wychodzi z odcinka osobno, żeby przełamanie wiersza nie
+       trafiło w środek podświetlenia — inaczej zielone tło ciągnęłoby się przez
+       pustą przestrzeń do końca wiersza. */
+    let biezacy = [];
+    const wypchnij = ()=>{
+      if(!biezacy.length) return;
+      const tekst = biezacy.join(" ");
+      czesci.push(o.typ === "=" ? esc(tekst) : "<" + t + ">" + esc(tekst) + "</" + t + ">");
+      biezacy = [];
+    };
+    o.slowa.forEach(w=>{
+      if(w === "\n"){ wypchnij(); czesci.push("<br>"); }
+      else biezacy.push(w);
+    });
+    wypchnij();
+  });
+  /* Spacje wstawiamy tylko pomiędzy sąsiadującymi kawałkami tekstu — nie po
+     przełamaniu wiersza i nie przed nim. */
+  let html = "";
+  czesci.forEach((c, i)=>{
+    const poprzedni = czesci[i - 1];
+    if(i > 0 && poprzedni !== "<br>" && c !== "<br>") html += " ";
+    html += c;
+  });
+  return html.trim() ? html : "<i>(bez treści)</i>";
+}
+
+/* Polska odmiana po liczbie: 1 słowo, 2–4 słowa, 5+ słów, ale 12 słów i 22 słowa.
+   Bez tego okno pisało „+1 słów", co wygląda jak niedokończona robota. */
+function odmianaSlow(n){
+  const x = Math.abs(n) % 100, y = Math.abs(n) % 10;
+  if(x === 1) return "słowo";
+  if(y >= 2 && y <= 4 && !(x >= 12 && x <= 14)) return "słowa";
+  return "słów";
+}
+
+/** Ile słów doszło, ile zniknęło — podsumowanie nad porównaniem. */
+function roznicaPodsumowanie(odcinki){
+  let dodane = 0, usuniete = 0, wspolne = 0;
+  odcinki.forEach(o=>{
+    const ile = o.slowa.filter(s=>s !== "\n").length;
+    if(o.typ === "+") dodane += ile;
+    else if(o.typ === "-") usuniete += ile;
+    else wspolne += ile;
+  });
+  return {dodane, usuniete, wspolne};
+}
+
+/* ——— OKNO HISTORII ——— */
+
+let _histNota = null;      // notatka, której historię pokazujemy
+let _histWybor = {a:null, b:null};   // wybrane wersje w karcie „Porównaj”
+let _histLista = [];       // jej wersje, od najnowszej
+let _histKarta = "lista";  // "lista" albo "porownanie"
+
+function histCzas(iso){
+  const d = new Date(iso);
+  if(isNaN(d)) return String(iso || "");
+  const dwie = (x)=>String(x).padStart(2, "0");
+  return dwie(d.getDate()) + "." + dwie(d.getMonth() + 1) + "." + d.getFullYear()
+       + " " + dwie(d.getHours()) + ":" + dwie(d.getMinutes());
+}
+function histSlowa(html){
+  return (String(html || "").replace(/<[^>]*>/g, " ").match(/\S+/g) || []).length;
+}
+/* Wersje z tej samej doby dostają podpis „dziś" / „wczoraj" — data w postaci
+   19.08.2026 jest precyzyjna, ale przy szukaniu wczorajszej wersji trzeba ją
+   najpierw przeliczyć w głowie. */
+function histDzien(iso){
+  const d = new Date(iso); if(isNaN(d)) return "";
+  const doba = (x)=>new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const roznica = Math.round((doba(new Date()) - doba(d)) / 86400000);
+  if(roznica === 0) return "dziś";
+  if(roznica === 1) return "wczoraj";
+  if(roznica < 7) return roznica + " dni temu";
+  return "";
+}
+
+/** Treść notatki „teraz" — zawsze pierwsza pozycja do porównania. */
+function histTeraz(){
+  return {t:null, h:(_histNota && _histNota.h) || "", ttl:(_histNota && _histNota.t) || "",
+          teraz:true};
+}
+function histWszystkieDoWyboru(){
+  return [histTeraz(), ..._histLista];
+}
+function histPodpis(v, i){
+  if(v.teraz) return "Teraz (bieżąca treść)";
+  const dzien = histDzien(v.t);
+  return histCzas(v.t) + (dzien ? " · " + dzien : "");
+}
+
+async function openHistory(ce){
+  /* Wołane z paska edycji (ce = pole treści), ale ma działać i bez niego. */
+  let n = null;
+  if(ce){
+    const karta = ce.closest(".ncard");
+    if(karta) n = notes.find(x=>x.g === karta.dataset.g);
+  }
+  if(!n && typeof fsGuid !== "undefined" && fsGuid) n = notes.find(x=>x.g === fsGuid);
+  if(!n){ toast("Nie wiadomo, której notatki dotyczy historia"); return; }
+  _histNota = n;
+  _histLista = await wersjeNotatki(n.g);
+  _histKarta = "lista";
+  rysujHistorie();
+  openModal("modalHist");
+}
+
+function rysujHistorie(){
+  const naglowek = $("modalHist").querySelector(".nn-head h3");
+  if(naglowek) naglowek.textContent = "Historia wersji";
+  const zak = $("histZakladki");
+  if(zak){
+    zak.innerHTML =
+      '<button type="button" class="st-zak' + (_histKarta === "lista" ? " on" : "") + '" '
+      + 'role="tab" data-hk="lista">Wersje (' + _histLista.length + ')</button>'
+      + '<button type="button" class="st-zak' + (_histKarta === "porownanie" ? " on" : "") + '" '
+      + 'role="tab" data-hk="porownanie">Porównaj</button>';
+  }
+  const lista = $("histLista"), por = $("histPorownanie");
+  lista.style.display = _histKarta === "lista" ? "block" : "none";
+  por.style.display   = _histKarta === "porownanie" ? "block" : "none";
+  if(_histKarta === "lista") rysujListeWersji();
+  else rysujPorownanie();
+}
+
+function rysujListeWersji(){
+  const el = $("histLista");
+  if(!_histLista.length){
+    setHtml(el,
+      '<div class="histPusto">Nie ma jeszcze zapisanych wcześniejszych wersji tej notatki.'
+      + '<br><br>Wersja odkłada się przy zakończeniu edycji — nie częściej niż raz na '
+      + WERSJE_ODSTEP_MIN + ' minut, żeby jedno posiedzenie nie zajęło całej historii.</div>');
+    return;
+  }
+  const teraz = histTeraz();
+  let html = '<div class="histWiersz histTeraz">'
+    + '<div class="histKiedy"><b>Teraz</b><span>' + histSlowa(teraz.h) + ' słów</span></div>'
+    + '<div class="histAkcje"><span class="histInfo">bieżąca treść notatki</span></div></div>';
+  html += _histLista.map((v, i)=>{
+    const dzien = histDzien(v.t);
+    return '<div class="histWiersz" data-wers="' + i + '">'
+      + '<div class="histKiedy"><b>' + esc(histCzas(v.t)) + '</b>'
+      + '<span>' + histSlowa(v.h) + ' słów' + (dzien ? ' · ' + dzien : '')
+      + (v.img ? ' · <span class="histZdj">było zdjęcie</span>' : '') + '</span></div>'
+      + '<div class="histAkcje">'
+      + '<button type="button" class="btn" data-hpor="' + i + '">Porównaj</button>'
+      + '<button type="button" class="btn" data-hprzyw="' + i + '">Przywróć</button>'
+      + '</div></div>';
+  }).join("");
+  setHtml(el, html);
+}
+
+function rysujPorownanie(){
+  const el = $("histPorownanie");
+  const wszystkie = histWszystkieDoWyboru();
+  if(wszystkie.length < 2){
+    setHtml(el, '<div class="histPusto">Do porównania potrzebne są dwie wersje. '
+      + 'Na razie jest tylko bieżąca treść notatki.</div>');
+    return;
+  }
+  /* Domyślnie: najnowsza zapisana wersja obok bieżącej treści — to porównanie,
+     po które sięga się najczęściej („co zmieniłem ostatnio?"). */
+  if(_histWybor.a == null || _histWybor.a >= wszystkie.length) _histWybor.a = 1;
+  if(_histWybor.b == null || _histWybor.b >= wszystkie.length) _histWybor.b = 0;
+  const opcje = (wybrany)=>wszystkie.map((v, i)=>
+    '<option value="' + i + '"' + (i === wybrany ? " selected" : "") + '>'
+    + esc(histPodpis(v, i)) + '</option>').join("");
+  const a = wszystkie[_histWybor.a], b = wszystkie[_histWybor.b];
+  const odcinki = roznicaSlow(naSlowa(htmlToPlain(a.h)), naSlowa(htmlToPlain(b.h)));
+  const p = roznicaPodsumowanie(odcinki);
+  setHtml(el,
+    '<div class="histWybor">'
+    + '<label>Starsza<select id="histA">' + opcje(_histWybor.a) + '</select></label>'
+    + '<label>Nowsza<select id="histB">' + opcje(_histWybor.b) + '</select></label>'
+    + '</div>'
+    + '<div class="histBilans">'
+    /* Pokazujemy tylko to, co się naprawdę zdarzyło. „−0 słów" obok „+12 słów"
+       to zdanie o niczym, a przy każdym porównaniu jedna z tych liczb bywa zerem. */
+    + (p.dodane   ? '<span class="histPlus">+' + p.dodane + ' ' + odmianaSlow(p.dodane) + '</span>' : '')
+    + (p.usuniete ? '<span class="histMinus">−' + p.usuniete + ' ' + odmianaSlow(p.usuniete) + '</span>' : '')
+    + (p.dodane === 0 && p.usuniete === 0
+        ? '<span class="histInfo">te wersje mają tę samą treść</span>' : '')
+    + '</div>'
+    + '<div class="histDiff">' + roznicaHtml(odcinki) + '</div>'
+    + '<div class="histLegenda"><ins>tak wygląda tekst dodany</ins> · '
+    + '<del>tak wygląda usunięty</del> · porównanie dotyczy samego tekstu, '
+    + 'nie pogrubień i kolorów</div>');
+  const sa = $("histA"), sb = $("histB");
+  if(sa) sa.onchange = ()=>{ _histWybor.a = +sa.value; rysujPorownanie(); };
+  if(sb) sb.onchange = ()=>{ _histWybor.b = +sb.value; rysujPorownanie(); };
+}
+
+/* ——— OBSŁUGA OKNA ——— */
+if($("modalHist")){
+  $("modalHist").addEventListener("click", async ev=>{
+    const zak = ev.target.closest("[data-hk]");
+    if(zak){ _histKarta = zak.dataset.hk; rysujHistorie(); return; }
+
+    const por = ev.target.closest("[data-hpor]");
+    if(por){
+      /* „Porównaj" przy wersji ustawia ją jako starszą, a bieżącą treść jako
+         nowszą — czyli odpowiada na pytanie „co się od tego czasu zmieniło". */
+      _histWybor.a = +por.dataset.hpor + 1;   // +1, bo na liście wyboru pierwsza jest bieżąca
+      _histWybor.b = 0;
+      _histKarta = "porownanie";
+      rysujHistorie();
+      return;
+    }
+    const przyw = ev.target.closest("[data-hprzyw]");
+    if(przyw){
+      const v = _histLista[+przyw.dataset.hprzyw];
+      const n = _histNota;
+      if(!v || !n) return;
+      const ostrzZdj = v.img
+        ? "<br><br>⚠️ Ta wersja zawierała <b>zdjęcia</b> — historia ich nie przechowuje "
+          + "(zajmowałyby zbyt dużo miejsca), więc po przywróceniu trzeba je wstawić ponownie."
+        : "";
+      const zgoda = await askConfirm("Przywrócić tę wersję?",
+        "Obecna treść notatki zostanie zastąpiona wersją z " + histCzas(v.t)
+        + ".<br><br>Bieżącą treść zapiszemy w historii, więc będzie można wrócić." + ostrzZdj,
+        {okLabel:"Przywróć", danger:!!v.img});
+      if(!zgoda) return;
+      /* Zapis bieżącej treści MUSI pójść przed podmianą i musi się dokończyć —
+         inaczej próg czasowy mógłby go pominąć i droga powrotna by nie istniała. */
+      await wersjeZapiszTeraz(n);
+      pushUndo({type:"note", label:"przywrócenie wersji", before:cloneNote(n)});
+      n.h = v.h; n.c = htmlToPlain(v.h); markDirty(n); renderAll();
+      _histLista = await wersjeNotatki(n.g);
+      rysujHistorie();
+      toast("Przywrócono wersję z " + histCzas(v.t));
+      return;
+    }
+  });
+}
+
+/**
+ * Zapis wersji z pominięciem progu czasowego i z czekaniem na koniec.
+ * Używany tam, gdzie treść zaraz zniknie (przywracanie), więc „za wcześnie"
+ * nie jest powodem do pominięcia.
+ */
+async function wersjeZapiszTeraz(n){
+  if(!n || !n.h || !idb) return;
+  const light = wersjaBezZdjec(n.h);
+  if(light.length > WERSJA_MAX_ZNAKOW) return;
+  try{
+    const lista = await wersjeNotatki(n.g);
+    if(lista.length && lista[0].h === light) return;
+    const nowa = {t:new Date().toISOString(), h:light, ttl:n.t || "", img:/<img/i.test(n.h)};
+    await idbPut("wersje", {g:n.g, lista:wersjeProzchudz([nowa, ...lista])});
+  }catch(e){}
+}
+
+/* Migracja startuje po wczytaniu bazy — nie blokuje pierwszego rysowania. */
+if(typeof window !== "undefined"){
+  setTimeout(()=>{ if(idb) wersjePrzenies(); }, 4000);
+}
+
+</script>
+<script>
+/* ==========================================================================
+   JW Study — centrum.js
+   CENTRUM STUDIUM — CO MOŻNA ZROBIĆ DZISIAJ
+
+   PO CO TO JEST
+
+   Po uruchomieniu aplikacja pokazywała listę wszystkich notatek posortowaną po
+   dacie zmiany. Przy kilkunastu tysiącach notatek taka lista nie odpowiada na
+   żadne pytanie, które ma się w głowie po włączeniu: „na czym skończyłem",
+   „co miałem dziś powtórzyć", „co jest jeszcze niedokończone". Odpowiedzi
+   siedziały w danych od dawna — po prostu nikt ich nie zadawał.
+
+   NIC NOWEGO NIE JEST TU ZLICZANE ANI ZAPISYWANE
+
+   Wszystkie sekcje liczą się z pól, które już są w notatkach:
+
+     n.la      data ostatniego otwarcia   → „Ostatnio studiowane", wersety, publikacje
+     n.cr      data dodania               → „Ostatnio dodane"
+     n.pwt.d   dzień powrotu do notatki   → „Na dziś"
+     n.h       treść                      → „Niedokończone" (nieodhaczone zadania)
+     ReadPos   zapamiętane przewinięcie   → „Kontynuuj ostatnie studium"
+     Recent    ostatnie wyszukiwania      → „Ostatnie wyszukiwania"
+
+   Dzięki temu Centrum działa od pierwszego uruchomienia na istniejących
+   notatkach, a nie „od teraz zaczyna zbierać dane".
+
+   KIEDY JEST WIDOCZNE
+
+   Kolumna notatek pokazuje ALBO Centrum, ALBO listę. Centrum wychodzi na
+   wierzch, gdy nic nie jest wybrane: bez etykiety, bez księgi, bez publikacji
+   i bez szukania. Pierwsze kliknięcie czegokolwiek przełącza na listę, bo od
+   tego momentu użytkownik wie, czego chce — a Centrum jest dla chwili, w której
+   jeszcze nie wie.
+
+   Jest też przełącznik ręczny: przycisk w pasku górnym (skrót H) i „Pokaż
+   wszystkie notatki" w samym Centrum. Wybór ręczny jest zapamiętywany, więc kto
+   woli zaczynać od listy, ustawia to raz. Całość da się wyłączyć w Ustawieniach.
+   ========================================================================== */
+"use strict";
+
+/* Ile pozycji w sekcji. Sześć mieści się bez przewijania na telefonie i nadal
+   jest wyborem, a nie wyrywkiem. */
+const CENTR_ILE = 6;
+/* Okno „ostatnio": trzy miesiące. Krócej — sekcje bywają puste po urlopie;
+   dłużej — przestają mówić „ostatnio". */
+const CENTR_DNI = 90;
+const CENTR_KLUCZ = KP + "Centrum";        // "auto" albo "lista"
+const CENTR_WLACZONE = KP + "CentrumWl";   // "1" albo "0"
+
+let centrTryb = lsGet(CENTR_KLUCZ, "auto") === "lista" ? "lista" : "auto";
+let centrWlaczone = lsGet(CENTR_WLACZONE, "1") !== "0";
+
+/* ——— CZY POKAZYWAĆ ——— */
+
+/** Czy cokolwiek jest wybrane. Gdy tak — Centrum ustępuje liście. */
+function centrCosWybrane(){
+  const q = (typeof query === "string" ? query : "").trim();
+  return !!q
+    || (filt && String(filt.tag) !== "all")
+    || (filt && String(filt.book) !== "all")
+    || (filt && filt.ch != null)
+    || (typeof sortMode !== "undefined" && sortMode === "recent");
+}
+function centrumWidoczne(){
+  return centrWlaczone && centrTryb === "auto" && !centrCosWybrane();
+}
+
+/* ——— ZBIERANIE DANYCH ———
+   Każda funkcja oddaje gotową listę pozycji. Notatki w koszu wypadają wszędzie. */
+
+function centrZywe(){
+  return notes.filter(n=>!n.del);
+}
+function centrPoDacie(pole){
+  return centrZywe()
+    .filter(n=>n[pole])
+    .sort((a, b)=>String(b[pole]).localeCompare(String(a[pole])));
+}
+/** Ile dni temu — do podpisów w rodzaju „3 dni temu". */
+function centrKiedy(iso){
+  if(!iso) return "";
+  const d = new Date(iso); if(isNaN(d)) return "";
+  const doba = (x)=>new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const ile = Math.round((doba(new Date()) - doba(d)) / 86400000);
+  if(ile <= 0) return "dziś";
+  if(ile === 1) return "wczoraj";
+  if(ile < 7) return ile + " dni temu";
+  if(ile < 30) return Math.round(ile / 7) + " tyg. temu";
+  if(ile < 365) return Math.round(ile / 30) + " mies. temu";
+  return d.getFullYear() + " r.";
+}
+
+/** NA DZIŚ: notatki, dla których nadszedł dzień powrotu (albo już minął). */
+function centrNaDzis(){
+  const dzis = (typeof dzisRRMMDD === "function") ? dzisRRMMDD()
+             : new Date().toISOString().slice(0, 10);
+  return centrZywe()
+    .filter(n=>n.pwt && n.pwt.d && String(n.pwt.d) <= dzis)
+    .sort((a, b)=>String(a.pwt.d).localeCompare(String(b.pwt.d)));
+}
+
+/**
+ * KONTYNUUJ: notatka, w której zostało zapamiętane miejsce czytania, najpóźniej
+ * otwarta. Zapamiętane przewinięcie jest tu mocniejszym sygnałem niż samo
+ * otwarcie: znaczy, że notatka była CZYTANA, a nie tylko zerknięta.
+ * Gdy żadna nie ma zapisanego miejsca — bierzemy po prostu ostatnio otwartą.
+ */
+function centrKontynuuj(){
+  const pozycje = (typeof readPosAll === "function") ? readPosAll() : {};
+  const zPozycja = centrPoDacie("la").filter(n=>pozycje[n.g]);
+  if(zPozycja.length) return {n:zPozycja[0], wMiejscu:true};
+  const ost = centrPoDacie("la")[0];
+  return ost ? {n:ost, wMiejscu:false} : null;
+}
+
+function centrOstatnioStudiowane(pomin){
+  return centrPoDacie("la").filter(n=>n.g !== pomin).slice(0, CENTR_ILE);
+}
+function centrOstatnioDodane(){
+  return centrPoDacie("cr").slice(0, CENTR_ILE);
+}
+
+/**
+ * NIEDOKOŃCZONE: notatki z listą zadań, w której coś jest jeszcze nieodhaczone.
+ *
+ * To jedyny sygnał, który postawił sam użytkownik — wpisując zadanie. Krótka
+ * treść albo puste sekcje szablonu też wyglądają na „niedokończone", ale bywają
+ * po prostu krótką notatką; zgadywanie zamieniłoby tę sekcję w listę
+ * przypadkowych notatek.
+ *
+ * Sito na wejściu jest tekstowe (`indexOf`), bo przy kilkunastu tysiącach
+ * notatek nie ma po co rozkładać każdej z nich na drzewo. Rozkładamy tylko te,
+ * które w ogóle mają listę zadań — a takich jest zwykle kilkadziesiąt.
+ */
+function centrNiedokonczone(){
+  const kandydaci = centrZywe().filter(n=>n.h && n.h.indexOf("tasklist") >= 0);
+  const wynik = [];
+  for(const n of kandydaci){
+    let zostalo = 0, razem = 0;
+    try{
+      const doc = (typeof parsujBezwladnie === "function")
+        ? parsujBezwladnie(n.h) : null;
+      if(!doc) continue;
+      doc.querySelectorAll("ul.tasklist li").forEach(li=>{
+        razem++;
+        if(!li.classList.contains("done")) zostalo++;
+      });
+    }catch(e){ continue; }
+    if(zostalo) wynik.push({n, zostalo, razem});
+  }
+  /* Najpierw te, przy których zostało najmniej — są najbliżej domknięcia. */
+  wynik.sort((a, b)=>a.zostalo - b.zostalo
+    || String(b.n.la || b.n.mo || "").localeCompare(String(a.n.la || a.n.mo || "")));
+  return wynik.slice(0, CENTR_ILE);
+}
+
+/** OSTATNIO UŻYWANE WERSETY: różne odnośniki z ostatnio otwieranych notatek. */
+function centrWersety(){
+  const widziane = new Set();
+  const wynik = [];
+  for(const n of centrPoDacie("la")){
+    if(!n.b || !n.ch) continue;
+    const klucz = n.b + ":" + n.ch;
+    if(widziane.has(klucz)) continue;
+    widziane.add(klucz);
+    const ile = centrZywe().filter(x=>x.b === n.b && x.ch === n.ch).length;
+    wynik.push({b:n.b, ch:n.ch, etykieta:BOOKS[n.b] + " " + n.ch, ile, kiedy:n.la});
+    if(wynik.length >= CENTR_ILE) break;
+  }
+  return wynik;
+}
+
+/**
+ * ULUBIONE PUBLIKACJE: te, przy których naprawdę siedzisz — licząc notatki
+ * otwierane w ostatnich trzech miesiącach, a nie wszystkie od początku.
+ * Bez tego okna czasowego lista byłaby zawsze ta sama: publikacja z największą
+ * liczbą notatek nie zmienia się przez lata, więc nie mówi nic o dzisiaj.
+ */
+function centrPublikacje(){
+  const prog = Date.now() - CENTR_DNI * 86400000;
+  const licznik = {};
+  centrZywe().forEach(n=>{
+    if(n.b || !n.ks) return;                       // wersety mają swoją sekcję
+    const kiedy = Date.parse(n.la || n.mo || "");
+    if(!isFinite(kiedy) || kiedy < prog) return;
+    const k = n.ks + "|" + (n.itn || 0);
+    if(!licznik[k]) licznik[k] = {klucz:k, ile:0, kiedy:0};
+    licznik[k].ile++;
+    if(kiedy > licznik[k].kiedy) licznik[k].kiedy = kiedy;
+  });
+  return Object.values(licznik)
+    .sort((a, b)=>b.ile - a.ile || b.kiedy - a.kiedy)
+    .slice(0, CENTR_ILE)
+    .map(x=>({
+      klucz:x.klucz, ile:x.ile,
+      etykieta:(typeof pubKeyLabel === "function") ? pubKeyLabel(x.klucz) : x.klucz
+    }));
+}
+
+function centrSzukania(){
+  return (typeof recentSearches === "function" ? recentSearches() : []).slice(0, CENTR_ILE);
+}
+
+/* ——— RYSOWANIE ——— */
+
+function centrTytulNotatki(n){
+  const t = (n.t || "").trim();
+  if(t) return t;
+  const c = (n.c || "").replace(/\s+/g, " ").trim();
+  return c ? c.slice(0, 60) + (c.length > 60 ? "…" : "") : "(bez tytułu)";
+}
+/** Wiersz z notatką — wszędzie ten sam, więc wszędzie klika się tak samo. */
+function centrWierszNotatki(n, opis){
+  return '<button type="button" class="cenPoz" data-cnota="' + esc(n.g) + '">'
+    + '<span class="cenNazwa">' + esc(centrTytulNotatki(n)) + '</span>'
+    + '<span class="cenOpis">' + esc(opis || "") + '</span>'
+    + '</button>';
+}
+function centrSekcja(id, tytul, ikona, wiersze, dopisek){
+  if(!wiersze.length) return "";
+  return '<section class="cenKarta" data-sek="' + id + '">'
+    + '<h3>' + ikona + '<span>' + esc(tytul) + '</span>'
+    + (dopisek ? '<span class="cenLicz">' + esc(dopisek) + '</span>' : '')
+    + '</h3>'
+    + '<div class="cenLista">' + wiersze.join("") + '</div>'
+    + '</section>';
+}
+
+/* Ikony rysowane na miejscu — Centrum jest jedynym miejscem, gdzie występują. */
+const CEN_IKO = {
+  dzis:  '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M8 3v3M16 3v3M3.5 10h17"/><path d="M9 14.5l2 2 4-4"/></svg>',
+  czyt:  '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v18H6.5A2.5 2.5 0 0 1 4 18.5z"/><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H13v18h4.5A2.5 2.5 0 0 0 20 18.5z"/></svg>',
+  nowe:  '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
+  zadan: '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg>',
+  wers:  '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4.5h9a3 3 0 0 1 3 3V20a2.5 2.5 0 0 0-2.5-2.5H4z"/><path d="M20 7v13"/></svg>',
+  pub:   '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5h9.5A2.5 2.5 0 0 1 18 6v14.5H8.5A2.5 2.5 0 0 1 6 18z"/><path d="M6 16.5h12"/></svg>',
+  szuk:  '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>'
+};
+
+function rysujCentrum(){
+  const el = $("centrum"); if(!el) return;
+  const kont = centrKontynuuj();
+  const dzis = centrNaDzis();
+  const niedok = centrNiedokonczone();
+
+  let html = '<div class="cenNagl">'
+    + '<div class="cenTyt"><b>Centrum studium</b>'
+    + '<span>' + esc(centrPowitanie()) + '</span></div>'
+    + '<button type="button" class="btn" data-cakcja="lista">Pokaż wszystkie notatki</button>'
+    + '</div>';
+
+  /* KONTYNUUJ — na samej górze, bo to jedna rzecz, którą robi się najczęściej. */
+  if(kont){
+    html += '<button type="button" class="cenDalej" data-cnota="' + esc(kont.n.g) + '" data-cwmiejscu="'
+      + (kont.wMiejscu ? "1" : "") + '">'
+      + '<span class="cenDalejIko">' + CEN_IKO.czyt + '</span>'
+      + '<span class="cenDalejTxt">'
+      + '<b>Kontynuuj ostatnie studium</b>'
+      + '<span>' + esc(centrTytulNotatki(kont.n))
+      + (kont.wMiejscu ? " · wrócisz tam, gdzie skończyłeś" : "")
+      + ' · ' + esc(centrKiedy(kont.n.la)) + '</span>'
+      + '</span>'
+      + '<span class="cenDalejStrz">›</span>'
+      + '</button>';
+  }
+
+  html += '<div class="cenSiatka">';
+
+  html += centrSekcja("dzis", "Na dziś", CEN_IKO.dzis,
+    dzis.map(n=>{
+      /* Data w postaci „2026-08-16" nic nie mówi bez liczenia w głowie. Przy
+         zaległej powtórce ważne jest JAK DAWNO, nie kiedy dokładnie. */
+      const dzien = (typeof dzisRRMMDD === "function") ? dzisRRMMDD() : "";
+      if(String(n.pwt.d) >= dzien) return centrWierszNotatki(n, "na dziś");
+      const ile = Math.round((Date.parse(dzien) - Date.parse(n.pwt.d)) / 86400000);
+      return centrWierszNotatki(n, isFinite(ile) && ile > 0
+        ? "zaległe " + ile + (ile === 1 ? " dzień" : ile < 5 ? " dni" : " dni")
+        : "zaległe");
+    }),
+    dzis.length > CENTR_ILE ? dzis.length + " razem" : "");
+
+  html += centrSekcja("niedok", "Niedokończone", CEN_IKO.zadan,
+    niedok.map(x=>centrWierszNotatki(x.n,
+      "zostało " + x.zostalo + " z " + x.razem + (x.razem === 1 ? " zadania" : " zadań"))));
+
+  html += centrSekcja("studiowane", "Ostatnio studiowane", CEN_IKO.czyt,
+    centrOstatnioStudiowane(kont ? kont.n.g : null).map(n=>centrWierszNotatki(n, centrKiedy(n.la))));
+
+  html += centrSekcja("dodane", "Ostatnio dodane", CEN_IKO.nowe,
+    centrOstatnioDodane().map(n=>centrWierszNotatki(n, centrKiedy(n.cr))));
+
+  html += centrSekcja("wersety", "Ostatnio używane wersety", CEN_IKO.wers,
+    centrWersety().map(w=>
+      '<button type="button" class="cenPoz" data-cwers="' + w.b + ":" + w.ch + '">'
+      + '<span class="cenNazwa">' + esc(w.etykieta) + '</span>'
+      + '<span class="cenOpis">' + w.ile + (w.ile === 1 ? " notatka" : " notatek") + '</span>'
+      + '</button>'));
+
+  html += centrSekcja("publikacje", "Ulubione publikacje", CEN_IKO.pub,
+    centrPublikacje().map(pu=>
+      '<button type="button" class="cenPoz" data-cpub="' + esc(pu.klucz) + '">'
+      + '<span class="cenNazwa">' + esc(pu.etykieta) + '</span>'
+      + '<span class="cenOpis">' + pu.ile + (pu.ile === 1 ? " notatka" : " notatek") + '</span>'
+      + '</button>'),
+    "z ostatnich " + CENTR_DNI + " dni");
+
+  html += centrSekcja("szukania", "Ostatnie wyszukiwania", CEN_IKO.szuk,
+    centrSzukania().map(q=>
+      '<button type="button" class="cenPoz" data-cszuk="' + esc(q) + '">'
+      + '<span class="cenNazwa">' + esc(q) + '</span>'
+      + '<span class="cenOpis">szukaj znowu</span>'
+      + '</button>'));
+
+  html += '</div>';
+
+  /* Puste Centrum musi tłumaczyć, a nie tylko być puste. */
+  if(!kont && !dzis.length && !niedok.length && !centrOstatnioDodane().length){
+    html += '<div class="cenPusto">'
+      + '<b>Jeszcze nie ma z czego zbudować podsumowania.</b>'
+      + 'Centrum pokazuje to, co już zrobiłeś: ostatnio otwierane notatki, '
+      + 'zaplanowane powtórki, niedokończone listy zadań, używane wersety. '
+      + 'Dodaj pierwszą notatkę albo wczytaj kopię z JW Library — wypełni się samo.'
+      + '</div>';
+  }
+  setHtml(el, html);
+}
+
+/** Nagłówek mówi, jaki dziś dzień — Centrum ma być „na dziś", nie „ogólnie". */
+function centrPowitanie(){
+  const dni = ["niedziela", "poniedziałek", "wtorek", "środa", "czwartek", "piątek", "sobota"];
+  const mies = ["stycznia", "lutego", "marca", "kwietnia", "maja", "czerwca", "lipca",
+                "sierpnia", "września", "października", "listopada", "grudnia"];
+  const d = new Date();
+  return dni[d.getDay()] + ", " + d.getDate() + " " + mies[d.getMonth()];
+}
+
+/**
+ * Przełącza widok kolumny notatek. Wołane z renderAll() po każdej zmianie
+ * filtrów — dzięki temu Centrum i lista nie mogą być widoczne naraz ani obie
+ * schowane, niezależnie od tego, co użytkownik nacisnął.
+ */
+function centrumOdswiez(){
+  const c = $("centrum"), l = $("noteList");
+  if(!c || !l) return;
+  const pokaz = centrumWidoczne();
+  if(pokaz) rysujCentrum();
+  c.hidden = !pokaz;
+  l.style.display = pokaz ? "none" : "";
+  /* Pasek widoku, filtry i licznik dotyczą LISTY — przy Centrum nie mają czego
+     opisywać i tylko dublowałyby jego nagłówek. */
+  ["viewBar", "quickFilters", "counts"].forEach(id=>{
+    const e = $(id); if(e) e.style.display = pokaz ? "none" : "";
+  });
+  const btn = $("btnCentrum");
+  if(btn){
+    btn.classList.toggle("on", pokaz);
+    btn.setAttribute("aria-pressed", pokaz ? "true" : "false");
+  }
+}
+
+function centrumPokaz(){
+  centrTryb = "auto";
+  lsSet(CENTR_KLUCZ, "auto");
+  /* Centrum pokazuje się tylko przy czystym widoku, więc przycisk w pasku
+     MUSI po drodze wyczyścić filtry — inaczej naciśnięcie go przy wybranej
+     etykiecie nie robiłoby nic i wyglądałoby na zepsute. */
+  if(centrCosWybrane()){
+    filt.tag = "all"; filt.book = "all"; filt.ch = null;
+    if(typeof expandedBook !== "undefined") expandedBook = null;
+    if(typeof sortMode !== "undefined" && sortMode === "recent") sortMode = "mod";
+    const inp = $("search");
+    if(inp && inp.value){ inp.value = ""; parseQuery(""); }
+    if(typeof persistFilt === "function") persistFilt();
+  }
+  renderAll();
+  const c = $("centrum"); if(c) c.scrollTop = 0;
+}
+function centrumSchowaj(){
+  centrTryb = "lista";
+  lsSet(CENTR_KLUCZ, "lista");
+  centrumOdswiez();
+}
+/** Włączenie i wyłączenie całości — z Ustawień. */
+function centrumUstawWlaczone(on){
+  centrWlaczone = !!on;
+  lsSet(CENTR_WLACZONE, on ? "1" : "0");
+  const btn = $("btnCentrum"); if(btn) btn.hidden = !on;
+  centrumOdswiez();
+}
+
+/* ——— KLIKNIĘCIA ——— */
+if($("centrum")){
+  $("centrum").addEventListener("click", ev=>{
+    const akcja = ev.target.closest("[data-cakcja]");
+    if(akcja){ if(akcja.dataset.cakcja === "lista") centrumSchowaj(); return; }
+
+    const nota = ev.target.closest("[data-cnota]");
+    if(nota){
+      const n = notes.find(x=>x.g === nota.dataset.cnota && !x.del);
+      if(!n){ toast("Tej notatki już nie ma"); rysujCentrum(); return; }
+      if(typeof touchAccess === "function") touchAccess(n);
+      openFs(n);
+      return;
+    }
+    const wers = ev.target.closest("[data-cwers]");
+    if(wers){
+      const [b, ch] = wers.dataset.cwers.split(":").map(Number);
+      filt.tag = "all"; filt.book = b; filt.ch = ch;
+      if(typeof expandedBook !== "undefined") expandedBook = b;
+      centrTryb = "auto";            // wybór filtra sam odsłoni listę
+      if(typeof persistFilt === "function") persistFilt();
+      renderAll();
+      if(innerWidth <= 900 && typeof mobileShow === "function") mobileShow("colNotes");
+      return;
+    }
+    const pub = ev.target.closest("[data-cpub]");
+    if(pub){
+      filt.tag = "all"; filt.book = "pub:" + pub.dataset.cpub; filt.ch = null;
+      if(typeof persistFilt === "function") persistFilt();
+      renderAll();
+      if(innerWidth <= 900 && typeof mobileShow === "function") mobileShow("colNotes");
+      return;
+    }
+    const szuk = ev.target.closest("[data-cszuk]");
+    if(szuk){
+      const inp = $("search");
+      if(inp){ inp.value = szuk.dataset.cszuk; parseQuery(inp.value); }
+      renderAll();
+      if(innerWidth <= 900 && typeof mobileShow === "function") mobileShow("colNotes");
+      return;
+    }
+  });
+}
+
+/* Przycisk w pasku górnym. */
+if($("btnCentrum")){
+  $("btnCentrum").hidden = !centrWlaczone;
+  $("btnCentrum").onclick = ()=>{
+    if(centrumWidoczne()) centrumSchowaj();
+    else centrumPokaz();
+  };
+}
+
+/* „Kontynuuj" ma wracać w to samo miejsce tekstu. Czytnik robi to sam przy
+   otwieraniu (restoreReadPos w renderFs), więc tu nie ma nic do dopisania —
+   wystarczyło nie zepsuć drogi: openFs, nie własne rysowanie. */
+
+/* Pierwsze rysowanie po wczytaniu notatek. Boot woła renderAll(), a w nim
+   siedzi centrumOdswiez() — ta linia jest dla sytuacji, w której Centrum
+   dopisano do gotowej strony (np. w teście). */
+setTimeout(centrumOdswiez, 0);
+
+</script>
+<script>
+/* ==========================================================================
    JW Study — shortcuts.js
    Skróty klawiszowe
    ========================================================================== */
@@ -16796,6 +18194,13 @@ document.addEventListener("keydown", e=>{
   if(e.key==="/"){ e.preventDefault(); $("search").focus(); return; }
   if(e.key==="?"){ e.preventDefault(); openSettings(); return; }
   if(e.key===","){ e.preventDefault(); openSettings(); return; }
+  /* H jak „home" — przełącza między Centrum studium i listą notatek. Litera
+     wolna: N to nowa notatka, E edycja, F ulubione, P przypięcie. */
+  if(k==="h" && typeof centrumWidoczne==="function"){
+    e.preventDefault();
+    if(centrumWidoczne()) centrumSchowaj(); else centrumPokaz();
+    return;
+  }
   if(k==="n"){ e.preventDefault(); $("btnNew").click(); return; }
   if(k==="f"){ const n=currentNote(); if(n){ e.preventDefault(); toggleFav(n); } return; }
   if(k==="p"){ const n=currentNote(); if(n){ e.preventDefault(); togglePin(n); } return; }
