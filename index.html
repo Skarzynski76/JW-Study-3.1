@@ -4049,7 +4049,10 @@ html[data-theme="dark"] #noteList.v-tablica .ncard.wydUbrana .wydDzialanie:hover
 #pubList .item .nm{
   white-space:normal;
   overflow-wrap:break-word;
-  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3;
+  /* Dwa wiersze, nie trzy (zmiana z 2.59). Trzeci wiersz to zwykle resztka
+     jednego wyrazu, a wysokość wiersza rośnie o połowę — przy kilkudziesięciu
+     etykietach to kilkaset pikseli przewijania na nic. */
+  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2;
   overflow:hidden;
 }
 /* MIĘDZY WYRAZAMI, NIE W ŚRODKU WYRAZU.
@@ -5036,6 +5039,131 @@ html[data-theme="sepia"] .cenOpis{ opacity:.8; }
   .cenOpis{ white-space:normal; }
 }
 
+
+/* ============================================================
+   WĄSKIE KOLUMNY: NAZWY MAJĄ SIĘ MIEŚCIĆ (v2.59)
+
+   Zmierzone pole zostające NAZWIE w kolumnie Publikacje, przed poprawką:
+
+       kolumna 260 px → nazwa 148 px
+       kolumna 190 px → nazwa  78 px
+       kolumna 165 px → nazwa  53 px   („Strażnica" potrzebuje 55 px)
+       kolumna 140 px → nazwa  28 px
+       kolumna 125 px → nazwa  13 px
+
+   Przy 165 px na meble wiersza szło 112 px, na treść 53 — i wtedy nazwy
+   łamały się w środku wyrazu: „Inn e", „Ksią żki", „Stra żnic a", „Prze budź
+   cie…". Trzy wiersze na jedno słowo, a lista rosła bez powodu.
+
+   Kolejność ustępowania jest tu ważna i celowa: najpierw znikają MEBLE, potem
+   maleje pismo, a skracanie wielokropkiem jest ostatnie. Zmniejszanie pisma na
+   starcie dałoby tylko drobniejszy tekst łamany w tych samych miejscach.
+
+   Poziom gęstości nadaje kolumnie 21-ui-helpers.js (obserwator rozmiaru), więc
+   działa jednakowo po przeciągnięciu uchwytu, po zmianie rozmiaru okna
+   i po wczytaniu zapamiętanych szerokości.
+   ============================================================ */
+
+/* ——— NAZWA PRZED MEBLAMI, NA KAŻDEJ SZEROKOŚCI ———
+   Wspólna podstawa: nazwa rośnie i kurczy się, meble mają stały rozmiar
+   i nie wolno im zabierać nazwie miejsca przez rozpychanie się. */
+#bookList .item .nm, #tagList .item .nm, #pubList .item .nm{
+  flex:1 1 auto; min-width:0;
+}
+#pubList .item .cnt, #tagList .item .cnt, #bookList .item .cnt{ flex:0 0 auto; }
+#pubList .item .arr{ flex:0 0 auto; }
+
+/* ——— ŚREDNIA (175–214 px): meble na dietę ——— */
+.col[data-gestosc="srednia"] .item{ gap:5px; padding-left:9px; padding-right:9px; }
+.col[data-gestosc="srednia"] #bookList .item .nm,
+.col[data-gestosc="srednia"] #tagList .item .nm,
+.col[data-gestosc="srednia"] #pubList .item .nm{
+  font-size:calc(13px * var(--uiw, 1));
+}
+/* Etykiety już przy średniej gęstości przechodzą na jeden wiersz z wielokropkiem,
+   a Biblia i Publikacje jeszcze nie. Nie jest to niekonsekwencja: nazwy etykiet
+   pisze użytkownik i bywają długie („Wnikliwe poznawanie Pism" — wyraz
+   „poznawanie" ma sam 68 px), a nazwy ksiąg i kategorii publikacji są nasze
+   i krótkie. Zmierzone: przy 175 px pole nazwy w Etykietach ma 59 px, więc
+   przy zawijaniu MUSI złamać wyraz w środku; w Publikacjach ma 97 px i nie musi. */
+.col[data-gestosc="srednia"] #tagList .item .nm{
+  display:block;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  -webkit-line-clamp:unset;
+}
+.col[data-gestosc="srednia"] .item .cnt{ font-size:calc(10.5px * var(--uiw, 1)); }
+/* Uchwyt przenoszenia w Etykietach i Publikacjach jest tylko podpowiedzią —
+   złapać można gdziekolwiek w wierszu (34-chwytanie.js wymaga uchwytu WYŁĄCZNIE
+   dla notatek). Przy ciasnocie oddaje więc swoje miejsce nazwie. */
+#tagList .col[data-gestosc="srednia"] .item .dragOrd,
+.col[data-gestosc="srednia"] #tagList .item .dragOrd,
+.col[data-gestosc="srednia"] #pubList .pubDrag{
+  min-width:12px; width:12px; margin-left:-3px;
+}
+.col[data-gestosc="srednia"] #pubList .pubDrag .ic,
+.col[data-gestosc="srednia"] #tagList .item .dragOrd .ic{ width:12px; height:12px; }
+
+/* ——— WĄSKA (poniżej 175 px): meble wychodzą, nazwa w jednym wierszu ——— */
+.col[data-gestosc="waska"] .item{
+  gap:4px; padding-left:8px; padding-right:8px;
+}
+/* Selektor musi wymieniać listy po identyfikatorze, bo nadpisujemy tu decyzję
+   z wydania 2.51: `#tagList .item .nm, #pubList .item .nm{ white-space:normal }`
+   — wtedy chodziło o to, żeby nazwa etykiety NIE była ucinana, bo ucięta wymaga
+   zgadywania albo najechania kursorem, czego na dotyku nie ma.
+
+   Ta decyzja zostaje w mocy wszędzie, gdzie kolumna ma sensowną szerokość.
+   Poniżej 175 px wybór jest jednak inny: nie „całość kontra wielokropek", tylko
+   „wielokropek kontra Wnikliw / e poznawa / nie Pism". Wielokropek wygrywa —
+   pełna nazwa zostaje w podpowiedzi i w oknie, które wiersz otwiera. */
+.col[data-gestosc="waska"] #bookList .item .nm,
+.col[data-gestosc="waska"] #tagList .item .nm,
+.col[data-gestosc="waska"] #pubList .item .nm{
+  font-size:calc(12.5px * var(--uiw, 1));
+  display:block;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  -webkit-line-clamp:unset;
+}
+.col[data-gestosc="waska"] .item .cnt{
+  font-size:calc(10px * var(--uiw, 1));
+  min-width:0;
+}
+/* Uchwyt i strzałka „›" wychodzą z układu — przy tej szerokości ich obecność
+   znaczyła, że nazwy nie widać wcale. */
+.col[data-gestosc="waska"] #pubList .pubDrag,
+.col[data-gestosc="waska"] #tagList .item .dragOrd,
+.col[data-gestosc="waska"] #pubList .item .arr{ display:none; }
+/* Kropka koloru etykiety zostaje — jest treścią, nie meblem — ale drobnieje. */
+.col[data-gestosc="waska"] #tagList .item .tgdot{ width:7px; height:7px; }
+/* Menu ⋯ zostaje (bez niego nie da się zmienić nazwy ani koloru etykiety),
+   ale przestaje rozpychać wiersz. */
+.col[data-gestosc="waska"] #tagList .item .more{ min-width:16px; width:16px; }
+.col[data-gestosc="waska"] #tagList .item .more .ic{ width:14px; height:14px; }
+
+/* Nazwa kolumny i podtytuły sekcji też ustępują — przy 150 px „PISMA
+   HEBRAJSKIE" zajmowało dwa wiersze samego nagłówka. */
+.col[data-gestosc="waska"] h2,
+.col[data-gestosc="waska"] .pubTitle{ font-size:calc(11.5px * var(--uiw, 1))!important; }
+.col[data-gestosc="waska"] .secHead,
+.col[data-gestosc="waska"] #tagList .secName{ font-size:calc(10.5px * var(--uiw, 1)); }
+/* Ścieżka w Publikacjach („Publikacje › Szkolenia") i podpowiedź pustej sekcji
+   przy tej szerokości zabierały cztery wiersze na wyjaśnienie. Zostaje sama
+   treść, bez rozpisywania się. */
+.col[data-gestosc="waska"] .pubSciezka{ font-size:calc(10.5px * var(--uiw, 1)); }
+.col[data-gestosc="waska"] .secEmpty{
+  font-size:calc(10.5px * var(--uiw, 1)); line-height:1.35;
+  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden;
+}
+/* Rozdziały ksiąg: przy wąskiej kolumnie plakietki mają być drobniejsze,
+   inaczej w rzędzie mieszczą się dwie i lista rozdziałów rośnie na dziesięć rzędów. */
+.col[data-gestosc="waska"] .chip-ch{
+  font-size:calc(10.5px * var(--uiw, 1)); padding:2px 6px; min-width:24px;
+}
+
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -5044,7 +5172,7 @@ html[data-theme="sepia"] .cenOpis{ opacity:.8; }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.58</span></div>
+      <div class="brand-name">JW Study <span class="ver">v2.59</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -12256,6 +12384,59 @@ odswiezUkryteKolumny();     // pasek musi znać stan zapamiętany z poprzedniej 
    dopóki użytkownik czegoś nie kliknie, a stan bywa wczytany z pamięci. */
 KOLUMNY_BOCZNE.forEach(([id])=>opiszStrzalkeKolumny(id));
 /* ===== regulacja szerokości kolumn (przeciąganie uchwytu) ===== */
+/* ==========================================================================
+   GĘSTOŚĆ KOLUMNY — DOPASOWANIE DO JEJ SZEROKOŚCI
+
+   Kolumny da się zwężać przeciąganiem, a nazwy w wierszach łamały się wtedy
+   W ŚRODKU WYRAZU: „Inn e", „Ksią żki", „Stra żnic a". Zmierzone pole zostające
+   NAZWIE w kolumnie Publikacje:
+
+       kolumna 260 px → nazwa 148 px
+       kolumna 190 px → nazwa  78 px
+       kolumna 165 px → nazwa  53 px   („Strażnica" potrzebuje 55)
+       kolumna 140 px → nazwa  28 px
+       kolumna 125 px → nazwa  13 px   — jeden znak
+
+   Czyli przy 165 px na meble wiersza (uchwyt przenoszenia, strzałka, licznik,
+   odstępy) szło 112 px, a na treść 53. Wina nie leży w rozmiarze pisma, tylko
+   w tym, że meble mają stałą szerokość, a nazwa dostaje resztę.
+
+   Rozwiązanie: trzy poziomy gęstości, nadawane jako atrybut na kolumnie.
+   Arkusz stylów przy każdym poziomie zabiera mebel, który przy tej szerokości
+   nie zarabia na swoje miejsce, i dopiero na końcu zmniejsza pismo.
+
+   Poziomy dobrane z pomiarów, nie z wyczucia: przy 215 px najdłuższa nazwa
+   kategorii publikacji mieści się w jednym wierszu, przy 175 px mieści się po
+   zabraniu uchwytu, niżej trzeba jeszcze skracać wielokropkiem.
+
+   Uchwyt przenoszenia można w tych dwóch kolumnach schować bez straty: chwytanie
+   za uchwyt jest wymagane TYLKO dla notatek (patrz 34-chwytanie.js) — etykiety
+   i publikacje przenosi się złapaniem gdziekolwiek w wierszu.
+   ========================================================================== */
+const KOL_PROG_SREDNIA = 215;   // poniżej tego robi się ciasno
+const KOL_PROG_WASKA   = 175;   // poniżej tego trzeba skracać nazwy
+
+function kolumnyDopasujGestosc(){
+  KOLUMNY_BOCZNE.forEach(([id])=>{
+    const kol = $(id); if(!kol) return;
+    if(kol.classList.contains("collapsed")){ kol.removeAttribute("data-gestosc"); return; }
+    const w = kol.getBoundingClientRect().width;
+    if(!w) return;                       // kolumna schowana — nie ma czego mierzyć
+    const g = w >= KOL_PROG_SREDNIA ? "szeroka" : (w >= KOL_PROG_WASKA ? "srednia" : "waska");
+    if(kol.dataset.gestosc !== g) kol.dataset.gestosc = g;
+  });
+}
+/* Szerokość kolumny zmienia się na trzy sposoby: przeciąganiem uchwytu, zmianą
+   rozmiaru okna i wczytaniem zapamiętanych szerokości. Każdy z nich musi
+   przeliczyć gęstość, więc wołamy to z jednego miejsca — z obserwatora rozmiaru,
+   który łapie wszystkie trzy naraz. */
+if(typeof ResizeObserver !== "undefined"){
+  const obs = new ResizeObserver(()=>kolumnyDopasujGestosc());
+  KOLUMNY_BOCZNE.forEach(([id])=>{ const k = $(id); if(k) obs.observe(k); });
+}else{
+  addEventListener("resize", kolumnyDopasujGestosc);
+}
+
 function applyColWidths(){
   try{
     const w = JSON.parse(localStorage.getItem(KP+"Widths")||"{}");
@@ -12264,12 +12445,17 @@ function applyColWidths(){
        nietknięta: trzy kolumny po 300 px zabierały 900 px i na notatki nie
        zostawało nic. Zapamiętane ustawienie ma wracać, ale nie może zjeść
        ekranu, na którym się nie mieści. */
-    const min = 120, max = Math.min(560, Math.max(160, innerWidth - 340));
+    /* 150 px, nie 120: przy 125 px na nazwę zostawało trzynaście pikseli, czyli
+       jeden znak, a licznik i tak zajmował swoje. Poniżej 150 px kolumna
+       przestaje cokolwiek pokazywać — to nie jest szerokość, którą warto
+       pozwolić zapamiętać. */
+    const min = 150, max = Math.min(560, Math.max(160, innerWidth - 340));
     ["colBooks","colTags","colPubs"].forEach(id=>{
       const c=$(id); if(!c) return;
       c.style.minWidth="0";
       if(w[id]) c.style.width = Math.max(min, Math.min(max, w[id])) + "px";
     });
+    kolumnyDopasujGestosc();
   }catch(e){}
 }
 function saveColWidths(){
@@ -12305,7 +12491,7 @@ document.querySelectorAll(".colResizer").forEach(rz=>{
     document.body.style.userSelect="none"; document.body.style.cursor="col-resize";
     try{ rz.setPointerCapture(e.pointerId); }catch(_){}
     const startX = e.clientX, startW = col.offsetWidth;
-    const min = 120, max = Math.min(560, innerWidth - 340);
+    const min = 150, max = Math.min(560, innerWidth - 340);   // patrz applyColWidths
     const move = ev=>{
       let w = startW + (ev.clientX - startX);
       w = Math.max(min, Math.min(max, w));
