@@ -4590,6 +4590,211 @@ html[data-theme="dark"] #motywMenu{ box-shadow:0 18px 48px rgba(0,0,0,.55); }
 #setBody .st-karta{ display:none; }
 #setBody .st-karta.on{ display:flex; flex-direction:column; gap:18px; }
 
+
+/* ============================================================
+   NAGŁÓWKI KOLUMN: WIDOCZNE NAZWY, WIDOCZNE STRZAŁKI (v2.55)
+
+   Zmierzone przed poprawką, na białym panelu:
+
+     nazwa BIBLIA / ETYKIETY / PUBLIKACJE   11,5 px · waga 600 · przezr. 0,72
+                                            KONTRAST 2,15  (próg dla drobnego
+                                            tekstu to 4,5 — a nawet dla dużego 3,0)
+     strzałka zwijania                      26×18 px · tło rgba(255,255,255,.12)
+                                            czyli BIEL 12% NA BIAŁYM PANELU
+
+   Tło strzałki pochodzi z czasów, gdy nagłówek kolumny był ciemnozielony —
+   biel na zieleni była wtedy delikatnym rozjaśnieniem. Po przejściu na jasne
+   panele ta sama reguła daje tło niewidoczne, więc z przycisku został sam
+   cienki znak ⟨⟨ o kontraście 3,08, w polu 26×18 px — mniejszym niż zalecane
+   minimum 24×24 dla celu pod palec.
+
+   Trzecia rzecz, której nie widać w liczbach, a widać na zrzucie: strzałka
+   Etykiet stała po LEWEJ stronie nazwy, a Biblii i Publikacji po prawej.
+   Wynikało to z tego, że nagłówek Etykiet jest pojemnikiem elastycznym (przez
+   przycisk „+"), a w takim pojemniku `float:right` nie działa — więc strzałka
+   zostawała tam, gdzie stoi w kodzie, czyli przed napisem.
+   ============================================================ */
+
+/* ——— 1. NAZWA KOLUMNY MA BYĆ NAZWĄ, NIE SZEPTEM ———
+   Zostaje wersalikowa i rozstrzelona, bo to nadal etykieta sekcji, a nie
+   nagłówek treści. Zmienia się to, co decydowało o czytelności: rozmiar,
+   grubość i kontrast. 0,92 zamiast pełnej jedynki zostawia różnicę między
+   nazwą kolumny a tytułem notatki — hierarchia ma zostać. */
+/* Selektor musi wymieniać identyfikatory kolumn, a rozmiar nieść „!important" —
+   i jedno, i drugie po to, żeby przebić to, co już w arkuszach stoi:
+
+     #colBooks h2{ color:var(--muted); font-weight:600 }      waga (1,1,0)
+     #colTags  h2{ color:var(--muted); font-weight:600 }      waga (1,1,0)
+     #colPubs h2, #colPubs .pubTitle{ color:var(--muted) }    waga (1,1,0)
+     .pubTitle{ font-size:11.5px!important }                  ważność wymuszona
+
+   Zwykłe `.col h2` ma wagę (0,2,0) i przegrywa z każdym z nich — dlatego
+   pierwsze podejście zmieniło tylko rozmiar dwóch nazw z trzech, a kontrast
+   podniosło z 2,15 do 2,77 zamiast powyżej 4,5. --muted to #8a8a8e: na białym
+   panelu daje 3,0 i ani przezroczystość, ani grubość tego nie naprawią. */
+#colBooks h2,
+#colTags h2,
+#colPubs h2,
+#colPubs .pubTitle{
+  font-size:calc(12.5px * var(--uiw, 1))!important;
+  font-weight:700;
+  letter-spacing:.06em;
+  color:var(--text);
+  opacity:.82;
+}
+
+/* ——— 2. WSZYSTKIE TRZY NAGŁÓWKI W JEDNEJ LINII ———
+   Nagłówek Etykiet ma przycisk „+" wysoki na 26 px, więc jego wiersz był
+   wyższy od pozostałych dwóch i cała kolumna zaczynała się 10 px niżej —
+   widać to gołym okiem, gdy trzy kolumny stoją obok siebie. Wspólna dolna
+   granica wysokości równa je niezależnie od tego, co w którym stoi. */
+/* Jedno dopełnienie dla wszystkich trzech nagłówków. Do tej pory Biblia miała
+   12 px u góry, a Etykiety i Publikacje 10 — więc nagłówek Biblii był o 2 px
+   wyższy, jej lista zaczynała się 2 px niżej i strzałka stała 2 px niżej niż
+   dwie sąsiednie. Przy trzech kolumnach obok siebie takie dwa piksele widać:
+   rząd przycisków przestaje być rzędem.
+
+   Dolna granica wysokości równa wiersze niezależnie od tego, co w którym stoi:
+   nagłówek Etykiet ma przycisk „+" wysoki na 26 px i bez tej granicy był
+   wyższy od pozostałych. */
+#colBooks h2,
+#colTags h2,
+#colPubs h2,
+#colPubs .pubTitle{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-height:30px;
+  padding:10px 14px 6px;
+}
+@media (min-width:768px) and (max-width:1180px){
+  #colBooks h2, #colTags h2, #colPubs h2, #colPubs .pubTitle{ padding:9px 12px 5px; }
+}
+/* Listy zaczynają się w tym samym miejscu pod nagłówkiem — jedna z nich miała
+   4 px odstępu u góry, dwie pozostałe zero. */
+#bookList, #tagList{ padding-top:0; }
+
+/* ——— 3. STRZAŁKA ZAWSZE PO PRAWEJ ———
+   `order` zamiast `float`, bo nagłówki są teraz elastyczne we wszystkich
+   trzech kolumnach i float nie miałby w nich znaczenia. Plus przed strzałką:
+   najpierw „dodaj", potem „schowaj". */
+.colToggle{ order:9; margin-left:auto; float:none; }
+.kolPlus{ order:8; margin-left:auto; }
+/* Gdy w wierszu są OBA przyciski, tylko pierwszy odpycha się od nazwy —
+   inaczej rozjechałyby się na dwa końce, a mają stać razem. */
+.kolPlus ~ .colToggle{ margin-left:0; }
+#colPubs .pubActs{ order:7; margin-left:auto; }
+#colPubs .pubActs ~ .colToggle{ margin-left:0; }
+
+/* ——— 4. STRZAŁKA WYGLĄDA JAK PRZYCISK, BO NIM JEST ———
+   Ta sama rama, ten sam promień i ta sama wielkość co „+" w Etykietach: dwa
+   sąsiadujące przyciski nie mogą wyglądać, jakby pochodziły z dwóch różnych
+   aplikacji. */
+.colToggle{
+  width:28px; height:28px; padding:0;
+  color:var(--text);
+  display:inline-flex; align-items:center; justify-content:center;
+  flex:0 0 auto;
+  background:none;
+  border:1px solid var(--border);
+  border-radius:8px;
+  cursor:pointer;
+  transition:background var(--dur-szybko) var(--ease),
+             border-color var(--dur-szybko) var(--ease),
+             color var(--dur-szybko) var(--ease);
+}
+/* Znak strzałki na --muted (#8a8a8e) daje 3,08 — tyle, ile wynosi minimum dla
+   elementów interfejsu, czyli dokładnie na granicy. Bierzemy kolor tekstu
+   i przygaszamy SAM ZNAK, nie cały przycisk: gdyby przezroczystość siedziała
+   na przycisku, zblakłaby razem z nim ramka, którą właśnie dodaliśmy. */
+.colToggle .ic{ width:15px; height:15px; opacity:.62; }
+.colToggle:hover{ background:var(--sel); border-color:var(--accent2); color:var(--accent); }
+.colToggle:hover .ic{ opacity:1; }
+.colToggle:active{ transform:scale(.94); }
+.colToggle:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+/* Pod palcem cel ma mieć co najmniej 32 px — tam, gdzie nie ma kursora,
+   nie ma też podpowiedzi „to jest klikalne", więc trafienie musi być łatwe. */
+@media (hover:none){
+  .colToggle{ width:32px; height:32px; }
+  .colToggle .ic{ width:17px; height:17px; }
+}
+
+/* ——— 5. LICZNIKI PRZY WIERSZACH ———
+   Liczba notatek to treść, nie ozdoba — a stała o włos poniżej progu:
+   biel 85% na zielonym tle wybranego wiersza dawała 4,37 przy wymaganych 4,5.
+   Selektory muszą wymieniać listy po identyfikatorze, bo tak są zapisane
+   reguły, które nadpisujemy (#bookList .item.active .cnt i sąsiednie). */
+#bookList .item.active .cnt,
+#tagList .item.active .cnt,
+#pubList .item.active .cnt{
+  color:rgba(255,255,255,.95);
+  /* Wiersz wybrany dostaje przezroczystość 0,75 z reguły „liczniki ustępują
+     nazwie" (wyżej w tym arkuszu). Na jasnym tle to w porządku, na zielonym
+     zmywa biel w tło. Tu liczbę zostawiamy w pełni. */
+  opacity:1;
+}
+/* `:not(.active)` jest konieczne: wiersz wybrany ma białą liczbę na zielonym
+   tle, a przezroczystość nałożona na biel zmywa ją w zieleń — 3,77 zamiast
+   6,36. Przygaszamy więc tylko liczby na jasnym tle. */
+#bookList .item:not(.active) .cnt,
+#tagList .item:not(.active) .cnt,
+#pubList .item:not(.active) .cnt{ color:var(--text); opacity:.66; }
+/* Wiersze z zerem zostają ciche — tak było i tak ma być. Ale reguła musi mieć
+   tę samą wagę co powyższa, bo tamta (z identyfikatorem) przebiłaby zwykłe
+   `.item.zero .cnt` i księgi bez notatek krzyczałyby tak samo jak te z notatkami. */
+#bookList .item.zero .cnt,
+#tagList .item.zero .cnt,
+#pubList .item.zero .cnt{ opacity:.42; }
+
+/* ——— 6. PASTYLKI UKRYTYCH KOLUMN ———
+   Jedyna droga powrotu do schowanej kolumny (poza menu) — a była bledsza niż
+   nazwy, które właśnie rozjaśniliśmy. */
+#ukryteKolumny .ukLbl{ opacity:.85; font-weight:600; }
+#ukryteKolumny .ukChip{ color:var(--text); opacity:.9; font-weight:500; }
+#ukryteKolumny .ukChip:hover{ opacity:1; border-color:var(--accent2); color:var(--accent); }
+
+/* ——— 7. SEPIA POTRZEBUJE MOCNIEJSZEGO ATRAMENTU ———
+   Sepia jest z założenia miękka: tekst #493d2a na tle #faf2df daje najwyżej
+   8,7 kontrastu, podczas gdy motyw dzienny ma do dyspozycji 15,8. Te same
+   przezroczystości dają więc w sepii wyraźnie mniej:
+
+                        dzień   sepia (przed)   sepia (po)
+     nazwa kolumny       8,91       5,32          7,4
+     licznik             5,47       3,81          5,1
+     znak strzałki       4,60       3,25          4,3
+
+   Zamiast osłabiać motyw dzienny, dokładamy atramentu tam, gdzie go brakuje.
+   Miękkość sepii bierze się z BARWY tła, nie z bladości napisów. */
+html[data-theme="sepia"] #colBooks h2,
+html[data-theme="sepia"] #colTags h2,
+html[data-theme="sepia"] #colPubs h2,
+html[data-theme="sepia"] #colPubs .pubTitle{ opacity:.95; }
+html[data-theme="sepia"] #bookList .item:not(.active) .cnt,
+html[data-theme="sepia"] #tagList .item:not(.active) .cnt,
+html[data-theme="sepia"] #pubList .item:not(.active) .cnt{ opacity:.8; }
+html[data-theme="sepia"] .colToggle .ic{ opacity:.78; }
+
+/* ——— 8. WYBRANY WIERSZ W TRYBIE NOCNYM ———
+   Usterka wykryta przez zestaw nagłówków, starsza od tej poprawki. Wybrany
+   wiersz kolumny dostaje tło --accent i biały napis. W dzień --accent to
+   ciemna zieleń #256b52 i biel daje na niej 6,4. W nocy --accent to jasna
+   mięta #48c08d — biel daje na niej 2,19, czyli napis „Wszystkie 16649" na
+   wybranym wierszu jest w praktyce nie do odczytania.
+
+   Miętowa pastylka zostaje, bo to ona jest znakiem wyboru w tym motywie.
+   Zmienia się napis: ciemny zamiast białego, tak jak robi się to wszędzie,
+   gdzie tło zaznaczenia jest jaśniejsze od tła strony. Kontrast rośnie
+   z 2,19 do około 8,9. */
+html[data-theme="dark"] #colBooks .item.active,
+html[data-theme="dark"] #colTags .item.active,
+html[data-theme="dark"] #colPubs .item.active{ color:#0d2119; }
+html[data-theme="dark"] #bookList .item.active .nm,
+html[data-theme="dark"] #tagList .item.active .nm,
+html[data-theme="dark"] #pubList .item.active .nm{ color:#0d2119; }
+html[data-theme="dark"] #bookList .item.active .cnt,
+html[data-theme="dark"] #tagList .item.active .cnt,
+html[data-theme="dark"] #pubList .item.active .cnt{ color:rgba(13,33,25,.82); }
+
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -4598,7 +4803,7 @@ html[data-theme="dark"] #motywMenu{ box-shadow:0 18px 48px rgba(0,0,0,.55); }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.54</span></div>
+      <div class="brand-name">JW Study <span class="ver">v2.55</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -4653,13 +4858,13 @@ html[data-theme="dark"] #motywMenu{ box-shadow:0 18px 48px rgba(0,0,0,.55); }
 
 <main id="glowna">
   <div class="col" id="colBooks">
-    <h2><button class="colToggle" data-c="colBooks" title="Zwiń / rozwiń">⟨⟨</button>Biblia</h2>
+    <h2><button class="colToggle" data-c="colBooks" title="Zwiń kolumnę Biblia" aria-label="Zwiń kolumnę Biblia" aria-expanded="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 6.5 9 12l5.5 5.5"/><path d="M19 6.5 13.5 12l5.5 5.5"/></svg></button>Biblia</h2>
     <div class="list" id="bookList"></div>
   </div>
   <div class="colResizer" data-c="colBooks" title="Przeciągnij, aby zmienić szerokość"></div>
   <div class="col" id="colTags">
     <div id="tagPanel">
-      <h2><button class="colToggle" data-c="colTags" title="Zwiń / rozwiń">⟨⟨</button>Etykiety<button class="kolPlus" id="btnTagPlus" title="Dodaj etykietę albo sekcję" aria-label="Dodaj etykietę albo sekcję"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></h2>
+      <h2><button class="colToggle" data-c="colTags" title="Zwiń kolumnę Etykiety" aria-label="Zwiń kolumnę Etykiety" aria-expanded="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 6.5 9 12l5.5 5.5"/><path d="M19 6.5 13.5 12l5.5 5.5"/></svg></button>Etykiety<button class="kolPlus" id="btnTagPlus" title="Dodaj etykietę albo sekcję" aria-label="Dodaj etykietę albo sekcję"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></h2>
       <div class="tagBtns">
         <button id="btnNewTag" title="Utwórz nową etykietę"><svg class="ic tb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span class="tb-txt">Nowa etykieta</span></button>
         <button id="btnNewSec" title="Grupuj etykiety w sekcje, np. Kongresy"><svg class="ic tb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 7.4A1.6 1.6 0 0 1 5.1 5.8h3.7l1.9 2.1h8.2a1.6 1.6 0 0 1 1.6 1.6v8.1a1.6 1.6 0 0 1-1.6 1.6H5.1a1.6 1.6 0 0 1-1.6-1.6z"/></svg><span class="tb-txt">Nowa sekcja</span></button>
@@ -4670,7 +4875,7 @@ html[data-theme="dark"] #motywMenu{ box-shadow:0 18px 48px rgba(0,0,0,.55); }
   <div class="colResizer" data-c="colTags" title="Przeciągnij, aby zmienić szerokość"></div>
   <div class="col" id="colPubs">
     <div id="pubPanel">
-      <h2 class="pubTitle">Publikacje <span class="pubActs"><span id="pubReset" class="pubReset" style="display:none" title="Przywróć domyślną kolejność">↺</span></span><button class="colToggle" data-c="colPubs" title="Zwiń / rozwiń">⟨⟨</button></h2>
+      <h2 class="pubTitle">Publikacje <span class="pubActs"><span id="pubReset" class="pubReset" style="display:none" title="Przywróć domyślną kolejność">↺</span></span><button class="colToggle" data-c="colPubs" title="Zwiń kolumnę Publikacje" aria-label="Zwiń kolumnę Publikacje" aria-expanded="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 6.5 9 12l5.5 5.5"/><path d="M19 6.5 13.5 12l5.5 5.5"/></svg></button></h2>
       <nav class="pubSciezka" id="pubSciezka" aria-label="Gdzie jesteś w publikacjach"></nav>
       <div class="list" id="pubList"></div>
     </div>
@@ -11688,9 +11893,23 @@ const KOLUMNY_BOCZNE = [
   ["colTags",  "Etykiety"],
   ["colPubs",  "Publikacje"]
 ];
+/* Podpis strzałki musi mówić, co się STANIE, a nie jak się nazywa element.
+   „Zwiń / rozwiń" nie mówi ani której kolumny dotyczy, ani w którą stronę
+   zadziała — czytnik ekranu odczytywał trzy identyczne przyciski pod rząd. */
+function opiszStrzalkeKolumny(id){
+  const col = $(id); if(!col) return;
+  const b = col.querySelector(".colToggle"); if(!b) return;
+  const nazwa = (KOLUMNY_BOCZNE.find(k=>k[0]===id) || [,""])[1];
+  const zwinieta = col.classList.contains("collapsed");
+  const opis = (zwinieta ? "Pokaż kolumnę " : "Zwiń kolumnę ") + nazwa;
+  b.title = opis;
+  b.setAttribute("aria-label", opis);
+  b.setAttribute("aria-expanded", zwinieta ? "false" : "true");
+}
 function setCollapsed(id, on){
   const col = $(id); if(!col) return;
   col.classList.toggle("collapsed", on);
+  opiszStrzalkeKolumny(id);
   lsSet(KP+"Cols", JSON.stringify({
     t: $("colTags").classList.contains("collapsed"),
     b: $("colBooks").classList.contains("collapsed"),
@@ -11789,6 +12008,9 @@ try{
   if(cs.p) $("colPubs").classList.add("collapsed");
 }catch(e){}
 odswiezUkryteKolumny();     // pasek musi znać stan zapamiętany z poprzedniej wizyty
+/* Podpisy strzałek też muszą znać ten stan: setCollapsed() ich nie dotknie,
+   dopóki użytkownik czegoś nie kliknie, a stan bywa wczytany z pamięci. */
+KOLUMNY_BOCZNE.forEach(([id])=>opiszStrzalkeKolumny(id));
 /* ===== regulacja szerokości kolumn (przeciąganie uchwytu) ===== */
 function applyColWidths(){
   try{
