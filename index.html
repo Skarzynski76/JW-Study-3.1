@@ -5164,6 +5164,309 @@ html[data-theme="sepia"] .cenOpis{ opacity:.8; }
   font-size:calc(10.5px * var(--uiw, 1)); padding:2px 6px; min-width:24px;
 }
 
+/* ══════════════ OKNO ROZBIEŻNOŚCI PRZY UZGADNIANIU (v2.60) ══════════════
+
+   Okno różnic po imporcie z JW Library ma dwie możliwości: „moja" i „z
+   biblioteki". Przy uzgadnianiu z drugim urządzeniem dochodzi trzecia —
+   „zachowaj obie" — bo tam obie wersje są PEŁNE notatkami z formatowaniem
+   i zdjęciami, więc odrzucenie którejkolwiek jest realną stratą, a nie
+   wyborem między tekstem a tekstem sformatowanym.
+
+   Trzecia możliwość nie może jednak zwężać dwóch pierwszych: to obok nich
+   porównuje się treść. Dlatego siatka zostaje dwukolumnowa, a „zachowaj obie"
+   idzie pod nimi na całą szerokość. */
+#modalSync .roz-pary:has(.roz-obie){ grid-template-columns:1fr 1fr; }
+#modalSync .roz-obie{ grid-column:1 / -1; }
+/* Na telefonie wszystko idzie jedno pod drugim. Reguła musi się powtórzyć
+   wewnątrz zapytania: selektor z :has() i identyfikatorem bije zwykłe
+   `.roz-pary` z 46-roznice, więc bez tego wiersz z trzecią możliwością
+   zostawał w dwóch kolumnach po 148 px i nie dało się w nim nic przeczytać. */
+@media (max-width:640px){
+  #modalSync .roz-pary:has(.roz-obie){ grid-template-columns:1fr; }
+  #modalSync .roz-obie{ grid-column:auto; }
+}
+/* Wiersz sporu bywa jednym z kilkudziesięciu — numer porządkowy pomaga nie
+   zgubić się w liście po przewinięciu. */
+#modalSync .roz{ counter-increment:spor; }
+#modalSync .roz-lista{ counter-reset:spor; }
+#modalSync .roz-tyt::before{
+  content:counter(spor) ". "; color:var(--muted); font-weight:500;
+}
+/* Rząd przycisków w Ustawieniach ma już układ z 10-redesign.css — brakuje mu
+   tylko odstępu od opisu nad nim i od przycisków pod nim. */
+#setBody .st-row{ margin:6px 0; }
+
+/* ══════════════ OKNA RÓŻNIC: WERSJA DO WYBORU TO <label> ══════════════
+
+   Okno różnic (import z JW Library, v2.49) i okno rozbieżności przy
+   uzgadnianiu (v2.60) pokazują dwie albo trzy wersje do wyboru. Każda jest
+   elementem <label>, bo kliknięcie gdziekolwiek w polu ma zaznaczać tę wersję.
+
+   I właśnie dlatego wyglądały źle. W 06-editor.css stoi:
+
+     .modal label{ display:block; text-transform:uppercase; font-size:11.5px;
+                   color:var(--muted); margin:12px 0 5px }
+
+   — reguła dla PODPISÓW PÓL w oknach (》NAZWA ETYKIETY《 nad polem tekstowym).
+   Ma wagę (0,1,1): klasa .modal plus typ label. Nasze `.roz-opcja` ma wagę
+   (0,1,0), czyli MNIEJSZĄ, więc przegrywało niezależnie od kolejności
+   arkuszy. Skutek: treść notatki pisana WERSALIKAMI, w kolorze podpisu,
+   a wszystkie trzy wiersze (skąd · data · treść) zlane w jeden akapit, bo
+   display:block zdejmował siatkę.
+
+   Dlatego selektor jest tu z nazwą elementu — waga musi być równa, żeby
+   zadecydowała kolejność. Wyliczamy WSZYSTKIE pola, które tamta reguła
+   nadaje, a nie tylko te dwa widoczne na pierwszy rzut oka: przy następnej
+   zmianie podpisów pól okno różnic nie może się znów rozjechać. */
+label.roz-opcja{
+  display:grid; gap:3px; margin:0;
+  text-transform:none; letter-spacing:normal;
+  font-size:inherit; font-weight:400; color:var(--text);
+}
+label.roz-opcja .roz-skad{ font-weight:600; font-size:12.5px; color:var(--text); }
+label.roz-opcja .roz-data{ font-size:11.5px; color:var(--muted); }
+label.roz-opcja .roz-tresc{ font-size:12.5px; line-height:1.5; color:var(--text); }
+/* Etykiety i zakładki nie mają daty zmiany — puste pole daty zostawiałoby
+   w wierszu wolny odstęp bez treści. */
+label.roz-opcja .roz-data:empty{ display:none; }
+
+/* ══════════════ `@` I `#` W TRAKCIE PISANIA (v2.61) ══════════════
+
+   Lista podpowiedzi stoi przy kursorze, nie przy przycisku — więc nie może
+   korzystać z wyglądu menu paska (#ebPop). Wygląd jest jednak ten sam, bo to
+   ta sama rzecz dla użytkownika: lista do wybrania jednej pozycji. */
+#wzmPop{
+  position:fixed; z-index:1400; display:none;
+  min-width:min(280px, 92vw); max-width:min(420px, 94vw);
+  background:var(--panel); color:var(--text);
+  border:1px solid var(--border); border-radius:12px;
+  box-shadow:0 12px 32px rgba(0,0,0,.22);
+  padding:5px; font-size:calc(13.5px * var(--ui, 1));
+  overscroll-behavior:contain;
+}
+#wzmPop .dd-lbl{ padding:5px 9px 4px; }
+#wzmPop .wzm-poz{
+  display:grid; grid-template-columns:auto 1fr; align-items:baseline; gap:2px 7px;
+  padding:7px 9px; border-radius:9px; cursor:pointer;
+}
+#wzmPop .wzm-poz .wzm-tyt{ grid-column:2; font-weight:600; }
+#wzmPop .wzm-poz .wzm-opis{ grid-column:2; font-size:.84em; color:var(--muted); }
+#wzmPop .wzm-kropka{
+  grid-column:1; grid-row:1; width:10px; height:10px; border-radius:50%;
+  align-self:center;
+}
+/* Podświetlenie idzie za STRZAŁKAMI, nie za myszą: przy pisaniu ręka jest na
+   klawiaturze, a wybór zatwierdza Enter. Wskaźnik myszy dostaje to samo tło,
+   żeby obie drogi wyglądały jednakowo. */
+#wzmPop .wzm-poz.wybrana, #wzmPop .wzm-poz:hover{ background:var(--sel); }
+#wzmPop .wzm-nowa .wzm-tyt{ color:var(--accent); }
+#wzmPop .wzm-brak{ padding:8px 9px; color:var(--muted); font-size:.9em; }
+
+/* ══════════════ ODSYŁACZ DO INNEJ NOTATKI ══════════════
+
+   Ma wyglądać na odsyłacz WEWNĘTRZNY, a nie na adres internetowy — inaczej
+   przy dwóch rodzajach linków w jednym akapicie nie da się przewidzieć, co
+   się stanie po kliknięciu. Dlatego nie podkreślenie, a delikatna ramka
+   z zaokrągleniem: „to jest kartka, nie strona". */
+.ncontent a.note-ref{
+  color:var(--accent); text-decoration:none; cursor:pointer;
+  border-bottom:1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  padding:0 1px; border-radius:3px;
+}
+.ncontent a.note-ref::before{ content:"↪ "; opacity:.7; font-size:.9em; }
+.ncontent a.note-ref:hover{ background:var(--sel); }
+/* Notatka usunięta albo z innego urządzenia. Nie znika — patrz decyzja 2
+   w 54-wzmianki.js. */
+.ncontent a.note-ref.brak,
+.ncontent a.note-ref.wkoszu{
+  color:var(--muted); border-bottom-style:dotted; cursor:help;
+}
+.ncontent a.note-ref.brak::before{ content:"⌀ "; }
+/* W edycji odsyłacz jest tekstem do poprawiania, więc nie udaje przycisku. */
+.ncontent[contenteditable="true"] a.note-ref{ cursor:text; }
+
+/* ══════════════ PRZYPISY ══════════════ */
+.ncontent sup.fnref{
+  color:var(--accent); font-weight:700; cursor:pointer;
+  padding:0 1px; border-radius:3px; font-size:.72em; line-height:1;
+}
+.ncontent sup.fnref:hover{ background:var(--sel); }
+.ncontent[contenteditable="true"] sup.fnref{ cursor:text; }
+/* Blok przypisów: linia i drobniejsze pismo mówią „to nie jest dalszy ciąg
+   notatki". Odstęp z góry większy niż między akapitami, bo to zmiana warstwy. */
+.ncontent .fnlist{
+  margin-top:16px; padding-top:9px;
+  border-top:1px solid var(--border);
+  font-size:.88em; color:var(--muted);
+}
+.ncontent .fnlist .fn{
+  display:list-item; list-style:none;
+  padding:3px 0 3px 26px; position:relative; line-height:1.5;
+  color:var(--text);
+}
+/* Numer przypisu jest treścią atrybutu, nie tekstem — więc nie da się go
+   przypadkiem skasować przy poprawianiu przypisu w edycji. */
+.ncontent .fnlist .fn::before{
+  content:attr(data-fn); position:absolute; left:0; top:3px;
+  min-width:20px; text-align:right;
+  color:var(--accent); font-weight:700; font-size:.9em; cursor:pointer;
+}
+.ncontent .fnlist .fn[data-fn^="f"]::before{ content:counter(fnnum); counter-increment:fnnum; }
+.ncontent .fnlist{ counter-reset:fnnum; }
+/* Przypis, którego odsyłacz zniknął z tekstu. Zostaje, ale mówi wprost, że
+   wisi w powietrzu — patrz decyzja 2 w 55-przypisy.js. */
+.ncontent .fnlist .fn[data-sierota]::before{ content:"⌀"; color:var(--muted); }
+.ncontent .fnlist .fn[data-sierota]::after{
+  content:" — bez odsyłacza w tekście"; color:var(--muted); font-size:.88em;
+}
+/* Mrugnięcie po skoku: bez niego po przewinięciu nie wiadomo, na co patrzeć. */
+@keyframes fnMrug{ 0%,100%{ background:transparent } 15%,55%{ background:var(--sel) } }
+.ncontent .fn-mrug{ animation:fnMrug 1.4s ease-out; border-radius:6px; }
+@media (prefers-reduced-motion:reduce){
+  .ncontent .fn-mrug{ animation:none; background:var(--sel); border-radius:6px; }
+}
+/* W EDYCJI blok przypisów dostaje podpis. Bez niego kursor postawiony na
+   samym końcu treści (Ctrl+End, kliknięcie pod tekstem) ląduje w przypisach,
+   a nic tego nie zapowiada — wygląda to jak dalszy ciąg notatki pisany
+   drobniejszym pismem. */
+.ncontent[contenteditable="true"] .fnlist::before{
+  content:"Przypisy"; display:block;
+  font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase;
+  color:var(--muted); margin-bottom:4px;
+}
+
+/* ══════════════ MAPA TEMATÓW (v2.62) ══════════════
+
+   Okno na cały ekran, dwie kolumny: drzewo i notatki wybranego miejsca.
+   Wzoruje się na oknie czytnika, bo to ten sam rodzaj ekranu — coś, w czym
+   się przebywa, a nie coś, co się odklika. Stąd przyklejony nagłówek
+   i przewijanie osobno w każdej kolumnie: przewijanie całości znaczyłoby,
+   że drzewo ucieka w górę, gdy szukasz notatki na dole listy. */
+#modalMapa .mapamodal{
+  width:min(100vw - 32px, 1280px); max-width:none;
+  height:min(100vh - 32px, 900px); max-height:100%;
+  display:flex; flex-direction:column; padding:0; overflow:hidden;
+}
+#modalMapa .mapaHead{
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  padding:12px 14px; border-bottom:1px solid var(--border);
+  background:var(--panel); position:sticky; top:0; z-index:2; margin:0;
+}
+#modalMapa .mapaHead h3{ margin:0; flex:0 0 auto; }
+#modalMapa #mapaSzukaj{
+  flex:1 1 160px; min-width:120px;
+  padding:8px 12px; border:1px solid var(--border); border-radius:20px;
+  background:var(--bg); color:var(--text); font-size:calc(13.5px * var(--ui,1));
+}
+#modalMapa .mapaHead .btn{ flex:0 0 auto; }
+
+#modalMapa .mapaCialo{
+  flex:1 1 auto; min-height:0;
+  display:grid; grid-template-columns:minmax(240px, 320px) 1fr;
+}
+#modalMapa .mapaLewa{
+  display:flex; flex-direction:column; min-height:0;
+  border-right:1px solid var(--border); background:var(--bg);
+}
+#modalMapa #mapaDrzewo{ flex:1 1 auto; min-height:0; overflow:auto; padding:8px; }
+#modalMapa .mapaStopka{
+  flex:0 0 auto; padding:8px 12px; border-top:1px solid var(--border);
+  font-size:11.5px; color:var(--muted);
+}
+#modalMapa .mapaPrawa{ min-height:0; overflow:auto; padding:14px 16px; }
+
+/* ——— drzewo ——— */
+#modalMapa .mapaGrupa{ margin-bottom:10px; }
+#modalMapa .mapaTemat,
+#modalMapa .mapaPod{
+  display:flex; align-items:center; gap:7px;
+  padding:7px 9px; border-radius:9px; cursor:pointer;
+  border:1.5px solid transparent;
+}
+/* Temat główny wielkimi literami — tak jak w Twoim przykładzie WIARA.
+   Nie chodzi o krzyk, a o to, żeby poziom był widoczny bez czytania wcięcia. */
+#modalMapa .mapaTemat{
+  font-weight:700; font-size:calc(13px * var(--ui,1));
+  letter-spacing:.04em; text-transform:uppercase;
+}
+#modalMapa .mapaPod{
+  margin-left:14px; font-size:calc(13.5px * var(--ui,1));
+}
+#modalMapa .mapaTemat:hover,
+#modalMapa .mapaPod:hover{ background:var(--sel); }
+#modalMapa .mapaTemat.wybrany,
+#modalMapa .mapaPod.wybrany{ background:var(--sel); border-color:var(--accent2); }
+#modalMapa .mapaTemat:focus-visible,
+#modalMapa .mapaPod:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+#modalMapa .mapaNazwa{ flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#modalMapa .mapaStrzalka{ flex:0 0 auto; color:var(--muted); }
+#modalMapa .mapaKropka{ flex:0 0 auto; width:9px; height:9px; border-radius:50%; }
+#modalMapa .mapaPasek{ flex:0 0 auto; width:4px; height:15px; border-radius:2px; }
+#modalMapa .mapaIle{
+  flex:0 0 auto; font-weight:600; font-size:11.5px; color:var(--muted);
+  text-transform:none; letter-spacing:0; font-variant-numeric:tabular-nums;
+}
+#modalMapa .mapaTemat.wybrany .mapaIle,
+#modalMapa .mapaPod.wybrany .mapaIle{ color:var(--accent); }
+#modalMapa .mapaMenu{
+  flex:0 0 auto; background:none; border:none; padding:2px; cursor:pointer;
+  color:var(--muted); border-radius:6px; opacity:0; transition:opacity .12s;
+}
+#modalMapa .mapaTemat:hover .mapaMenu,
+#modalMapa .mapaPod:hover .mapaMenu,
+#modalMapa .mapaMenu:focus-visible{ opacity:1; }
+/* Na dotyku nie ma zdarzenia „myszka nad" — menu musi być widoczne od razu,
+   inaczej na iPadzie nie da się go w ogóle otworzyć. */
+@media (hover: none){ #modalMapa .mapaMenu{ opacity:.7; } }
+#modalMapa .mapaBez{ text-transform:none; letter-spacing:0; font-weight:600; color:var(--muted); }
+
+/* ——— prawa strona ——— */
+#modalMapa .mapaNagl{ display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:10px; }
+#modalMapa .mapaNagl h3{ margin:0; }
+#modalMapa .mapaNaglIle{ color:var(--muted); font-size:12.5px; flex:1 1 auto; }
+#modalMapa .mapaChipy{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+#modalMapa .mapaChip{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:5px 11px; border:1px solid var(--border); border-radius:20px;
+  background:var(--panel); color:var(--text); cursor:pointer; font-size:12.5px;
+}
+#modalMapa .mapaChip:hover{ background:var(--sel); border-color:var(--accent2); }
+#modalMapa .mapaLista{ display:flex; flex-direction:column; gap:2px; }
+#modalMapa .mapaWiersz{
+  display:grid; grid-template-columns:1fr auto; gap:1px 10px;
+  text-align:left; width:100%; cursor:pointer;
+  padding:9px 11px; border:1px solid transparent; border-radius:10px;
+  background:none; color:var(--text); font:inherit;
+}
+#modalMapa .mapaWiersz:hover{ background:var(--sel); border-color:var(--border); }
+#modalMapa .mapaTyt{ grid-column:1; font-weight:600; font-size:calc(14px * var(--ui,1)); }
+#modalMapa .mapaGdzie{ grid-column:2; grid-row:1; font-size:11.5px; color:var(--accent); white-space:nowrap; }
+#modalMapa .mapaSkrot{
+  grid-column:1 / -1; font-size:12.5px; color:var(--muted); line-height:1.45;
+  overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+}
+#modalMapa .mapaWiecej{ text-align:center; padding:14px 0 4px; }
+#modalMapa .mapaPusto{ color:var(--muted); font-size:13px; line-height:1.6; padding:12px 10px; }
+#modalMapa .mapaZacheta{ max-width:46ch; }
+
+/* Telefon: jedna kolumna. Drzewo na górze, z ograniczoną wysokością, notatki
+   pod nim — bo przy 320 px na dwie kolumny nie ma czego dzielić. */
+@media (max-width:760px){
+  #modalMapa .mapamodal{ width:100vw; height:100vh; border-radius:0; }
+  #modalMapa .mapaCialo{ grid-template-columns:1fr; grid-template-rows:auto 1fr; }
+  #modalMapa .mapaLewa{ border-right:none; border-bottom:1px solid var(--border); max-height:42vh; }
+  #modalMapa .mapaPrawa{ padding:12px; }
+}
+/* Nagłówek mapy na telefonie: tytuł i ✕ w pierwszym rzędzie, szukanie na całą
+   szerokość w drugim. Bez tego ✕ lądowało obok „+ Nowy temat" w drugim rzędzie,
+   czyli najdalej od miejsca, w którym oko szuka wyjścia. */
+@media (max-width:760px){
+  #modalMapa .mapaHead h3{ order:1; }
+  #modalMapa .mapaHead [data-zamknij]{ order:2; margin-left:auto; }
+  #modalMapa #mapaSzukaj{ order:3; flex:1 1 100%; }
+  #modalMapa #mapaNowyTemat{ order:4; }
+}
+
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -5172,7 +5475,7 @@ html[data-theme="sepia"] .cenOpis{ opacity:.8; }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.59</span></div>
+      <div class="brand-name">JW Study <span class="ver">v2.62</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -5204,6 +5507,7 @@ html[data-theme="sepia"] .cenOpis{ opacity:.8; }
        zamiast pięciu odstępów jest jeden, a wzrokowo tworzą jedną rzecz. -->
   <div class="ikony-grupa" role="group" aria-label="Widok">
     <button class="btn ico-btn" id="btnCentrum" title="Centrum studium (H)" aria-label="Centrum studium" aria-pressed="false"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 11.5 12 4l8.5 7.5"/><path d="M5.5 10.5V20h13v-9.5"/><path d="M10 20v-5.5h4V20"/></svg></button>
+    <button class="btn ico-btn" id="btnMapa" title="Mapa tematów (M)" aria-label="Mapa tematów"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 5.5h5"/><path d="M4.5 5.5v13h5"/><path d="M13 5.5h6.5"/><path d="M13 12h6.5"/><path d="M13 18.5h6.5"/></svg></button>
     <button class="btn ico-btn" id="btnSettings" title="Ustawienia (,)"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.1"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a1.9 1.9 0 1 1-2.7 2.7l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5v.2a1.9 1.9 0 1 1-3.8 0V21a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a1.9 1.9 0 1 1-2.7-2.7l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a1.9 1.9 0 1 1 0-3.8h.2a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a1.9 1.9 0 1 1 2.7-2.7l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a1.9 1.9 0 1 1 3.8 0v.2a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a1.9 1.9 0 1 1 2.7 2.7l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1h.2a1.9 1.9 0 1 1 0 3.8H21a1.6 1.6 0 0 0-1.5 1z"/></svg></button>
     <button class="btn ico-btn" id="btnTheme" title="Motyw"></button>
     <button class="btn ico-btn" id="btnCols" title="Pokaż lub ukryj kolumny"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="2"/><path d="M9 4.5v15M15 4.5v15"/></svg></button>
@@ -5344,6 +5648,27 @@ html[data-theme="sepia"] .cenOpis{ opacity:.8; }
 </div>
 <button id="readExit"><svg class="ic mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 19.5h3.6L19 8.6a1.9 1.9 0 0 0-2.7-2.7L5.2 17z"/><path d="M14.8 7.4l2.7 2.7"/></svg> Pokaż narzędzia</button>
 
+<!-- MAPA TEMATÓW. Stoi PRZED oknem czytnika, żeby czytnik otwarty z mapy
+     rysował się NAD nią: po zamknięciu notatki wracasz do tego samego tematu.
+     Wyjaśnienie całości w js/56-mapa.js. -->
+<div class="overlay" id="modalMapa">
+  <div class="modal mapamodal" role="dialog" aria-label="Mapa tematów">
+    <div class="nn-head mapaHead">
+      <h3>Mapa tematów</h3>
+      <input id="mapaSzukaj" type="search" autocomplete="off" placeholder="Szukaj tematu…" aria-label="Szukaj tematu">
+      <button class="btn" type="button" id="mapaNowyTemat">+ Nowy temat</button>
+      <button class="btn" type="button" data-zamknij="modalMapa" aria-label="Zamknij mapę">✕</button>
+    </div>
+    <div class="mapaCialo">
+      <div class="mapaLewa">
+        <div id="mapaDrzewo" role="tree" aria-label="Drzewo tematów"></div>
+        <div class="mapaStopka" id="mapaPodsum"></div>
+      </div>
+      <div class="mapaPrawa" id="mapaTresc"></div>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="modalFs">
   <div class="fsmodal">
     <div id="fsProg"></div>
@@ -5460,6 +5785,29 @@ html[data-theme="sepia"] .cenOpis{ opacity:.8; }
   </div>
 </div>
 
+<div class="overlay" id="modalSync">
+  <div class="modal rozmodal" role="dialog" aria-label="Rozbieżności między urządzeniami">
+    <h3>Rozbieżności między urządzeniami</h3>
+    <p class="roz-wstep">Do rozstrzygnięcia: <b id="syncIle">0</b>. Tyle rzeczy zmieniło się
+      <b>i tutaj, i na drugim urządzeniu</b> (<span id="syncSkad">drugie urządzenie</span>) od ostatniego
+      uzgodnienia. Wszystko pozostałe zostało już uzgodnione bez pytania.
+      <br>Nic nie zostanie nadpisane, dopóki nie klikniesz <b>Zastosuj wybory</b>.</p>
+    <div class="roz-hurt">
+      <button class="btn" id="syncWszystkieMoje" type="button">Wszędzie zostaw moje</button>
+      <button class="btn" id="syncWszystkieZdalne" type="button">Wszędzie weź z drugiego urządzenia</button>
+    </div>
+    <div id="syncLista" class="roz-lista"></div>
+    <p id="syncPodsum" class="roz-podsum"></p>
+    <div class="actions">
+      <button class="btn" id="syncAnuluj" type="button">Przerwij — nic nie zmieniaj</button>
+      <button class="btn primary" id="syncZastosuj" type="button">Zastosuj wybory</button>
+    </div>
+  </div>
+</div>
+<!-- Wybór pliku uzgadniania. Poza oknem różnic, bo naciskany jest wtedy, gdy
+     to okno jest jeszcze zamknięte. -->
+<input type="file" id="syncPlikInput" accept="" style="display:none">
+
 <div class="overlay" id="modalTrash">
   <div class="modal trashmodal">
     <h3>🗑 Kosz</h3>
@@ -5499,9 +5847,24 @@ html[data-theme="sepia"] .cenOpis{ opacity:.8; }
         • pod polem podpowiadają się <b>etykiety i ostatnie wyszukiwania</b></div></div>
       <div class="help-row"><span class="help-ic">✚</span><div><b>Nowa notatka</b> — dodaj notatkę i (opcjonalnie) przypnij do konkretnego wersetu.</div></div>
       <div class="help-row"><span class="help-ic">📌</span><div><b>Przypnij</b> ważne notatki — zawsze będą na górze listy.</div></div>
+      <div class="help-row"><span class="help-ic">🗺️</span><div><b>Mapa tematów</b> — przycisk w pasku górnym albo klawisz <kbd>M</kbd>.<br>
+        Osobista encyklopedia: po lewej drzewo tematów, po prawej notatki wybranego miejsca.
+        <div class="help-steps">
+          <div class="help-step"><span class="hs-n">1</span><div><b>Temat główny to sekcja</b>, <b>podtemat to etykieta</b> — mapa nie ma własnych danych, więc działa od pierwszego otwarcia na etykietach, które już masz. Nic nie trzeba przepisywać.</div></div>
+          <div class="help-step"><span class="hs-n">2</span><div>Kliknięcie tematu (np. <b>WIARA</b>) pokazuje notatki ze <b>wszystkich jego podtematów naraz</b>. Kliknięcie podtematu zawęża do niego.</div></div>
+          <div class="help-step"><span class="hs-n">3</span><div>Porządkujesz na miejscu: <b>+ Nowy temat</b>, a przy podtemacie <b>⋯ → Przenieś do tematu</b>. To ten sam ruch co <b>⋯ → Sekcja</b> przy etykiecie, tylko tu widać, gdzie co wyląduje.</div></div>
+        </div>
+        <div class="help-tip">Licznik przy temacie to <b>liczba notatek</b>, nie suma podtematów — notatka z etykietami „Ufność" i „Modlitwa" liczy się w WIERZE raz.</div>
+      </div></div>
       <div class="help-row"><span class="help-ic">📁</span><div><b>Sekcje etykiet</b> — gdy masz dużo etykiet, pogrupuj je: <b>📁 Nowa sekcja</b> (np. „Kongresy”), potem przy etykiecie <b>⋯ → Sekcja</b>. Sekcje zwijasz kliknięciem w nagłówek.</div></div>
       <div class="help-row"><span class="help-ic">📖</span><div><b>Czytnik</b> (notatka na pełnym ekranie): licznik słów i czasu czytania, <b>Spis</b> (skok do nagłówka), <b>Znajdź</b> w notatce, <b>Aa</b> (rozmiar, interlinia, szerokość, czcionka, tło). Aplikacja <b>zapamiętuje miejsce</b>, w którym skończyłeś czytać.</div></div>
-      <div class="help-row"><span class="help-ic">✍️</span><div><b>W edycji</b>: przycisk <b>＋</b> wstawia odnośnik do wersetu, cytat, listę zadań, <b>tabelę</b> i <b>szablon notatki</b>; w menu <b>⋯</b> jest <b>Znajdź i zamień</b> oraz <b>Historia wersji</b> (10 ostatnich).</div></div>
+      <div class="help-row"><span class="help-ic">✍️</span><div><b>W edycji</b>: przycisk <b>＋</b> wstawia odnośnik do wersetu, <b>przypis</b>, cytat, listę zadań, <b>tabelę</b> i <b>szablon notatki</b>; ikona <b>🎨</b> to zakreślacz (7 kolorów) i kolor czcionki; w menu <b>⋯</b> jest <b>Znajdź i zamień</b> oraz <b>Historia wersji</b> (do 50 wersji).</div></div>
+      <div class="help-row"><span class="help-ic">⌨️</span><div><b>Pisanie skrótami</b> — na początku wiersza:<br>
+        • <code>@</code> → lista notatek. Wybrana wchodzi jako <b>odsyłacz</b>; kliknięcie w niego otwiera tamtą notatkę, a strzałka wstecz wraca tutaj. Napis bierze się z bieżącego tytułu, więc zmiana tytułu przenosi się sama.<br>
+        • <code>#</code> → lista etykiet. Wybrana zostaje <b>nadana notatce</b>, a wpisany tekst znika. Nieistniejącą można utworzyć od razu.<br>
+        • <code># </code> nagłówek · <code>## </code> mniejszy nagłówek · <code>- </code> lista · <code>1. </code> lista numerowana · <code>> </code> cytat · <code>[] </code> lista zadań<br>
+        • <code>Jana 3:16</code> samo staje się odnośnikiem do JW Library — działa też z przecinkiem (<code>Rzymian 12,2</code>) i z zakresem (<code>Mateusza 5:3-5</code>)</div></div>
+      <div class="help-row"><span class="help-ic">¹</span><div><b>Przypisy</b> — <b>＋ → Przypis</b>. W tekście zostaje mały odsyłacz, treść ląduje na dole notatki, pod linią. Kliknięcie odsyłacza przenosi do przypisu, kliknięcie numeru przypisu — z powrotem do tekstu. Numery liczą się same: wstawienie przypisu w środku przenumerowuje wszystkie następne. Gdy skasujesz w tekście sam odsyłacz, treść przypisu <b>zostaje</b> na dole z oznaczeniem, że nie ma odsyłacza — nic nie ginie przez przypadkowe naciśnięcie Backspace.</div></div>
       <div class="help-row"><span class="help-ic">🔄</span><div><b>Wymiana notatek z JW Library</b><br>
         Aplikacja <u>nie zmienia</u> JW Library bezpośrednio. Bierze kopię, którą do niej wczytasz, dopisuje Twoje notatki i tworzy <b>nowy plik .jwlibrary</b>, który przywracasz w JW Library.
         <div class="help-steps">
@@ -5515,7 +5878,17 @@ html[data-theme="sepia"] .cenOpis{ opacity:.8; }
         Dlatego trzymaj się kolejności: <b>kopia → import → praca tutaj → eksport → przywrócenie</b>, i nie pracuj w JW Library w międzyczasie.</div>
         <div class="help-tip">Twoje podkreślenia, playlisty i pozostałe dane z JW Library <b>zostają nietknięte</b> — aplikacja dopisuje tylko notatki i etykiety.</div>
       </div></div>
-      <div class="help-row"><span class="help-ic">💾</span><div><b>Kopia zapasowa</b> — rób ją regularnie (przycisk 💾 u góry). Gdy zrobi się bursztynowy, czas na kopię.<br><b>Przenoszenie między urządzeniami:</b> zapisz kopię na jednym, a na drugim <b>⚙️ Plik → Wczytaj kopię</b> i wybierz <b>Dołącz + układ</b> — doda brakujące notatki i przeniesie porządek etykiet (sekcje, kolory), więc wszędzie będzie tak samo. Nic nie kasuje.</div></div>
+      <div class="help-row"><span class="help-ic">🔁</span><div><b>Ta sama treść na iPhonie, iPadzie i Macu</b><br>
+        Wszystkie urządzenia korzystają z <b>jednego pliku uzgadniania</b> w iCloud Drive (może być też OneDrive albo Dysk Google — aplikacji jest to obojętne). Każde urządzenie ten plik czyta, scala z tym, co ma u siebie, i zapisuje wynik. Jadą <b>notatki, etykiety, kolory, sekcje, zakładki, szablony, kolejność publikacji, powtórki i historia wersji</b>.
+        <div class="help-steps">
+          <div class="help-step"><span class="hs-n">1</span><div>Na <b>Macu w Chrome</b> (albo Edge, Brave, Arc): <b>⚙️ Ustawienia → Notatki i dane → Wskaż plik uzgadniania</b>. Zapisz go w folderze <b>iCloud Drive</b>. Pytanie pada raz — potem uzgadnianie chodzi samo.</div></div>
+          <div class="help-step"><span class="hs-n">2</span><div>Na <b>iPhonie i iPadzie</b> (a także w Safari na Macu) strona nie może sama sięgnąć do iCloud Drive. Zostają dwa przyciski: <b>⚙️ Plik → Uzgodnij z iPhonem, iPadem, Makiem…</b> → <b>Wczytaj zmiany</b> (wskazujesz plik z iCloud Drive) albo <b>Wyślij zmiany</b> (zapisujesz go tam z powrotem).</div></div>
+          <div class="help-step"><span class="hs-n">3</span><div>Zawsze <b>najpierw wczytaj, potem wyślij</b>. Wczytanie dokłada to, co zrobiłeś na drugim urządzeniu; wysłanie oddaje mu to, co zrobiłeś tutaj.</div></div>
+        </div>
+        <div class="help-tip">Rzecz zmieniona <b>tylko w jednym miejscu</b> uzgadnia się bez pytania. Gdy ta sama notatka zmieniła się <b>w dwóch miejscach naraz</b>, aplikacja pokaże obie wersje obok siebie — możesz zostawić swoją, wziąć tę drugą albo <b>zachować obie</b>. Domyślnie zostaje Twoja i nic się nie dzieje, dopóki nie klikniesz.</div>
+        <div class="help-warn"><b>Uzgadnianie nie zastępuje kopii zapasowej.</b> Plik uzgadniania jest <u>wspólnym</u> stanem wszystkich urządzeń — kopia zapasowa jest zdjęciem z danego dnia, do którego można wrócić. Rób jedno i drugie.</div>
+      </div></div>
+      <div class="help-row"><span class="help-ic">💾</span><div><b>Kopia zapasowa</b> — rób ją regularnie (przycisk 💾 u góry). Gdy zrobi się bursztynowy, czas na kopię.<br>Kopia to <b>zdjęcie z danego dnia</b>: możesz do niego wrócić, gdy coś pójdzie nie tak. Do trzymania urządzeń w zgodzie służy <b>uzgadnianie</b> (punkt wyżej), nie kopia.</div></div>
       <div class="help-row"><span class="help-ic">⌨️</span><div><b>Skróty</b> (komputer): <code>/</code> szukaj · <code>n</code> nowa notatka · <code>Esc</code> zamknij.</div></div>
     </div>
     <div class="actions"><button class="btn primary" data-zamknij="modalHelp">Zaczynajmy</button></div>
@@ -5888,6 +6261,9 @@ function commitLiveEdit(ce){
   const card = ce.closest && ce.closest(".ncard"); if(!card) return;
   const n = notes.find(x=>x.g===card.dataset.g); if(!n) return;
   try{
+    /* Numery przypisów liczy 55-przypisy.js z kolejności odsyłaczy w treści —
+       zawsze przed odczytaniem HTML, żeby do bazy nie trafiła stara numeracja. */
+    if(typeof przPrzenumeruj==="function") przPrzenumeruj(ce);
     const clean = sanitize(ce.innerHTML);
     n.h = clean; n.c = htmlToPlain(clean);
     n.ed = true; n.mo = new Date().toISOString();
@@ -6141,6 +6517,9 @@ async function boot(){
   }, 400);
   // tryb offline: zapamiętaj aplikację w pamięci podręcznej urządzenia
   if(location.protocol.indexOf("http")===0 && "serviceWorker" in navigator) zarejestrujSW();
+  /* Uzgadnianie z drugim urządzeniem — dopiero po pierwszym renderowaniu, żeby
+     czytanie pliku z chmury nie opóźniało pojawienia się notatek na ekranie. */
+  if(typeof syncStart==="function") syncStart();
 }
 
 /**
@@ -6340,6 +6719,16 @@ function noteMatchesTag(n,t){
      oraz te noszące którąkolwiek z etykiet przypisanych do tej zakładki. */
   if(typeof t==="string" && t.indexOf("stb:")===0)
     return typeof notatkaWZakladce==="function" && notatkaWZakladce(n, +t.slice(4));
+  /* „sec:<id>" — CAŁY TEMAT z mapy tematów (56-mapa.js): notatki noszące
+     którąkolwiek etykietę należącą do tej sekcji. Bez tego z mapy dałoby się
+     pokazać na liście tylko jeden podtemat, a nie temat jako całość. */
+  if(typeof t==="string" && t.indexOf("sec:")===0){
+    const sek = +t.slice(4);
+    return n.tg.some(id=>{
+      const tg = tags.find(x=>x.id===id);
+      return tg && tg.sec === sek;
+    });
+  }
   return n.tg.includes(t);
 }
 /* filtr księgi; dodatkowo obsługuje wybór publikacji: "pub:SYMBOL" */
@@ -7839,6 +8228,12 @@ function renderNotes(){
   }
   syncChildren(el, wanted);
   odswiezPodswietlenie(el);
+  /* Napisy odsyłaczy do notatek odświeżamy dla CAŁEJ listy, nie tylko dla kart
+     zbudowanych od nowa. Karta siedzi w pamięci podręcznej, dopóki nie zmieni
+     się jej własny podpis — a zmiana TYTUŁU innej notatki tego podpisu nie
+     rusza. Bez tego przebiegu odsyłacz pokazywałby stary tytuł aż do
+     przypadkowej zmiany w tej notatce. */
+  if(typeof odswiezOdnosnikiNotatek==="function") odswiezOdnosnikiNotatek(el);
   pruneCardCache(keep);
   fsNavList = arr.map(n=>n.g);
 }
@@ -8042,6 +8437,11 @@ function noteCard(n){
                 `<div class="wysUchwyt" title="Przeciągnij, aby zmienić wysokość notatki (dwuklik = jak w widoku)"></div>` +
                 noteCardTools(n);
   autolinkRefs(d.querySelector(".ncontent"));
+  /* Odsyłacze do notatek dostają napis z BIEŻĄCEGO tytułu, a przypisy numery
+     z kolejności odsyłaczy — jedno i drugie liczone przy wyświetleniu, nie
+     zapisane w treści. Wyjaśnienia w 54-wzmianki.js i 55-przypisy.js. */
+  if(typeof odswiezOdnosnikiNotatek==="function") odswiezOdnosnikiNotatek(d.querySelector(".ncontent"));
+  if(typeof przPrzenumeruj==="function") przPrzenumeruj(d.querySelector(".ncontent"));
   if(typeof zastosujWysokosc==="function") zastosujWysokosc(d, n);
   if(typeof zastosujTloNotatki==="function") zastosujTloNotatki(d, n);
   if(typeof przygotujPrzewijanie==="function") przygotujPrzewijanie(d);
@@ -8777,7 +9177,11 @@ function persistFilt(){ lsSetSoon(KP+"Filt", JSON.stringify(filt), 300); }
 /* ================= AKCJE ================= */
 /* licznik niezapisanych zmian: czytamy z pamięci podręcznej, zapis sklejamy */
 function bumpDirty(){ lsSetSoon(KP+"Dirty", String((+(lsGet(KP+"Dirty",0)||0))+1), 500); updateBackupBadge();
-  if(typeof sprawdzKopie==="function") sprawdzKopie(); }
+  if(typeof sprawdzKopie==="function") sprawdzKopie();
+  /* Każda zmiana odkłada zapis pliku uzgadniania — patrz 53-sync.js. Wpięte tutaj,
+     w JEDNYM miejscu, przez które przechodzi każda zmiana danych; rozsypane po
+     kilkunastu akcjach zawsze którąś by pominęło. */
+  if(typeof syncPoZmianie==="function") syncPoZmianie(); }
 function clearDirty(){ lsSet(KP+"Dirty","0"); lsSet(KP+"LastBk", new Date().toISOString().substring(0,10)); updateBackupBadge();
   if(typeof zapomnijOdlozenie==="function") zapomnijOdlozenie();
   if(typeof schowajPasekKopii==="function") schowajPasekKopii(); }
@@ -9206,7 +9610,12 @@ const SKROTY_PISANIA = [
   { wzor:/^\d{1,2}[.)]$/, cmd:"insertOrderedList" },
   { wzor:/^#$/,        blok:"h2" },
   { wzor:/^##$/,       blok:"h3" },
-  { wzor:/^>$/,        blok:"blockquote" }
+  { wzor:/^>$/,        blok:"blockquote" },
+  /* Lista zadań. Do wydania 2.60 rozpoznawał ją tylko autoformat na zdarzeniu
+     „input", które przy pisaniu z klawiatury nigdy nie dochodziło — spację
+     przechwytuje skrotPisania i zatrzymuje. Czyli `[] ` działało wyłącznie przy
+     dyktowaniu i pisaniu rysikiem. */
+  { wzor:/^\[ ?\]$/,   cmd:"insertTaskList" }
 ];
 /**
  * Reaguje na spację wpisaną na początku wiersza.
@@ -9234,9 +9643,23 @@ function skrotPisania(e, ce){
   zakres.setStart(wezel, r.startOffset - przed.length);
   zakres.setEnd(wezel, r.startOffset);
   zakres.deleteContents();
-  if(pasuje.cmd) document.execCommand(pasuje.cmd, false, null);
-  else document.execCommand("formatBlock", false, "<"+pasuje.blok+">");
+  /* ZAMIANA BLOKU BEZ execCommand — patrz obszerne wyjaśnienie przy zamienBlok
+     niżej w tym pliku. W skrócie: po skasowaniu wpisanego znacznika akapit jest
+     PUSTY, a execCommand w pustym bloku brał blok POPRZEDNI. Nagłówkiem stawał
+     się akapit wyżej, a wpisywany tekst dopisywał się na jego końcu. Dotyczyło
+     to wszystkich pięciu skrótów. */
+  const blok = blockOf(zakres.startContainer, ce);
+  let nowy = null;
+  if(pasuje.blok) nowy = zamienBlok(blok, pasuje.blok, ce);
+  else if(pasuje.cmd === "insertUnorderedList") nowy = zamienNaListe(blok, "ul", "", ce);
+  else if(pasuje.cmd === "insertOrderedList")   nowy = zamienNaListe(blok, "ol", "", ce);
+  else if(pasuje.cmd === "insertTaskList")      nowy = zamienNaListe(blok, "ul", "tasklist", ce);
+  if(nowy) kursorNaPoczatkuBloku(nowy, ce);
+  else if(pasuje.cmd) document.execCommand(pasuje.cmd, false, null);   // droga awaryjna
+  if(typeof commitLiveEdit === "function") commitLiveEdit(ce);
   histZapisz(ce);
+  const pasek = ce.parentElement && ce.parentElement.querySelector(".editbar");
+  if(pasek && typeof updateEditbarState === "function") updateEditbarState(pasek);
   return true;
 }
 /** Czy podana pozycja to faktycznie początek wiersza (nic przed nią oprócz białych znaków). */
@@ -9480,6 +9903,8 @@ function openEbPop(kind, btn, bar){
       `<div data-ins="verse">${ICO.book}Odnośnik do wersetu (JW Library)</div>
        <div data-ins="url">${ICO.link}Link (adres internetowy)</div>
        <div class="dd-sep"></div>
+       <div data-ins="przypis">${IE_GORNY}Przypis¹</div>
+       <div class="dd-sep"></div>
        <div data-ins="quote">${IE_CYTAT}Blok cytatu wersetu</div>
        <div data-ins="task">${IE_ZADANIA}Lista zadań</div>
        <div data-ins="table">${IE_TABELA}Tabela</div>
@@ -9569,6 +9994,7 @@ $("ebPop").addEventListener("pointerdown", ev=>{
     const k=ins.dataset.ins;
     pop.style.display="none";
     if(k==="verse"){ insertVerseRef(ce); return; }   // własne okienko + commit w środku
+    if(k==="przypis"){ if(typeof przWstaw==="function") przWstaw(ce); return; }
     if(k==="url"){ insertUrlLink(ce); return; }
     if(k==="tpl"){ insertTemplate(ce); return; }
     if(k==="replace"){ openReplace(ce); return; }
@@ -9924,24 +10350,106 @@ function blockOf(node, ce){
   }
   return ce;
 }
+/**
+ * SKRÓTY PISANIA: `# `, `## `, `- `, `1. `, `> `, `[] ` na początku akapitu.
+ *
+ * CO BYŁO NIE TAK (do wydania 2.60)
+ *
+ * Zamiana bloku szła przez document.execCommand("formatBlock"). Działa to
+ * tylko wtedy, gdy w bloku JEST tekst. Najczęstszy przypadek jest odwrotny:
+ * naciskasz Enter, powstaje PUSTY akapit, wpisujesz `# ` — i po skasowaniu
+ * dwóch znaków blok znów jest pusty. Kursor w pustym elemencie nie wskazuje
+ * przeglądarce jednoznacznie, co formatować, więc Chromium brał blok
+ * POPRZEDNI. Efekt: nagłówkiem stawał się akapit wyżej, a wpisywany tekst
+ * dopisywał się na jego końcu:
+ *
+ *     <div>pierwszy akapit</div> + Enter + „# Nagłówek"
+ *        → <h2>pierwszy akapitNagłówek</h2><div></div>
+ *
+ * Tak samo psuły się wszystkie sześć skrótów, także listy. Nie było tego
+ * widać w testach, bo sprawdzały funkcję autoformat na bloku Z TEKSTEM.
+ *
+ * JAK JEST TERAZ
+ *
+ * Zamianę robimy sami: nowy element, przeniesione dzieci, podmiana w miejscu.
+ * Żadnego zgadywania, który blok miał być celem — mamy go w ręku. execCommand
+ * zostaje tylko tam, gdzie nie ma nic do zgadnięcia.
+ */
+function zamienBlok(block, tag, ce){
+  if(!block || block === ce || !block.parentNode) return null;
+  const nowy = document.createElement(tag);
+  while(block.firstChild) nowy.appendChild(block.firstChild);
+  block.parentNode.replaceChild(nowy, block);
+  return nowy;
+}
+/** Zamienia blok na listę jednoelementową; zawartość bloku wchodzi do <li>. */
+function zamienNaListe(block, tag, klasa, ce){
+  if(!block || block === ce || !block.parentNode) return null;
+  const lista = document.createElement(tag);
+  if(klasa) lista.className = klasa;
+  const li = document.createElement("li");
+  while(block.firstChild) li.appendChild(block.firstChild);
+  lista.appendChild(li);
+  block.parentNode.replaceChild(lista, block);
+  return lista;
+}
+/**
+ * KURSOR NA POCZĄTKU ŚWIEŻO UTWORZONEGO BLOKU.
+ *
+ * Nowy blok jest zwykle PUSTY (znacznik `# ` właśnie zniknął), a w pustym
+ * elemencie przeglądarka nie umie utrzymać kursora: zaznaczenie ustawione na
+ * „element, pozycja 0" przepadało i pisany dalej tekst lądował w akapicie
+ * WYŻEJ. Widać to było przy `## ` i `[] `, a przy `# ` czasem tak, czasem nie —
+ * czyli najgorszy możliwy rodzaj usterki.
+ *
+ * Dlatego pusty blok dostaje najpierw <br> — dokładnie to, co przeglądarka
+ * sama wstawia do pustego akapitu w polu edycji. Kursor ma się wtedy o co
+ * zaczepić, a pisany tekst wchodzi PRZED znacznik i wypycha go poza widok.
+ */
+function kursorNaPoczatkuBloku(el, ce){
+  if(!el) return;
+  const cel = el.querySelector("li") || el;
+  /* PUSTE WĘZŁY TEKSTOWE MUSZĄ ZNIKNĄĆ. Zostają po skasowaniu wpisanego
+     znacznika i wyglądają na dobre miejsce dla kursora, ale przeglądarka
+     porzuca je przy pierwszej normalizacji zaznaczenia — i wtedy kursor
+     przeskakuje do akapitu wyżej. To była przyczyna tego, że `# ` działało,
+     a `## ` i `[] ` nie: różniły się tylko tym, czy po kasowaniu został pusty
+     węzeł, czy nie. */
+  [...cel.childNodes].forEach(w=>{ if(w.nodeType === 3 && !w.nodeValue) w.remove(); });
+  if(!cel.firstChild) cel.appendChild(document.createElement("br"));
+  try{
+    if(ce && typeof ce.focus === "function") ce.focus();
+    const r = document.createRange();
+    if(cel.firstChild.nodeType === 3) r.setStart(cel.firstChild, 0);
+    else r.setStart(cel, 0);
+    r.collapse(true);
+    const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+  }catch(e){}
+}
 function autoformat(ce){
   const sel=getSelection(); if(!sel.rangeCount) return;
   const r=sel.getRangeAt(0); if(!r.collapsed) return;
-  const block=blockOf(r.startContainer, ce); if(!block) return;
+  const block=blockOf(r.startContainer, ce); if(!block || block===ce) return;
   let txt;
   try{ const pre=document.createRange(); pre.setStart(block,0); pre.setEnd(r.startContainer, r.startOffset); txt=pre.toString(); }catch(e){ return; }
   const m=txt.match(/^(#{1,2}|[-*]|>|1\.|\[ ?\])\s$/);
   if(!m) return;
   const trig=m[1];
-  try{ const del=document.createRange(); del.setStart(block,0); del.setEnd(r.startContainer, r.startOffset); del.deleteContents();
-    const cr=document.createRange(); cr.setStart(block,0); cr.collapse(true); sel.removeAllRanges(); sel.addRange(cr); }catch(e){ return; }
-  if(trig==="#") document.execCommand("formatBlock",false,"<h2>");
-  else if(trig==="##") document.execCommand("formatBlock",false,"<h3>");
-  else if(trig==="-"||trig==="*") document.execCommand("insertUnorderedList");
-  else if(trig==="1.") document.execCommand("insertOrderedList");
-  else if(trig===">") document.execCommand("formatBlock",false,"<blockquote>");
-  else if(trig[0]==="["){ document.execCommand("insertUnorderedList"); const a2=getSelection().anchorNode; const ul=(a2&&a2.nodeType===3?a2.parentNode:a2)?.closest?.("ul"); if(ul) ul.classList.add("tasklist"); }
+  /* Wpisany znacznik znika — od tej chwili blok wygląda jak przed pisaniem. */
+  try{ const del=document.createRange(); del.setStart(block,0); del.setEnd(r.startContainer, r.startOffset); del.deleteContents(); }
+  catch(e){ return; }
+  let nowy=null;
+  if(trig==="#")            nowy = zamienBlok(block, "h2", ce);
+  else if(trig==="##")      nowy = zamienBlok(block, "h3", ce);
+  else if(trig===">")       nowy = zamienBlok(block, "blockquote", ce);
+  else if(trig==="-"||trig==="*") nowy = zamienNaListe(block, "ul", "", ce);
+  else if(trig==="1.")      nowy = zamienNaListe(block, "ol", "", ce);
+  else if(trig[0]==="[")    nowy = zamienNaListe(block, "ul", "tasklist", ce);
+  if(!nowy) return;
+  kursorNaPoczatkuBloku(nowy, ce);
   commitLiveEdit(ce);
+  const bar = ce.parentElement && ce.parentElement.querySelector(".editbar");
+  if(bar && typeof updateEditbarState==="function") updateEditbarState(bar);
 }
 document.addEventListener("input", e=>{ const ce=e.target && e.target.closest && e.target.closest('.ncontent[contenteditable="true"]'); if(ce) autoformat(ce); });
 // odhaczanie list zadań (odnośniki do wersetów są zwykłymi <a target="_blank"> — otwierają się natywnie, iOS przekieruje do JW Library)
@@ -10251,6 +10759,9 @@ function toggleEdit(card,n){
     saveVersion(n);   // zapisz poprzednią treść do historii wersji
     pushUndo({type:"note", label:"edycję notatki", before:cloneNote(n)});
     n.t = titleEl.textContent.trim();
+    /* Numery przypisów liczą się z kolejności odsyłaczy — musi to się stać
+       PRZED odczytaniem treści, inaczej do bazy trafiłyby stare numery. */
+    if(typeof przPrzenumeruj==="function") przPrzenumeruj(contEl);
     const clean = sanitize(contEl.innerHTML);
     n.h = clean; n.c = htmlToPlain(clean);
     markDirty(n); renderAll();
@@ -10300,9 +10811,36 @@ function sanitize(html){
         else if(tag==="TBODY"||tag==="THEAD"||tag==="TR"||tag==="TD"||tag==="TH"){
           const e3=document.createElement(tag.toLowerCase()); walk(node,e3); dst.appendChild(e3);
         }
-        else if(tag==="SUP"||tag==="SUB"){ const e2=document.createElement(tag.toLowerCase()); walk(node,e2); dst.appendChild(e2); }
+        else if(tag==="SUP"||tag==="SUB"){
+          const e2=document.createElement(tag.toLowerCase());
+          /* Odsyłacz przypisu. Numer w treści jest tylko wyglądem — liczy go
+             przPrzenumeruj z kolejności odsyłaczy (55-przypisy.js) — ale sama
+             para (klasa, data-fn) musi przejść przez sito, bo to ona łączy
+             odsyłacz z treścią przypisu na dole notatki. */
+          if(tag==="SUP" && /(^|\s)fnref(\s|$)/.test(node.className||"")){
+            e2.className="fnref";
+            const id=String(node.getAttribute("data-fn")||"").slice(0,20);
+            if(/^[a-z0-9]+$/i.test(id)) e2.setAttribute("data-fn", id);
+          }
+          walk(node,e2); dst.appendChild(e2);
+        }
         else if(tag==="HR"){ dst.appendChild(document.createElement("hr")); }
         else if(tag==="A"){
+          /* Odsyłacz do innej notatki. Nie ma adresu — ma identyfikator notatki
+             na tym urządzeniu. Napis dopisuje przy wyświetlaniu
+             odswiezOdnosnikiNotatek (54-wzmianki.js), z bieżącego tytułu. */
+          if(/(^|\s)note-ref(\s|$)/.test(node.className||"")){
+            const g=String(node.getAttribute("data-g")||"").slice(0,80);
+            if(/^[A-Za-z0-9_.:-]+$/.test(g)){
+              const a=document.createElement("a");
+              a.className="note-ref"; a.setAttribute("data-g", g);
+              walk(node,a);
+              if(!a.textContent.trim()) a.textContent="notatka";
+              dst.appendChild(a);
+              return;
+            }
+            walk(node,dst); return;
+          }
           const href=node.getAttribute("href")||"";
           if(/^(https?:\/\/|mailto:|jwlibrary:)/i.test(href)){
             const a=document.createElement("a"); a.setAttribute("href",href);
@@ -10342,6 +10880,16 @@ function sanitize(html){
         else if(tag==="LI"){ const li=document.createElement("li"); if(/(^|\s)done(\s|$)/.test(node.className||"")) li.className="done"; walk(node,li); dst.appendChild(li); }
         else if(tag==="DIV"||tag==="P"){
           const d2=document.createElement("div");
+          /* Blok przypisów i pojedynczy przypis. Trzymamy je w treści notatki,
+             a nie w osobnym polu — patrz decyzja 3 w 55-przypisy.js. */
+          const kl=node.className||"";
+          if(/(^|\s)fnlist(\s|$)/.test(kl)) d2.className="fnlist";
+          else if(/(^|\s)fn(\s|$)/.test(kl)){
+            d2.className="fn";
+            const id=String(node.getAttribute("data-fn")||"").slice(0,20);
+            if(/^[a-z0-9]+$/i.test(id)) d2.setAttribute("data-fn", id);
+            if(node.getAttribute("data-sierota")) d2.setAttribute("data-sierota","1");
+          }
           const ta=(node.style&&node.style.textAlign)||node.getAttribute&&node.getAttribute("align");
           if(ta) d2.style.textAlign=ta;
           walk(node,d2);
@@ -10469,9 +11017,12 @@ document.addEventListener("click", e=>{
 function saveContentEl(contEl, n){
   pushUndo({type:"note", label:"zmianę w treści notatki", before:cloneNote(n)});
   contEl.querySelectorAll(".qhl").forEach(s=>{ s.replaceWith(...s.childNodes); });
+  if(typeof przPrzenumeruj==="function") przPrzenumeruj(contEl);
   const clean=sanitize(contEl.innerHTML);
   contEl.innerHTML=hilite(clean);
   autolinkRefs(contEl);
+  if(typeof odswiezOdnosnikiNotatek==="function") odswiezOdnosnikiNotatek(contEl);
+  if(typeof przPrzenumeruj==="function") przPrzenumeruj(contEl);
   n.h=clean; n.c=htmlToPlain(clean);
   markDirty(n);
   // NIE przebudowuj całej listy tu (blokowałoby dotyk/rysik) — odłóż do zamknięcia pełnego ekranu
@@ -10679,6 +11230,7 @@ $("btnMenu").onclick = e=>{
     up:_svg('<path d="M12 20V9"/><path d="M8 13l4-4 4 4"/><path d="M4 5h16"/>'),
     cloud:_svg('<path d="M7 18a4 4 0 0 1 0-8 5.5 5.5 0 0 1 10.4-1.3A3.8 3.8 0 0 1 18 18z"/><path d="M12 12v5"/><path d="M9.5 14.5L12 12l2.5 2.5"/>'),
     folder:_svg('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>'),
+    sync:_svg('<path d="M20 11a8 8 0 0 0-14.3-4.1"/><path d="M4 13a8 8 0 0 0 14.3 4.1"/><path d="M4 4v4h4"/><path d="M20 20v-4h-4"/>'),
     info:_svg('<circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><circle cx="12" cy="7.8" r="1" fill="currentColor" stroke="none"/>'),
     help:_svg('<circle cx="12" cy="12" r="9"/><path d="M9.4 9.2a2.7 2.7 0 0 1 5.2.9c0 1.8-2.6 2.2-2.6 3.9"/><circle cx="12" cy="17.2" r="1" fill="currentColor" stroke="none"/>')
   };
@@ -10686,6 +11238,9 @@ $("btnMenu").onclick = e=>{
     <div class="dd-lbl">JW Library</div>
     <div data-m="import">${ic.down}Importuj backup <b>.jwlibrary</b>…</div>
     <div data-m="export">${ic.up}Eksportuj do JW Library</div>
+    <div class="dd-sep"></div>
+    <div class="dd-lbl">Inne urządzenia</div>
+    <div data-m="sync">${ic.sync}Uzgodnij z iPhonem, iPadem, Makiem…</div>
     <div class="dd-sep"></div>
     <div class="dd-lbl">Kopia zapasowa</div>
     <div data-m="json">${ICO.save}Zapisz kopię danych <span class="dd-hint">JSON</span></div>
@@ -10705,7 +11260,8 @@ $("btnMenu").onclick = e=>{
   dd.onclick=ev=>{
     const m=ev.target.dataset.m;
     dd.style.display="none";
-    if(m==="import")openFilePicker("jwl");
+    if(m==="sync"){ if(typeof syncUzgodnijTeraz==="function") syncUzgodnijTeraz(); }
+    else if(m==="import")openFilePicker("jwl");
     else if(m==="export")startExport();
     else if(m==="json")exportJson();
     else if(m==="cloud")shareBackup();
@@ -13040,6 +13596,25 @@ function openSettings(){
        <div class="st-hint">Treść notatki jest wyświetlana z zachowaniem spacji, żeby Twoje własne wcięcia wyglądały tak, jak je wpisałeś. Notatki przeniesione z innego programu niosą jednak wcięcia i podziały wierszy z <b>pliku źródłowego</b> — one też są widoczne, choć nikt ich nie pisał. To narzędzie je usuwa; tekst, listy, tabele i zdjęcia zostają nietknięte.</div>
      </div>
      <div class="st-sec">
+       <div class="st-lbl">Synchronizacja między urządzeniami</div>
+       <div class="st-ver" id="stSync">sprawdzam…</div>
+       <div class="st-row">
+         <button class="btn primary" data-act="syncTeraz" type="button">Uzgodnij teraz</button>
+         <button class="btn" data-act="syncNazwa" type="button">Nazwa tego urządzenia…</button>
+       </div>
+       <button class="st-opt st-wide" id="stSyncWskaz" data-act="syncWskaz">Wskaż plik uzgadniania (raz)</button>
+       <button class="st-opt st-wide" id="stSyncOff" data-act="syncOff" style="display:none">Przestań uzgadniać automatycznie</button>
+       <button class="st-opt st-wide" id="stSyncOdNowa" data-act="syncZapomnij" style="display:none">Zacznij uzgadnianie od nowa</button>
+       <div class="st-row" id="stSyncRecznie" style="display:none">
+         <button class="btn" data-act="syncWyslij" type="button">Wyślij zmiany</button>
+         <button class="btn" data-act="syncWczytaj" type="button">Wczytaj zmiany</button>
+       </div>
+       <div class="st-hint">Jeden <b>plik uzgadniania</b> w iCloud Drive. Każde urządzenie go czyta,
+         scala z tym, co ma u siebie, i zapisuje wynik. Jadą notatki, etykiety, kolory, sekcje,
+         zakładki, szablony, kolejność publikacji, powtórki i historia wersji.
+         Krok po kroku: <b>⚙️ Plik → Jak to działa</b>.</div>
+     </div>
+     <div class="st-sec">
        <div class="st-lbl">Kopia zapasowa</div>
        <div class="st-ver" id="stPlikKopii"></div>
        <button class="st-opt st-wide" data-act="plikKopii">Wskaż stały plik kopii</button>
@@ -13077,6 +13652,7 @@ function openSettings(){
          <div><kbd>0</kbd><span>wszystkie notatki — zdejmuje szukanie i filtry</span></div>
          <div><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd><span>chowanie kolumn: Biblia / Etykiety / Publikacje</span></div>
          <div><kbd>H</kbd><span>Centrum studium / lista notatek</span></div>
+         <div><kbd>M</kbd><span>Mapa tematów</span></div>
          <div><kbd>,</kbd><span>ustawienia</span></div>
          <div><kbd>?</kbd><span>ta lista</span></div>
          <div><kbd>←</kbd> <kbd>→</kbd><span>poprzednia / następna notatka w czytniku</span></div>
@@ -13104,6 +13680,7 @@ function openSettings(){
   rysujZakladkiUstawien();
   pokazKarteUstawien(stKarta);
   pokazPlikKopii();
+  pokazStanSync();
   pokazStanBibliotek();
   const wyborOsz = $("stOszczedny");
   if(wyborOsz){
@@ -13149,6 +13726,45 @@ function openSettings(){
     if(act && act.dataset.act==="odstepy"){
       closeModal("modalSettings");
       setTimeout(()=>uporzadkujOdstepyNotatek(), 80);
+      return;
+    }
+    if(act && act.dataset.act==="syncTeraz"){ syncUzgodnijTeraz().then(pokazStanSync); return; }
+    if(act && act.dataset.act==="syncWskaz"){
+      syncWskazPlik().then(ok=>{ if(ok) syncUzgodnijTeraz().then(pokazStanSync); else pokazStanSync(); });
+      return;
+    }
+    if(act && act.dataset.act==="syncOff"){
+      /* Wyłączenie samo z siebie NIE kasuje podstawy: gdy ktoś wróci do
+         uzgadniania, ma się ono zacząć od miejsca, w którym stanęło, a nie od
+         „pierwszego spotkania" z pytaniem o każdą rozbieżność. */
+      syncZapomnijPlik().then(pokazStanSync);
+      return;
+    }
+    if(act && act.dataset.act==="syncWyslij"){ syncWyslij().then(pokazStanSync); return; }
+    if(act && act.dataset.act==="syncWczytaj"){
+      const p = $("syncPlikInput"); if(p) p.click();
+      return;
+    }
+    if(act && act.dataset.act==="syncNazwa"){
+      askText({title:"Nazwa tego urządzenia", value:syncNazwaUrzadzenia(),
+               placeholder:"np. iPad Grzegorza", okLabel:"Zapisz"}).then(n=>{
+        if(n && syncUstawNazweUrzadzenia(n)){ toastOk("Zapisano nazwę urządzenia"); pokazStanSync(); }
+      });
+      return;
+    }
+    if(act && act.dataset.act==="syncZapomnij"){
+      askConfirm("Zacząć uzgadnianie od nowa?",
+        "Aplikacja zapomni, na czym się ostatnio zgodziła z drugim urządzeniem. "
+        + "<b>Notatki zostają nietknięte</b> — ale przy najbliższym uzgodnieniu "
+        + "nie będzie wiadomo, kto się zmienił, więc w spornych notatkach wygra "
+        + "nowsza data zmiany, bez pytania. Przydaje się tylko wtedy, gdy "
+        + "uzgadnianie zaczęło pokazywać rozbieżności, których nie ma.",
+        {okLabel:"Zacznij od nowa", danger:true}).then(async ok=>{
+          if(!ok) return;
+          await syncZapomnijPodstawe();
+          pokazStanSync();
+          toast("Podstawa uzgadniania wyczyszczona");
+        });
       return;
     }
     if(act && act.dataset.act==="plikKopii"){
@@ -13213,6 +13829,31 @@ async function pokazPlikKopii(){
   opis.textContent = nazwa ? "Nadpisywany plik: " + nazwa : "Każda kopia to nowy plik z datą w nazwie.";
   if(wyl) wyl.style.display = nazwa ? "" : "none";
 }
+/**
+ * Stan uzgadniania w Ustawieniach.
+ *
+ * Pokazuje się TYLKO to, co na tym urządzeniu ma sens: w Chromium na komputerze
+ * wskazanie pliku i wyłącznik, w Safari i na telefonie dwa przyciski ręczne.
+ * Przycisk, który w danej przeglądarce nic nie zrobi, jest gorszy od jego braku.
+ */
+async function pokazStanSync(){
+  const opis = $("stSync");
+  if(!opis || typeof syncStanOpis !== "function") return;
+  opis.textContent = await syncStanOpis();
+  const auto = typeof syncPlikAutomatyczny === "function" && syncPlikAutomatyczny();
+  const nazwa = auto && typeof syncNazwaPliku === "function" ? await syncNazwaPliku() : "";
+  const wskaz   = document.querySelector('#setBody [data-act="syncWskaz"]');
+  const off     = $("stSyncOff");
+  const odNowa  = $("stSyncOdNowa");
+  const recznie = $("stSyncRecznie");
+  if(wskaz)   wskaz.style.display   = auto ? "" : "none";
+  if(off)     off.style.display     = (auto && nazwa) ? "" : "none";
+  if(recznie) recznie.style.display = (auto && nazwa) ? "none" : "";
+  /* „Zacznij od nowa" dotyczy podstawy, nie pliku — ma sens dopiero wtedy, gdy
+     coś już kiedyś uzgodniono. */
+  if(odNowa) odNowa.style.display = lsGet(KP+"SyncKiedy", "") ? "" : "none";
+}
+
 /** Skąd aplikacja bierze biblioteki do importu — widoczne w Ustawieniach. */
 async function pokazStanBibliotek(){
   const opis = document.getElementById("stLib");
@@ -16914,7 +17555,12 @@ function ustawPowtorke(guid, dni){
   /* Umówienie powrotu to nie zmiana treści — nie oznaczamy notatki jako
      zmienionej, bo trafiłaby do eksportu do JW Library, gdzie tego pojęcia
      nie ma, i podbiłaby licznik zmian bez kopii. */
-  if(idb) idbPut("notes", n, n.g).catch(e=>reportSaveError(e,"powtórka"));
+  /* Magazyn notatek ma klucz W REKORDZIE (keyPath "g"), więc podanie klucza
+     osobno kończy się błędem „the key parameter was provided" i powtórka NIE
+     ZAPISUJE SIĘ — po odświeżeniu strony przepada. Wyszło to przy pierwszym
+     uzgadnianiu między urządzeniami: powtórki nie miały jak nigdzie pojechać,
+     bo nie było ich nawet w bazie na urządzeniu. */
+  if(idb) idbPut("notes", n).catch(e=>reportSaveError(e,"powtórka"));
   renderNotes();
   const opis = (ODSTEPY_POWTORKI.find(o=>o.dni===dni)||{}).nazwa || ("za "+dni+" dni");
   toastOk("Wróci do Ciebie: " + opis.toLowerCase().replace("za ","za ") + " (" + n.pwt.d + ")");
@@ -16922,7 +17568,7 @@ function ustawPowtorke(guid, dni){
 function usunPowtorke(guid, cicho){
   const n = notes.find(x=>x.g===guid); if(!n || !n.pwt) return;
   delete n.pwt;
-  if(idb) idbPut("notes", n, n.g).catch(e=>reportSaveError(e,"powtórka"));
+  if(idb) idbPut("notes", n).catch(e=>reportSaveError(e,"powtórka"));   // patrz uwaga wyżej
   renderNotes();
   if(!cicho) toastOk("Nie będę już o niej przypominać");
 }
@@ -18325,6 +18971,2527 @@ setTimeout(centrumOdswiez, 0);
 </script>
 <script>
 /* ==========================================================================
+   JW Study — sync.js
+   UZGADNIANIE DANYCH MIĘDZY URZĄDZENIAMI (iPhone ↔ iPad ↔ Mac)
+
+   CO BYŁO NIE TAK
+
+   Dane mieszkają w bazie przeglądarki na urządzeniu. Przeniesienie ich na
+   drugie urządzenie znaczyło: zapisz kopię JSON, przenieś plik, wczytaj kopię.
+   Wczytanie dołączało notatki po dacie zmiany („nowsza wygrywa") i na tym
+   koniec. To wystarcza, żeby PRZENIEŚĆ notatki raz. Nie wystarcza, żeby
+   PRACOWAĆ na trzech urządzeniach:
+
+     • Usunięcia nie wracały. Etykieta skasowana na iPadzie wracała z każdą
+       kopią z Maca, bo „dołącz" umie tylko dokładać.
+     • Kolejność, kolory i przypisania do sekcji przenosiły się tylko wtedy,
+       gdy świadomie wybrało się „Dołącz + układ" — i wtedy hurtem, cudzym
+       układem na wierzchu.
+     • Notatka zmieniona w DWÓCH miejscach naraz przepadała po cichu: starsza
+       wersja odpadała, nikt o niej nie słyszał.
+     • Historia wersji i powtórki nie jechały wcale.
+
+   JAK JEST TERAZ
+
+   Jeden PLIK UZGADNIANIA w chmurze (iCloud Drive, OneDrive, Dysk Google —
+   aplikacji jest to obojętne; to zwykły plik w folderze, który system sam
+   podaje dalej). Każde urządzenie ten plik czyta, scala z tym, co ma
+   u siebie, i zapisuje wynik.
+
+   TRZY DECYZJE, KTÓRE WARTO ZNAĆ
+
+   1. SCALANIE JEST TRÓJSTRONNE. Po każdym udanym uzgodnieniu zapisujemy
+      PODPISY wszystkiego, co wtedy było — to jest „podstawa". Przy kolejnym
+      uzgodnieniu porównujemy trzy stany: podstawę, siebie i plik. Dzięki temu
+      wiadomo nie tylko ŻE się różnią, ale KTO się zmienił:
+
+        zmiana tylko w pliku      → bierzemy z pliku, bez pytania
+        zmiana tylko u nas        → zostawiamy swoje, bez pytania
+        zmiana w obu miejscach    → PYTAMY (okno z dwiema treściami)
+        zniknęło w pliku, u nas bez zmian → kasujemy też u nas
+        zniknęło w pliku, u nas zmienione → PYTAMY
+
+      Bez podstawy (czyli przy zwykłym „dołącz") KAŻDA różnica wyglądałaby na
+      spór i przy ośmiu tysiącach notatek trzeba by odpowiedzieć na tysiące
+      pytań. Z podstawą pytań jest tyle, ile naprawdę spornych notatek —
+      w praktyce zero albo kilka.
+
+   2. REKORDY MAJĄ STAŁE UID. Numery etykiet, sekcji i zakładek są LOKALNE:
+      etykieta „Betel" ma na iPadzie numer 3, a na Macu 11. Numer nie nadaje
+      się więc do rozpoznawania rekordu między urządzeniami. Każdy rekord
+      dostaje własne, niezmienne `uid`, a w pliku wszystkie odsyłacze
+      (notatka → etykiety, etykieta → sekcja, zakładka → sekcja) idą po uid.
+      Przy PIERWSZYM spotkaniu dwóch urządzeń rekordy o tej samej nazwie
+      zostają skojarzone i przyjmują wspólne uid — inaczej powstałyby dwie
+      etykiety „Betel".
+
+   3. NOTATKI NIGDY NIE GINĄ PRZEZ SAM BRAK W PLIKU. Etykieta czy zakładka,
+      której w pliku nie ma, a była w podstawie, została skasowana na drugim
+      urządzeniu — kasujemy ją też u siebie. Przy NOTATKACH tego nie robimy:
+      usunięcie notatki i tak zostawia po sobie ślad (`del` + `delAt`, kosz na
+      30 dni), więc jedzie normalną drogą, jak każda inna zmiana. Notatka,
+      której w pliku nie ma, jest po prostu dopisywana do pliku.
+
+   GDZIE DZIAŁA SAMO, A GDZIE TRZEBA KLIKNĄĆ
+
+   Zapis i odczyt pliku BEZ PYTANIA wymaga File System Access API — jest
+   w przeglądarkach opartych na Chromium na komputerze (Chrome, Edge, Brave,
+   Arc). Tam plik wskazuje się raz, a potem uzgadnianie chodzi samo: przy
+   uruchomieniu, po zmianach i co pół minuty zaglądając, czy plik się zmienił.
+
+   Safari — także na Macu — i wszystkie przeglądarki na iPhonie i iPadzie tego
+   nie mają i mieć nie będą: strona nie może tam sięgnąć do iCloud Drive.
+   Zostają dwa przyciski: „Wyślij zmiany" (przez systemowe okno udostępniania
+   do iCloud Drive) i „Wczytaj zmiany" (wskazanie pliku). Ta sama droga, to
+   samo scalanie — różni się tylko tym, kto naciska.
+   ========================================================================== */
+"use strict";
+
+/* ——— STAŁE ——— */
+const SYNC_FORMAT  = "jwstudy-sync";
+const SYNC_WERSJA  = 1;
+/* Klucze w magazynie „meta" bazy urządzenia. */
+const SYNC_K_PLIK  = "syncPlik";        // uchwyt pliku uzgadniania (File System Access)
+const SYNC_K_BAZA  = "syncBaza";        // podpisy z ostatniego udanego uzgodnienia
+/* Klucze w pamięci ustawień. */
+const SYNC_K_AUTO  = KP + "SyncAuto";   // "1" / "0" — czy chodzić samo
+const SYNC_K_NAZWA = KP + "SyncNazwa";  // nazwa tego urządzenia w opisach
+const SYNC_K_KIEDY = KP + "SyncKiedy";  // kiedy ostatnio się udało
+
+/* Ile czekać po ostatniej zmianie, zanim zapiszemy plik. Pisanie po każdym
+   naciśnięciu klawisza znaczyłoby kilkadziesiąt zapisów pliku na minutę. */
+const SYNC_ZWLOKA_MS = 15000;
+/* Najmniejszy odstęp między dwoma zapisami pliku. Plik z ośmioma tysiącami
+   notatek waży kilkanaście megabajtów, a ze zdjęciami znacznie więcej — i za
+   każdym razem idzie w całości na dysk, a potem do chmury. Dłuższe pisanie
+   z przerwami dawałoby bez tego zapis co piętnaście sekund. */
+const SYNC_MIN_ODSTEP_ZAPISU = 90000;
+/* Jak często zaglądać, czy plik zmienił się na drugim urządzeniu. iCloud Drive
+   podmienia plik na dysku sam; my tylko patrzymy na jego datę. */
+const SYNC_ODPYT_MS = 30000;
+/* Historia wersji potrafi przerosnąć same notatki: pięćdziesiąt wersji razy
+   osiem tysięcy notatek to setki megabajtów. Do pliku idzie tyle, ile ma sens
+   przenosić — reszta zostaje lokalnym dziennikiem pracy. */
+const SYNC_HIST_NA_NOTATKE = 20;
+const SYNC_HIST_BUDZET = 8 * 1024 * 1024;   // znaków treści wersji łącznie
+/* Zapory na wczytywany plik — te same, co przy kopii zapasowej. */
+const SYNC_MAX_PLIK = 400 * 1024 * 1024;
+
+/* ——— STAN ——— */
+let syncPracuje  = false;    // trwa uzgadnianie — drugie nie wchodzi
+let syncZnanyMs  = 0;        // data pliku, którą już przetworzyliśmy
+let syncZwloka   = null;     // timer zapisu po zmianach
+let syncOdpyt    = null;     // timer zaglądania do pliku
+let syncOpisStanu = "";      // krótki opis do Ustawień
+let syncOstatniZapis = 0;    // kiedy ostatnio zapisaliśmy plik (do odstępu wyżej)
+
+/* ==========================================================================
+   1. TOŻSAMOŚĆ: URZĄDZENIE I REKORDY
+   ========================================================================== */
+
+/** Nowe, niepowtarzalne uid. */
+function syncNowyUid(){
+  try{
+    if(typeof crypto!=="undefined" && crypto.randomUUID) return crypto.randomUUID();
+  }catch(e){}
+  return "u" + Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
+}
+
+/** Nazwa tego urządzenia — pokazywana w oknie różnic, żeby wiedzieć, co z czym. */
+function syncNazwaUrzadzenia(){
+  const zapisana = lsGet(SYNC_K_NAZWA, "");
+  if(zapisana) return String(zapisana);
+  const ua = navigator.userAgent || "";
+  if(/iPad/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) return "iPad";
+  if(/iPhone/.test(ua)) return "iPhone";
+  if(/Macintosh|Mac OS X/.test(ua)) return "Mac";
+  if(/Android/.test(ua)) return "Android";
+  if(/Windows/.test(ua)) return "Windows";
+  return "To urządzenie";
+}
+function syncUstawNazweUrzadzenia(nazwa){
+  const n = String(nazwa || "").trim().slice(0, 40);
+  if(!n) return false;
+  lsSet(SYNC_K_NAZWA, n);
+  return true;
+}
+
+/**
+ * OPIS KAŻDEJ LISTY, KTÓRĄ UZGADNIAMY.
+ *
+ * Pięć list — sekcje, etykiety, zakładki publikacji, zakładki sekcji, szablony
+ * — różni się nazwami pól i niczym więcej. Bez tej tabeli byłoby pięć prawie
+ * identycznych kawałków kodu, a poprawka w jednym z nich zawsze omijałaby
+ * cztery pozostałe.
+ *
+ * • `lista`   — tablica w pamięci aplikacji
+ * • `zapis`   — jak zapisać ją na urządzeniu
+ * • `klucz`   — po czym rozpoznać TEN SAM rekord przy pierwszym spotkaniu
+ * • `wyjscie` — rekord w postaci przenośnej (odsyłacze po uid)
+ * • `wejscie` — z postaci przenośnej z powrotem na rekord lokalny
+ * • `podpis`  — z czego składa się „stan" rekordu (bez pól czysto lokalnych)
+ * • `opis`    — jak nazwać rekord w oknie różnic
+ */
+function syncListy(){
+  const uidNaId = {};            // rodzaj → {uid: lokalne id}, wypełniane w trakcie scalania
+  const daj = (rodzaj, uid)=> (uidNaId[rodzaj] && uidNaId[rodzaj][uid]);
+  const opisy = [
+    {
+      rodzaj:"sections", nazwa:"sekcja", nazwaMn:"sekcje",
+      lista: ()=> (typeof sections!=="undefined" ? sections : []),
+      zapis: ()=> { if(typeof saveSections==="function") saveSections(); },
+      klucz: s=> "n:" + norm(s.name),
+      kluczP: p=> "n:" + norm(p.name),
+      wyjscie: s=> ({uid:s.uid, name:s.name, color:s.color, ord:s.ord}),
+      wejscie: (p, id)=> ({id, uid:p.uid, name:p.name, color:p.color, ord:p.ord, open:true}),
+      /* `open` (rozwinięta czy zwinięta) jest stanem ekranu, nie danymi —
+         gdyby wchodził do podpisu, dwa urządzenia spierałyby się bez końca
+         o to, czy sekcja jest właśnie rozłożona. */
+      podpis: p=> [p.name||"", p.color||"", p.ord??""].join(""),
+      opis: p=> "Sekcja „" + (p.name||"") + "”"
+    },
+    {
+      rodzaj:"tags", nazwa:"etykieta", nazwaMn:"etykiety",
+      lista: ()=> tags,
+      zapis: ()=> { if(typeof sortTags==="function") sortTags(); if(typeof saveTags==="function") saveTags(); },
+      klucz: t=> "n:" + norm(t.name),
+      kluczP: p=> "n:" + norm(p.name),
+      wyjscie: t=> ({uid:t.uid, name:t.name, color:t.color, ord:t.ord, orig:t.orig,
+                     secUid: syncUidPo("sections", t.sec), stbUid: syncUidPo("secTabs", t.stb)}),
+      wejscie: (p, id)=> {
+        const t = {id, uid:p.uid, name:p.name};
+        if(p.color) t.color = p.color;
+        if(p.ord !== undefined) t.ord = p.ord;
+        if(p.orig) t.orig = p.orig;
+        const sek = daj("sections", p.secUid); if(sek !== undefined) t.sec = sek;
+        const zak = daj("secTabs",  p.stbUid); if(zak !== undefined) t.stb = zak;
+        return t;
+      },
+      podpis: p=> [p.name||"", p.color||"", p.ord??"", p.secUid||"", p.stbUid||""].join(""),
+      opis: p=> "Etykieta „" + (p.name||"") + "”"
+    },
+    {
+      rodzaj:"pubTabs", nazwa:"zakładka publikacji", nazwaMn:"zakładki publikacji",
+      lista: ()=> (typeof pubTabs!=="undefined" ? pubTabs : []),
+      zapis: ()=> { if(typeof savePubTabs==="function") savePubTabs(); },
+      klucz: z=> "k:" + (z.ks||"") + ":" + norm(z.name),
+      kluczP: p=> "k:" + (p.ks||"") + ":" + norm(p.name),
+      wyjscie: z=> ({uid:z.uid, ks:z.ks, name:z.name, ord:z.ord}),
+      wejscie: (p, id)=> ({id, uid:p.uid, ks:p.ks, name:p.name, ord:p.ord}),
+      podpis: p=> [p.ks||"", p.name||"", p.ord??""].join(""),
+      opis: p=> "Zakładka „" + (p.name||"") + "” w publikacji " + (p.ks||"")
+    },
+    {
+      rodzaj:"secTabs", nazwa:"zakładka sekcji", nazwaMn:"zakładki sekcji",
+      lista: ()=> (typeof secTabs!=="undefined" ? secTabs : []),
+      zapis: ()=> { if(typeof saveSecTabs==="function") saveSecTabs(); },
+      klucz: z=> "s:" + syncUidPo("sections", z.sec) + ":" + norm(z.name),
+      kluczP: p=> "s:" + (p.secUid||"") + ":" + norm(p.name),
+      wyjscie: z=> ({uid:z.uid, name:z.name, ord:z.ord, color:z.color,
+                     secUid: syncUidPo("sections", z.sec)}),
+      wejscie: (p, id)=> {
+        const z = {id, uid:p.uid, name:p.name, ord:p.ord};
+        if(p.color) z.color = p.color;
+        const sek = daj("sections", p.secUid); if(sek !== undefined) z.sec = sek;
+        return z;
+      },
+      podpis: p=> [p.name||"", p.ord??"", p.color||"", p.secUid||""].join(""),
+      opis: p=> "Zakładka sekcji „" + (p.name||"") + "”"
+    },
+    {
+      rodzaj:"szablony", nazwa:"szablon", nazwaMn:"szablony",
+      lista: ()=> (typeof szablony!=="undefined" ? szablony : []),
+      zapis: ()=> { if(typeof saveSzablony==="function") saveSzablony();
+                    if(typeof rysujSzablony==="function") rysujSzablony(); },
+      klucz: z=> "n:" + norm(z.nazwa),
+      kluczP: p=> "n:" + norm(p.nazwa),
+      wyjscie: z=> ({uid:z.uid, nazwa:z.nazwa, tytul:z.tytul, tresc:z.tresc, ord:z.ord}),
+      wejscie: (p, id)=> ({id, uid:p.uid, nazwa:p.nazwa, tytul:p.tytul||"",
+                           tresc:p.tresc||"", ord:p.ord}),
+      podpis: p=> [p.nazwa||"", p.tytul||"", p.tresc||"", p.ord??""].join(""),
+      opis: p=> "Szablon „" + (p.nazwa||"") + "”"
+    }
+  ];
+  opisy.forEach(o=>{ uidNaId[o.rodzaj] = {}; o._mapa = uidNaId[o.rodzaj]; });
+  return opisy;
+}
+
+/** Uid rekordu o podanym lokalnym numerze — albo pusty napis. */
+function syncUidPo(rodzaj, id){
+  if(id === undefined || id === null) return "";
+  const lista = rodzaj === "sections" ? (typeof sections!=="undefined" ? sections : [])
+              : rodzaj === "secTabs"  ? (typeof secTabs !=="undefined" ? secTabs  : [])
+              : [];
+  const r = lista.find(x=>x && x.id === id);
+  return (r && r.uid) ? r.uid : "";
+}
+
+/**
+ * Nadaje brakujące uid i zapisuje listy, które się zmieniły.
+ * Wołane raz, na początku każdego uzgadniania — dane starsze niż ta wersja
+ * aplikacji uid oczywiście nie mają.
+ */
+function syncNadajUidy(){
+  let razem = 0;
+  syncListy().forEach(o=>{
+    let ile = 0;
+    o.lista().forEach(r=>{ if(r && typeof r==="object" && !r.uid){ r.uid = syncNowyUid(); ile++; } });
+    if(ile){ o.zapis(); razem += ile; }
+  });
+  return razem;
+}
+
+/* ==========================================================================
+   2. PLIK UZGADNIANIA: POSTAĆ PRZENOŚNA
+   ========================================================================== */
+
+/** Historia wersji do pliku — z górnym pułapem, patrz stałe na początku. */
+async function syncHistoriaDoPliku(){
+  if(!idb) return [];
+  let wszystkie;
+  try{ wszystkie = await idbAll("wersje"); }catch(e){ return []; }
+  /* Najświeższe historie mają pierwszeństwo w budżecie — po nie sięga się
+     najczęściej. Bez tego przypadkowa kolejność bazy decydowałaby, czyja
+     historia pojedzie, a czyja nie. */
+  const posortowane = wszystkie
+    .map(r=>({g:r.g, lista:(Array.isArray(r.lista)?r.lista:[]).slice(0, SYNC_HIST_NA_NOTATKE)}))
+    .filter(r=>r.g && r.lista.length)
+    .sort((a,b)=> String(b.lista[0].t||"").localeCompare(String(a.lista[0].t||"")));
+  const wynik = [];
+  let znakow = 0, pominietych = 0;
+  for(const r of posortowane){
+    const waga = r.lista.reduce((s,v)=> s + (v.h||"").length, 0);
+    if(znakow + waga > SYNC_HIST_BUDZET){ pominietych++; continue; }
+    znakow += waga;
+    wynik.push(r);
+  }
+  if(pominietych) console.info("Uzgadnianie: historia " + pominietych +
+    " notatek nie weszła do pliku (przekroczony budżet " + ludzkiRozmiar(SYNC_HIST_BUDZET) + ")");
+  return wynik;
+}
+
+/**
+ * Cała zawartość tego urządzenia w postaci przenośnej.
+ * Notatki tracą lokalne numery etykiet i zakładek, a dostają odsyłacze po uid.
+ */
+async function syncEksport(){
+  syncNadajUidy();
+  const opisy = syncListy();
+  const dane = {
+    format: SYNC_FORMAT,
+    wersja: SYNC_WERSJA,
+    zapisane: new Date().toISOString(),
+    urzadzenie: syncNazwaUrzadzenia(),
+    kolejnosc: syncKolejnoscDoPliku(),
+    historia: await syncHistoriaDoPliku(),
+    notes: notes.map(syncNotatkaDoPliku)
+  };
+  opisy.forEach(o=>{ dane[o.rodzaj] = o.lista().map(o.wyjscie); });
+  return dane;
+}
+
+/** Notatka w postaci przenośnej: bez lokalnych numerów, z uid. */
+function syncNotatkaDoPliku(n){
+  const p = {};
+  for(const k in n){
+    if(k === "tg" || k === "ptb" || k === "stb" || k === "nw") continue;
+    p[k] = n[k];
+  }
+  p.tgU = (n.tg || []).map(id=>{ const t = tags.find(x=>x.id===id); return t && t.uid; })
+                      .filter(Boolean);
+  const ptb = (typeof pubTabs!=="undefined" && n.ptb!==undefined)
+    ? pubTabs.find(x=>x.id===n.ptb) : null;
+  if(ptb && ptb.uid) p.ptbU = ptb.uid;
+  const stb = (typeof secTabs!=="undefined" && n.stb!==undefined)
+    ? secTabs.find(x=>x.id===n.stb) : null;
+  if(stb && stb.uid) p.stbU = stb.uid;
+  return p;
+}
+
+/** Własna kolejność w panelu Publikacje — jedna całość, bez rozbierania na części. */
+function syncKolejnoscDoPliku(){
+  if(typeof pubOrder === "undefined") return null;
+  return {pubOrder: pubOrder};
+}
+
+/* ==========================================================================
+   3. PODPISY I PODSTAWA
+
+   PODSTAWA MA DWIE POŁOWY, I TO JEST TU NAJWAŻNIEJSZE.
+
+   Naturalnym odruchem jest zapisać po uzgodnieniu jeden stan: „na tym się
+   zgodziliśmy". Wystarczy jednak jedna sytuacja, żeby to zawiodło, i to
+   sytuacja codzienna na iPhonie, gdzie „Wczytaj zmiany" i „Wyślij zmiany" to
+   dwa osobne naciśnięcia:
+
+     • w pliku leży stan X, u nas też X — podstawa: X;
+     • poprawiamy notatkę u siebie: mamy Y, w pliku nadal X;
+     • wczytujemy plik. Zmiana jest tylko u nas, więc słusznie zostaje Y.
+       Podstawa zapisuje się jako Y — i tu jest błąd;
+     • wysłania zmian nie robimy (albo się nie udaje);
+     • wczytujemy TEN SAM plik jeszcze raz. Teraz u nas Y = podstawa, a w pliku
+       X ≠ podstawa, czyli „zmiana tylko w pliku" — i nasza poprawka zostaje
+       zastąpiona starym X. Po cichu, bez pytania.
+
+   Dlatego podstawa pamięta OSOBNO dwie rzeczy:
+
+     baza.moje  — jaki był NASZ stan przy ostatnim uzgodnieniu
+     baza.plik  — co wtedy STAŁO W PLIKU
+
+   Zmianę u siebie rozpoznajemy po różnicy z baza.moje, zmianę w pliku — po
+   różnicy z baza.plik. W przykładzie wyżej przy drugim czytaniu wychodzi:
+   u nas bez zmian (Y = Y), w pliku bez zmian (X = X) — więc nie dzieje się
+   nic, a nasza poprawka czeka na wysłanie. Tak samo działa to przy wersji
+   ODRZUCONEJ w oknie sporów: raz odrzucona nie wraca, bo od tego czasu nikt
+   jej w pliku nie ruszył.
+
+   Po udanym ZAPISIE pliku obie połowy zrównują się ze sobą — plik ma wtedy
+   dokładnie to, co my.
+   ========================================================================== */
+
+/**
+ * PODPIS TREŚCI NOTATKI.
+ *
+ * Data zmiany wystarcza: każda zmiana treści przechodzi przez markDirty, który
+ * ją podbija. Do tego stan usunięcia, bo skasowanie notatki zostawia ślad
+ * (`del`), a nie dziurę.
+ */
+function syncPodpisTresci(n){
+  return [n.mo || "", n.del ? 1 : 0, n.delAt || ""].join("");
+}
+/**
+ * PODPIS DROBIAZGÓW: powtórka, przypięcie, ulubione.
+ *
+ * Te trzy zapisują się BEZ podbijania daty zmiany — i słusznie, bo umówienie
+ * powrotu do notatki nie jest zmianą jej treści. Gdyby jednak wchodziły do
+ * podpisu treści, ustawienie powtórki na iPadzie wyglądałoby jak spór
+ * o treść. Idą więc osobno i scalają się same, bez pytania (patrz
+ * syncScalDrobiazgi).
+ */
+function syncPodpisDrobiazgow(n){
+  return [n.pwt ? (n.pwt.d + "/" + n.pwt.o) : "", n.pin ? 1 : 0, n.fav ? 1 : 0].join("");
+}
+
+/** Podpisy CAŁEGO stanu tego urządzenia. */
+function syncStanTeraz(){
+  const s = {notes:{}, listy:{}, kolejnosc:JSON.stringify(syncKolejnoscDoPliku())};
+  notes.forEach(n=>{ s.notes[n.g] = [syncPodpisTresci(n), syncPodpisDrobiazgow(n)]; });
+  syncListy().forEach(o=>{
+    const m = {};
+    o.lista().forEach(r=>{ if(r && r.uid) m[r.uid] = o.podpis(o.wyjscie(r)); });
+    s.listy[o.rodzaj] = m;
+  });
+  return s;
+}
+/** Podpisy stanu, jaki stał w przeczytanym pliku. */
+function syncStanZPliku(dane, opisy){
+  const s = {notes:{}, listy:{}, kolejnosc:JSON.stringify(
+    dane.kolejnosc === undefined ? null : dane.kolejnosc)};
+  (dane.notes || []).forEach(n=>{
+    if(n && n.g) s.notes[n.g] = [syncPodpisTresci(n), syncPodpisDrobiazgow(n)];
+  });
+  opisy.forEach(o=>{
+    const m = {};
+    (dane[o.rodzaj] || []).forEach(r=>{ if(r && r.uid) m[r.uid] = o.podpis(r); });
+    s.listy[o.rodzaj] = m;
+  });
+  return s;
+}
+
+/**
+ * Podstawa z ostatniego udanego uzgodnienia albo null.
+ * Zapis w starszej postaci (jedna połowa) traktujemy jak brak podstawy —
+ * lepiej raz zapytać o rozbieżności niż wnioskować z niepełnych danych.
+ */
+async function syncPodstawa(){
+  if(!idb) return null;
+  try{
+    const b = await idbGet("meta", SYNC_K_BAZA);
+    return (b && b.moje && b.plik && b.moje.notes && b.plik.notes) ? b : null;
+  }catch(e){ return null; }
+}
+/**
+ * Zapisuje podstawę.
+ * @param {Object} [stanPliku]  podpisy stanu z przeczytanego pliku; gdy go nie
+ *   ma (bo plik był pusty albo właśnie go nadpisaliśmy naszą treścią),
+ *   obie połowy są takie same.
+ */
+async function syncZapiszPodstawe(stanPliku){
+  if(!idb) return;
+  const moje = syncStanTeraz();
+  const b = {kiedy:new Date().toISOString(), moje, plik: stanPliku || moje};
+  try{ await idbPut("meta", b, SYNC_K_BAZA); }
+  catch(e){ console.warn("Nie zapisano podstawy uzgadniania", e); }
+}
+/** Po udanym zapisie pliku obie połowy podstawy są tym samym. */
+async function syncPodstawaPoZapisie(){ await syncZapiszPodstawe(null); }
+/** Zapomina podstawę — następne uzgodnienie będzie pierwszym. */
+async function syncZapomnijPodstawe(){
+  if(!idb) return;
+  try{ await idbDelKey("meta", SYNC_K_BAZA); }catch(e){}
+}
+
+/* ==========================================================================
+   4. SCALANIE
+   ========================================================================== */
+
+/**
+ * CZY REKORD ZMIENIŁ SIĘ U NAS OD OSTATNIEGO UZGODNIENIA.
+ *
+ * Dwa powody, a nie jeden:
+ *
+ *  1. nasz obecny podpis różni się od tego, co podstawa pamięta jako nasz —
+ *     to oczywisty przypadek;
+ *  2. obie POŁOWY podstawy się różnią. To znaczy, że przy ostatnim uzgodnieniu
+ *     rozjechaliśmy się z plikiem i rozjazd trwa: albo obroniliśmy swoją wersję
+ *     w oknie sporów, albo zmieniliśmy coś u siebie i jeszcze tego nie
+ *     wysłaliśmy. Dopóki plik nie dostanie naszej wersji, jesteśmy „zmienieni".
+ *
+ * Bez drugiego powodu wychodziło tak: obroniona wersja przeżywała powtórne
+ * wczytanie TEGO SAMEGO pliku, ale gdy na drugim urządzeniu dopisano do tej
+ * notatki cokolwiek nowego, uzgadnianie brało to za „zmianę tylko w pliku"
+ * i nadpisywało obronioną pracę bez pytania.
+ */
+function syncZmienioneUNas(wPodstawieMoje, wPodstawiePlik, teraz){
+  if(wPodstawieMoje === undefined) return true;
+  if(wPodstawieMoje !== teraz) return true;
+  return wPodstawieMoje !== wPodstawiePlik;
+}
+
+/**
+ * KOJARZENIE PO NAZWIE PRZY PIERWSZYM SPOTKANIU.
+ *
+ * Dwa urządzenia, które nigdy się nie uzgadniały, mają swoje własne uid dla
+ * etykiety „Betel". Bez tego kroku po pierwszym uzgodnieniu byłyby dwie.
+ * Rekord lokalny PRZYJMUJE uid z pliku — plik odsyła się do swoich uid
+ * w notatkach, więc przepisanie ich wszystkich byłoby robotą na darmo.
+ *
+ * @returns {number} ile rekordów skojarzono
+ */
+function syncSkojarzPoNazwie(o, zdalne, podstawa){
+  const lokalne = o.lista();
+  const uidLokalne = new Set(lokalne.map(r=>r && r.uid).filter(Boolean));
+  const bezPary = (zdalne||[]).filter(z=> z && z.uid && !uidLokalne.has(z.uid));
+  if(!bezPary.length) return 0;
+  /* Kandydat lokalny musi być równie osamotniony: rekord, który już ma parę
+     w pliku, nie może zostać skojarzony po raz drugi. */
+  const uidZdalne = new Set((zdalne||[]).map(z=>z && z.uid).filter(Boolean));
+  const wolne = new Map();
+  lokalne.forEach(r=>{
+    if(!r || uidZdalne.has(r.uid)) return;
+    const k = o.klucz(r);
+    if(k && !wolne.has(k)) wolne.set(k, r);
+  });
+  let ile = 0;
+  bezPary.forEach(z=>{
+    /* Rekord z pliku jest w postaci PRZENOŚNEJ (odsyłacze po uid), więc jego
+       klucz liczy kluczP, a nie klucz — ten drugi czyta lokalne numery. */
+    const kandydat = wolne.get(o.kluczP(z));
+    if(!kandydat) return;
+    wolne.delete(o.kluczP(z));
+    /* Podstawa jest kluczowana po uid — przy zmianie uid trzeba przenieść też
+       jej wpisy, inaczej rekord wyglądałby na nowy po obu stronach. */
+    if(podstawa) ["moje","plik"].forEach(pol=>{
+      const m = podstawa[pol] && podstawa[pol].listy && podstawa[pol].listy[o.rodzaj];
+      if(m && m[kandydat.uid] !== undefined){ m[z.uid] = m[kandydat.uid]; delete m[kandydat.uid]; }
+    });
+    kandydat.uid = z.uid;
+    ile++;
+  });
+  if(ile) o.zapis();
+  return ile;
+}
+
+/**
+ * TRÓJSTRONNE SCALANIE JEDNEJ LISTY.
+ *
+ * Nie zmienia jeszcze niczego w aplikacji — zwraca decyzje. Wprowadza je
+ * w życie syncZastosuj, po ewentualnym rozstrzygnięciu sporów.
+ *
+ * doPliku zlicza to, o czym plik jeszcze nie wie. Zero na wszystkich listach
+ * i notatkach znaczy, że pliku nie ma po co przepisywać — przy ośmiu tysiącach
+ * notatek to kilkanaście megabajtów zapisu i kolejna wysyłka do chmury.
+ */
+function syncScalListe(o, zdalne, bazaMoje, bazaPlik){
+  const wynik = {rodzaj:o.rodzaj, nowe:[], podmiany:[], usunLokalnie:[], konflikty:[], doPliku:0};
+  const bl = bazaMoje || null, bz = bazaPlik || null;
+  const zdalneMapa = new Map();
+  (zdalne||[]).forEach(z=>{ if(z && z.uid) zdalneMapa.set(z.uid, z); });
+  const lokalneMapa = new Map();
+  o.lista().forEach(r=>{ if(r && r.uid) lokalneMapa.set(r.uid, r); });
+
+  zdalneMapa.forEach((zd, uid)=>{
+    const lo = lokalneMapa.get(uid);
+    const pz = o.podpis(zd);
+    const wPodstawieZ = bz ? bz[uid] : undefined;
+    const zmienioneTam = !bz || wPodstawieZ === undefined || wPodstawieZ !== pz;
+    if(!lo){
+      /* Rekordu u nas nie ma. Jeśli podstawa go nie znała, jest po prostu nowy
+         w pliku. Jeśli znała — skasowaliśmy go po ostatnim uzgodnieniu. */
+      const bylUNas = bl && bl[uid] !== undefined;
+      if(!bylUNas){ wynik.nowe.push(zd); return; }
+      if(!zmienioneTam){ wynik.doPliku++; return; }   // ma zniknąć także w pliku
+      wynik.konflikty.push({rodzaj:o.rodzaj, uid, typ:"usuniete-tu",
+        opis:o.opis(zd), zdalny:zd, lokalny:null, domyslnie:"moje"});
+      return;
+    }
+    const pl = o.podpis(o.wyjscie(lo));
+    const zmienioneTu = syncZmienioneUNas(bl ? bl[uid] : undefined,
+                                          bz ? bz[uid] : undefined, pl);
+    if(pl === pz) return;                                       // zgodne
+    if(zmienioneTam && !zmienioneTu){ wynik.podmiany.push([lo, zd]); return; }
+    if(zmienioneTu && !zmienioneTam){ wynik.doPliku++; return; }
+    if(!zmienioneTu && !zmienioneTam){ wynik.doPliku++; return; }
+    if(!bl || !bz){
+      /* Pierwsze uzgodnienie — nie ma z czym porównać. Układ z pliku nie jest
+         ani lepszy, ani gorszy od naszego, więc zostawiamy swój i mówimy
+         o tym w podsumowaniu. Notatki mają tu inną regułę (nowsza data). */
+      wynik.doPliku++; return;
+    }
+    wynik.konflikty.push({rodzaj:o.rodzaj, uid, typ:"oba",
+      opis:o.opis(zd), zdalny:zd, lokalny:o.wyjscie(lo), domyslnie:"moje"});
+  });
+
+  lokalneMapa.forEach((lo, uid)=>{
+    if(zdalneMapa.has(uid)) return;
+    const bylWPliku = bz && bz[uid] !== undefined;
+    if(!bylWPliku){ wynik.doPliku++; return; }        // nowy u nas → pojedzie do pliku
+    const pl = o.podpis(o.wyjscie(lo));
+    const zmienioneTu = syncZmienioneUNas(bl ? bl[uid] : undefined,
+                                          bz ? bz[uid] : undefined, pl);
+    if(!zmienioneTu){ wynik.usunLokalnie.push(lo); return; }   // skasowane w pliku
+    wynik.konflikty.push({rodzaj:o.rodzaj, uid, typ:"usuniete-tam",
+      opis:o.opis(o.wyjscie(lo)), zdalny:null, lokalny:o.wyjscie(lo), domyslnie:"moje"});
+  });
+  return wynik;
+}
+
+/**
+ * SCALANIE DROBIAZGÓW NOTATKI (powtórka, przypięcie, ulubione).
+ *
+ * Nigdy nie pyta. Gdy obie strony zmieniły to samo pole, wybieramy wariant,
+ * który niczego nie gubi: wcześniejszy termin powrotu (lepiej dostać
+ * przypomnienie za wcześnie niż wcale) i „tak" dla przypięcia i ulubionych.
+ */
+function syncScalDrobiazgi(n, zd, byloU, byloW){
+  let zmiana = false;
+  const pl = syncPodpisDrobiazgow(n);
+  const pz = syncPodpisDrobiazgow(zd);
+  if(pl === pz) return false;
+  const zmienioneTu  = byloU === undefined || byloU !== pl;
+  const zmienioneTam = byloW === undefined || byloW !== pz;
+  if(!zmienioneTam) return false;                      // w pliku bez zmian — nasze zostaje
+  if(!zmienioneTu){                                    // zmiana tylko w pliku
+    if(zd.pwt && zd.pwt.d) n.pwt = {d:zd.pwt.d, o:zd.pwt.o}; else delete n.pwt;
+    n.pin = !!zd.pin;
+    n.fav = !!zd.fav;
+    return true;
+  }
+  /* Oba naraz albo brak podstawy — rozstrzygamy bez pytania, na korzyść tego,
+     co więcej zachowuje. */
+  const dataMoja = n.pwt && n.pwt.d, dataTam = zd.pwt && zd.pwt.d;
+  if(dataTam && (!dataMoja || dataTam < dataMoja)){ n.pwt = {d:zd.pwt.d, o:zd.pwt.o}; zmiana = true; }
+  if(zd.pin && !n.pin){ n.pin = true; zmiana = true; }
+  if(zd.fav && !n.fav){ n.fav = true; zmiana = true; }
+  return zmiana;
+}
+
+/**
+ * TRÓJSTRONNE SCALANIE NOTATEK.
+ *
+ * @param {Array} zdalne  notatki z pliku, w postaci przenośnej
+ * @param {Object|null} bazaMoje  {guid: [podpisTresci, podpisDrobiazgow]} — nasz stan
+ * @param {Object|null} bazaPlik  to samo dla stanu, jaki stał w pliku
+ */
+function syncScalNotatki(zdalne, bazaMoje, bazaPlik){
+  const wynik = {nowe:[], podmiany:[], konflikty:[], drobiazgi:[], pierwsze:0, doPliku:0};
+  const moje = new Map();
+  notes.forEach(n=>moje.set(n.g, n));
+  /* Notatka, której plik w ogóle nie zna, musi do niego pojechać. */
+  const wPliku = new Set((zdalne||[]).map(z=>z && z.g).filter(Boolean));
+  notes.forEach(n=>{ if(!wPliku.has(n.g)) wynik.doPliku++; });
+
+  (zdalne||[]).forEach(zd=>{
+    if(!zd || !zd.g) return;
+    const n = moje.get(zd.g);
+    if(!n){ wynik.nowe.push(zd); return; }
+    const bu = bazaMoje ? bazaMoje[zd.g] : undefined;
+    const bw = bazaPlik ? bazaPlik[zd.g] : undefined;
+    if(syncScalDrobiazgi(n, zd, Array.isArray(bu) ? bu[1] : undefined,
+                                Array.isArray(bw) ? bw[1] : undefined))
+      wynik.drobiazgi.push(n);
+    else if(syncPodpisDrobiazgow(n) !== syncPodpisDrobiazgow(zd)) wynik.doPliku++;
+    /* Data ostatniego otwarcia nie jest sporna — bierzemy późniejszą. */
+    if(zd.la && (!n.la || String(zd.la) > String(n.la))) n.la = zd.la;
+
+    const pl = syncPodpisTresci(n), pz = syncPodpisTresci(zd);
+    if(pl === pz) return;
+    const wU = Array.isArray(bu) ? bu[0] : undefined;
+    const wW = Array.isArray(bw) ? bw[0] : undefined;
+    if(wU === undefined && wW === undefined){
+      /* Brak podstawy dla tej notatki: albo pierwsze uzgodnienie, albo notatka
+         powstała po nim po obu stronach. Nie ma jak stwierdzić, kto się
+         zmienił, więc stosujemy regułę znaną z wczytywania kopii — wygrywa
+         nowsza data zmiany. Sporne pytania zostawiamy na sytuacje, w których
+         naprawdę wiadomo, że doszło do rozjazdu. */
+      if(String(zd.mo||"") > String(n.mo||"")){ wynik.podmiany.push([n, zd]); wynik.pierwsze++; }
+      else wynik.doPliku++;
+      return;
+    }
+    const zmienioneTu  = syncZmienioneUNas(wU, wW, pl);
+    const zmienioneTam = wW === undefined || wW !== pz;
+    if(zmienioneTam && !zmienioneTu){ wynik.podmiany.push([n, zd]); return; }
+    if(!zmienioneTam){ wynik.doPliku++; return; }     // w pliku bez zmian — nasze zostaje
+    wynik.konflikty.push({rodzaj:"notes", uid:zd.g, typ:"oba",
+      opis: (n.t || zd.t || "Notatka bez tytułu"),
+      lokalny:n, zdalny:zd, domyslnie:"moje"});
+  });
+  return wynik;
+}
+
+/** Kolejność w panelu Publikacje — całość, jedna decyzja. */
+function syncScalKolejnosc(zdalna, bazaMoje, bazaPlik){
+  const moja = JSON.stringify(syncKolejnoscDoPliku());
+  const tam  = JSON.stringify(zdalna === undefined ? null : zdalna);
+  if(moja === tam) return null;
+  if(bazaMoje === undefined || bazaPlik === undefined) return {typ:"doPliku"};
+  const zmienioneTu  = syncZmienioneUNas(bazaMoje, bazaPlik, moja);
+  const zmienioneTam = bazaPlik !== tam;
+  if(zmienioneTam && !zmienioneTu) return {typ:"bierz", zdalna};
+  if(!zmienioneTam) return {typ:"doPliku"};
+  return {typ:"konflikt", zdalna};
+}
+
+/**
+ * Historia wersji — dziennik, nie stan. Scala się przez zsumowanie po czasie.
+ *
+ * Jeden odczyt CAŁEGO magazynu i jeden zapis porcjami, a nie odczyt na każdą
+ * notatkę. Przy ośmiu tysiącach notatek historię ma około ośmiuset — osiemset
+ * osobnych transakcji zajmowało pół sekundy i było najdroższą częścią całego
+ * uzgadniania, także wtedy, gdy nie dochodził ani jeden nowy wpis.
+ */
+async function syncScalHistorie(zdalna){
+  if(!idb || !Array.isArray(zdalna) || !zdalna.length) return 0;
+  let moje;
+  try{ moje = await idbAll("wersje"); }catch(e){ return 0; }
+  const mapa = new Map();
+  moje.forEach(r=>{ if(r && r.g) mapa.set(r.g, Array.isArray(r.lista) ? r.lista : []); });
+  const doZapisu = [];
+  let dolozonych = 0;
+  for(const r of zdalna){
+    if(!r || !r.g || !Array.isArray(r.lista) || !r.lista.length) continue;
+    const lista = mapa.get(r.g) || [];
+    const czasy = new Set(lista.map(v=>v.t));
+    const nowe = r.lista.filter(v=> v && v.t && typeof v.h === "string" && !czasy.has(v.t));
+    if(!nowe.length) continue;
+    const razem = [...lista, ...nowe].sort((a,b)=> String(b.t).localeCompare(String(a.t)));
+    doZapisu.push({g:r.g, lista: wersjeProzchudz(razem)});
+    dolozonych += nowe.length;
+  }
+  if(doZapisu.length){
+    try{ await idbBulkChunked("wersje", doZapisu); }
+    catch(e){ console.warn("Nie zapisano scalonej historii wersji", e); return 0; }
+  }
+  return dolozonych;
+}
+
+/* ==========================================================================
+   5. WPROWADZANIE DECYZJI W ŻYCIE
+   ========================================================================== */
+
+/**
+ * Zamienia decyzje na zmiany w pamięci aplikacji i w bazie urządzenia.
+ *
+ * Kolejność jest istotna: sekcje przed etykietami i zakładkami sekcji, bo
+ * etykieta odsyła do sekcji; wszystkie listy przed notatkami, bo notatka
+ * odsyła do etykiet i zakładek. Odwrotna kolejność zostawiałaby odsyłacze
+ * w próżnię.
+ */
+async function syncZastosuj(plan){
+  const st = {notatekNowych:0, notatekZmienionych:0, etykietNowych:0,
+              etykietZmienionych:0, etykietUsunietych:0, innych:0,
+              drobiazgow:0, wersji:0, kolejnosc:false};
+  const zmienioneNotatki = new Set();
+
+  /* ——— listy ——— */
+  for(const o of plan.opisy){
+    const w = plan.listy[o.rodzaj];
+    if(!w) continue;
+    const lista = o.lista();
+    let ruszone = false;
+    /* Mapa uid→id musi znać rekordy, które JUŻ są, zanim dojdą nowe. */
+    lista.forEach(r=>{ if(r && r.uid) o._mapa[r.uid] = r.id; });
+
+    w.usunLokalnie.forEach(r=>{
+      const i = lista.indexOf(r);
+      if(i >= 0){ lista.splice(i, 1); ruszone = true;
+        if(o.rodzaj === "tags"){
+          st.etykietUsunietych++;
+          if(idb) idbDelKey("tags", r.id).catch(()=>{});
+          notes.forEach(n=>{ if(n.tg && n.tg.includes(r.id)){
+            n.tg = n.tg.filter(x=>x!==r.id); zmienioneNotatki.add(n); } });
+        } else st.innych++;
+        delete o._mapa[r.uid];
+      }
+    });
+    w.podmiany.forEach(([lo, zd])=>{
+      const nowy = o.wejscie(zd, lo.id);
+      /* `open` i `nw` to stan ekranu tego urządzenia — zostają. */
+      if(lo.open !== undefined) nowy.open = lo.open;
+      Object.keys(lo).forEach(k=>{ if(!(k in nowy)) delete lo[k]; });
+      Object.assign(lo, nowy);
+      o._mapa[lo.uid] = lo.id;
+      ruszone = true;
+      if(o.rodzaj === "tags") st.etykietZmienionych++; else st.innych++;
+    });
+    w.nowe.forEach(zd=>{
+      const id = nastepnyNumer(lista);
+      const rek = o.wejscie(zd, id);
+      lista.push(rek);
+      o._mapa[rek.uid] = id;
+      ruszone = true;
+      if(o.rodzaj === "tags") st.etykietNowych++; else st.innych++;
+    });
+    if(ruszone) o.zapis();
+  }
+
+  /* ——— notatki ——— */
+  const mapaTag = plan.opisy.find(o=>o.rodzaj==="tags")._mapa;
+  const mapaPub = plan.opisy.find(o=>o.rodzaj==="pubTabs")._mapa;
+  const mapaSek = plan.opisy.find(o=>o.rodzaj==="secTabs")._mapa;
+  const doLokalnej = (zd)=>{
+    const n = {};
+    for(const k in zd){ if(k==="tgU"||k==="ptbU"||k==="stbU") continue; n[k] = zd[k]; }
+    n.tg = (zd.tgU || []).map(u=>mapaTag[u]).filter(v=>v!==undefined);
+    if(zd.ptbU !== undefined && mapaPub[zd.ptbU] !== undefined) n.ptb = mapaPub[zd.ptbU];
+    if(zd.stbU !== undefined && mapaSek[zd.stbU] !== undefined) n.stb = mapaSek[zd.stbU];
+    return sanitizeNote(n, true);
+  };
+  plan.notatki.nowe.forEach(zd=>{
+    const n = doLokalnej(zd);
+    if(!n) return;
+    notes.push(n); zmienioneNotatki.add(n); st.notatekNowych++;
+  });
+  plan.notatki.podmiany.forEach(([n, zd])=>{
+    const nowa = doLokalnej(zd);
+    if(!nowa) return;
+    /* Drobiazgi mają już swój, uzgodniony stan — podmiana treści go nie zdejmuje. */
+    const pwt = n.pwt, pin = n.pin, fav = n.fav, la = n.la;
+    Object.keys(n).forEach(k=>{ if(!(k in nowa)) delete n[k]; });
+    Object.assign(n, nowa);
+    if(pwt) n.pwt = pwt; else delete n.pwt;
+    n.pin = pin; n.fav = fav;
+    if(la && (!n.la || String(la) > String(n.la))) n.la = la;
+    zmienioneNotatki.add(n); st.notatekZmienionych++;
+  });
+  plan.notatki.drobiazgi.forEach(n=>{ zmienioneNotatki.add(n); st.drobiazgow++; });
+
+  /* ——— rozstrzygnięte spory ——— */
+  (plan.rozstrzygniete || []).forEach(k=>{
+    if(k.rodzaj !== "notes") return;
+    if(k.wybor === "zdalna"){
+      const n = notes.find(x=>x.g===k.uid);
+      if(!n) return;
+      /* To jedyne miejsce, w którym uzgadnianie NADPISUJE pracę użytkownika —
+         więc wersja sprzed nadpisania idzie do historii. */
+      if(typeof saveVersion === "function") saveVersion(n);
+      const nowa = doLokalnej(k.zdalny);
+      if(!nowa) return;
+      Object.keys(n).forEach(x=>{ if(!(x in nowa)) delete n[x]; });
+      Object.assign(n, nowa);
+      zmienioneNotatki.add(n); st.notatekZmienionych++;
+    } else if(k.wybor === "obie"){
+      const n = notes.find(x=>x.g===k.uid);
+      const nowa = doLokalnej(k.zdalny);
+      if(!nowa) return;
+      /* Kopia dostaje NOWY identyfikator — inaczej za chwilę znów byłyby dwie
+         notatki o tym samym guid i spór wróciłby przy następnym uzgodnieniu. */
+      nowa.g = syncNowyUid().toUpperCase();   // tak samo jak przy nowej notatce
+      nowa.t = (nowa.t || "") + " (z " + (plan.skad || "drugiego urządzenia") + ")";
+      nowa.cr = nowa.cr || new Date().toISOString();
+      notes.push(nowa); zmienioneNotatki.add(nowa); st.notatekNowych++;
+      if(n) zmienioneNotatki.add(n);
+    }
+    /* "moja" — nic nie robimy; nasza wersja pojedzie do pliku przy zapisie. */
+  });
+  (plan.rozstrzygniete || []).forEach(k=>{
+    if(k.rodzaj === "notes" || k.wybor !== "zdalna") return;
+    const o = plan.opisy.find(x=>x.rodzaj===k.rodzaj);
+    if(!o) return;
+    const lista = o.lista();
+    const lo = lista.find(r=>r && r.uid===k.uid);
+    if(k.typ === "usuniete-tam"){
+      const i = lista.indexOf(lo);
+      if(i >= 0){ lista.splice(i,1); o.zapis();
+        if(o.rodzaj==="tags" && idb) idbDelKey("tags", lo.id).catch(()=>{}); }
+      return;
+    }
+    if(!k.zdalny) return;
+    if(lo){
+      const nowy = o.wejscie(k.zdalny, lo.id);
+      if(lo.open !== undefined) nowy.open = lo.open;
+      Object.keys(lo).forEach(x=>{ if(!(x in nowy)) delete lo[x]; });
+      Object.assign(lo, nowy);
+    } else {
+      const id = nastepnyNumer(lista);
+      lista.push(o.wejscie(k.zdalny, id));
+    }
+    o.zapis();
+    st.innych++;
+  });
+
+  /* ——— kolejność ——— */
+  if(plan.kolejnosc && plan.kolejnosc.typ === "bierz" && typeof pubOrder !== "undefined"){
+    const z = plan.kolejnosc.zdalna;
+    if(z && typeof z.pubOrder === "object" && z.pubOrder){
+      pubOrder = z.pubOrder;
+      if(typeof savePubOrder === "function") savePubOrder();
+      st.kolejnosc = true;
+    }
+  }
+
+  /* ——— zapis notatek ——— */
+  if(idb && zmienioneNotatki.size)
+    await idbBulkChunked("notes", [...zmienioneNotatki]).catch(e=>reportSaveError(e,"uzgadnianie"));
+
+  /* ——— historia ——— */
+  st.wersji = await syncScalHistorie(plan.historia);
+  return st;
+}
+
+/* ==========================================================================
+   6. JEDNO UZGODNIENIE OD POCZĄTKU DO KOŃCA
+   ========================================================================== */
+
+/** Sito na wczytany plik uzgadniania. Rzuca wyjątkiem z czytelnym powodem. */
+function syncSprawdzPlik(dane){
+  if(!dane || typeof dane !== "object")
+    throw new Error("To nie jest plik uzgadniania JW Study");
+  if(dane.format !== SYNC_FORMAT){
+    if(Array.isArray(dane.notes) && Array.isArray(dane.tags))
+      throw new Error("To jest zwykła kopia zapasowa, nie plik uzgadniania — wczytaj ją przez Plik → Wczytaj kopię danych");
+    throw new Error("To nie jest plik uzgadniania JW Study");
+  }
+  if(Number(dane.wersja) > SYNC_WERSJA)
+    throw new Error("Plik pochodzi z nowszej wersji aplikacji (" + dane.wersja +
+                    "). Zaktualizuj aplikację na tym urządzeniu.");
+  if(!Array.isArray(dane.notes)) throw new Error("W pliku brakuje listy notatek");
+  if(dane.notes.length > MAX_NOTATEK)
+    throw new Error("Plik zawiera " + dane.notes.length + " notatek, a dopuszczalne jest do " + MAX_NOTATEK);
+  /* Treść notatek z pliku przechodzi przez ten sam filtr, co treść z kopii —
+     plik krąży po chmurze i mógł zostać po drodze zmieniony. */
+  dane.notes = dane.notes.filter(n=>{
+    if(!n || typeof n!=="object" || !n.g) return false;
+    if(typeof n.h === "string" && n.h) n.h = czystyHtmlZObcegoZrodla(n.h);
+    if(n.bg != null && !kolorBezpieczny(n.bg)) delete n.bg;
+    if(!Array.isArray(n.tgU)) n.tgU = [];
+    return true;
+  });
+  ["sections","tags","pubTabs","secTabs","szablony"].forEach(k=>{
+    if(!Array.isArray(dane[k])){ dane[k] = []; return; }
+    dane[k] = dane[k].filter(r=>{
+      if(!r || typeof r!=="object" || !r.uid) return false;
+      if(r.color != null && !kolorBezpieczny(r.color)) delete r.color;
+      return true;
+    });
+  });
+  if((dane.tags||[]).length > MAX_ETYKIET)
+    throw new Error("Plik zawiera " + dane.tags.length + " etykiet, a dopuszczalne jest do " + MAX_ETYKIET);
+  if(!Array.isArray(dane.historia)) dane.historia = [];
+  return dane;
+}
+
+/**
+ * SCALENIE WCZYTANEGO PLIKU Z TYM, CO JEST NA URZĄDZENIU.
+ *
+ * @param {Object} dane      zawartość pliku uzgadniania
+ * @param {boolean} [bezPytania]  nie pokazuj okna sporów (przy uzgadnianiu w tle,
+ *                                gdy użytkownik właśnie coś pisze)
+ * @returns {Promise<{st:Object, konflikty:number, odlozone:boolean}>}
+ */
+async function syncScalDane(dane, bezPytania){
+  dane = syncSprawdzPlik(dane);
+  syncNadajUidy();
+  const opisy = syncListy();
+  const podstawa = await syncPodstawa();
+  const bMoje = podstawa ? podstawa.moje : null;
+  const bPlik = podstawa ? podstawa.plik : null;
+
+  /* Pierwsze spotkanie: skojarz rekordy po nazwie, żeby nie powstały bliźniaki.
+     Robimy to PRZED odczytaniem podpisów pliku, bo kojarzenie zmienia uid. */
+  opisy.forEach(o=> syncSkojarzPoNazwie(o, dane[o.rodzaj], podstawa));
+
+  const plan = {opisy, listy:{}, notatki:null, kolejnosc:null,
+                historia:dane.historia, skad:(dane.urzadzenie || "drugiego urządzenia"),
+                rozstrzygniete:[]};
+  let konflikty = [];
+  opisy.forEach(o=>{
+    const w = syncScalListe(o, dane[o.rodzaj],
+                            bMoje ? bMoje.listy[o.rodzaj] : null,
+                            bPlik ? bPlik.listy[o.rodzaj] : null);
+    plan.listy[o.rodzaj] = w;
+    konflikty = konflikty.concat(w.konflikty);
+  });
+  plan.notatki = syncScalNotatki(dane.notes,
+                                 bMoje ? bMoje.notes : null,
+                                 bPlik ? bPlik.notes : null);
+  konflikty = konflikty.concat(plan.notatki.konflikty);
+  const k = syncScalKolejnosc(dane.kolejnosc,
+                              bMoje ? bMoje.kolejnosc : undefined,
+                              bPlik ? bPlik.kolejnosc : undefined);
+  if(k && k.typ === "konflikt"){
+    konflikty.push({rodzaj:"kolejnosc", uid:"kolejnosc", typ:"oba",
+      opis:"Kolejność pozycji w panelu Publikacje", zdalny:k.zdalna, lokalny:null,
+      domyslnie:"moje"});
+  } else plan.kolejnosc = k;
+
+  if(konflikty.length){
+    if(bezPytania) return {st:null, konflikty:konflikty.length, odlozone:true};
+    const wybory = await pokazSpory(konflikty, dane.urzadzenie || "drugie urządzenie");
+    if(wybory === null) return {st:null, konflikty:konflikty.length, odlozone:true};
+    plan.rozstrzygniete = wybory;
+    /* Kolejność rozstrzygana w oknie, nie w planie. */
+    const kk = wybory.find(x=>x.rodzaj==="kolejnosc");
+    if(kk && kk.wybor === "zdalna") plan.kolejnosc = {typ:"bierz", zdalna:kk.zdalny};
+  }
+
+  const st = await syncZastosuj(plan);
+  st.pierwsze = plan.notatki.pierwsze;
+  st.sporow = konflikty.length;
+  /* Czy plik trzeba przepisać. Nasza wersja obroniona w sporze też musi tam
+     trafić — inaczej drugie urządzenie zapytałoby o to samo jeszcze raz. */
+  st.doPliku = plan.notatki.doPliku
+    + opisy.reduce((s2, o)=> s2 + ((plan.listy[o.rodzaj] || {}).doPliku || 0), 0)
+    + (plan.rozstrzygniete || []).filter(x=>x.wybor !== "zdalna").length
+    + ((k && (k.typ === "konflikt" || k.typ === "doPliku")) ? 1 : 0);
+  /* Cokolwiek weszło do naszych danych? Tylko wtedy warto przerysowywać ekran —
+     przy ośmiu tysiącach notatek pełne przerysowanie to grubo ponad sto
+     milisekund, a uzgadnianie zagląda do pliku samo, w tle. */
+  const cosWeszlo = st.notatekNowych + st.notatekZmienionych + st.drobiazgow
+    + st.etykietNowych + st.etykietZmienionych + st.etykietUsunietych
+    + st.innych + st.wersji + (st.kolejnosc ? 1 : 0);
+  if(cosWeszlo){
+    if(typeof sortTags === "function") sortTags();
+    if(typeof renderAll === "function") renderAll();
+    if(typeof centrumOdswiez === "function") centrumOdswiez();
+  }
+  /* W podstawie zapisujemy OSOBNO nasz stan i stan pliku — po co, mówi
+     komentarz na początku rozdziału 3. */
+  await syncZapiszPodstawe(syncStanZPliku(dane, opisy));
+  return {st, konflikty:konflikty.length, odlozone:false};
+}
+
+/* ==========================================================================
+   7. PLIK: AUTOMATYCZNIE (Chromium) I RĘCZNIE (Safari, iPhone, iPad)
+   ========================================================================== */
+
+/** Czy ta przeglądarka umie sama pisać do wskazanego pliku. */
+function syncPlikAutomatyczny(){
+  return typeof window !== "undefined" && typeof window.showSaveFilePicker === "function";
+}
+/** Zapamiętane wskazanie pliku uzgadniania albo null. */
+async function syncUchwyt(){
+  if(!idb) return null;
+  try{ return (await idbGet("meta", SYNC_K_PLIK)) || null; }catch(e){ return null; }
+}
+/** Pyta o plik uzgadniania i zapamiętuje wskazanie. */
+async function syncWskazPlik(){
+  if(!syncPlikAutomatyczny()){
+    toast("Ta przeglądarka nie pozwala pisać do wskazanego pliku");
+    return false;
+  }
+  try{
+    const uchwyt = await window.showSaveFilePicker({
+      suggestedName: "jw-study-uzgadnianie.json",
+      types: [{description:"Plik uzgadniania JW Study", accept:{"application/json":[".json"]}}]
+    });
+    await idbPut("meta", uchwyt, SYNC_K_PLIK);
+    lsSet(SYNC_K_AUTO, "1");
+    toastOk("Plik uzgadniania: " + (uchwyt.name || "wybrany"));
+    syncUruchomOdpytywanie();
+    return true;
+  }catch(e){
+    if(e && e.name === "AbortError") return false;
+    console.warn("Nie udało się wskazać pliku uzgadniania", e);
+    toastErr("Nie udało się wskazać pliku");
+    return false;
+  }
+}
+/** Przestaje używać pliku — zostają przyciski ręczne. */
+async function syncZapomnijPlik(){
+  if(idb){ try{ await idbDelKey("meta", SYNC_K_PLIK); }catch(e){} }
+  lsSet(SYNC_K_AUTO, "0");
+  syncZatrzymajOdpytywanie();
+  toast("Uzgadnianie automatyczne wyłączone");
+}
+/** Nazwa wskazanego pliku albo pusty napis. */
+async function syncNazwaPliku(){
+  const u = await syncUchwyt();
+  return u && u.name ? u.name : "";
+}
+
+/**
+ * UZGODNIENIE PRZEZ WSKAZANY PLIK — czytaj, scal, zapisz.
+ * @param {string} powod  do dziennika: "start", "zmiany", "odpytanie", "ręcznie"
+ */
+async function syncTeraz(powod){
+  if(syncPracuje) return null;
+  const uchwyt = await syncUchwyt();
+  if(!uchwyt){
+    if(powod === "ręcznie") toast("Najpierw wskaż plik uzgadniania w Ustawieniach");
+    return null;
+  }
+  /* Bez pytania o prawo do pliku przy uzgadnianiu w tle: pytanie musi wyjść
+     z naciśnięcia przycisku, inaczej przeglądarka i tak je odrzuci. */
+  const wolno = await prawoDoPliku(uchwyt, powod === "ręcznie");
+  if(!wolno){
+    syncOpisStanu = "Plik wskazany, ale brak prawa zapisu — kliknij „Uzgodnij teraz”.";
+    return null;
+  }
+  syncPracuje = true;
+  try{
+    let plik = null;
+    try{ plik = await uchwyt.getFile(); }catch(e){ plik = null; }
+    /* Plik się nie zmienił od naszego ostatniego przejścia i nie czeka żadna
+       nasza zmiana — nie ma czego uzgadniać. Bez tego każde wejście w kartę
+       przeliczało osiem tysięcy notatek po nic. */
+    if(plik && plik.size && syncZnanyMs && (plik.lastModified || 0) <= syncZnanyMs
+       && !syncZwloka && powod !== "ręcznie"){
+      return null;
+    }
+    let wynik = null;
+    if(plik && plik.size){
+      if(plik.size > SYNC_MAX_PLIK) throw new Error("Plik ma " + ludzkiRozmiar(plik.size) +
+        ", a dopuszczalne jest do " + ludzkiRozmiar(SYNC_MAX_PLIK));
+      const tekst = await plik.text();
+      let dane;
+      try{ dane = JSON.parse(tekst); }
+      catch(e){ throw new Error("Plik uzgadniania jest uszkodzony (błąd formatu JSON)"); }
+      /* W tle nie przerywamy pisania oknem sporów — odkładamy je do chwili,
+         gdy uzgadnianie ruszy z przycisku. */
+      wynik = await syncScalDane(dane, powod !== "ręcznie" && syncKtosPisze());
+      syncZnanyMs = plik.lastModified || 0;
+      if(wynik.odlozone){
+        syncOpisStanu = "Do rozstrzygnięcia: " + wynik.konflikty +
+          (wynik.konflikty === 1 ? " rozbieżność" : " rozbieżności") + " — kliknij „Uzgodnij teraz”.";
+        if(powod !== "start") toast("Uzgadnianie czeka na Twoją decyzję — otwórz Ustawienia → Synchronizacja");
+        return wynik;
+      }
+    }
+    /* ZAPIS TYLKO WTEDY, GDY PLIK CZEGOŚ NIE WIE.
+       Plik z ośmioma tysiącami notatek waży kilkanaście megabajtów. Zapis „na
+       wszelki wypadek" przy każdym powrocie do karty i przy każdym zajrzeniu
+       do pliku znaczyłby kilkanaście megabajtów przepisywanych bez powodu,
+       a w folderze chmury — kolejną wysyłkę tego samego. */
+    if(plik && plik.size && wynik && wynik.st && !wynik.st.doPliku){
+      lsSet(SYNC_K_KIEDY, new Date().toISOString());
+      syncOpisStanu = "";
+      if(typeof pokazStanSync === "function") pokazStanSync();
+      return wynik;
+    }
+    const tekstDoZapisu = JSON.stringify(await syncEksport());
+    const zapis = await uchwyt.createWritable();
+    await zapis.write(tekstDoZapisu);
+    await zapis.close();
+    try{ syncZnanyMs = (await uchwyt.getFile()).lastModified || Date.now(); }
+    catch(e){ syncZnanyMs = Date.now(); }
+    syncOstatniZapis = Date.now();
+    lsSet(SYNC_K_KIEDY, new Date().toISOString());
+    /* Plik ma teraz dokładnie to, co my — obie połowy podstawy się zrównują. */
+    await syncPodstawaPoZapisie();
+    syncOpisStanu = "";
+    if(typeof pokazStanSync === "function") pokazStanSync();
+    return wynik;
+  }catch(e){
+    console.warn("Uzgadnianie nie powiodło się (" + powod + ")", e);
+    syncOpisStanu = "Ostatnia próba nie wyszła: " + (e && e.message ? e.message : String(e));
+    if(powod === "ręcznie") toastErr("Nie udało się uzgodnić: " + (e && e.message ? e.message : e));
+    return null;
+  }finally{
+    syncPracuje = false;
+  }
+}
+
+/** Czy użytkownik właśnie pisze — wtedy nie wchodzimy mu w drogę. */
+function syncKtosPisze(){
+  try{
+    if(document.querySelector(".ncard.editing")) return true;
+    const a = document.activeElement;
+    if(a && (a.isContentEditable || a.tagName === "TEXTAREA" || a.tagName === "INPUT")) return true;
+  }catch(e){}
+  return false;
+}
+
+/* ——— DROGA RĘCZNA: DWA PRZYCISKI ——— */
+
+/** „Wyślij zmiany" — plik uzgadniania przez systemowe okno udostępniania. */
+async function syncWyslij(){
+  try{
+    const tekst = JSON.stringify(await syncEksport());
+    const nazwa = "jw-study-uzgadnianie.json";
+    const blob = new Blob([tekst], {type:"application/json"});
+    const wyszlo = await saveFile(blob, nazwa, "Plik uzgadniania JW Study");
+    if(wyszlo === false) return;
+    lsSet(SYNC_K_KIEDY, new Date().toISOString());
+    await syncPodstawaPoZapisie();      // plik dostał nasz stan
+    if(typeof pokazStanSync === "function") pokazStanSync();
+    toastOk("Zapisz go w iCloud Drive — na drugim urządzeniu wybierz „Wczytaj zmiany”");
+  }catch(e){
+    console.warn("Nie udało się wysłać zmian", e);
+    toastErr("Nie udało się przygotować pliku: " + (e && e.message ? e.message : e));
+  }
+}
+
+/** „Wczytaj zmiany" — plik uzgadniania wskazany ręcznie. */
+async function syncWczytajZPliku(plik){
+  if(!plik) return;
+  try{
+    if(plik.size > SYNC_MAX_PLIK)
+      throw new Error("Plik ma " + ludzkiRozmiar(plik.size) + ", a dopuszczalne jest do " +
+                      ludzkiRozmiar(SYNC_MAX_PLIK));
+    if(!plik.size) throw new Error("Plik jest pusty");
+    const tekst = await plik.text();
+    let dane;
+    try{ dane = JSON.parse(tekst); }
+    catch(e){ throw new Error("Plik uzgadniania jest uszkodzony (błąd formatu JSON)"); }
+    const wynik = await syncScalDane(dane, false);
+    if(wynik.odlozone){ toast("Uzgadnianie przerwane — nic nie zmieniono"); return; }
+    lsSet(SYNC_K_KIEDY, new Date().toISOString());
+    if(typeof pokazStanSync === "function") pokazStanSync();
+    pokazPodsumowanieSync(wynik.st, dane.urzadzenie || "drugiego urządzenia", true);
+  }catch(e){
+    console.warn("Nie udało się wczytać zmian", e);
+    showInfo("Nie udało się uzgodnić",
+      esc(e && e.message ? e.message : String(e)) +
+      "<br><br><b>Dotychczasowe dane pozostały nietknięte.</b>");
+  }
+}
+
+/** Podsumowanie po uzgodnieniu — krótkie, ale konkretne. */
+function pokazPodsumowanieSync(st, skad, oknem){
+  if(!st) return;
+  const w = [];
+  if(st.notatekNowych)      w.push("nowych notatek: <b>" + st.notatekNowych + "</b>");
+  if(st.notatekZmienionych) w.push("zaktualizowanych notatek: <b>" + st.notatekZmienionych + "</b>");
+  if(st.drobiazgow)         w.push("powtórek i oznaczeń: <b>" + st.drobiazgow + "</b>");
+  if(st.etykietNowych)      w.push("nowych etykiet: <b>" + st.etykietNowych + "</b>");
+  if(st.etykietZmienionych) w.push("zmienionych etykiet: <b>" + st.etykietZmienionych + "</b>");
+  if(st.etykietUsunietych)  w.push("usuniętych etykiet: <b>" + st.etykietUsunietych + "</b>");
+  if(st.innych)             w.push("sekcji, zakładek i szablonów: <b>" + st.innych + "</b>");
+  if(st.wersji)             w.push("wpisów historii: <b>" + st.wersji + "</b>");
+  if(st.kolejnosc)          w.push("przeniesiona kolejność publikacji");
+  if(!w.length){
+    if(oknem) toastOk("Wszystko już było zgodne");
+    return;
+  }
+  const ogon = st.pierwsze
+    ? "<br><br><i>Pierwsze uzgodnienie z " + esc(skad) + ": nie było z czym porównywać, " +
+      "więc w " + st.pierwsze + " notatkach wygrała nowsza data zmiany. " +
+      "Od następnego razu rozbieżności będą pokazywane do wyboru.</i>"
+    : "";
+  if(oknem) showInfo("Uzgodniono z " + esc(skad), "• " + w.join("<br>• ") + ogon);
+  else toastOk("Uzgodniono: " + w.length + (w.length===1 ? " zmiana" : " zmiany"));
+}
+
+/* ==========================================================================
+   8. AUTOMATYKA
+   ========================================================================== */
+
+/* Czy uzgadnianie ma chodzić samo. Włącza się wraz ze wskazaniem pliku
+   (syncWskazPlik), wyłącza wraz z jego zapomnieniem (syncZapomnijPlik) —
+   osobny wyłącznik byłby trzecim stanem, którego nikt nie umie wytłumaczyć. */
+function syncAutoWlaczone(){ return String(lsGet(SYNC_K_AUTO, "0")) === "1"; }
+
+/** Po zmianie w danych — zapis pliku po chwili spokoju, ale nie za często. */
+function syncPoZmianie(){
+  if(!syncAutoWlaczone() || !syncPlikAutomatyczny()) return;
+  if(syncZwloka) clearTimeout(syncZwloka);
+  const odOstatniego = Date.now() - syncOstatniZapis;
+  const czekaj = Math.max(SYNC_ZWLOKA_MS, SYNC_MIN_ODSTEP_ZAPISU - odOstatniego);
+  syncZwloka = setTimeout(()=>{ syncZwloka = null; syncTeraz("zmiany"); }, czekaj);
+}
+
+/** Zaglądanie do pliku: zmienił się na drugim urządzeniu? */
+function syncUruchomOdpytywanie(){
+  if(syncOdpyt || !syncAutoWlaczone() || !syncPlikAutomatyczny()) return;
+  syncOdpyt = setInterval(async ()=>{
+    if(syncPracuje || document.hidden) return;
+    const u = await syncUchwyt(); if(!u) return;
+    if(!(await prawoDoPliku(u, false))) return;
+    let plik; try{ plik = await u.getFile(); }catch(e){ return; }
+    if(!plik || !plik.lastModified) return;
+    if(plik.lastModified <= syncZnanyMs) return;      // to nasz własny zapis
+    syncTeraz("odpytanie");
+  }, SYNC_ODPYT_MS);
+}
+function syncZatrzymajOdpytywanie(){
+  if(syncOdpyt){ clearInterval(syncOdpyt); syncOdpyt = null; }
+}
+
+/**
+ * Wpięcie w cykl życia aplikacji. Wołane raz, z 03-boot.js.
+ * Uruchomienie → uzgodnij; powrót do karty → uzgodnij; wyjście → dopisz zmiany.
+ */
+function syncStart(){
+  if(!syncPlikAutomatyczny() || !syncAutoWlaczone()) return;
+  syncUruchomOdpytywanie();
+  setTimeout(()=>syncTeraz("start"), 1200);
+  document.addEventListener("visibilitychange", ()=>{
+    if(!document.hidden) syncTeraz("powrót");
+  });
+  /* Przy zamykaniu karty zapis pliku i tak się nie zmieści — ale zwłoka
+     czekająca w kolejce zmieści się, jeśli ją teraz popchniemy. */
+  window.addEventListener("pagehide", ()=>{
+    if(syncZwloka){ clearTimeout(syncZwloka); syncZwloka = null; syncTeraz("wyjście"); }
+  });
+}
+
+/* ==========================================================================
+   9. OKNO SPORÓW
+   ========================================================================== */
+
+let _spory = [], _sporyWybory = {}, _sporySkad = "";
+
+/** Krótki podgląd treści rekordu — tyle, żeby rozpoznać, nie żeby czytać. */
+function sporTresc(rodzaj, rek){
+  if(!rek) return "<i>(usunięte)</i>";
+  if(rodzaj === "notes") return skrotTekstu(rek.c || htmlToPlain(rek.h || ""), 260);
+  if(rodzaj === "kolejnosc") return "<i>(inna kolejność pozycji)</i>";
+  const czesci = [];
+  if(rek.name || rek.nazwa) czesci.push("nazwa: " + (rek.name || rek.nazwa));
+  if(rek.color) czesci.push("kolor: " + rek.color);
+  if(rek.ord !== undefined && rek.ord !== null) czesci.push("miejsce: " + rek.ord);
+  if(rek.tytul) czesci.push("tytuł: " + rek.tytul);
+  return esc(czesci.join(" · ")) || "<i>(bez zmian widocznych na liście)</i>";
+}
+
+function wierszSporu(s, i){
+  const wybor = _sporyWybory[i] || "moje";
+  const powod = s.typ === "usuniete-tam"
+      ? "Usunięte na drugim urządzeniu, u Ciebie zmienione"
+    : s.typ === "usuniete-tu"
+      ? "Usunięte tutaj, na drugim urządzeniu zmienione"
+      : "Zmienione w dwóch miejscach naraz";
+  const trzecia = s.rodzaj === "notes" && s.lokalny && s.zdalny;
+  /* Napisy na przyciskach mówią, CO SIĘ STANIE, a nie skąd pochodzi rekord.
+     Przy usunięciu „Ta z iPada" nic nie znaczy — nie ma żadnej wersji z iPada,
+     bo tam tej rzeczy już nie ma. */
+  const mojeNapis = s.typ === "usuniete-tu" ? "Zostaw usunięte tutaj"
+                  : s.typ === "usuniete-tam" ? "Zachowaj u siebie"
+                  : "Ta z tego urządzenia";
+  const zdalnyNapis = s.typ === "usuniete-tu" ? ("Przywróć — na " + _sporySkad + " jeszcze jest")
+                    : s.typ === "usuniete-tam" ? ("Usuń też tutaj — na " + _sporySkad + " już nie ma")
+                    : ("Ta z " + _sporySkad);
+  return `<div class="roz spor" data-spor="${i}">
+    <div class="roz-tyt">${skrotTekstu(s.opis, 80)}</div>
+    <div class="roz-powod">${esc(powod)}</div>
+    <div class="roz-pary">
+      <label class="roz-opcja${wybor==="moje"?" wybrana":""}">
+        <input type="radio" name="spor-${i}" value="moje"${wybor==="moje"?" checked":""}>
+        <span class="roz-skad">${esc(mojeNapis)}</span>
+        <span class="roz-data">${esc(s.lokalny && s.lokalny.mo ? dataPolska(s.lokalny.mo) : "")}</span>
+        <span class="roz-tresc">${sporTresc(s.rodzaj, s.lokalny)}</span>
+      </label>
+      <label class="roz-opcja${wybor==="zdalna"?" wybrana":""}">
+        <input type="radio" name="spor-${i}" value="zdalna"${wybor==="zdalna"?" checked":""}>
+        <span class="roz-skad">${esc(zdalnyNapis)}</span>
+        <span class="roz-data">${esc(s.zdalny && s.zdalny.mo ? dataPolska(s.zdalny.mo) : "")}</span>
+        <span class="roz-tresc">${sporTresc(s.rodzaj, s.zdalny)}</span>
+      </label>
+      ${trzecia ? `<label class="roz-opcja roz-obie${wybor==="obie"?" wybrana":""}">
+        <input type="radio" name="spor-${i}" value="obie"${wybor==="obie"?" checked":""}>
+        <span class="roz-skad">Zachowaj obie</span>
+        <span class="roz-tresc">Twoja zostaje bez zmian, druga dojdzie jako nowa notatka.</span>
+      </label>` : ""}
+    </div>
+  </div>`;
+}
+
+function rysujSpory(){
+  const box = $("syncLista"); if(!box) return;
+  setHtml(box, _spory.map(wierszSporu).join(""));
+  const ile = _spory.filter((s,i)=>(_sporyWybory[i]||"moje") !== "moje").length;
+  setText($("syncPodsum"), ile
+    ? "Zmienisz u siebie: " + ile + " z " + _spory.length
+    : "Nic się u Ciebie nie zmieni — wszystko zostaje tak, jak tutaj.");
+}
+
+/**
+ * Pokazuje spory i czeka na decyzje.
+ * @returns {Promise<Array|null>} lista rozstrzygnięć albo null, gdy przerwano
+ */
+function pokazSpory(lista, skad){
+  _spory = Array.isArray(lista) ? lista : [];
+  _sporySkad = skad || "drugiego urządzenia";
+  _sporyWybory = {};
+  /* Domyślnie ZOSTAJE TO, CO TUTAJ. Zamknięcie okna bez czytania nie może
+     niczego nadpisać — ta zasada obowiązuje też przy imporcie z JW Library. */
+  _spory.forEach((s,i)=>{ _sporyWybory[i] = "moje"; });
+  if(!_spory.length) return Promise.resolve([]);
+
+  return new Promise(zakoncz=>{
+    setText($("syncIle"), String(_spory.length));
+    setText($("syncSkad"), _sporySkad);
+    rysujSpory();
+    openModal("modalSync");
+    const posprzataj = ()=>{
+      $("syncLista").onchange = null;
+      $("syncWszystkieMoje").onclick = null;
+      $("syncWszystkieZdalne").onclick = null;
+      $("syncZastosuj").onclick = null;
+      $("syncAnuluj").onclick = null;
+    };
+    $("syncLista").onchange = e=>{
+      const pole = e.target.closest && e.target.closest('input[type="radio"]');
+      const wiersz = pole && pole.closest("[data-spor]");
+      if(!pole || !wiersz) return;
+      _sporyWybory[+wiersz.dataset.spor] = pole.value;
+      rysujSpory();
+    };
+    $("syncWszystkieMoje").onclick = ()=>{
+      _spory.forEach((s,i)=>{ _sporyWybory[i] = "moje"; }); rysujSpory(); };
+    $("syncWszystkieZdalne").onclick = ()=>{
+      _spory.forEach((s,i)=>{ _sporyWybory[i] = "zdalna"; }); rysujSpory(); };
+    $("syncAnuluj").onclick = ()=>{
+      posprzataj(); closeModal("modalSync"); zakoncz(null); };
+    $("syncZastosuj").onclick = ()=>{
+      const wybory = _spory.map((s,i)=> Object.assign({}, s, {wybor:_sporyWybory[i] || "moje"}));
+      posprzataj(); closeModal("modalSync"); zakoncz(wybory); };
+  });
+}
+
+/* ==========================================================================
+   10. WEJŚCIA Z INTERFEJSU
+   ========================================================================== */
+
+/** „Uzgodnij teraz" — jedna droga dla obu trybów. */
+async function syncUzgodnijTeraz(){
+  if(syncPlikAutomatyczny() && (await syncUchwyt())){
+    toast("Uzgadniam…");
+    const w = await syncTeraz("ręcznie");
+    if(w && !w.odlozone) pokazPodsumowanieSync(w.st, "pliku uzgadniania", true);
+    else if(!w) toastOk("Plik uzgadniania zapisany — nie było czego dołożyć");
+    if(typeof pokazStanSync === "function") pokazStanSync();
+    return;
+  }
+  /* Bez wskazanego pliku zostaje droga ręczna — pytamy, w którą stronę. */
+  const wybor = await askChoice("Uzgodnienie z innym urządzeniem",
+    `<p class="ch-lead">Ta przeglądarka nie może sama sięgnąć do iCloud Drive, `+
+    `więc plik uzgadniania przechodzi przez Twoje ręce — raz w jedną stronę, raz w drugą.</p>`+
+    `<dl class="ch-opts">`+
+    `<dt>Wczytaj zmiany</dt><dd>Wskaż plik uzgadniania z iCloud Drive. Zmiany z drugiego urządzenia dojdą tutaj.</dd>`+
+    `<dt>Wyślij zmiany</dt><dd>Zapisz plik do iCloud Drive, żeby drugie urządzenie mogło go wczytać.</dd>`+
+    `</dl>`,
+    [{label:"Wczytaj zmiany", value:"wczytaj", style:"primary"},
+     {label:"Wyślij zmiany", value:"wyslij"},
+     {label:"Anuluj", value:"cancel"}]);
+  if(wybor === "wczytaj"){ const p = $("syncPlikInput"); if(p) p.click(); }
+  else if(wybor === "wyslij") syncWyslij();
+}
+
+/* Wskazanie pliku uzgadniania w trybie ręcznym. Pole czyścimy PRZED scalaniem,
+   żeby wskazanie tego samego pliku po raz drugi znów wywołało zdarzenie. */
+if($("syncPlikInput")) $("syncPlikInput").onchange = e=>{
+  const plik = e.target.files && e.target.files[0];
+  e.target.value = "";
+  syncWczytajZPliku(plik);
+};
+
+/** Opis stanu uzgadniania — do Ustawień. */
+async function syncStanOpis(){
+  const kiedy = lsGet(SYNC_K_KIEDY, "");
+  const nazwa = await syncNazwaPliku();
+  const czesci = [];
+  if(nazwa) czesci.push("Plik: " + nazwa);
+  else if(syncPlikAutomatyczny()) czesci.push("Plik uzgadniania nie jest wskazany.");
+  else czesci.push("Ta przeglądarka nie może sama pisać do pliku — zostają przyciski ręczne.");
+  if(kiedy){
+    const d = new Date(kiedy);
+    czesci.push("Ostatnio uzgodnione: " + (isNaN(d) ? kiedy : dataPolska(kiedy)));
+  } else czesci.push("Jeszcze nie uzgadniano.");
+  if(syncOpisStanu) czesci.push(syncOpisStanu);
+  return czesci.join(" · ");
+}
+
+</script>
+<script>
+/* ==========================================================================
+   JW Study — wzmianki.js
+   `@` → ODSYŁACZ DO INNEJ NOTATKI ·  `#` → ETYKIETA
+
+   CO BYŁO NIE TAK
+
+   Notatki na jeden temat leżały osobno i nie było jak powiedzieć „to wynika
+   z tamtej". Zostawały trzy obejścia, każde ze swoją wadą:
+
+     • przepisanie kawałka tamtej notatki — od tej chwili są dwie wersje tego
+       samego zdania i za miesiąc nie wiadomo, która jest poprawiona;
+     • wspólna etykieta — mówi „te notatki są z jednego działu", a nie
+       „TA notatka odsyła DO TEJ";
+     • „powiązane notatki" (44-powiazane.js) — liczy podobieństwo słów, więc
+       zgaduje. Bywa trafne, ale nie zapamiętuje decyzji autora.
+
+   Etykietę też trzeba było nadawać osobno: wyjść z pisania, otworzyć wybór
+   etykiet, zaznaczyć, wrócić. Przy pisaniu w biegu (na zebraniu, na iPadzie)
+   to wystarczyło, żeby tego nie robić wcale.
+
+   JAK JEST TERAZ
+
+   W trakcie pisania:
+
+     `@` + kilka liter  → lista notatek. Wybrana wchodzi jako ODSYŁACZ.
+                          Kliknięcie w niego (poza edycją) otwiera tamtą notatkę
+                          w czytniku, ze śladem powrotu — strzałka wstecz wraca
+                          tam, skąd przyszedłeś.
+     `#` + kilka liter  → lista etykiet. Wybrana zostaje NADANA notatce.
+                          Wpisany tekst znika, bo etykieta nie jest treścią.
+
+   TRZY DECYZJE, KTÓRE WARTO ZNAĆ
+
+   1. ODSYŁACZ TRZYMA IDENTYFIKATOR, NIE TYTUŁ. W treści zapisane jest
+      `<a class="note-ref" data-g="…">`, a widoczny napis bierze się przy
+      każdym wyświetleniu z BIEŻĄCEGO tytułu tamtej notatki. Zmiana tytułu
+      przenosi się więc sama na wszystkie odsyłacze. Gdyby napis był zapisany
+      na stałe, po pierwszej zmianie tytułu odsyłacze kłamałyby.
+
+   2. ODSYŁACZ DO NOTATKI, KTÓREJ JUŻ NIE MA, NIE JEST MARTWYM LINKIEM.
+      Dostaje wyraźny wygląd i podpowiedź „notatka usunięta" — bo notatka może
+      leżeć w koszu i wrócić. Ciche zniknięcie napisu byłoby gorsze: nie dałoby
+      się nawet zauważyć, że coś tu było.
+
+   3. `#` NIE KOLIDUJE Z NAGŁÓWKIEM. `# ` na początku wiersza od dawna robi
+      nagłówek (13-editor.js, autoformat). Lista etykiet otwiera się od razu po
+      `#`, ale zamyka się, gdy tylko pojawi się spacja — czyli dokładnie wtedy,
+      gdy nagłówek wchodzi w życie. Obie rzeczy działają bez wyboru „albo-albo".
+   ========================================================================== */
+"use strict";
+
+/* Ile pozycji na liście. Więcej nie pomaga: przy ośmiu tysiącach notatek
+   i tak trafia się do celu przez dopisanie liter, a nie przez przewijanie. */
+const WZM_ILE = 8;
+/* Najdłuższe szukane słowo. Dłuższe znaczy, że `@` było przypadkiem (adres
+   e-mail, „małpa" w treści) i lista ma zniknąć. */
+const WZM_MAX_ZNAKOW = 40;
+
+let wzmStan = null;   // {rodzaj:"@"|"#", ce, wezel, poczatek, szukane, lista, wybrany}
+
+/** Popup listy. Tworzony raz, przy pierwszym użyciu. */
+function wzmPop(){
+  let p = $("wzmPop");
+  if(!p){
+    p = document.createElement("div");
+    p.id = "wzmPop";
+    p.setAttribute("role", "listbox");
+    document.body.appendChild(p);
+    /* pointerdown, nie click: kliknięcie zabrałoby ognisko polu edycji, a wraz
+       z nim zaznaczenie, którego potrzebujemy do wstawienia w dobrym miejscu. */
+    p.addEventListener("pointerdown", e=>{
+      e.preventDefault();
+      const it = e.target.closest && e.target.closest("[data-wzm]");
+      if(!it) return;
+      wzmWybierz(+it.dataset.wzm);
+    });
+  }
+  return p;
+}
+
+function wzmZamknij(){
+  const p = $("wzmPop");
+  if(p) p.style.display = "none";
+  wzmStan = null;
+}
+
+/**
+ * Co użytkownik właśnie napisał: szuka `@` albo `#` przed kursorem, w tym samym
+ * węźle tekstowym. Zwraca null, gdy nie ma czego podpowiadać.
+ */
+function wzmSzukanePrzedKursorem(ce){
+  const sel = getSelection();
+  if(!sel || !sel.rangeCount) return null;
+  const r = sel.getRangeAt(0);
+  if(!r.collapsed) return null;
+  const wezel = r.startContainer;
+  if(wezel.nodeType !== 3) return null;                 // tylko w zwykłym tekście
+  if(!ce.contains(wezel)) return null;
+  /* W środku istniejącego odsyłacza nie podpowiadamy — tam `@` jest treścią. */
+  let rodzic = wezel.parentNode;
+  while(rodzic && rodzic !== ce){
+    if(rodzic.tagName === "A") return null;
+    rodzic = rodzic.parentNode;
+  }
+  const przed = wezel.nodeValue.slice(0, r.startOffset);
+  const m = przed.match(/([@#])([^\s@#]*)$/);
+  if(!m) return null;
+  if(m[2].length > WZM_MAX_ZNAKOW) return null;
+  /* Znak musi zaczynać słowo. Bez tego `e@mail` i `nr#5` otwierałyby listę. */
+  const zaraz = przed.charAt(przed.length - m[0].length - 1);
+  if(zaraz && !/[\s(\[„”"' ]/.test(zaraz)) return null;
+  return {rodzaj:m[1], szukane:m[2], wezel, poczatek:r.startOffset - m[0].length,
+          koniec:r.startOffset};
+}
+
+/** Notatki dopasowane do szukanego tekstu. Puste szukane → ostatnio zmienione. */
+function wzmNotatki(szukane, pomin){
+  const q = norm(szukane);
+  const zywe = notes.filter(n=>!n.del && n.g !== pomin);
+  if(!q){
+    return zywe.slice()
+      .sort((a,b)=>String(b.mo||"").localeCompare(String(a.mo||"")))
+      .slice(0, WZM_ILE)
+      .map(n=>({n, gdzie:"tytuł"}));
+  }
+  const wTytule = [], wTresci = [];
+  for(const n of zywe){
+    if(norm(n.t || "").indexOf(q) >= 0){ wTytule.push({n, gdzie:"tytuł"}); if(wTytule.length >= WZM_ILE) break; }
+  }
+  if(wTytule.length < WZM_ILE){
+    /* Dopiero gdy tytuły nie wystarczą, zaglądamy w treść. Odwrotna kolejność
+       zasypywałaby listę notatkami, w których słowo pada raz, w środku. */
+    for(const n of zywe){
+      if(wTytule.some(x=>x.n.g === n.g)) continue;
+      if(norm(n.c || "").indexOf(q) >= 0){ wTresci.push({n, gdzie:"treść"}); }
+      if(wTytule.length + wTresci.length >= WZM_ILE) break;
+    }
+  }
+  return wTytule.concat(wTresci).slice(0, WZM_ILE);
+}
+
+/** Etykiety dopasowane do szukanego tekstu. */
+function wzmEtykiety(szukane, notatka){
+  const q = norm(szukane);
+  const juz = new Set((notatka && notatka.tg) || []);
+  const dopasowane = tags.filter(t=>!q || norm(t.name).indexOf(q) >= 0);
+  /* Etykiety, których notatka jeszcze nie ma, idą pierwsze — po to się tu
+     przyszło. Te nadane zostają widoczne, żeby dało się je zdjąć. */
+  dopasowane.sort((a,b)=> (juz.has(a.id) ? 1 : 0) - (juz.has(b.id) ? 1 : 0));
+  return dopasowane.slice(0, WZM_ILE).map(t=>({t, nadana:juz.has(t.id)}));
+}
+
+/** Rysuje listę i ustawia ją przy kursorze. */
+function wzmRysuj(){
+  const st = wzmStan; if(!st) return;
+  const p = wzmPop();
+  let html = "";
+  if(st.rodzaj === "@"){
+    html = `<div class="dd-lbl">Odsyłacz do notatki${st.szukane ? ": " + esc(st.szukane) : ""}</div>`;
+    if(!st.lista.length) html += `<div class="wzm-brak">Nie znalazłem takiej notatki</div>`;
+    else html += st.lista.map((x, i)=>
+      `<div data-wzm="${i}" class="wzm-poz${i === st.wybrany ? " wybrana" : ""}" role="option">
+         <span class="wzm-tyt">${esc((x.n.t || "Bez tytułu").slice(0, 70))}</span>
+         <span class="wzm-opis">${x.gdzie === "treść" ? "w treści · " : ""}${esc(wzmOpisNotatki(x.n))}</span>
+       </div>`).join("");
+  } else {
+    html = `<div class="dd-lbl">Etykieta${st.szukane ? ": " + esc(st.szukane) : ""}</div>`;
+    html += st.lista.map((x, i)=>
+      `<div data-wzm="${i}" class="wzm-poz${i === st.wybrany ? " wybrana" : ""}" role="option">
+         <span class="wzm-kropka" style="background:${esc(x.t.color || "var(--accent2)")}"></span>
+         <span class="wzm-tyt">${esc(x.t.name)}</span>
+         ${x.nadana ? '<span class="wzm-opis">już nadana — wybierz, żeby zdjąć</span>' : ""}
+       </div>`).join("");
+    if(st.nowa) html += `<div data-wzm="${st.lista.length}" class="wzm-poz wzm-nowa${
+      st.wybrany === st.lista.length ? " wybrana" : ""}" role="option">
+        <span class="wzm-tyt">Utwórz etykietę „${esc(st.nowa)}”</span></div>`;
+    if(!st.lista.length && !st.nowa) html += `<div class="wzm-brak">Wpisz nazwę nowej etykiety</div>`;
+  }
+  p.innerHTML = html;
+  p.style.display = "block";
+  wzmUstawPrzyKursorze(p);
+}
+
+/** Krótki opis notatki na liście: werset albo publikacja albo data. */
+function wzmOpisNotatki(n){
+  if(n.b && BOOKS[n.b]) return BOOKS[n.b] + (n.ch ? " " + n.ch + (n.v ? ":" + n.v : "") : "");
+  if(n.pub) return String(n.pub);
+  const d = n.mo ? new Date(n.mo) : null;
+  return (d && !isNaN(d)) ? d.toLocaleDateString("pl", {day:"numeric", month:"short", year:"numeric"}) : "";
+}
+
+/** Umieszcza listę pod kursorem, w granicach widocznego obszaru. */
+function wzmUstawPrzyKursorze(p){
+  const sel = getSelection();
+  if(!sel || !sel.rangeCount){ p.style.display = "none"; return; }
+  let r;
+  try{ r = sel.getRangeAt(0).getBoundingClientRect(); }catch(e){ r = null; }
+  /* Kursor bez szerokości bywa prostokątem 0×0 w miejscu (0,0) — wtedy bierzemy
+     prostokąt wiersza, w którym stoi, żeby lista nie wylądowała w kącie ekranu. */
+  if(!r || (!r.width && !r.height && !r.top)){
+    const w = sel.anchorNode;
+    const el = w && (w.nodeType === 1 ? w : w.parentElement);
+    r = el ? el.getBoundingClientRect() : {left:20, top:80, bottom:100, height:20};
+  }
+  const ob = (typeof widocznyObszar === "function") ? widocznyObszar()
+           : {lewo:0, gora:0, prawo:innerWidth, dol:innerHeight, wys:innerHeight};
+  const M = 8;
+  p.style.maxHeight = "none";
+  const w = p.offsetWidth || 260, h = p.offsetHeight || 160;
+  const pod = ob.dol - r.bottom - M * 2;
+  const nad = r.top - ob.gora - M * 2;
+  let top, maxH;
+  if(h <= pod || pod >= nad){ top = r.bottom + 6; maxH = Math.max(120, pod); }
+  else { maxH = Math.max(120, nad); top = r.top - 6 - Math.min(h, maxH); }
+  p.style.maxHeight = Math.min(maxH, ob.wys - M * 2) + "px";
+  p.style.overflowY = "auto";
+  p.style.top = Math.max(ob.gora + M, Math.min(top, ob.dol - Math.min(h, maxH) - M)) + "px";
+  p.style.left = Math.max(ob.lewo + M, Math.min(r.left, ob.prawo - w - M)) + "px";
+}
+
+/** Odświeża listę po każdym naciśnięciu klawisza w treści notatki. */
+function wzmSprawdz(ce){
+  const co = wzmSzukanePrzedKursorem(ce);
+  if(!co){ wzmZamknij(); return; }
+  const n = (typeof notaDlaPola === "function") ? notaDlaPola(ce) : null;
+  const stary = wzmStan;
+  wzmStan = {rodzaj:co.rodzaj, ce, wezel:co.wezel, poczatek:co.poczatek, koniec:co.koniec,
+             szukane:co.szukane, notatka:n, lista:[], wybrany:0, nowa:""};
+  if(co.rodzaj === "@") wzmStan.lista = wzmNotatki(co.szukane, n && n.g);
+  else {
+    wzmStan.lista = wzmEtykiety(co.szukane, n);
+    const dokladna = co.szukane && tags.some(t=>norm(t.name) === norm(co.szukane));
+    if(co.szukane && !dokladna) wzmStan.nowa = co.szukane;
+  }
+  /* Zachowaj podświetlenie, jeśli lista się nie zmieniła — inaczej strzałka
+     w dół po dopisaniu litery skakałaby zawsze na pierwszą pozycję. */
+  if(stary && stary.rodzaj === wzmStan.rodzaj && stary.szukane === wzmStan.szukane)
+    wzmStan.wybrany = Math.min(stary.wybrany, wzmIlePozycji() - 1);
+  if(wzmIlePozycji() < 1 && wzmStan.rodzaj === "@"){ wzmRysuj(); return; }  // pokaż „nie znalazłem"
+  wzmRysuj();
+}
+function wzmIlePozycji(){
+  if(!wzmStan) return 0;
+  return wzmStan.lista.length + (wzmStan.nowa ? 1 : 0);
+}
+
+/** Usuwa wpisane `@szukane` / `#szukane` z treści. */
+function wzmUsunWpisane(){
+  const st = wzmStan; if(!st) return null;
+  const w = st.wezel;
+  if(!w || w.nodeType !== 3 || !st.ce.contains(w)) return null;
+  const r = document.createRange();
+  try{
+    r.setStart(w, st.poczatek);
+    r.setEnd(w, Math.min(st.koniec, w.nodeValue.length));
+  }catch(e){ return null; }
+  r.deleteContents();
+  const sel = getSelection();
+  sel.removeAllRanges(); sel.addRange(r);
+  return r;
+}
+
+/** Wprowadza wybór w życie. */
+function wzmWybierz(i){
+  const st = wzmStan; if(!st) return;
+  const ce = st.ce;
+  if(st.rodzaj === "@"){
+    const wpis = st.lista[i]; if(!wpis){ wzmZamknij(); return; }
+    const r = wzmUsunWpisane();
+    const a = document.createElement("a");
+    a.className = "note-ref";
+    a.setAttribute("data-g", wpis.n.g);
+    a.textContent = wpis.n.t || "Bez tytułu";
+    if(r){ r.insertNode(a); a.parentNode.insertBefore(document.createTextNode(" "), a.nextSibling);
+           const po = document.createRange(); po.setStartAfter(a.nextSibling); po.collapse(true);
+           const sel = getSelection(); sel.removeAllRanges(); sel.addRange(po); }
+    else { ce.appendChild(a); ce.appendChild(document.createTextNode(" ")); }
+    wzmZamknij();
+    commitLiveEdit(ce);
+    toastOk("Odsyłacz do: " + (wpis.n.t || "Bez tytułu"));
+    return;
+  }
+  /* `#` — etykieta. Tekst znika, bo etykieta nie jest treścią notatki. */
+  const n = st.notatka;
+  let t = null, zdjeta = false;
+  if(i < st.lista.length){
+    t = st.lista[i].t;
+    zdjeta = st.lista[i].nadana;
+  } else if(st.nowa){
+    t = (typeof createTag === "function") ? createTag(st.nowa) : null;
+    if(!t){ wzmZamknij(); return; }
+  }
+  wzmUsunWpisane();
+  wzmZamknij();
+  if(!n || !t){ commitLiveEdit(ce); return; }
+  n.tg = Array.isArray(n.tg) ? n.tg : [];
+  if(zdjeta) n.tg = n.tg.filter(x=>x !== t.id);
+  else if(n.tg.indexOf(t.id) < 0) n.tg.push(t.id);
+  commitLiveEdit(ce);               // zapisuje treść (już bez `#…`) i podbija datę
+  saveNote(n);
+  if(typeof bumpTagsVer === "function") bumpTagsVer();   // chipy i lista wyboru na kartach
+  if(typeof renderTags === "function") renderTags();      // licznik przy etykiecie w kolumnie
+  toastOk(zdjeta ? "Zdjęto etykietę „" + t.name + "”" : "Nadano etykietę „" + t.name + "”");
+}
+
+/* ——— WPIĘCIE W PISANIE ——— */
+document.addEventListener("input", e=>{
+  const ce = e.target && e.target.closest && e.target.closest('.ncontent[contenteditable="true"]');
+  if(ce) wzmSprawdz(ce);
+});
+/* Klawiatura obsługiwana w fazie przechwytywania: strzałki i Enter muszą trafić
+   do listy, a nie do treści notatki. */
+document.addEventListener("keydown", e=>{
+  if(!wzmStan) return;
+  const ile = wzmIlePozycji();
+  if(e.key === "Escape"){ e.preventDefault(); e.stopPropagation(); wzmZamknij(); return; }
+  if(e.key === "ArrowDown" && ile){ e.preventDefault(); e.stopPropagation();
+    wzmStan.wybrany = (wzmStan.wybrany + 1) % ile; wzmRysuj(); return; }
+  if(e.key === "ArrowUp" && ile){ e.preventDefault(); e.stopPropagation();
+    wzmStan.wybrany = (wzmStan.wybrany - 1 + ile) % ile; wzmRysuj(); return; }
+  if((e.key === "Enter" || e.key === "Tab") && ile){ e.preventDefault(); e.stopPropagation();
+    wzmWybierz(wzmStan.wybrany); return; }
+}, true);
+/* Kliknięcie gdzie indziej albo wyjście z edycji zamyka listę. */
+document.addEventListener("pointerdown", e=>{
+  if(!wzmStan) return;
+  if(e.target && e.target.closest && e.target.closest("#wzmPop")) return;
+  wzmZamknij();
+});
+document.addEventListener("scroll", ()=>{ if(wzmStan) wzmZamknij(); }, true);
+
+/* ==========================================================================
+   ODSYŁACZE W WYŚWIETLANEJ TREŚCI
+   ========================================================================== */
+
+/**
+ * Uzupełnia odsyłacze do notatek przy każdym wyświetleniu: napis bierze się
+ * z BIEŻĄCEGO tytułu, a odsyłacz do notatki, której nie ma, dostaje wyraźny
+ * wygląd zamiast zniknąć. Wołane z renderNotes i z czytnika.
+ */
+function odswiezOdnosnikiNotatek(container){
+  if(!container) return;
+  container.querySelectorAll("a.note-ref[data-g]").forEach(a=>{
+    const g = a.getAttribute("data-g");
+    const n = notes.find(x=>x.g === g);
+    if(!n){
+      a.classList.add("brak");
+      a.title = "Notatka usunięta albo z innego urządzenia — odsyłacz zostaje, bo notatka może wrócić";
+      if(!a.textContent.trim()) a.textContent = "notatka usunięta";
+      return;
+    }
+    a.classList.remove("brak");
+    if(n.del){ a.classList.add("wkoszu"); a.title = "Notatka jest w koszu"; }
+    else { a.classList.remove("wkoszu"); a.title = "Otwórz notatkę: " + (n.t || "Bez tytułu"); }
+    const tytul = n.t || "Bez tytułu";
+    if(a.textContent !== tytul) a.textContent = tytul;
+  });
+}
+
+/* Kliknięcie w odsyłacz otwiera tamtą notatkę w czytniku. openFs sam odkłada
+   ślad powrotu, więc strzałka wstecz wraca tam, skąd przyszliśmy. */
+document.addEventListener("click", e=>{
+  const a = e.target && e.target.closest ? e.target.closest("a.note-ref") : null;
+  if(!a) return;
+  if(a.closest('[contenteditable="true"]')) return;      // w edycji odsyłacz jest tekstem
+  e.preventDefault();
+  const g = a.getAttribute("data-g");
+  const n = notes.find(x=>x.g === g);
+  if(!n){ toast("Tej notatki już nie ma"); return; }
+  if(n.del){ toast("Ta notatka jest w koszu — przywróć ją, żeby otworzyć"); return; }
+  if(typeof openFs === "function") openFs(n);
+});
+
+</script>
+<script>
+/* ==========================================================================
+   JW Study — przypisy.js
+   PRZYPISY W NOTATCE
+
+   CO BYŁO NIE TAK
+
+   Notatka ze studium ma dwie warstwy: myśl główną i to, co ją podpiera —
+   skąd wzięta, kto tak twierdzi, jaki jest wyjątek, gdzie doczytać. Do tej
+   pory obie leżały w jednym ciągu tekstu, więc trzeba było wybrać:
+
+     • wpisać wyjaśnienie w nawiasie, w środku zdania — myśl główna rozpada się
+       na kawałki i przy czytaniu na głos trzeba nawias przeskakiwać;
+     • albo dopisać je na końcu notatki — ale wtedy nic nie mówi, DO CZEGO
+       się odnosi, a po miesiącu i po dopisaniu trzech akapitów nie da się tego
+       odgadnąć;
+     • albo zrobić z tego osobną notatkę — czyli rozbić jedną myśl na dwie
+       kartki, żeby zapisać jedno zdanie.
+
+   JAK JEST TERAZ
+
+   W miejscu, w którym stoi kursor, wchodzi mały odsyłacz ¹, a treść przypisu
+   ląduje na dole notatki, w osobnym bloku pod linią. Kliknięcie odsyłacza
+   przenosi do przypisu, kliknięcie numeru przypisu — z powrotem do miejsca
+   w tekście. Przypisy wchodzą też do wyszukiwania, bo są zwykłym tekstem
+   notatki.
+
+   TRZY DECYZJE, KTÓRE WARTO ZNAĆ
+
+   1. NUMERY LICZĄ SIĘ SAME, ZA KAŻDYM RAZEM. Nigdzie nie jest zapisane
+      „to jest przypis numer 3". Kolejność bierze się z KOLEJNOŚCI ODSYŁACZY
+      w treści, przy każdym zapisie i przy każdym wyświetleniu. Dzięki temu
+      wstawienie przypisu w środku notatki przenumerowuje wszystkie następne,
+      a usunięcie odsyłacza zamyka lukę — bez żadnej osobnej ewidencji, która
+      i tak rozjechałaby się przy pierwszym wklejeniu tekstu.
+
+   2. PRZYPIS BEZ ODSYŁACZA NIE JEST KASOWANY. Gdy skasujesz w tekście samo ¹,
+      treść przypisu zostaje na dole, oznaczona jako „bez odsyłacza w tekście".
+      Ciche usunięcie byłoby najgorsze z możliwych: kilka zdań przepadałoby
+      przez naciśnięcie Backspace w niepozornym miejscu. Puste przypisy
+      (bez ani jednego znaku) odpadają same, bo nie ma czego ratować.
+
+   3. BLOK PRZYPISÓW JEST ZWYKŁĄ CZĘŚCIĄ TREŚCI. Nie osobnym polem w notatce.
+      Dzięki temu jedzie w kopii zapasowej i w pliku uzgadniania, wchodzi do
+      historii wersji i do porównywania wersji, daje się przeszukać i nie
+      wymagał podniesienia wersji bazy. Kosztuje to tyle, że sito treści
+      (`sanitize`) musi znać trzy nowe znaczniki — i tylko tyle.
+   ========================================================================== */
+"use strict";
+
+/* Cyfry górne. Zwykła cyfra w <sup> też by wyglądała dobrze, ale te znaki
+   przeżywają skopiowanie notatki do zwykłego tekstu — a właśnie tam odsyłacz
+   przestaje być widoczny, jeśli jest tylko wyglądem. */
+const PRZ_CYFRY = ["⁰","¹","²","³","⁴","⁵","⁶","⁷","⁸","⁹"];
+function przCyfryGorne(n){
+  return String(n).split("").map(c=>PRZ_CYFRY[+c] || c).join("");
+}
+/* Ile przypisów na notatkę. Setka to znacznie więcej, niż ma sens w notatce
+   ze studium; granica jest tu po to, żeby wklejony obcy tekst nie zrobił
+   z bloku przypisów drugiej notatki. */
+const PRZ_MAX = 100;
+/* Najdłuższy przypis. Dłuższy tekst to już akapit, nie przypis. */
+const PRZ_MAX_ZNAKOW = 2000;
+
+/** Blok przypisów notatki — istniejący albo świeżo utworzony na końcu treści. */
+function przBlok(ce, utworz){
+  let blok = ce.querySelector(":scope > .fnlist") || ce.querySelector(".fnlist");
+  if(blok || !utworz) return blok;
+  blok = document.createElement("div");
+  blok.className = "fnlist";
+  ce.appendChild(blok);
+  return blok;
+}
+
+/**
+ * PRZENUMEROWANIE. Jedyne miejsce, w którym ustala się, który przypis ma jaki
+ * numer — patrz decyzja 1 w nagłówku pliku.
+ *
+ * @param {HTMLElement} ce  treść notatki (w edycji albo wyświetlana)
+ * @returns {number} ile przypisów ma odsyłacz w tekście
+ */
+function przPrzenumeruj(ce){
+  if(!ce) return 0;
+  const blok = przBlok(ce, false);
+  const wpisy = blok ? [...blok.querySelectorAll(".fn")] : [];
+  /* Odsyłacze bierzemy w kolejności, w jakiej stoją w treści — ale bez tych,
+     które siedzą wewnątrz samego bloku przypisów (przypis o przypisie to już
+     nie przypis). */
+  const odsylacze = [...ce.querySelectorAll("sup.fnref")].filter(s=>!s.closest(".fnlist"));
+  const poId = new Map();
+  wpisy.forEach(w=>{ const k = w.getAttribute("data-fn"); if(k && !poId.has(k)) poId.set(k, w); });
+
+  const uzyte = new Set();
+  let nr = 0;
+  const nowaKolejnosc = [];
+  odsylacze.forEach(s=>{
+    if(nr >= PRZ_MAX){ return; }
+    const k = s.getAttribute("data-fn") || "";
+    let wpis = poId.get(k);
+    if(!wpis || uzyte.has(wpis)){
+      /* Odsyłacz bez swojego przypisu — najczęściej po skopiowaniu fragmentu
+         notatki. Dostaje pusty przypis, żeby nie wisiał w powietrzu. */
+      wpis = document.createElement("div");
+      wpis.className = "fn";
+      wpis.textContent = "";
+    }
+    uzyte.add(wpis);
+    nr++;
+    const id = "f" + nr;
+    s.setAttribute("data-fn", id);
+    s.textContent = przCyfryGorne(nr);
+    wpis.setAttribute("data-fn", id);
+    wpis.removeAttribute("data-sierota");
+    nowaKolejnosc.push(wpis);
+  });
+  /* Przypisy, których odsyłacz zniknął — patrz decyzja 2. Puste odpadają. */
+  const sieroty = wpisy.filter(w=>!uzyte.has(w) && w.textContent.trim());
+  sieroty.forEach((w, i)=>{
+    w.setAttribute("data-fn", "s" + (i + 1));
+    w.setAttribute("data-sierota", "1");
+    nowaKolejnosc.push(w);
+  });
+  if(!nowaKolejnosc.length){
+    if(blok) blok.remove();
+    return 0;
+  }
+  const cel = blok || przBlok(ce, true);
+  nowaKolejnosc.forEach(w=>cel.appendChild(w));      // appendChild przenosi, nie kopiuje
+  return nr;
+}
+
+/** Wstawia przypis w miejscu kursora. */
+async function przWstaw(ce){
+  if(!ce) return;
+  /* Lista podpowiedzi `@`/`#` mogła zostać otwarta ostatnim naciśnięciem —
+     jej obsługa klawiatury przechwytuje Enter, a Enter jest teraz potrzebny
+     w okienku treści przypisu. */
+  if(typeof wzmZamknij === "function") wzmZamknij();
+  const zapamietane = (typeof edSavedRange !== "undefined" && edSavedRange)
+    ? edSavedRange.cloneRange() : null;
+  const ile = [...ce.querySelectorAll("sup.fnref")].filter(s=>!s.closest(".fnlist")).length;
+  if(ile >= PRZ_MAX){ toast("Więcej niż " + PRZ_MAX + " przypisów w jednej notatce to już nie przypisy"); return; }
+  const tekst = await askText({title:"Przypis",
+    placeholder:"np. Wnikliwe poznawanie Pism, t. 2, s. 415",
+    hint:"Odsyłacz wejdzie w miejscu kursora, treść na dole notatki.",
+    okLabel:"Wstaw przypis"});
+  if(tekst === null) return;
+  const czysty = String(tekst).trim().slice(0, PRZ_MAX_ZNAKOW);
+  if(!czysty){ toast("Puste przypisy nie mają czego pokazać"); return; }
+
+  const s = document.createElement("sup");
+  s.className = "fnref";
+  s.setAttribute("data-fn", "nowy");
+  s.textContent = "¹";
+  /* Wstawiamy PRZED blokiem przypisów, choćby kursor stał gdzieś w nim — inaczej
+     odsyłacz wylądowałby wewnątrz listy przypisów, gdzie nie ma sensu. */
+  const wBloku = zapamietane && zapamietane.commonAncestorContainer
+    && zapamietane.commonAncestorContainer.parentElement
+    && zapamietane.commonAncestorContainer.parentElement.closest(".fnlist");
+  if(zapamietane && !wBloku && ce.contains(zapamietane.commonAncestorContainer)){
+    const r = zapamietane.cloneRange(); r.collapse(false); r.insertNode(s);
+  } else {
+    const blok = przBlok(ce, false);
+    if(blok) ce.insertBefore(s, blok); else ce.appendChild(s);
+  }
+  const wpis = document.createElement("div");
+  wpis.className = "fn";
+  wpis.setAttribute("data-fn", "nowy");
+  wpis.textContent = czysty;
+  przBlok(ce, true).appendChild(wpis);
+
+  const nr = przPrzenumeruj(ce);
+  commitLiveEdit(ce);
+  if(typeof histZapisz === "function") histZapisz(ce);
+  toastOk("Wstawiono przypis " + przCyfryGorne(nr ? nr : 1));
+}
+
+/* ==========================================================================
+   CHODZENIE MIĘDZY ODSYŁACZEM I PRZYPISEM
+   ========================================================================== */
+
+/** Podświetla element na moment, żeby oko go znalazło po przewinięciu. */
+function przMrugnij(el){
+  if(!el) return;
+  el.classList.remove("fn-mrug");
+  void el.offsetWidth;                 // wymuszenie przerysowania — bez tego druga animacja nie startuje
+  el.classList.add("fn-mrug");
+  setTimeout(()=>el.classList.remove("fn-mrug"), 1400);
+}
+
+document.addEventListener("click", e=>{
+  const cel = e.target && e.target.closest ? e.target : null;
+  if(!cel) return;
+  const ods = cel.closest("sup.fnref");
+  const wpis = cel.closest(".fnlist .fn");
+  if(!ods && !wpis) return;
+  const tresc = (ods || wpis).closest(".ncontent");
+  if(!tresc) return;
+  if(tresc.isContentEditable) return;          // w edycji przypis jest zwykłym tekstem do poprawiania
+  e.preventDefault();
+  if(ods){
+    const id = ods.getAttribute("data-fn");
+    const doc = tresc.querySelector('.fnlist .fn[data-fn="' + CSS.escape(id || "") + '"]');
+    if(!doc){ toast("Ten przypis nie ma treści"); return; }
+    doc.scrollIntoView({block:"nearest", behavior:"smooth"});
+    przMrugnij(doc);
+    return;
+  }
+  /* Klik w przypis wraca do miejsca w tekście. */
+  const id = wpis.getAttribute("data-fn");
+  const back = tresc.querySelector('sup.fnref[data-fn="' + CSS.escape(id || "") + '"]');
+  if(!back){ toast("Ten przypis nie ma już odsyłacza w tekście"); return; }
+  back.scrollIntoView({block:"center", behavior:"smooth"});
+  przMrugnij(back);
+});
+
+</script>
+<script>
+/* ==========================================================================
+   JW Study — mapa.js
+   MAPA TEMATÓW — osobista encyklopedia notatek
+
+   CO BYŁO NIE TAK
+
+   Etykiet jest kilkadziesiąt i leżą w jednej kolumnie, jedna pod drugą. Ta
+   kolumna świetnie nadaje się do JEDNEJ rzeczy: zawężenia listy notatek do
+   wybranej etykiety. Nie nadaje się do drugiej, wcale nie rzadszej: zobaczenia,
+   JAK TO WSZYSTKO SIĘ ZE SOBĄ TRZYMA.
+
+     • przy czterdziestu paru pozycjach nie widać, które są o tym samym;
+     • sekcje istniały (grupują etykiety), ale w wąskiej kolumnie wyglądały jak
+       kolejny wiersz listy, a nie jak temat z podtematami;
+     • nie było jak zapytać „co mam o WIERZE" — trzeba było klikać po kolei
+       Ufność, Modlitwę, Próby i za każdym razem patrzeć na osobną listę;
+     • licznik przy etykiecie mówił, ile jest notatek, ale nic nie mówił o tym,
+       ile ich jest w całym temacie.
+
+   JAK JEST TERAZ
+
+   Osobny ekran: po lewej drzewo tematów, po prawej notatki wybranego miejsca.
+
+       WIARA                    107
+         ↳ Ufność                34
+         ↳ Modlitwa              61
+         ↳ Próby                 12
+
+   Kliknięcie WIARY pokazuje notatki z WSZYSTKICH podtematów naraz — i to jest
+   ta „encyklopedia": jedno miejsce, w którym widać cały temat. Kliknięcie
+   podtematu zawęża do niego.
+
+   TRZY DECYZJE, KTÓRE WARTO ZNAĆ
+
+   1. MAPA NIE MA WŁASNYCH DANYCH. Temat główny to SEKCJA, podtemat to
+      ETYKIETA — czyli dokładnie to, co już jest w aplikacji i co jedzie
+      w kopii zapasowej oraz w pliku uzgadniania. Osobne drzewo tematów
+      znaczyłoby DRUGĄ ewidencję tego samego: notatka musiałaby być przypisana
+      dwa razy, a po miesiącu jedno z przypisań byłoby nieaktualne. Tu nie ma
+      czego rozjechać, bo nie ma drugiego zapisu. Skutek uboczny jest
+      przyjemny: mapa działa od pierwszego otwarcia, na etykietach, które już
+      masz — nie trzeba niczego przepisywać.
+
+   2. LICZNIK TEMATU TO NOTATKI, NIE SUMA PODTEMATÓW. Notatka z etykietami
+      „Ufność" i „Modlitwa" liczy się w temacie WIARA RAZ. Suma podtematów
+      (34 + 61 + 12) dawałaby liczbę większą od liczby notatek, jakich w ogóle
+      jest — a to jedyna rzecz, której licznik nie może robić, bo wtedy nikt mu
+      już nie wierzy.
+
+   3. DRZEWO MA DWA POZIOMY, NIE DOWOLNIE WIELE. Głębsze drzewa wyglądają
+      bogato na komputerze i rozpadają się na telefonie: siódmy poziom to
+      wcięcie na pół szerokości ekranu i nazwa łamana w środku wyrazu. Dwa
+      poziomy to też dokładnie tyle, ile ma ludzka pamięć do takich rzeczy:
+      temat i jego części.
+   ========================================================================== */
+"use strict";
+
+/* Ile notatek pokazujemy naraz w prawym panelu. Temat może mieć ich tysiące,
+   a nikt nie przewija tysiąca pozycji — do tego jest szukanie. */
+const MAPA_ILE = 60;
+/* Zapamiętane miejsce w mapie: wraca się do tego samego tematu. */
+const MAPA_KLUCZ = KP + "Mapa";
+
+let mapaWybor = null;      // {rodzaj:"temat"|"podtemat"|"poza"|"bez", id}
+let mapaSzukane = "";
+let mapaIle = MAPA_ILE;
+
+/* ==========================================================================
+   LICZENIE
+   ========================================================================== */
+
+/**
+ * Liczniki dla całej mapy w JEDNYM przebiegu po notatkach.
+ *
+ * Przy ośmiu tysiącach notatek i czterdziestu etykietach osobne liczenie dla
+ * każdego węzła znaczyłoby czterdzieści przebiegów. Tutaj jest jeden: dla
+ * każdej notatki dopisujemy jedynkę jej etykietom i — po jednej — każdemu
+ * tematowi, którego dotknęła (patrz decyzja 2 w nagłówku pliku).
+ *
+ * Zwraca: tag (id etykiety → ile), sek (id sekcji → ile), poza, bez, razem.
+ * Bez zapisu typu w nawiasach klamrowych — podwójna klamra w pliku wywraca
+ * budowanie strony na GitHub Pages (pilnuje tego testy/audyt.js).
+ */
+function mapaLiczniki(){
+  const tag = {}, sek = {};
+  let poza = 0, bez = 0, razem = 0;
+  const sekEtykiety = new Map();
+  tags.forEach(t=>sekEtykiety.set(t.id, t.sec));
+  const tematyTej = new Set();
+  for(const n of notes){
+    if(n.del) continue;
+    razem++;
+    const tg = Array.isArray(n.tg) ? n.tg : [];
+    if(!tg.length){ bez++; continue; }
+    tematyTej.clear();
+    let maSekcje = false;
+    for(const id of tg){
+      tag[id] = (tag[id] || 0) + 1;
+      const s = sekEtykiety.get(id);
+      if(s !== undefined){ tematyTej.add(s); maSekcje = true; }
+    }
+    tematyTej.forEach(s=>{ sek[s] = (sek[s] || 0) + 1; });
+    if(!maSekcje) poza++;
+  }
+  return {tag, sek, poza, bez, razem};
+}
+
+/** Drzewo do wyświetlenia: sekcje w swojej kolejności, w środku ich etykiety. */
+function mapaDrzewo(licz){
+  const q = norm(mapaSzukane);
+  const posortowane = sections.slice().sort((a,b)=>(a.ord ?? 0) - (b.ord ?? 0));
+  const wynik = [];
+  posortowane.forEach(s=>{
+    const pod = tags.filter(t=>t.sec === s.id).sort(cmpTags);
+    /* Szukanie: temat zostaje, gdy pasuje sam ALBO gdy pasuje którykolwiek
+       z jego podtematów — inaczej wpisanie „modlit" ukrywałoby WIARĘ i nie
+       byłoby widać, gdzie znaleziony podtemat należy. */
+    const pasujeTemat = !q || norm(s.name).indexOf(q) >= 0;
+    const pasujacePod = pod.filter(t=>!q || norm(t.name).indexOf(q) >= 0);
+    if(!pasujeTemat && !pasujacePod.length) return;
+    wynik.push({rodzaj:"temat", sek:s, ile:licz.sek[s.id] || 0,
+                pod: pasujeTemat ? pod : pasujacePod});
+  });
+  const luzne = tags.filter(t=>t.sec === undefined).sort(cmpTags)
+    .filter(t=>!q || norm(t.name).indexOf(q) >= 0);
+  if(luzne.length) wynik.push({rodzaj:"poza", sek:null, ile:licz.poza, pod:luzne});
+  return wynik;
+}
+
+/** Notatki wybranego miejsca w mapie. */
+function mapaNotatkiWybranego(){
+  if(!mapaWybor) return [];
+  const w = mapaWybor;
+  let pasuje;
+  if(w.rodzaj === "podtemat")      pasuje = n=>n.tg && n.tg.indexOf(w.id) >= 0;
+  else if(w.rodzaj === "temat"){
+    const wTemacie = new Set(tags.filter(t=>t.sec === w.id).map(t=>t.id));
+    pasuje = n=>(n.tg || []).some(id=>wTemacie.has(id));
+  }
+  else if(w.rodzaj === "poza"){
+    const luzne = new Set(tags.filter(t=>t.sec === undefined).map(t=>t.id));
+    pasuje = n=>(n.tg || []).some(id=>luzne.has(id));
+  }
+  else pasuje = n=>!n.tg || !n.tg.length;
+  return notes.filter(n=>!n.del && pasuje(n))
+    .sort((a,b)=>String(b.mo || "").localeCompare(String(a.mo || "")));
+}
+
+/** Nazwa wybranego miejsca — do nagłówka prawego panelu. */
+function mapaNazwaWyboru(){
+  if(!mapaWybor) return "";
+  if(mapaWybor.rodzaj === "temat")
+    return ((sections.find(s=>s.id === mapaWybor.id) || {}).name) || "Temat";
+  if(mapaWybor.rodzaj === "podtemat")
+    return ((tags.find(t=>t.id === mapaWybor.id) || {}).name) || "Podtemat";
+  if(mapaWybor.rodzaj === "poza") return "Poza tematami";
+  return "Notatki bez etykiety";
+}
+
+/* ==========================================================================
+   RYSOWANIE
+   ========================================================================== */
+
+/**
+ * Polska odmiana po liczbie: 1 temat · 2 tematy · 5 tematów.
+ * Bez tego podsumowanie mówiło „3 tematów", co przy każdym otwarciu mapy kłuje
+ * w oczy. Trzy formy wystarczą na wszystkie słowa, których tu używamy.
+ */
+function mapaOdmiana(n, jeden, dwa, wiele){
+  const x = Math.abs(n) % 100, y = Math.abs(n) % 10;
+  if(x === 1) return jeden;
+  if(y >= 2 && y <= 4 && !(x >= 12 && x <= 14)) return dwa;
+  return wiele;
+}
+function mapaNotatek(n){ return n + " " + mapaOdmiana(n, "notatka", "notatki", "notatek"); }
+function mapaTematow(n){ return n + " " + mapaOdmiana(n, "temat", "tematy", "tematów"); }
+function mapaPodtematow(n){ return n + " " + mapaOdmiana(n, "podtemat", "podtematy", "podtematów"); }
+
+function mapaWybrany(rodzaj, id){
+  return !!mapaWybor && mapaWybor.rodzaj === rodzaj &&
+         (id === undefined || mapaWybor.id === id);
+}
+
+function rysujMape(){
+  const okno = $("modalMapa"); if(!okno) return;
+  const licz = mapaLiczniki();
+  const drzewo = mapaDrzewo(licz);
+
+  /* ——— lewa strona: drzewo ——— */
+  let html = "";
+  if(!sections.length && !tags.length){
+    html = `<div class="mapaPusto">Nie masz jeszcze ani jednej etykiety.
+      Mapa buduje się z <b>sekcji</b> (temat główny) i <b>etykiet</b> (podtematy),
+      więc zacznij od nadania notatkom etykiet.</div>`;
+  } else if(!drzewo.length){
+    html = `<div class="mapaPusto">Nic nie pasuje do „${esc(mapaSzukane)}”.</div>`;
+  } else {
+    html = drzewo.map(w=>{
+      const idT = w.rodzaj === "temat" ? w.sek.id : "poza";
+      const wybT = w.rodzaj === "temat" ? mapaWybrany("temat", w.sek.id) : mapaWybrany("poza");
+      const nazwa = w.rodzaj === "temat" ? w.sek.name : "Poza tematami";
+      const kolor = w.rodzaj === "temat" && w.sek.color ? w.sek.color : "";
+      return `<div class="mapaGrupa">
+        <div class="mapaTemat${wybT ? " wybrany" : ""}" data-temat="${esc(String(idT))}"
+             role="treeitem" tabindex="0">
+          ${kolor ? `<span class="mapaPasek" style="background:${esc(kolor)}"></span>` : ""}
+          <span class="mapaNazwa">${esc(nazwa)}</span>
+          <span class="mapaIle">${w.ile}</span>
+          ${w.rodzaj === "temat"
+            ? `<button class="mapaMenu" type="button" data-menuTemat="${w.sek.id}"
+                       title="Działania na temacie" aria-label="Działania na temacie">${IC_DOTS}</button>`
+            : ""}
+        </div>
+        ${w.pod.map(t=>`
+          <div class="mapaPod${mapaWybrany("podtemat", t.id) ? " wybrany" : ""}"
+               data-pod="${t.id}" role="treeitem" tabindex="0">
+            <span class="mapaStrzalka">↳</span>
+            <span class="mapaKropka" style="background:${esc(t.color || "var(--accent2)")}"></span>
+            <span class="mapaNazwa">${esc(t.name)}</span>
+            <span class="mapaIle">${licz.tag[t.id] || 0}</span>
+            <button class="mapaMenu" type="button" data-menuPod="${t.id}"
+                    title="Działania na podtemacie" aria-label="Działania na podtemacie">${IC_DOTS}</button>
+          </div>`).join("")}
+      </div>`;
+    }).join("");
+  }
+  if(licz.bez){
+    html += `<div class="mapaGrupa">
+      <div class="mapaTemat mapaBez${mapaWybrany("bez") ? " wybrany" : ""}" data-temat="bez"
+           role="treeitem" tabindex="0">
+        <span class="mapaNazwa">Notatki bez etykiety</span>
+        <span class="mapaIle">${licz.bez}</span>
+      </div></div>`;
+  }
+  setHtml($("mapaDrzewo"), html);
+  setText($("mapaPodsum"), mapaNotatek(licz.razem) + " · " + mapaTematow(sections.length) +
+    " · " + mapaPodtematow(tags.length));
+
+  /* ——— prawa strona: notatki wybranego miejsca ——— */
+  rysujMapePrawa(licz);
+}
+
+function rysujMapePrawa(licz){
+  const box = $("mapaTresc"); if(!box) return;
+  if(!mapaWybor){
+    setHtml(box, `<div class="mapaPusto mapaZacheta">
+      <b>Wybierz temat po lewej.</b><br><br>
+      Temat główny pokazuje notatki ze <b>wszystkich swoich podtematów</b> naraz —
+      po to, żeby dało się zobaczyć cały temat w jednym miejscu.
+      Podtemat zawęża do siebie.</div>`);
+    return;
+  }
+  const lista = mapaNotatkiWybranego();
+  const nazwa = mapaNazwaWyboru();
+  /* Przy temacie pokazujemy jego podtematy jako plakietki — stąd wchodzi się
+     głębiej bez wracania wzrokiem do drzewa. */
+  let plakietki = "";
+  if(mapaWybor.rodzaj === "temat"){
+    const pod = tags.filter(t=>t.sec === mapaWybor.id).sort(cmpTags);
+    if(pod.length) plakietki = `<div class="mapaChipy">` + pod.map(t=>
+      `<button class="mapaChip" type="button" data-chip="${t.id}">
+         <span class="mapaKropka" style="background:${esc(t.color || "var(--accent2)")}"></span>
+         ${esc(t.name)} <span class="mapaIle">${(licz.tag[t.id] || 0)}</span></button>`).join("") + `</div>`;
+  }
+  const widoczne = lista.slice(0, mapaIle);
+  const wiersze = widoczne.map(n=>{
+    const gdzie = n.b && BOOKS[n.b]
+      ? BOOKS[n.b] + (n.ch ? " " + n.ch + (n.v ? ":" + n.v : "") : "")
+      : (n.pub ? String(n.pub) : "");
+    const skrot = String(n.c || "").replace(/\s+/g, " ").trim().slice(0, 150);
+    return `<button class="mapaWiersz" type="button" data-notatka="${esc(n.g)}">
+      <span class="mapaTyt">${esc(n.t || "Bez tytułu")}</span>
+      ${gdzie ? `<span class="mapaGdzie">${esc(gdzie)}</span>` : ""}
+      ${skrot ? `<span class="mapaSkrot">${esc(skrot)}</span>` : ""}
+    </button>`;
+  }).join("");
+  setHtml(box, `
+    <div class="mapaNagl">
+      <h3>${esc(nazwa)}</h3>
+      <div class="mapaNaglIle">${esc(mapaNotatek(lista.length))}${
+        mapaWybor.rodzaj === "temat"
+          ? " · " + esc(mapaPodtematow(tags.filter(t=>t.sec === mapaWybor.id).length))
+          : ""}</div>
+      <button class="btn" type="button" id="mapaNaListe">Pokaż na liście notatek</button>
+    </div>
+    ${plakietki}
+    ${lista.length ? `<div class="mapaLista">${wiersze}</div>` : `<div class="mapaPusto">
+       W tym miejscu nie ma jeszcze żadnej notatki.</div>`}
+    ${lista.length > mapaIle
+      ? `<div class="mapaWiecej"><button class="btn" type="button" id="mapaWiecej">Pokaż więcej (${lista.length - mapaIle})</button></div>`
+      : ""}`);
+}
+
+/* ==========================================================================
+   DZIAŁANIA
+   ========================================================================== */
+
+function mapaUstawWybor(rodzaj, id){
+  mapaWybor = {rodzaj, id};
+  mapaIle = MAPA_ILE;
+  lsSet(MAPA_KLUCZ, JSON.stringify(mapaWybor));
+  rysujMape();
+  const p = $("mapaTresc"); if(p) p.scrollTop = 0;
+}
+
+/** Menu działań na temacie głównym. */
+function mapaMenuTematu(secId, kotwica){
+  const s = sections.find(x=>x.id === secId); if(!s) return;
+  const dd = $("dropdown");
+  dd.innerHTML =
+    `<div class="dd-lbl">${esc(s.name)}</div>` +
+    `<div data-m="nowyPod">${ICO.tag}Nowy podtemat w tym temacie…</div>` +
+    `<div data-m="zmien">${ICO.edit}Zmień nazwę tematu…</div>` +
+    `<div class="dd-sep"></div>` +
+    `<div data-m="gora">${IE_GORNY}Przenieś wyżej</div>` +
+    `<div data-m="dol">${IE_DOLNY}Przenieś niżej</div>` +
+    `<div class="dd-sep"></div>` +
+    `<div data-m="usun" class="dd-danger">${ICO.trash}Usuń temat (podtematy zostają)</div>`;
+  dd.style.display = "block";
+  if(typeof oznaczPozycjeMenu === "function") oznaczPozycjeMenu(dd);
+  placeDropdown(dd, kotwica);
+  dd.onclick = async ev=>{
+    const it = ev.target.closest("[data-m]"); if(!it) return;
+    dd.style.display = "none";
+    const m = it.dataset.m;
+    if(m === "nowyPod"){
+      const nazwa = await askText({title:"Nowy podtemat w „" + s.name + "”",
+        placeholder:"np. Ufność", okLabel:"Utwórz"});
+      if(!nazwa || !nazwa.trim()) return;
+      const t = createTag(nazwa.trim());
+      if(t){ setTagSection(t.id, s.id); rysujMape(); }
+      return;
+    }
+    if(m === "zmien"){ await renameSection(s.id); rysujMape(); return; }
+    if(m === "gora"){ moveSection(s.id, -1); rysujMape(); return; }
+    if(m === "dol"){ moveSection(s.id, +1); rysujMape(); return; }
+    if(m === "usun"){
+      await deleteSection(s.id);
+      if(!sections.some(x=>x.id === s.id) && mapaWybrany("temat", s.id)) mapaWybor = null;
+      rysujMape();
+    }
+  };
+}
+
+/** Menu działań na podtemacie (etykiecie). */
+function mapaMenuPodtematu(tagId, kotwica){
+  const t = tags.find(x=>x.id === tagId); if(!t) return;
+  const dd = $("dropdown");
+  const inne = sections.slice().sort((a,b)=>(a.ord ?? 0) - (b.ord ?? 0))
+    .filter(s=>s.id !== t.sec);
+  dd.innerHTML =
+    `<div class="dd-lbl">${esc(t.name)}</div>` +
+    `<div data-m="zmien">${ICO.edit}Zmień nazwę podtematu…</div>` +
+    `<div data-m="naListe">${ICO.search}Pokaż na liście notatek</div>` +
+    (inne.length || t.sec !== undefined ? `<div class="dd-sep"></div><div class="dd-lbl">Przenieś do tematu</div>` : "") +
+    inne.map(s=>`<div data-sec="${s.id}">${ICO.bookmark}${esc(s.name)}</div>`).join("") +
+    (t.sec !== undefined ? `<div data-sec="brak">${IE_PUSTO}Poza tematami</div>` : "") +
+    `<div class="dd-sep"></div><div data-m="nowyTemat">${ICO.plus}Nowy temat i przenieś tutaj…</div>`;
+  dd.style.display = "block";
+  if(typeof oznaczPozycjeMenu === "function") oznaczPozycjeMenu(dd);
+  placeDropdown(dd, kotwica);
+  dd.onclick = async ev=>{
+    const sec = ev.target.closest("[data-sec]");
+    if(sec){
+      dd.style.display = "none";
+      setTagSection(t.id, sec.dataset.sec === "brak" ? null : +sec.dataset.sec);
+      rysujMape();
+      return;
+    }
+    const it = ev.target.closest("[data-m]"); if(!it) return;
+    dd.style.display = "none";
+    if(it.dataset.m === "zmien"){ await renameTag(t.id); rysujMape(); return; }
+    if(it.dataset.m === "naListe"){ mapaNaListe("podtemat", t.id); return; }
+    if(it.dataset.m === "nowyTemat"){
+      const nazwa = await askText({title:"Nowy temat główny",
+        placeholder:"np. WIARA", okLabel:"Utwórz i przenieś"});
+      if(!nazwa || !nazwa.trim()) return;
+      const nm = nazwa.trim();
+      if(sections.some(x=>norm(x.name) === norm(nm))){ toast("Taki temat już jest"); return; }
+      const nowa = {id:nextSecId(), name:nm, ord:sections.length, open:true};
+      sections.push(nowa); saveSections();
+      setTagSection(t.id, nowa.id);
+      rysujMape();
+    }
+  };
+}
+
+/**
+ * Przejście z mapy na zwykłą listę notatek z nałożonym filtrem.
+ * Temat główny korzysta z filtru „sec:<id>", dodanego w 04-filters.js — dzięki
+ * temu cały temat da się pokazać na liście, a nie tylko jeden podtemat.
+ */
+function mapaNaListe(rodzaj, id){
+  if(rodzaj === "temat")          filt.tag = "sec:" + id;
+  else if(rodzaj === "podtemat")  filt.tag = id;
+  else if(rodzaj === "bez")       filt.tag = "none";
+  else                            filt.tag = "all";
+  filt.book = "all"; filt.ch = null;
+  if(typeof expandedBook !== "undefined") expandedBook = null;
+  if(typeof persistFilt === "function") persistFilt();
+  if(typeof centrumSchowaj === "function") centrumSchowaj();
+  zamknijMape();
+  renderAll();
+}
+
+/* ==========================================================================
+   OTWIERANIE I ZAMYKANIE
+   ========================================================================== */
+
+function otworzMape(){
+  mapaIle = MAPA_ILE;
+  mapaSzukane = "";
+  const pole = $("mapaSzukaj"); if(pole) pole.value = "";
+  /* Wracamy tam, gdzie się skończyło — mapa służy do wracania do tematu. */
+  if(!mapaWybor){
+    try{
+      const z = JSON.parse(lsGet(MAPA_KLUCZ, "null"));
+      if(z && z.rodzaj) mapaWybor = z;
+    }catch(e){ mapaWybor = null; }
+  }
+  /* Zapamiętany temat mógł zostać w międzyczasie usunięty. */
+  if(mapaWybor){
+    const zyje = mapaWybor.rodzaj === "temat"    ? sections.some(s=>s.id === mapaWybor.id)
+               : mapaWybor.rodzaj === "podtemat" ? tags.some(t=>t.id === mapaWybor.id)
+               : true;
+    if(!zyje) mapaWybor = null;
+  }
+  rysujMape();
+  openModal("modalMapa");
+}
+function zamknijMape(){ closeModal("modalMapa"); }
+
+/* ——— wpięcie w interfejs ——— */
+if($("btnMapa")) $("btnMapa").onclick = otworzMape;
+
+if($("modalMapa")){
+  $("mapaDrzewo").onclick = e=>{
+    const menuT = e.target.closest("[data-menuTemat]");
+    if(menuT){ e.stopPropagation(); mapaMenuTematu(+menuT.dataset.menutemat, menuT); return; }
+    const menuP = e.target.closest("[data-menuPod]");
+    if(menuP){ e.stopPropagation(); mapaMenuPodtematu(+menuP.dataset.menupod, menuP); return; }
+    const pod = e.target.closest("[data-pod]");
+    if(pod){ mapaUstawWybor("podtemat", +pod.dataset.pod); return; }
+    const temat = e.target.closest("[data-temat]");
+    if(temat){
+      const v = temat.dataset.temat;
+      if(v === "poza") mapaUstawWybor("poza", null);
+      else if(v === "bez") mapaUstawWybor("bez", null);
+      else mapaUstawWybor("temat", +v);
+    }
+  };
+  /* Klawiatura: Enter i spacja wybierają węzeł, na którym stoi ognisko. */
+  $("mapaDrzewo").onkeydown = e=>{
+    if(e.key !== "Enter" && e.key !== " ") return;
+    const w = e.target.closest("[data-pod],[data-temat]");
+    if(!w) return;
+    e.preventDefault();
+    w.click();
+  };
+  $("mapaTresc").onclick = e=>{
+    const chip = e.target.closest("[data-chip]");
+    if(chip){ mapaUstawWybor("podtemat", +chip.dataset.chip); return; }
+    const wiersz = e.target.closest("[data-notatka]");
+    if(wiersz){
+      const n = notes.find(x=>x.g === wiersz.dataset.notatka);
+      /* Czytnik otwiera się NA mapie, nie zamiast niej: po zamknięciu notatki
+         wracasz do tego samego tematu, a nie do listy wszystkich notatek. */
+      if(n && typeof openFs === "function") openFs(n);
+      return;
+    }
+    if(e.target.closest("#mapaWiecej")){ mapaIle += MAPA_ILE; rysujMape(); return; }
+    if(e.target.closest("#mapaNaListe") && mapaWybor){
+      mapaNaListe(mapaWybor.rodzaj, mapaWybor.id);
+    }
+  };
+  $("mapaSzukaj").oninput = e=>{ mapaSzukane = e.target.value || ""; rysujMape(); };
+  $("mapaNowyTemat").onclick = async ()=>{
+    await createSection();
+    rysujMape();
+  };
+}
+
+</script>
+<script>
+/* ==========================================================================
    JW Study — shortcuts.js
    Skróty klawiszowe
    ========================================================================== */
@@ -18385,6 +21552,14 @@ document.addEventListener("keydown", e=>{
   if(k==="h" && typeof centrumWidoczne==="function"){
     e.preventDefault();
     if(centrumWidoczne()) centrumSchowaj(); else centrumPokaz();
+    return;
+  }
+  /* M jak „mapa" — mapa tematów (56-mapa.js). Litera wolna: N nowa notatka,
+     E edycja, F ulubione, P przypięcie, H Centrum. */
+  if(k==="m" && typeof otworzMape==="function"){
+    e.preventDefault();
+    const okno = $("modalMapa");
+    if(okno && okno.classList.contains("show")) zamknijMape(); else otworzMape();
     return;
   }
   if(k==="n"){ e.preventDefault(); $("btnNew").click(); return; }
