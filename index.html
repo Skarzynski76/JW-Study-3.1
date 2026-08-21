@@ -4193,7 +4193,10 @@ html[data-theme="dark"] #noteList.v-tablica .ncard.wydUbrana .wydDzialanie:hover
 #fsWrap .fsBackInline .ic{ width:18px; height:18px; }
 #fsWrap .fsBackInline:hover{ background:#eef2ef; }
 #fsWrap .fsBackInline:active{ transform:scale(.92); }
-/* Tytuł ustępuje strzałce tyle miejsca, ile ona zajmuje — inaczej wchodziłby pod nią. */
+/* Tytuł ustępuje strzałce tyle miejsca, ile ona zajmuje — inaczej wchodziłby
+   pod nią. Miejsce robi WYPEŁNIENIE, nie przesunięcie pudełka: od 2.74 belka
+   tytułu idzie przez całą szerokość okna, więc jej lewa krawędź jest tuż przy
+   strzałce, a odsunięte są dopiero litery. */
 #fsWrap .nhead:has(.fsBackInline) .ntitle{ padding-left:34px; }
 @media (max-width:620px){
   #fsWrap .fsBackInline{ top:12px; left:2px; width:30px; height:30px; }
@@ -5361,10 +5364,7 @@ label.roz-opcja .roz-data:empty{ display:none; }
   border-right:1px solid var(--border); background:var(--bg);
 }
 #modalMapa #mapaDrzewo{ flex:1 1 auto; min-height:0; overflow:auto; padding:8px; }
-#modalMapa .mapaStopka{
-  flex:0 0 auto; padding:8px 12px; border-top:1px solid var(--border);
-  font-size:11.5px; color:var(--muted);
-}
+/* (stopka mapy odeszła w 2.72 — podsumowanie stoi teraz w nagłówku strony) */
 #modalMapa .mapaPrawa{ min-height:0; overflow:auto; padding:14px 16px; }
 
 /* ——— drzewo ——— */
@@ -6034,34 +6034,52 @@ html[data-theme="sepia"]{
 .cenHeroStrz .ic{ width:16px; height:16px; }
 
 /* ——— SZEŚĆ SKRÓTÓW ———
-   Kafelek jest kwadratowy i podpisany, bo sama ikona nie mówi, dokąd prowadzi:
-   „cel ze strzałką" to powtórki tylko dla kogoś, kto już wie. Kolor niesie
-   rozpoznawanie, podpis niesie znaczenie — potrzebne są oba. */
-.cenSzybkie{
-  display:grid; grid-template-columns:repeat(auto-fit, minmax(104px, 1fr));
-  gap:8px; margin:0 0 12px;
+   Kafelek jest podpisany, bo sama ikona nie mówi, dokąd prowadzi: „cel ze
+   strzałką" to powtórki tylko dla kogoś, kto już wie. Kolor niesie
+   rozpoznawanie, podpis niesie znaczenie — potrzebne są oba.
+
+   WAGA WIZUALNA (v2.73). Do 2.72 każdy skrót był kwadratowym kafelkiem
+   114×87 px z białym tłem, ramką i kolorowym kwadratem pod ikoną. Sześć
+   takich kafelków w kolumnie o szerokości 629 px łamało się na DWA rzędy
+   i zajmowało 182 px — więcej niż którakolwiek z dwóch dużych kart nad nimi.
+   Kafelek wygląda jak karta, więc oko czytało je jako sześć równorzędnych
+   kart, a nie jako pasek narzędzi. Teraz to RZĄD PLAKIETEK pod cichym
+   podpisem: przezroczyste tło, włos ramki, ikona 15 px w kolorze działania,
+   jedno słowo podpisu. Dostępność bez zmian — te same przyciski, te same
+   `data-cszyb`, pełna nazwa w `title` i `aria-label`. */
+.cenSzybkie{ margin:0 0 14px; }
+.cenSzybEt{
+  font-size:calc(10.5px * var(--uiw, 1)); font-weight:700;
+  letter-spacing:.07em; text-transform:uppercase;
+  color:var(--muted); margin:0 0 7px 2px;
 }
+/* Odstępy są policzone tak, żeby przy zwykłym rozmiarze pisma sześć plakietek
+   mieściło się w JEDNYM rzędzie w kolumnie Centrum (601 px). Przy powiększonym
+   piśmie rząd zawija się sam — i o to chodzi, lepszy drugi rząd niż ścinanie
+   podpisów. */
+.cenSzybRzad{ display:flex; flex-wrap:wrap; gap:5px; }
 .cenSzyb{
-  display:flex; flex-direction:column; align-items:center; gap:7px;
-  padding:13px 6px 11px; cursor:pointer;
-  border:1px solid var(--border); border-radius:14px;
-  background:var(--panel); color:var(--text);
-  transition:transform var(--dur-szybko) var(--ease), box-shadow var(--dur-szybko) var(--ease);
+  display:inline-flex; align-items:center; gap:5px;
+  padding:6px 10px 6px 9px; cursor:pointer;
+  border:1px solid var(--border); border-radius:999px;
+  background:transparent; color:var(--text);
+  font-size:calc(12px * var(--uiw, 1)); font-weight:600; line-height:1.2;
+  transition:background var(--dur-szybko) var(--ease),
+             border-color var(--dur-szybko) var(--ease),
+             transform var(--dur-szybko) var(--ease);
 }
-.cenSzyb:hover{ box-shadow:var(--cien-2); }
+.cenSzyb:hover{
+  background:var(--sel);
+  border-color:color-mix(in srgb, var(--szK, var(--accent)) 45%, var(--border));
+}
 .cenSzyb:active{ transform:scale(.97); }
 .cenSzyb:focus-visible{ outline:2px solid var(--szK, var(--accent)); outline-offset:2px; }
 .cenSzybIko{
   display:flex; align-items:center; justify-content:center;
-  width:40px; height:40px; border-radius:13px;
   color:var(--szK, var(--accent));
-  background:color-mix(in srgb, var(--szK, var(--accent)) 14%, transparent);
 }
-.cenSzybIko .ic{ width:21px; height:21px; }
-.cenSzybTxt{
-  font-size:calc(11px * var(--uiw, 1)); font-weight:600; line-height:1.25;
-  text-align:center; overflow-wrap:anywhere;
-}
+.cenSzybIko .ic{ width:15px; height:15px; }
+.cenSzybTxt{ white-space:nowrap; }
 .cenSzyb[data-cszyb="notatka"]{  --szK:var(--cenK-studiowane); }
 .cenSzyb[data-cszyb="biblia"]{   --szK:var(--cenK-wersety); }
 .cenSzyb[data-cszyb="powtorki"]{ --szK:var(--cenPilny); }
@@ -6083,11 +6101,9 @@ html[data-theme="sepia"]{ --cenSerce:#a83232; }
 }
 
 @media (max-width:620px){
-  /* Trzy w rzędzie zamiast sześciu — przy 340 px sześć kafelków miałoby po
-     50 px i podpis „Synchronizacja" łamałby się na cztery wiersze. */
-  .cenSzybkie{ grid-template-columns:repeat(3, minmax(0, 1fr)); gap:6px; }
-  .cenSzyb{ padding:11px 4px 9px; }
-  .cenSzybIko{ width:36px; height:36px; border-radius:12px; }
+  /* Plakietki zawijają się same, ile ich wejdzie w rząd. Zostaje tylko palec:
+     wysokość rośnie do 38 px, żeby był w co trafić. */
+  .cenSzyb{ padding:9px 13px 9px 11px; min-height:38px; }
 }
 
 
@@ -6123,16 +6139,203 @@ html[data-theme="sepia"]{ --cenSerce:#a83232; }
 #dropdown .tloSw:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
 
 
-/* ══════════════ MIEJSCE POD OSTATNIM RZĘDEM (v2.70) ══════════════
+/* ══════════════ ODSTĘP POD OSTATNIM RZĘDEM (v2.70 → v2.74) ══════════════
 
-   Odstęp u dołu listy nie jest już stały. Liczy go `dopasujDolListy`
-   w 09-notes.js z wysokości widoku, tak żeby ostatni rząd dał się podciągnąć
-   pod górną krawędź okna. Tutaj tylko miejsce, w które ta liczba wchodzi.
+   2.70 liczyła ten odstęp z wysokości widoku, żeby ostatni rząd dał się
+   podciągnąć pod górną krawędź okna. Wychodziło z tego 482–620 px pustki na
+   iPadzie — po przewinięciu na dół białe pole większe niż sama notatka.
+   Od 2.74 odstęp jest z powrotem stały.
 
    Dwa selektory, bo tablica ma własny skrót `padding` z wyższą specyficznością
    — sam `#noteList` by go nie przebił. */
 #noteList,
-#noteList.v-tablica{ padding-bottom:var(--dolListy, 40px); }
+#noteList.v-tablica{ padding-bottom:40px; }
+
+
+/* ══════════════ MAPA TEMATÓW JAKO STRONA (v2.72) ══════════════
+
+   Mapa była OKNEM DIALOGOWYM: pływająca karta 1280×900 na przyciemnionym tle,
+   z krzyżykiem w rogu. Okno dialogowe mówi „zrób jedną rzecz i wróć" — a mapa
+   jest miejscem, w którym się siedzi i chodzi po tematach. Teraz jest stroną:
+   pełne okno, własny nagłówek, przycisk powrotu zamiast krzyżyka, bez ramki
+   i bez przyciemnienia pod spodem.
+
+   Zostaje w tym samym mechanizmie okien (openModal/closeModal), bo to on
+   trzyma Escape, ognisko klawiatury i powrót do miejsca, z którego się przyszło.
+   Zmienia się wygląd, nie sposób otwierania. */
+#modalMapa{ background:var(--bg); backdrop-filter:none; padding:0; }
+#modalMapa .mapamodal{
+  width:100%; max-width:none; height:100%; max-height:none;
+  border:0; border-radius:0; box-shadow:none; background:transparent;
+}
+/* ——— nagłówek strony ——— */
+#modalMapa .mapaHead{
+  gap:12px; padding:12px 18px;
+  background:var(--panel);
+  border-bottom:1px solid var(--border);
+}
+#modalMapa .mapaWroc{
+  display:inline-flex; align-items:center; gap:5px; flex:0 0 auto;
+  padding:7px 13px 7px 9px;
+}
+#modalMapa .mapaWroc .ic{ width:16px; height:16px; }
+#modalMapa .mapaTytul{ display:flex; flex-direction:column; gap:1px; flex:0 0 auto; margin-right:4px; }
+#modalMapa .mapaTytul b{ font-size:calc(19px * var(--uiw, 1)); letter-spacing:-.015em; }
+#modalMapa .mapaTytul span{ font-size:calc(12px * var(--uiw, 1)); color:var(--muted); }
+#modalMapa .mapaCialo{ background:var(--bg); }
+#modalMapa .mapaLewa{ background:var(--panel); }
+
+/* ══════════════ SIATKA KART TEMATÓW ══════════════ */
+#modalMapa .mapaWstep{ padding:18px 20px 4px; max-width:70ch; }
+#modalMapa .mapaWstep h3{ margin:0 0 6px; font-size:calc(16px * var(--uiw, 1)); }
+#modalMapa .mapaWstep p{ margin:0; font-size:calc(13px * var(--uiw, 1)); line-height:1.55; color:var(--muted); }
+#modalMapa .mapaKarty{
+  display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr));
+  /* `stretch`, nie `start`: karty w jednym wierszu mają równą wysokość,
+     a plakietki podtematów są dosunięte do dołu (`margin-top:auto` niżej).
+     Dzięki temu dolne krawędzie kart i ostatnie wiersze plakietek układają
+     się w jedną linię, zamiast kończyć się w siedmiu różnych miejscach. */
+  gap:12px; padding:16px 20px 40px; align-items:stretch;
+}
+#modalMapa .mapaKarta{
+  position:relative; overflow:hidden;
+  display:flex; flex-direction:column; gap:5px; align-items:flex-start;
+  text-align:left; cursor:pointer;
+  padding:16px 14px 13px; border-radius:16px;
+  border:1px solid var(--border); background:var(--panel); color:var(--text);
+  box-shadow:0 1px 2px rgba(0,0,0,.05);
+  /* Przejście dotyczy TYLKO ruchu i cienia. Kolorów nie animujemy —
+     przy zmianie motywu dawałoby to falę przebarwień przez całą stronę. */
+  transition:transform .22s cubic-bezier(.22,.8,.28,1),
+             box-shadow .22s cubic-bezier(.22,.8,.28,1);
+}
+#modalMapa .mapaKartaGora{
+  position:absolute; left:0; right:0; top:0; height:3px; background:var(--kolT, var(--accent));
+}
+#modalMapa .mapaKartaTyt{
+  font-size:calc(15px * var(--uiw, 1)); font-weight:700; line-height:1.25;
+  overflow-wrap:anywhere;
+}
+#modalMapa .mapaKartaIle{ display:flex; align-items:baseline; gap:6px; }
+#modalMapa .mapaKartaIle b{
+  font-size:calc(26px * var(--uiw, 1)); font-weight:800; line-height:1.05;
+  letter-spacing:-.02em; color:var(--kolT, var(--accent)); font-variant-numeric:tabular-nums;
+}
+#modalMapa .mapaKartaIle{ font-size:calc(12px * var(--uiw, 1)); color:var(--muted); }
+/* Udział tematu w całości. „75" i „14" to dwie liczby; pasek mówi, że jedno
+   jest połową wszystkiego, a drugie marginesem. */
+#modalMapa .mapaKartaPasek{
+  display:block; width:100%; height:5px; margin:3px 0 1px;
+  border-radius:9px; background:var(--border); overflow:hidden;
+}
+#modalMapa .mapaKartaPasek i{ display:block; height:100%; border-radius:9px; background:var(--kolT, var(--accent)); }
+#modalMapa .mapaKartaUdzial,
+#modalMapa .mapaKartaBrak{ font-size:calc(10.5px * var(--uiw, 1)); color:var(--muted); }
+#modalMapa .mapaKartaChipy{ display:flex; flex-wrap:wrap; gap:4px; margin-top:auto; padding-top:6px; }
+#modalMapa .mapaKartaChip{
+  display:inline-flex; align-items:center; gap:5px;
+  padding:2px 8px; border-radius:20px;
+  background:var(--sel); font-size:calc(10.5px * var(--uiw, 1));
+}
+#modalMapa .mapaKartaChip i{ font-style:normal; color:var(--muted); font-variant-numeric:tabular-nums; }
+#modalMapa .mapaKartaWiecej{ color:var(--muted); }
+
+/* Droga powrotna z tematu do siatki kart. Osobny wiersz nad tytułem — tam,
+   gdzie w każdej aplikacji siedzi „wstecz", czyli w lewym górnym rogu tego,
+   co się właśnie ogląda. */
+#modalMapa .mapaDoKart{
+  flex:1 1 100%; align-self:flex-start;
+  display:inline-flex; align-items:center; gap:4px;
+  margin:0 0 2px; padding:2px 0;
+  background:none; border:0; cursor:pointer;
+  color:var(--muted); font-weight:600;
+  font-size:calc(12.5px * var(--uiw, 1));
+}
+#modalMapa .mapaDoKart:hover{ color:var(--accent); }
+#modalMapa .mapaDoKart:focus-visible{
+  outline:2px solid var(--accent); outline-offset:3px; border-radius:6px;
+}
+
+/* ══════════════ ANIMACJE — BARDZO DELIKATNE ══════════════
+
+   Dwie i tylko dwie.
+
+   1. WEJŚCIE. Karty pojawiają się po kolei: pierwsza od razu, każda następna
+      45 ms później. Ruch to 8 px w górę i przejście z przezroczystości —
+      tyle, żeby oko zauważyło porządek, za mało, żeby na to czekać.
+      Opóźnienie ma GÓRNĄ GRANICĘ (`min`): przy dwudziestu tematach ostatnia
+      karta czekałaby prawie sekundę, a to już nie jest delikatność.
+
+   2. NACIŚNIĘCIE. Karta unosi się o 1,5 % i dostaje mocniejszy cień. Skala
+      celowo mała: przy 1,05 karta zaczyna zasłaniać sąsiadki i widać, że coś
+      „skacze". Cień robi tu więcej niż sama skala — to on daje wrażenie
+      podniesienia.
+
+   Obie ustępują przy `prefers-reduced-motion` — całkowicie, nie „szybciej". */
+@keyframes mapaWejscie{
+  from{ opacity:0; transform:translateY(8px) scale(.985); }
+  to{   opacity:1; transform:none; }
+}
+#modalMapa .mapaKarta{
+  /* `backwards`, nie `both`. Przy `both` animacja TRZYMA swoją ostatnią klatkę
+     (`transform:none`) także po zakończeniu, a klatka animacji wygrywa w kaskadzie
+     ze zwykłą regułą — przez co `.klik{ transform:scale(1.015) }` w ogóle się nie
+     pokazywało. `backwards` daje stan początkowy na czas opóźnienia i oddaje
+     `transform` z powrotem kaskadzie, gdy wejście się skończy. */
+  animation:mapaWejscie .34s cubic-bezier(.22,.8,.28,1) backwards;
+  animation-delay:min(calc(var(--i, 0) * 45ms), 400ms);
+}
+#modalMapa .mapaKarta:hover{
+  box-shadow:0 6px 18px rgba(0,0,0,.10);
+  transform:translateY(-1px);
+}
+#modalMapa .mapaKarta:focus-visible{ outline:2px solid var(--kolT, var(--accent)); outline-offset:2px; }
+#modalMapa .mapaKarta.klik{
+  transform:scale(1.015);
+  box-shadow:0 14px 34px rgba(0,0,0,.18);
+}
+/* Wstęp nad kartami wchodzi jako pierwszy — to on jest „kartą główną”,
+   od której zaczyna się porządek pojawiania. */
+#modalMapa .mapaWstep{ animation:mapaWejscie .3s cubic-bezier(.22,.8,.28,1) backwards; }
+
+@media (prefers-reduced-motion:reduce){
+  #modalMapa .mapaKarta,
+  #modalMapa .mapaWstep{ animation:none; }
+  #modalMapa .mapaKarta{ transition:none; }
+  #modalMapa .mapaKarta.klik{ transform:none; }
+}
+
+@media (max-width:768px){
+  #modalMapa .mapaHead{ padding:10px 12px; }
+  #modalMapa .mapaTytul b{ font-size:calc(17px * var(--uiw, 1)); }
+  #modalMapa .mapaKarty{ grid-template-columns:1fr; padding:12px 12px 40px; gap:10px; }
+  #modalMapa .mapaWstep{ padding:14px 14px 2px; }
+
+  /* „Wróć" wraca na swoje miejsce — pierwszy element od lewej. Stara reguła
+     z czasów okna modalnego (`[data-zamknij]{ order:2; margin-left:auto }`)
+     wypychała je na prawy skraj, obok tytułu; w oknie z ✕ to było poprawne,
+     na stronie z przyciskiem powrotu — nie. Selektor musi być mocniejszy
+     od tamtego, stąd nazwa klasy i atrybut razem. */
+  #modalMapa .mapaHead .mapaWroc[data-zamknij]{ order:0; margin-left:0; }
+  #modalMapa .mapaTytul{ order:1; }
+}
+
+/* Ten sam próg co stary układ telefonu (760 px) — inaczej między 761 a 768 px
+   siatka dostałaby wiersze bez kolumn. */
+@media (max-width:760px){
+  /* Na telefonie karty tematów idą PRZED drzewem. Drzewo ma tu kilkanaście
+     wierszy — gdyby zostało na górze, karty (czyli to, po co się wchodzi na
+     mapę) zaczynałyby się poniżej pierwszego ekranu. */
+  #modalMapa .mapaCialo{ grid-template-rows:1fr auto; }
+  #modalMapa .mapaPrawa{ order:1; }
+  #modalMapa .mapaLewa{
+    order:2; border-bottom:none; border-top:1px solid var(--border);
+    max-height:32vh;   /* drzewo jest tu dodatkiem, nie głównym widokiem */
+  }
+  /* Szukanie i „+ Nowy temat" w jednym rzędzie zamiast w dwóch — nagłówek
+     schodzi ze 147 px do jednego rzędu mniej, a to na telefonie cały akapit. */
+  #modalMapa #mapaSzukaj{ flex:1 1 140px; }
+}
 
 </style></head>
 <body>
@@ -6142,7 +6345,7 @@ html[data-theme="sepia"]{ --cenSerce:#a83232; }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.70</span></div>
+      <div class="brand-name">JW Study <span class="ver">v2.75</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -6321,15 +6524,14 @@ html[data-theme="sepia"]{ --cenSerce:#a83232; }
 <div class="overlay" id="modalMapa">
   <div class="modal mapamodal" role="dialog" aria-label="Mapa tematów">
     <div class="nn-head mapaHead">
-      <h3>Mapa tematów</h3>
+      <button class="btn mapaWroc" type="button" data-zamknij="modalMapa" aria-label="Wróć do notatek"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5"/></svg><span>Wróć</span></button>
+      <div class="mapaTytul"><b>Mapa tematów</b><span id="mapaPodsum"></span></div>
       <input id="mapaSzukaj" type="search" autocomplete="off" placeholder="Szukaj tematu…" aria-label="Szukaj tematu">
       <button class="btn" type="button" id="mapaNowyTemat">+ Nowy temat</button>
-      <button class="btn" type="button" data-zamknij="modalMapa" aria-label="Zamknij mapę">✕</button>
     </div>
     <div class="mapaCialo">
       <div class="mapaLewa">
         <div id="mapaDrzewo" role="tree" aria-label="Drzewo tematów"></div>
-        <div class="mapaStopka" id="mapaPodsum"></div>
       </div>
       <div class="mapaPrawa" id="mapaTresc"></div>
     </div>
@@ -8957,58 +9159,26 @@ function renderNotes(){
   if(typeof odswiezOdnosnikiNotatek==="function") odswiezOdnosnikiNotatek(el);
   pruneCardCache(keep);
   fsNavList = arr.map(n=>n.g);
-  /* Miejsce pod ostatnim rzędem — dopiero gdy widać CAŁĄ listę. Przy niepełnej
-     pustka pojawiłaby się pod przyciskiem „Pokaż więcej", czyli w środku. */
-  dopasujDolListy(arr.length <= visibleCount);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   MIEJSCE POD OSTATNIM RZĘDEM
+   MIEJSCE POD OSTATNIM RZĘDEM — DLACZEGO GO TU NIE MA (v2.74)
 
-   Lista kończyła się czterdziestoma pikselami odstępu, więc ostatnia notatka
-   zostawała przyklejona do dolnej krawędzi okna — dokładnie tam, gdzie czyta
-   się najgorzej i gdzie na telefonie leży kciuk. Żeby ją przeczytać, trzeba
-   było przewinąć i patrzeć w dół ekranu.
+   W 2.70 lista dostawała u dołu odstęp liczony z wysokości widoku, tak żeby
+   ostatni rząd dał się podciągnąć pod górną krawędź okna. Zamysł był z czytnika
+   tekstu: każda notatka, także ostatnia, ma móc stanąć tam, gdzie się czyta.
 
-   Teraz odstęp jest tak duży, że OSTATNI RZĄD DA SIĘ PODCIĄGNĄĆ POD GÓRNĄ
-   KRAWĘDŹ — czyli każda notatka, także ostatnia, może stanąć w miejscu,
-   w którym się czyta. To samo robią edytory tekstu i czytniki.
+   W praktyce wyszło z tego pół ekranu pustki: na iPadzie 482–620 px zależnie
+   od widoku. Przewinięcie na dół listy kończyło się białym polem większym niż
+   sama notatka, a lista wydawała się dwa razy dłuższa, niż jest. Ostatni rząd
+   PODCIĄGAŁ SIĘ, ale nikt tego nie potrzebował — w tej aplikacji notatkę czyta
+   się w A-6 albo na pełnym ekranie, nie w ostatnim wierszu listy.
 
-   Trzy warunki, bez których wyszłaby z tego usterka:
-
-     • odstęp rośnie TYLKO wtedy, gdy lista i tak się przewija. Przy dwóch
-       notatkach pusty ekran pod spodem wyglądałby jak zgubiona treść;
-     • liczony jest z WYSOKOŚCI WIDOKU, nie z jakiejś stałej — na telefonie
-       i na monitorze wychodzi co innego, a chodzi o to samo;
-     • odejmujemy wysokość ostatniej karty, bo ona ma stanąć u góry, nie zniknąć
-       nad krawędzią.
+   Odstęp wrócił więc do stałych 40 px (`css/11-polish.css`). Nie ma tu żadnej
+   funkcji do liczenia ani nasłuchu `resize` — i to jest cała treść tej uwagi:
+   żeby za pół roku nikt (łącznie ze mną) nie dodał tego drugi raz.
    ══════════════════════════════════════════════════════════════════════════ */
-const DOL_LISTY_MIN = 40;
-function dopasujDolListy(pelnaLista){
-  const el = $("noteList");
-  if(!el || el.style.display === "none") return;
-  const teraz = parseFloat(getComputedStyle(el).paddingBottom) || 0;
-  const widok = el.clientHeight;
-  /* Wysokość SAMEJ treści: bez odstępu, który sami przed chwilą nadaliśmy —
-     inaczej każde przeliczenie brałoby pod uwagę swój własny wynik i odstęp
-     rósłby w nieskończoność. */
-  const tresc = el.scrollHeight - teraz;
-  let dol = DOL_LISTY_MIN;
-  if(pelnaLista && widok > 0 && tresc > widok){
-    const karty = el.querySelectorAll(".ncard");
-    const ost = karty[karty.length - 1];
-    const wysOst = ost ? Math.round(ost.getBoundingClientRect().height) : 0;
-    dol = Math.max(DOL_LISTY_MIN, Math.round(widok - wysOst - 24));
-  }
-  el.style.setProperty("--dolListy", dol + "px");
-}
-/* Obrót telefonu, Split View na iPadzie, zmiana wielkości okna na Macu —
-   wysokość widoku się zmienia, więc odstęp trzeba przeliczyć od nowa. */
-addEventListener("resize", ()=>{
-  clearTimeout(_dolListyTimer);
-  _dolListyTimer = setTimeout(()=>dopasujDolListy(!_moreObserver), 150);
-});
-let _dolListyTimer = 0;
+
 /* ==========================================================================
    PODŚWIETLENIE TRAFIEŃ NA GOTOWYCH KARTACH
 
@@ -9792,7 +9962,7 @@ $("readPop").addEventListener("pointerdown", e=>{
   const grp=b.closest("[data-grp]").dataset.grp, v=b.dataset.v;
   if(grp==="size"){ if(!fsNoteFs) fsNoteFs=noteFs+3; if(v==="-") fsNoteFs=Math.max(12,fsNoteFs-1); else fsNoteFs=Math.min(34,fsNoteFs+1); lsSetSoon(KP+"FsFont",fsNoteFs); applyFsFont(); toast("Wielkość tekstu w notatce: "+fsNoteFs+" px"); return; }
   if(grp==="line"){ lineH=+v; lsSet(KP+"LineH",lineH); applyReading(); }
-  else if(grp==="width"){ fsWidth=+v; lsSet(KP+"FsW",fsWidth); applyFsWidth(); }
+  else if(grp==="width"){ fsWidth=+v; lsSet(KP+"FsW2",fsWidth); applyFsWidth(); }   /* FsW2 — patrz 11-theme.js */
   else if(grp==="font"){ readFont=v; lsSet(KP+"ReadFont",readFont); applyReading(); }
   else if(grp==="theme"){ setTheme(v); }
   const g=b.closest("[data-grp]"); g.querySelectorAll("button").forEach(x=>x.classList.remove("on")); b.classList.add("on");
@@ -9973,16 +10143,26 @@ const FSW = ["620px","760px","100%"];
 /* Odczyt przez lsGet z wartością domyślną, a NIE przez localStorage.getItem.
    Przy pustej pamięci getItem oddaje null, +null to 0, a 0 nie jest NaN — więc
    zabezpieczenie „if(isNaN)" nigdy się nie odpalało i każdy nowy użytkownik
-   dostawał „wąski" (620 px) zamiast zapowiedzianego w kodzie „komfort" (760 px).
-   Na komputerze to 140 px tekstu mniej w każdym wierszu, bez żadnego wyboru
-   z jego strony. Sprawdzamy też kształt zapisu, żeby śmieć w pamięci nie
-   przechodził jako numer wyboru. */
-let fsWidth = 1;
+   dostawał „wąski" (620 px). Sprawdzamy też kształt zapisu, żeby śmieć
+   w pamięci nie przechodził jako numer wyboru.
+
+   DOMYŚLNIE „PEŁNY" (v2.74). Do 2.73 domyślny był „komfort" — 760 px tekstu
+   wyśrodkowane w oknie. Na iPadzie w PIONIE (820 px) wygląda to jak pełny
+   ekran i o to chodziło. Ale w POZIOMIE (1180 px) zostawia po 210 px pustki
+   z każdej strony, i to samo dotyczy pisania: notatka otwarta „na cały ekran"
+   zajmowała dwie trzecie ekranu. Tryb pełnoekranowy ma być pełnoekranowy.
+
+   Klucz ma NOWY NUMER (`FsW2`). Stary zapis pochodzi sprzed tej decyzji —
+   gdyby czytać dalej `FsW`, zapisane kiedyś „komfort" trzymałoby stary wygląd
+   mimo zmiany domyślnej, czyli zmiana nie zadziałałaby u nikogo, kto choć raz
+   dotknął tego ustawienia. Wybór dokonany od 2.74 zapisuje się normalnie
+   i zostaje. */
+let fsWidth = 2;
 try{
-  const zapisFsW = String(lsGet(KP+"FsW", "1")).trim();
-  fsWidth = /^[012]$/.test(zapisFsW) ? +zapisFsW : 1;
-}catch(e){ fsWidth = 1; }
-function applyFsWidth(){ document.documentElement.style.setProperty("--fsMax", FSW[fsWidth]||"760px"); }
+  const zapisFsW = String(lsGet(KP+"FsW2", "2")).trim();
+  fsWidth = /^[012]$/.test(zapisFsW) ? +zapisFsW : 2;
+}catch(e){ fsWidth = 2; }
+function applyFsWidth(){ document.documentElement.style.setProperty("--fsMax", FSW[fsWidth]||"100%"); }
 applyFsWidth();
 $("fMinus").onclick = ()=>{ noteFs = Math.max(FS_MIN, noteFs-1); lsSetSoon(KP+"Font", noteFs); applyFs(); toast("Wielkość: "+noteFs+" px"); };
 $("fPlus").onclick = ()=>{ noteFs = Math.min(FS_MAX, noteFs+1); lsSetSoon(KP+"Font", noteFs); applyFs(); toast("Wielkość: "+noteFs+" px"); };
@@ -14018,7 +14198,20 @@ let searchTimer=null;
    przerwie w pisaniu. Kolumny etykiet i publikacji nie zależą jednak od tego,
    co wpisano — ich liczniki są liczone z całości, nie z wyników — więc dwie
    trzecie tej pracy szło w próżnię przy każdej literze. */
-$("search").addEventListener("input",e=>{ parseQuery(e.target.value); clearTimeout(searchTimer); searchTimer=setTimeout(renderNotes, 130); showSearchSug(e.target.value); });
+/* ...ale JEDNA rzecz spoza kolumny notatek musi się przełączyć: CENTRUM ALBO
+   LISTA. Centrum pokazuje się wtedy, gdy nic nie jest wybrane — a wpisane słowo
+   jest właśnie takim wyborem. Ten przełącznik siedzi w `renderAll`, więc na
+   szybkiej ścieżce trzeba go zawołać osobno. Bez tego pisanie przy otwartym
+   Centrum nie robiło NIC WIDOCZNEGO: lista pod spodem miała już wyniki, tylko
+   że zasłonięte. Gdy Centrum jest schowane — czyli praktycznie zawsze
+   w trakcie szukania — to dwa przypisania i koniec. */
+$("search").addEventListener("input",e=>{
+  parseQuery(e.target.value);
+  if(typeof centrumOdswiez === "function") centrumOdswiez();
+  clearTimeout(searchTimer);
+  searchTimer=setTimeout(renderNotes, 130);
+  showSearchSug(e.target.value);
+});
 
 </script>
 <script>
@@ -16418,6 +16611,72 @@ document.addEventListener("click", e=>{
     e.preventDefault(); pokazWszystkieNotatki();
   }
 });
+
+/* ==========================================================================
+   SZUKANIE ZAWSZE PO CAŁOŚCI (v2.75)
+
+   DLACZEGO
+
+   Pole szukania działało W BIEŻĄCYM WIDOKU. Kto stał na etykiecie „Betel",
+   w księdze Psalmów albo na szybkim filtrze „Ulubione", szukał wyłącznie tam —
+   a to jest dokładnie ta sytuacja, w której najczęściej się szuka: nie znalazłem
+   tego, czego szukam, tam gdzie patrzyłem. Żeby poszukać naprawdę wszędzie,
+   trzeba było najpierw zauważyć przycisk „Wróć do wszystkich notatek", nacisnąć
+   go, i dopiero potem zacząć pisać. Trzy ruchy zamiast jednego, a bez nich pole
+   oddawało „nic nie znaleziono" przy notatce, która leżała obok.
+
+   Do tego drugie: przy otwartym Centrum studium pisanie w polu NIC NIE ROBIŁO
+   NA EKRANIE. Lista pod spodem uaktualniała się prawidłowo, ale Centrum ją
+   zasłaniało, bo szybka ścieżka szukania woła `renderNotes`, a przełącznik
+   „Centrum albo lista" siedzi w `renderAll`. Wyglądało to jak zepsute
+   wyszukiwanie.
+
+   JAK
+
+   Samo USTAWIENIE OGNISKA w polu szukania zdejmuje wszystkie zawężenia
+   i wychodzi z Centrum. Nie po wpisaniu pierwszej litery, tylko od razu przy
+   kliknięciu — bo wtedy widać, co się stało, zanim się zacznie pisać.
+   Działa tak samo dla ⌘F, „/" i kliknięcia myszą: `focus` dostajemy w każdym
+   z tych przypadków.
+
+   Zdejmujemy też sortowanie „ostatnio otwierane": ono pokazuje pięć notatek
+   i NIE PRZEPUSZCZA przez siebie szukanego słowa, więc szukanie w tym trybie
+   nie mogłoby zadziałać.
+   ========================================================================== */
+function szukajWszedzie(){
+  let zdjete = false;      // czy naprawdę coś zawężało listę
+  if(filt.tag && String(filt.tag) !== "all"){ filt.tag = "all"; zdjete = true; }
+  if(filt.book && String(filt.book) !== "all"){ filt.book = "all"; zdjete = true; }
+  if(filt.ch != null){ filt.ch = null; zdjete = true; }
+  if(typeof expandedBook !== "undefined" && expandedBook){ expandedBook = null; }
+  if(typeof quickFilter !== "undefined" && quickFilter !== "all"){ quickFilter = "all"; zdjete = true; }
+  if(typeof sortMode !== "undefined" && sortMode === "recent"){
+    sortMode = "mod";
+    const sel = $("sortSel");
+    if(sel && [...sel.options].some(o=>o.value === "mod")){ sel.value = "mod"; lsSet(KP + "Sort", "mod"); }
+    zdjete = true;
+  }
+  /* Mapa tematów jest osobną stroną na całe okno — z ⌘F można ją wywołać
+     także stamtąd. Skoro szukamy po wszystkim, wracamy do listy notatek. */
+  if(typeof zamknijMape === "function"){
+    const m = $("modalMapa");
+    if(m && m.classList.contains("show")) zamknijMape();
+  }
+  const bylCentrum = (typeof centrumWidoczne === "function") && centrumWidoczne();
+  if(bylCentrum && typeof centrumSchowaj === "function") centrumSchowaj();
+
+  if(!zdjete && !bylCentrum) return false;
+  if(typeof persistFilt === "function") persistFilt();
+  renderAll();
+  /* Na telefonie kolumny są jedna na raz — bez tego pisałoby się w polu,
+     patrząc na kolumnę ksiąg. */
+  if(innerWidth <= 900 && typeof mobileShow === "function") mobileShow("colNotes");
+  /* Napis tylko wtedy, gdy coś naprawdę zniknęło z widoku. Samo wyjście
+     z Centrum nie jest niespodzianką i nie potrzebuje tłumaczenia. */
+  if(zdjete && typeof toast === "function") toast("Szukam we wszystkich notatkach");
+  return true;
+}
+if($("search")) $("search").addEventListener("focus", szukajWszedzie);
 
 </script>
 <script>
@@ -19787,7 +20046,16 @@ function centrPublikacje(){
     if(n.b || !n.ks) return;                       // wersety mają swoją sekcję
     const kiedy = Date.parse(n.la || n.mo || "");
     if(!isFinite(kiedy) || kiedy < prog) return;
-    const k = n.ks + "|" + (n.itn || 0);
+    /* KLUCZ MUSI BYĆ TEN SAM, KTÓRYM FILTRUJE LISTA.
+       Do 2.70 Centrum sklejało go po swojemu: `ks + "|" + (itn || 0)`. Dla
+       czasopisma z numerem wydania wychodziło to samo co z `pubKeyOf`, więc
+       usterki nie było widać — ale dla KSIĄŻKI, która numeru wydania nie ma,
+       Centrum robiło „it|0", a lista szuka „it". Kafelek pokazywał wtedy
+       poprawną liczbę (bo liczył sam), a po kliknięciu lista była pusta,
+       bo filtrowała po kluczu, którego żadna notatka nie ma.
+       Dotyczyło to wszystkich książek i broszur — czyli akurat tych publikacji,
+       przy których notatek jest najwięcej. */
+    const k = pubKeyOf(n);
     if(!licznik[k]) licznik[k] = {klucz:k, ile:0, kiedy:0};
     licznik[k].ile++;
     if(kiedy > licznik[k].kiedy) licznik[k].kiedy = kiedy;
@@ -20201,20 +20469,26 @@ function centrStatKafel(id, iko, ile, tyt, delta){
    na samym dole panelu. Każdy kafelek prowadzi TAM, GDZIE TA RZECZ SIĘ DZIEJE
    — żaden nie jest ozdobą ani drugą drogą do tego samego okna.
    ════════════════════════════════════════════════════════════════════════ */
+/* `napis` to pełna nazwa — idzie do podpowiedzi i do czytnika ekranu.
+   `krotki` to napis widoczny na pasku: w rzędzie plakietek liczy się jedno
+   słowo, bo sześć pełnych nazw robi z paska drugą listę do przeczytania. */
 const CENTR_SZYBKIE = [
-  {id:"notatka",  iko:"notePen",   napis:"Szybka notatka"},
-  {id:"biblia",   iko:"books",     napis:"Studium biblijne"},
-  {id:"powtorki", iko:"target",    napis:"Powtórki"},
-  {id:"sync",     iko:"cloudSync", napis:"Synchronizacja"},
-  {id:"ulubione", iko:"heart",     napis:"Ulubione"},
-  {id:"postepy",  iko:"trend",     napis:"Postępy"}
+  {id:"notatka",  iko:"notePen",   napis:"Szybka notatka",   krotki:"Notatka"},
+  {id:"biblia",   iko:"books",     napis:"Studium biblijne", krotki:"Studium"},
+  {id:"powtorki", iko:"target",    napis:"Powtórki",         krotki:"Powtórki"},
+  {id:"sync",     iko:"cloudSync", napis:"Synchronizacja",   krotki:"Synchronizacja"},
+  {id:"ulubione", iko:"heart",     napis:"Ulubione",         krotki:"Ulubione"},
+  {id:"postepy",  iko:"trend",     napis:"Postępy",          krotki:"Postępy"}
 ];
 function centrSzybkie(){
-  return '<div class="cenSzybkie">' + CENTR_SZYBKIE.map(k=>
-    '<button type="button" class="cenSzyb" data-cszyb="' + k.id + '">'
-    + '<span class="cenSzybIko">' + ICO[k.iko] + '</span>'
-    + '<span class="cenSzybTxt">' + esc(k.napis) + '</span>'
-    + '</button>').join("") + '</div>';
+  return '<div class="cenSzybkie">'
+    + '<div class="cenSzybEt">Szybkie akcje</div>'
+    + '<div class="cenSzybRzad">' + CENTR_SZYBKIE.map(k=>
+      '<button type="button" class="cenSzyb" data-cszyb="' + k.id + '"'
+      + ' title="' + esc(k.napis) + '" aria-label="' + esc(k.napis) + '">'
+      + '<span class="cenSzybIko">' + ICO[k.iko] + '</span>'
+      + '<span class="cenSzybTxt">' + esc(k.krotki) + '</span>'
+      + '</button>').join("") + '</div></div>';
 }
 
 /**
@@ -22770,6 +23044,9 @@ document.addEventListener("click", e=>{
 const MAPA_ILE = 60;
 /* Zapamiętane miejsce w mapie: wraca się do tego samego tematu. */
 const MAPA_KLUCZ = KP + "Mapa";
+/* Ile trwa uniesienie karty po naciśnięciu. Tyle, co jedno mrugnięcie —
+   dłużej i zamiast potwierdzenia robi się z tego czekanie. */
+const MAPA_KLIK_MS = 180;
 
 let mapaWybor = null;      // {rodzaj:"temat"|"podtemat"|"poza"|"bez", id}
 let mapaSzukane = "";
@@ -22950,16 +23227,71 @@ function rysujMape(){
   rysujMapePrawa(licz);
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   SIATKA KART TEMATÓW
+
+   Prawa strona mapy była pusta, dopóki nie wybrało się czegoś po lewej —
+   zamiast czegokolwiek stało tam zdanie „Wybierz temat po lewej". Strona
+   otwierała się więc pusta i najpierw trzeba było ją obsłużyć, żeby coś
+   pokazała. A tematy MOŻNA pokazać od razu: jest ich kilka, każdy ma nazwę,
+   kolor, liczbę notatek i swoje podtematy.
+
+   Karta pokazuje też UDZIAŁ tematu w całości — cienki pasek pod liczbą.
+   Bez niego „75" i „14" to dwie liczby; z nim widać, że jeden temat to
+   połowa wszystkiego, a drugi margines.
+   ══════════════════════════════════════════════════════════════════════════ */
+function mapaKartyTematow(licz){
+  const drzewo = mapaDrzewo(licz);
+  const razem = Math.max(1, licz.razem);
+  if(!drzewo.length && !licz.bez){
+    return `<div class="mapaPusto mapaZacheta">
+      <b>Nie masz jeszcze ani jednej etykiety.</b><br><br>
+      Mapa buduje się z <b>sekcji</b> (temat główny) i <b>etykiet</b> (podtematy),
+      więc zacznij od nadania notatkom etykiet.</div>`;
+  }
+  /* Kolejność kart = kolejność tematów w drzewie. Pierwsza karta pojawia się
+     bez zwłoki, każda następna o 45 ms później — stąd `--i`. */
+  const karty = drzewo.map((w, i)=>{
+    const temat = w.rodzaj === "temat";
+    const nazwa = temat ? w.sek.name : "Poza tematami";
+    const kolor = (temat && w.sek.color) ? w.sek.color : "var(--muted)";
+    const udzial = Math.round(w.ile / razem * 100);
+    const chipy = w.pod.slice(0, 6).map(t=>
+      `<span class="mapaKartaChip"><span class="mapaKropka" style="background:${
+        esc(t.color || "var(--accent2)")}"></span>${esc(t.name)}<i>${licz.tag[t.id] || 0}</i></span>`).join("");
+    return `<button type="button" class="mapaKarta" style="--kolT:${esc(kolor)};--i:${i}"
+             data-karta="${esc(temat ? String(w.sek.id) : "poza")}">
+      <span class="mapaKartaGora"></span>
+      <span class="mapaKartaTyt">${esc(nazwa)}</span>
+      <span class="mapaKartaIle"><b>${w.ile}</b>${esc(mapaOdmiana(w.ile, "notatka", "notatki", "notatek"))}</span>
+      <span class="mapaKartaPasek"><i style="width:${Math.max(2, udzial)}%"></i></span>
+      <span class="mapaKartaUdzial">${udzial}% wszystkich notatek</span>
+      ${chipy ? `<span class="mapaKartaChipy">${chipy}${
+        w.pod.length > 6 ? `<span class="mapaKartaChip mapaKartaWiecej">+${w.pod.length - 6}</span>` : ""
+      }</span>` : `<span class="mapaKartaBrak">bez podtematów</span>`}
+    </button>`;
+  }).join("");
+  const bez = licz.bez
+    ? `<button type="button" class="mapaKarta mapaKartaBez" style="--kolT:var(--muted);--i:${drzewo.length}"
+         data-karta="bez">
+        <span class="mapaKartaGora"></span>
+        <span class="mapaKartaTyt">Notatki bez etykiety</span>
+        <span class="mapaKartaIle"><b>${licz.bez}</b>${esc(mapaOdmiana(licz.bez, "notatka", "notatki", "notatek"))}</span>
+        <span class="mapaKartaUdzial">nie należą do żadnego tematu</span>
+      </button>`
+    : "";
+  return `<div class="mapaWstep">
+      <h3>Twoje tematy</h3>
+      <p>Temat główny pokazuje notatki ze <b>wszystkich swoich podtematów</b> naraz —
+         po to, żeby dało się zobaczyć cały temat w jednym miejscu.
+         Podtemat zawęża do siebie.</p>
+    </div>
+    <div class="mapaKarty">${karty}${bez}</div>`;
+}
+
 function rysujMapePrawa(licz){
   const box = $("mapaTresc"); if(!box) return;
-  if(!mapaWybor){
-    setHtml(box, `<div class="mapaPusto mapaZacheta">
-      <b>Wybierz temat po lewej.</b><br><br>
-      Temat główny pokazuje notatki ze <b>wszystkich swoich podtematów</b> naraz —
-      po to, żeby dało się zobaczyć cały temat w jednym miejscu.
-      Podtemat zawęża do siebie.</div>`);
-    return;
-  }
+  if(!mapaWybor){ setHtml(box, mapaKartyTematow(licz)); return; }
   const lista = mapaNotatkiWybranego();
   const nazwa = mapaNazwaWyboru();
   /* Przy temacie pokazujemy jego podtematy jako plakietki — stąd wchodzi się
@@ -22986,6 +23318,7 @@ function rysujMapePrawa(licz){
   }).join("");
   setHtml(box, `
     <div class="mapaNagl">
+      <button class="mapaDoKart" type="button" id="mapaDoKart">‹ Wszystkie tematy</button>
       <h3>${esc(nazwa)}</h3>
       <div class="mapaNaglIle">${esc(mapaNotatek(lista.length))}${
         mapaWybor.rodzaj === "temat"
@@ -23009,6 +23342,19 @@ function mapaUstawWybor(rodzaj, id){
   mapaWybor = {rodzaj, id};
   mapaIle = MAPA_ILE;
   lsSet(MAPA_KLUCZ, JSON.stringify(mapaWybor));
+  rysujMape();
+  const p = $("mapaTresc"); if(p) p.scrollTop = 0;
+}
+
+/** Powrót ze środka tematu do siatki kart.
+    Mapa pamięta ostatni temat między otwarciami, więc bez tej drogi powrotnej
+    siatka kart pokazałaby się raz w życiu — przy pierwszym otwarciu — i nigdy
+    więcej. Zapominamy też zapamiętany wybór, żeby następne wejście na mapę
+    zaczynało się od widoku całości. */
+function mapaWrocDoKart(){
+  mapaWybor = null;
+  mapaIle = MAPA_ILE;
+  lsSet(MAPA_KLUCZ, "null");   /* „null", nie "" — otwieranie robi tu JSON.parse */
   rysujMape();
   const p = $("mapaTresc"); if(p) p.scrollTop = 0;
 }
@@ -23168,6 +23514,24 @@ if($("modalMapa")){
     w.click();
   };
   $("mapaTresc").onclick = e=>{
+    /* KARTA TEMATU. Zanim widok się zmieni, karta na moment unosi się i dostaje
+       mocniejszy cień — ruch trwa tyle, co jedno mrugnięcie, i mówi „to
+       nacisnąłeś". Bez tego przejście wygląda, jakby strona podmieniła się sama
+       z siebie. Zmiana widoku czeka na koniec ruchu, nie odwrotnie. */
+    const karta = e.target.closest("[data-karta]");
+    if(karta){
+      const co = karta.dataset.karta;
+      karta.classList.add("klik");
+      const idz = ()=>{
+        if(co === "poza") mapaUstawWybor("poza", null);
+        else if(co === "bez") mapaUstawWybor("bez", null);
+        else mapaUstawWybor("temat", +co);
+      };
+      if(matchMedia("(prefers-reduced-motion: reduce)").matches) idz();
+      else setTimeout(idz, MAPA_KLIK_MS);
+      return;
+    }
+    if(e.target.closest("#mapaDoKart")){ mapaWrocDoKart(); return; }
     const chip = e.target.closest("[data-chip]");
     if(chip){ mapaUstawWybor("podtemat", +chip.dataset.chip); return; }
     const wiersz = e.target.closest("[data-notatka]");
@@ -23224,7 +23588,28 @@ document.addEventListener("keydown", e=>{
      Skoro nie ma czego cofać, blokujemy skrót. */
   if(!typing && (e.metaKey||e.ctrlKey) && e.key.toLowerCase()==="z"){ e.preventDefault(); return; }
   if(typing) return;
-  if((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==="f"){ e.preventDefault(); $("search").focus(); $("search").select(); return; }
+  /* SZUKANIE ZNACZY CO INNEGO W CZYTNIKU NIŻ NA LIŚCIE.
+     Na liście ⌘F i „/" prowadzą do pola u góry — a od 2.75 samo ustawienie w nim
+     ogniska zdejmuje wszystkie zawężenia, więc szuka się po całości. W OTWARTEJ
+     NOTATCE ta sama para znaczy „znajdź w tej notatce": czytnik ma własny pasek
+     „Znajdź". Bez tego rozróżnienia ⌘F w czytniku przenosiło ognisko na pole
+     schowane pod oknem — nie było widać nic poza tym, że nic się nie stało —
+     a od 2.75 po cichu zdejmowałoby jeszcze filtry listy pod spodem. */
+  const szukajWNotatce = ()=>{
+    const przycisk = document.querySelector('#fsWrap [data-fsb="find"]');
+    if(!przycisk) return false;
+    const box = document.querySelector("#fsWrap .fsFind");
+    if(box && box.style.display !== "none"){
+      const inp = box.querySelector(".fsFindInp");
+      if(inp){ inp.focus(); inp.select(); }
+    } else przycisk.click();
+    return true;
+  };
+  if((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==="f"){
+    e.preventDefault();
+    if(fsGuid && szukajWNotatce()) return;
+    $("search").focus(); $("search").select(); return;
+  }
   if(e.metaKey||e.ctrlKey||e.altKey) return;
   /* 0 — powrót do wszystkich notatek; sąsiaduje z 1/2/3 od kolumn */
   if(e.key==="0" && typeof pokazWszystkieNotatki==="function"){
@@ -23245,7 +23630,11 @@ document.addEventListener("keydown", e=>{
   };
 
   const k = e.key.toLowerCase();
-  if(e.key==="/"){ e.preventDefault(); $("search").focus(); return; }
+  if(e.key==="/"){
+    e.preventDefault();
+    if(fsGuid && szukajWNotatce()) return;
+    $("search").focus(); return;
+  }
   if(e.key==="?"){ e.preventDefault(); openSettings(); return; }
   if(e.key===","){ e.preventDefault(); openSettings(); return; }
   /* H jak „home" — przełącza między Centrum studium i listą notatek. Litera
