@@ -2975,8 +2975,18 @@ header #btnWszystkie{ flex:0 1 auto; max-width:230px; overflow:hidden; }
 #noteList.v-tablica[style*="--kolTablicy: 0"],
 #noteList.v-tablica:not([style*="--kolTablicy"]){
   /* Przy dopasowaniu automatycznym szerokość karteczki idzie za jej wielkością:
-     bardzo małe mieszczą się gęściej, bardzo duże dostają więcej miejsca. */
-  grid-template-columns:repeat(auto-fill, minmax(var(--kartaMin, 190px), 1fr));
+     bardzo małe mieszczą się gęściej, bardzo duże dostają więcej miejsca.
+
+     GÓRNA GRANICA JEST NA KOLUMNIE, NIE NA KARCIE (v2.67). Do 2.66 kolumna
+     rosła do `1fr`, a karta w środku miała `max-width` i `justify-items:center`
+     — czyli kolumna zostawała szeroka, karta wąska, a różnica robiła się PRZERWĄ
+     między kolumnami. Zamknięcie zakresu w samej ścieżce siatki daje ten sam
+     efekt (karteczki nie skaczą przy zmianie szerokości okna), ale nadmiar
+     zostaje na zewnątrz rzędu, nie w środku. `justify-content:center` rozkłada
+     ten nadmiar po równo na oba marginesy. */
+  grid-template-columns:repeat(auto-fill,
+    minmax(var(--kartaMin, 190px), calc(var(--kartaMin, 190px) * 1.45)));
+  justify-content:center;
 }
 #noteList.v-tablica .ncard{
   position:relative;
@@ -3177,6 +3187,13 @@ html[data-theme="dark"] .ncard.wlasneTlo .ntools{ background:rgba(0,0,0,.18); }
   border-radius:12px;
   border:1px dashed var(--border);
   opacity:.5;
+}
+/* Na czas powrotu podkładka gaśnie. Karta wraca dokładnie na jej miejsce, więc
+   kreskowana ramka wystawałaby spod zaokrąglonych narożników jako migająca
+   kreska — a od 2.67 karta wypełnia całą kolumnę, czyli i całą podkładkę. */
+#noteList.v-tablica .wydPodkladka.wydPodkladkaZnika{
+  border-color:transparent;
+  transition:border-color .12s linear;
 }
 /* W powiększeniu jest miejsce na szczegóły, które na małej karteczce ustąpiły. */
 /* ——— ODNOŚNIK W WYDOBYTEJ KARTECZCE ———
@@ -4369,18 +4386,15 @@ html[data-theme="dark"] #noteList.v-tablica .ncard.wydUbrana .wydDzialanie:hover
 
    `justify-items:center` dopełnia rzecz: gdy w rzędzie stoi jedna karta węższa
    niż jej miejsce w siatce, zostaje na środku, a nie przy lewej krawędzi. */
-@media (min-width:900px){
-  #noteList.v-tablica{ justify-items:center; }
-  /* `:not(.wydobyta)` nie jest ostrożnością na zapas — bez niego karteczka
-     podniesiona do formatu A6 dostaje tę samą górną granicę co miniatura
-     w siatce i jej podpisy u dołu („Edytuj", „Pełny ekran", „Przypnij"…)
-     zostają ucięte. Podniesiona karta ma własną, znacznie większą szerokość
-     i to jest jej rola: przestać być miniaturą. */
-  #noteList.v-tablica .ncard:not(.wydobyta){
-    max-width:calc(var(--kartaMin, 190px) * 1.45);
-    width:100%;
-  }
-}
+/* Karteczka WYPEŁNIA swoją kolumnę — zawsze, w obu trybach.
+   Do 2.66 stała tu górna granica szerokości i `justify-items:center`. Przy
+   ustawionych na sztywno trzech kolumnach na szerokiej liście dawało to kolumnę
+   594 px i kartę 276 px, czyli 318 px pustki w każdej kolumnie. Wybór „trzy
+   w rzędzie" jest prośbą o karty tej szerokości, a nie o trzy wąskie karty
+   z przerwami. Zakres szerokości pilnuje teraz ścieżka siatki w trybie
+   automatycznym (wyżej), więc granica na karcie nie jest już do niczego
+   potrzebna. */
+#noteList.v-tablica .ncard:not(.wydobyta){ width:100%; max-width:none; }
 
 /* ——— 3. CZYTNIK JAKO OKNO, NIE JAK ŚCIANA ———
 
@@ -4932,31 +4946,9 @@ html[data-theme="dark"] .histDiff del{ background:rgba(240,138,130,.16); }
 .cenTyt b{ font-size:calc(19px * var(--uiw, 1)); letter-spacing:-.015em; }
 .cenTyt span{ font-size:calc(12.5px * var(--uiw, 1)); color:var(--muted); }
 
-/* ——— „Kontynuuj ostatnie studium" ———
-   Jedna rzecz robiona najczęściej dostaje osobny, szeroki przycisk nad siatką.
-   Gdyby siedziała jako wiersz w jednej z sekcji, trzeba by jej szukać wzrokiem
-   wśród sześciu innych tytułów. */
-.cenDalej{
-  display:flex; align-items:center; gap:14px; width:100%;
-  text-align:left; cursor:pointer;
-  margin:0 0 16px; padding:14px 16px;
-  border:1px solid var(--accent2); border-radius:16px;
-  background:var(--sel); color:var(--text);
-  transition:transform var(--dur-szybko) var(--ease), box-shadow var(--dur-szybko) var(--ease);
-}
-.cenDalej:hover{ box-shadow:var(--cien-2); }
-.cenDalej:active{ transform:scale(.995); }
-.cenDalej:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
-.cenDalejIko{ display:flex; flex:0 0 auto; color:var(--accent); }
-.cenDalejIko .ic{ width:26px; height:26px; }
-.cenDalejTxt{ display:flex; flex-direction:column; gap:3px; flex:1 1 auto; min-width:0; }
-.cenDalejTxt b{ font-size:calc(14.5px * var(--uiw, 1)); color:var(--accent); }
-.cenDalejTxt > span{
-  font-size:calc(13px * var(--uiw, 1)); line-height:1.4;
-  /* Tytuł notatki bywa długi; dwa wiersze wystarczą do rozpoznania. */
-  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden;
-}
-.cenDalejStrz{ flex:0 0 auto; font-size:22px; color:var(--muted); }
+/* Duża karta „Kontynuuj ostatnie studium" mieszka od 2.64 w bloku niżej
+   (CENTRUM STUDIUM — DWA PIĘTRA). Stary, wąski przycisk „dalej" zniknął
+   razem z układem, w którym wszystkie karty ważyły tyle samo. */
 
 /* ——— siatka sekcji ———
    Kolumny dobierają się do szerokości: przy jednej kolumnie notatek na telefonie
@@ -5467,6 +5459,637 @@ label.roz-opcja .roz-data:empty{ display:none; }
   #modalMapa #mapaNowyTemat{ order:4; }
 }
 
+/* ══════════════ CENTRUM STUDIUM — WYGLĄD (v2.63) ══════════════
+
+   CO BYŁO NIE TAK
+
+   Zmierzone na panelu z siedmioma sekcjami (1400 px, kolumna Centrum 629 px):
+
+     • siedem kart wyglądało IDENTYCZNIE — ta sama biel, ta sama ramka, ten sam
+       nagłówek wersalikami, ta sama zielona ikona. Nic nie mówiło, że „Na dziś"
+       jest ważniejsze niż „Ostatnie wyszukiwania", więc oko nie miało na czym
+       spocząć i przebiegało panel od góry do dołu jak spis treści;
+     • „zaległe 6 dni" miało 11 px i kolor tekstu przygaszony do .66 — dokładnie
+       tyle samo głosu, co „1 notatka" przy publikacji. Najważniejsza informacja
+       w panelu wyglądała jak przypis;
+     • ANI JEDNEJ LICZBY W SKALI. Panel startowy odpowiadał na pytanie „co",
+       pomijając pytanie zadawane pierwsze: „ile";
+     • DZIURY. Siatka wyrównywała wiersze do najwyższej karty, więc pod
+       „Ostatnio studiowane" zostawało około 80 px pustki;
+     • wiersz miał 32 px i wszystko w jednej linii, więc dłuższy tytuł łamał się
+       i zlewał z opisem po prawej;
+     • kolory etykiet (Betel zielony, Ciekawostki niebieski) nie pojawiały się
+       w Centrum ani razu, choć w kolumnie obok są podstawą rozpoznawania.
+
+   CO SIĘ ZMIENIŁO
+
+   Pasek dnia z liczbami, własny kolor każdej sekcji, zaległość jako plakietka,
+   wiersz w dwóch liniach (tytuł, pod nim skąd notatka jest) i układ kolumnowy
+   zamiast siatki, który upycha karty bez dziur. */
+
+/* ——— CZTERY LICZBY ———
+   Do 2.63 stały u samej góry jako „pasek dnia". Od 2.64 są podsumowaniem
+   w stopce panelu („Twoje studium”): u góry siedzi teraz to, co się ROBI,
+   a liczby mówią, ile tego w ogóle jest — a to inne pytanie i inne miejsce. */
+.cenStatKafle{
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));
+  gap:8px; align-content:start;
+}
+.cenKafel{
+  display:flex; flex-direction:column; gap:1px; align-items:flex-start;
+  text-align:left; cursor:pointer;
+  padding:10px 12px; border-radius:13px;
+  border:1px solid var(--border); background:var(--panel); color:var(--text);
+  transition:transform var(--dur-szybko) var(--ease), box-shadow var(--dur-szybko) var(--ease);
+}
+.cenKafel:hover{ box-shadow:var(--cien-2); }
+.cenKafel:active{ transform:scale(.985); }
+.cenKafel:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+.cenKafelIle{
+  font-size:calc(23px * var(--uiw, 1)); font-weight:700; line-height:1.1;
+  letter-spacing:-.02em; font-variant-numeric:tabular-nums; color:var(--accent);
+}
+.cenKafelTyt{ font-size:calc(12px * var(--uiw, 1)); font-weight:600; }
+.cenKafelOpis{ font-size:calc(10.5px * var(--uiw, 1)); color:var(--muted); }
+
+/* ——— KOLORY SEKCJI ———
+   Jeden odcień na sekcję, użyty w dwóch miejscach: kolorowa ikona i cienki
+   pasek u góry karty. Tła kart zostają białe — siedem kolorowych prostokątów
+   obok siebie byłoby jarmarkiem, a chodzi tylko o to, żeby dało się je
+   rozróżniać kątem oka. */
+:root{
+  --cenPilny:#b26a00;  --cenPilnyTlo:#fff6e6;
+  --cenK-dzis:#b26a00; --cenK-niedok:#7b4fb5; --cenK-studiowane:#256b52;
+  --cenK-dodane:#1565c0; --cenK-wersety:#00796b; --cenK-publikacje:#8a5a2b;
+  --cenK-szukania:#5a6570;
+}
+/* Sepia ma kremowe tło kart, więc kremowe #fff6e6 znikało w nim bez śladu —
+   plakietka „zaległe 6 dni" wyglądała jak zwykły tekst. Tu tło musi być
+   procentem koloru, nie własnym odcieniem. */
+html[data-theme="sepia"]{
+  --cenPilny:#9c5a00;  --cenPilnyTlo:rgba(156,90,0,.14);
+}
+html[data-theme="dark"]{
+  --cenPilny:#e8a33d;  --cenPilnyTlo:rgba(232,163,61,.12);
+  --cenK-dzis:#e8a33d; --cenK-niedok:#b18cf0; --cenK-studiowane:#5fd0a0;
+  --cenK-dodane:#6bb2ff; --cenK-wersety:#4ecdc4; --cenK-publikacje:#d7a06a;
+  --cenK-szukania:#9aa7b3;
+}
+.cenKarta[data-sek="statystyki"]{  --sekK:var(--cenK-szukania); }
+.cenKarta[data-sek="niedok"]{      --sekK:var(--cenK-niedok); }
+.cenKarta[data-sek="studiowane"]{  --sekK:var(--cenK-studiowane); }
+.cenKarta[data-sek="dodane"]{      --sekK:var(--cenK-dodane); }
+.cenKarta[data-sek="wersety"]{     --sekK:var(--cenK-wersety); }
+.cenKarta[data-sek="publikacje"]{  --sekK:var(--cenK-publikacje); }
+.cenKarta[data-sek="szukania"]{    --sekK:var(--cenK-szukania); }
+
+/* ——— UKŁAD ———
+   Do 2.63 siedem kart jechało w kolumnach jak w gazecie, bo siatka zostawiała
+   dziury pod niższymi kartami. Od 2.64 kart w tym rzędzie są CZTERY i każda ma
+   stopkę („Zobacz wszystkie"), więc muszą kończyć się na jednej wysokości —
+   równa krawędź dolna jest tu warta więcej niż kilkanaście pikseli pustki. */
+/* 300 px, nie 232: przy 232 w typowej kolumnie mieściły się TRZY karty i czwarta
+   zostawała sama w drugim rzędzie, obok dziury na dwie karty. Przy 300 wychodzą
+   dwie (kwadrat 2×2) albo — na szerokim panelu — cztery w rzędzie, jak na
+   obrazku. Cztery to liczba parzysta i o to tu chodzi. */
+.cenSiatka{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));
+  gap:12px; align-items:stretch;
+}
+.cenKarta{
+  display:flex; flex-direction:column;
+  margin:0;
+  position:relative; overflow:hidden;
+  padding-top:14px;
+}
+.cenKarta .cenLista{ flex:1 1 auto; }
+/* Pasek koloru sekcji u góry karty — cienki, na całą szerokość. */
+.cenKarta::before{
+  content:""; position:absolute; left:0; right:0; top:0; height:3px;
+  background:var(--sekK, var(--accent));
+}
+
+/* ——— NAGŁÓWEK KARTY ——— */
+/* Kafelek pod ikoną robimy na samym <svg> — bez opakowania, żeby nie ruszać
+   kolejności elementów w nagłówku (pierwszy span musi zostać tytułem). */
+.cenKarta h3 .ic{
+  width:26px; height:26px; flex:0 0 auto; box-sizing:border-box;
+  padding:5px; border-radius:8px;
+  color:var(--sekK, var(--accent));
+  background:color-mix(in srgb, var(--sekK, var(--accent)) 13%, transparent);
+}
+.cenPlak{
+  flex:0 0 auto; min-width:20px; padding:1px 7px; border-radius:20px;
+  font-size:calc(11px * var(--uiw, 1)); font-weight:700;
+  letter-spacing:0; text-transform:none; font-variant-numeric:tabular-nums;
+  color:#fff; background:var(--sekK, var(--accent));
+}
+
+/* ——— WIERSZ W DWÓCH LINIACH ———
+   Tytuł ma swoją linię, pod nim skąd notatka jest. Wcześniej wszystko stało
+   w jednym rzędzie i dłuższy tytuł spychał opis, zamiast po prostu zejść niżej. */
+.cenPoz.cenPozN{
+  display:grid; grid-template-columns:1fr auto; align-items:baseline;
+  column-gap:10px; row-gap:2px;
+  padding:8px;
+}
+/* TYTUŁ DOSTAJE CAŁĄ SZEROKOŚĆ, opis schodzi do drugiego wiersza, obok
+   informacji „skąd". Gdy opis stał obok tytułu, zabierał mu jedną trzecią
+   miejsca i „Pokora Dawida wobec Saula" łamało się na dwie linie — czyli ten
+   sam problem, przed którym uciekaliśmy, tylko w innym miejscu. */
+.cenPozN .cenNazwa{ grid-column:1 / -1; grid-row:1; -webkit-line-clamp:2; }
+.cenPozN .cenOpis{ grid-column:2; grid-row:2; justify-self:end; align-self:center; }
+/* Notatka bez etykiety i bez wersetu nie ma drugiego wiersza — wtedy opis
+   wraca obok tytułu, żeby nie zostawiać pustej linii. */
+.cenPozN:not(:has(.cenMeta)) .cenNazwa{ grid-column:1; }
+.cenPozN:not(:has(.cenMeta)) .cenOpis{ grid-row:1; align-self:baseline; }
+.cenMeta{
+  grid-column:1; grid-row:2; min-width:0;
+  display:flex; align-items:center; gap:5px; flex-wrap:nowrap; overflow:hidden;
+  font-size:calc(11px * var(--uiw, 1)); color:var(--muted); line-height:1.4;
+}
+/* Ostatni kawałek (werset albo publikacja) ustępuje pierwszy — nazwa etykiety
+   jest ważniejsza, bo to po niej rozpoznaje się notatkę. */
+.cenCz{
+  display:flex; align-items:center; gap:5px; min-width:0;
+  white-space:nowrap; overflow:hidden;
+}
+/* Gdy zabraknie miejsca, kurczy się werset/publikacja, nie nazwa etykiety —
+   inaczej oba kawałki ucinały się po równo („Ciekawo… · 1 Samuela 2…"), choć
+   wystarczy skrócić jeden. Duży flex-shrink na ostatnim to właśnie robi;
+   pierwszy zachowuje shrink 1 na wypadek naprawdę długiej nazwy etykiety. */
+.cenCz:first-child{ flex:0 1 auto; }
+.cenCz:last-child{ flex:0 200 auto; }
+/* Wielokropek działa tylko na prawdziwym elemencie z tekstem — stąd cenCzT. */
+.cenCzT{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cenKropka{ width:7px; height:7px; border-radius:50%; flex:0 0 auto; }
+.cenSep{ opacity:.5; flex:0 0 auto; }
+/* Zaległa powtórka — plakietka, nie szary przypis. */
+.cenOpis.cenZal{
+  opacity:1; font-weight:700;
+  color:var(--cenPilny); background:var(--cenPilnyTlo);
+  padding:2px 8px; border-radius:20px;
+}
+
+
+/* ══════════════ CENTRUM STUDIUM — DWA PIĘTRA (v2.64) ══════════════
+
+   CO BYŁO NIE TAK PO 2.63
+
+   Panel miał już liczby i kolory, ale wszystkie karty nadal ważyły tyle samo.
+   Siedem prostokątów, każdy z nagłówkiem wersalikami i listą pozycji —
+   „Kontynuuj ostatnie studium" stało w tym samym szeregu co „Ostatnie
+   wyszukiwania", choć pierwsze jest powodem, dla którego się tu przyszło,
+   a drugie tylko wpadło po drodze.
+
+   JAK JEST TERAZ — TRZY PIĘTRA, MALEJĄCO WAŻNE
+
+     1. DWIE DUŻE KARTY: na czym skończyłem · co mam dziś powtórzyć.
+        Kolor, ilustracja, własny przycisk. To jedyne miejsca w panelu,
+        które mają przycisk zamiast samej listy.
+     2. CZTERY KARTY: skąd wracać do notatek. Równa wysokość, każda ze
+        stopką „Zobacz wszystkie" — sześć pozycji to początek listy,
+        a nie wszystko, co jest.
+     3. NIŻSZY RZĄD I PODSUMOWANIE: niedokończone, wyszukiwania, cztery
+        liczby i wykres. Rzeczy, po które się nie sięga codziennie.
+
+   Kolor bierze się z jednej zmiennej na kartę (`--heroK`), więc ilustracja,
+   plakietka, nagłówek i przycisk nie mogą się rozjechać. */
+
+/* ——— GÓRNE PIĘTRO ——— */
+.cenGora{
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));
+  gap:12px; margin:0 0 12px; align-items:stretch;
+}
+.cenHero{
+  position:relative; overflow:hidden;
+  display:flex; align-items:stretch;
+  border:1px solid color-mix(in srgb, var(--heroK) 32%, var(--border));
+  border-radius:18px; padding:16px 18px;
+  background:linear-gradient(135deg,
+    color-mix(in srgb, var(--heroK) 12%, var(--panel)) 0%, var(--panel) 65%);
+}
+.cenHeroStud{ --heroK:var(--accent); }
+.cenHeroPowt{ --heroK:var(--cenPilny); }
+.cenHeroTresc{ position:relative; z-index:1; flex:1 1 auto; min-width:0; }
+/* Ilustracja siedzi w rogu i wychodzi poza kartę — ma być tłem, nie
+   ilustracją do podpisu. `pointer-events:none`, bo cała karta jest klikalna
+   w innych miejscach i rysunek nie może przechwytywać kliknięć. */
+.cenHeroObraz{
+  position:absolute; right:-4px; bottom:0; z-index:0;
+  width:40%; max-width:190px; min-width:110px;
+  color:var(--heroK); opacity:.92; pointer-events:none;
+}
+.cenIlu{ display:block; width:100%; height:auto; }
+
+/* ——— KARTA POWTÓREK: pas u góry, lista pod nim ———
+   Budzik leżący na całej karcie wchodził na pierwszy wiersz listy i zasłaniał
+   „6 dni temu" — czyli akurat to, po co ta lista jest. Pas zamyka rysunek tam,
+   gdzie nie ma tekstu, a lista dostaje spokojne tło. */
+.cenHeroPowt{ padding:0; background:var(--panel); }
+.cenHeroPowt .cenHeroTresc{ display:flex; flex-direction:column; }
+.cenHeroPas{
+  position:relative; overflow:hidden;
+  padding:15px 18px 14px;
+  border-bottom:1px solid color-mix(in srgb, var(--heroK) 22%, var(--border));
+  background:linear-gradient(135deg,
+    color-mix(in srgb, var(--heroK) 20%, var(--panel)) 0%,
+    color-mix(in srgb, var(--heroK) 7%, var(--panel)) 100%);
+}
+.cenHeroPas .cenHeroObraz{
+  top:50%; bottom:auto; right:16px; transform:translateY(-50%);
+  width:96px; min-width:0; max-width:96px;
+}
+.cenHeroPas .cenHeroLicz{ margin:12px 0 0; }
+.cenHeroPas .cenHeroMal{ position:relative; z-index:1; }
+.cenHeroDol{ display:flex; flex-direction:column; padding:2px 18px 16px; }
+
+.cenChip{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:4px 10px; border-radius:20px;
+  background:color-mix(in srgb, var(--heroK) 16%, transparent);
+  color:var(--heroK);
+  font-size:calc(10.5px * var(--uiw, 1)); font-weight:700;
+  text-transform:uppercase; letter-spacing:.06em;
+}
+.cenChip .ic{ width:13px; height:13px; flex:0 0 auto; }
+/* Selektor musi być podwójny: `.col h2` z układu kolumn ma specyficzność (0,1,1)
+   i ustawia 11,5 px WERSALIKAMI — a Centrum siedzi w kolumnie notatek, więc
+   tytuł karty wychodził jako mały nagłówek kolumny zamiast nagłówka karty.
+   Stąd też jawne zerowanie text-transform i letter-spacing. */
+.cenHero .cenHeroTyt{
+  margin:11px 0 3px; padding:0;
+  font-size:calc(21px * var(--uiw, 1)); font-weight:800;
+  line-height:1.15; letter-spacing:-.02em; text-transform:none;
+  color:var(--heroK);
+}
+.cenHeroPod{ margin:0; font-size:calc(14px * var(--uiw, 1)); font-weight:600; }
+.cenHeroMal{ margin:4px 0 0; font-size:calc(11.5px * var(--uiw, 1)); color:var(--muted); line-height:1.45; }
+
+.cenHeroKafle{ display:flex; flex-wrap:wrap; gap:8px; margin:14px 0 0; }
+.cenHeroKafel{
+  display:flex; align-items:center; gap:8px; min-width:0;
+  padding:8px 11px; border-radius:12px;
+  border:1px solid var(--border); background:var(--panel);
+}
+.cenHeroKafel .ic{ width:16px; height:16px; flex:0 0 auto; color:var(--heroK); }
+.cenHeroKafelTxt{ display:flex; flex-direction:column; min-width:0; }
+.cenHeroKafelTxt b{ font-size:calc(15px * var(--uiw, 1)); font-weight:700; line-height:1.15; }
+/* Nazwa publikacji nie zmieści się wielkością liczby — dostaje mniejszy krój
+   i wielokropek, żeby trzeci kafelek nie rozpychał dwóch pierwszych. */
+.cenHeroKafelTxt b.male{
+  font-size:calc(11.5px * var(--uiw, 1)); max-width:15ch;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.cenHeroKafelTxt i{ font-style:normal; font-size:calc(10.5px * var(--uiw, 1)); color:var(--muted); }
+
+.cenHeroBtn{
+  display:inline-flex; align-items:center; gap:10px;
+  margin:14px 0 0; padding:10px 16px;
+  border:0; border-radius:12px; cursor:pointer;
+  background:var(--heroK); color:#fff;
+  font-size:calc(13.5px * var(--uiw, 1)); font-weight:700;
+  transition:transform var(--dur-szybko) var(--ease), box-shadow var(--dur-szybko) var(--ease);
+}
+/* W trybie ciemnym oba kolory kart są JASNE (#48c08d i #e8a33d), więc biały
+   napis na nich prawie znika. Ciemny tekst na jasnym przycisku daje kontrast
+   ~9:1 zamiast ~1,8:1 — ta sama zasada, co przy przyciskach „qf.on". */
+html[data-theme="dark"] .cenHeroBtn{ color:#0f1a16; }
+.cenHeroBtn:hover{ box-shadow:var(--cien-2); }
+.cenHeroBtn:active{ transform:scale(.985); }
+.cenHeroBtn:focus-visible{ outline:2px solid var(--heroK); outline-offset:2px; }
+.cenHeroStrz{ font-size:18px; line-height:1; }
+
+.cenHeroLicz{ display:flex; align-items:baseline; gap:9px; margin:12px 0 10px; }
+.cenHeroLicz b{
+  font-size:calc(38px * var(--uiw, 1)); font-weight:800; line-height:1;
+  letter-spacing:-.03em; color:var(--heroK); font-variant-numeric:tabular-nums;
+}
+.cenHeroLicz span{ font-size:calc(13px * var(--uiw, 1)); color:var(--muted); }
+/* Brak powtórek to dobra wiadomość, więc nie pokazujemy wielkiego zera —
+   zero wygląda jak zaległość, a jest dokładnie jej brakiem. */
+.cenHeroLiczOk b{ font-size:calc(28px * var(--uiw, 1)); }
+
+.cenPowtLista{ display:flex; flex-direction:column; margin:0 0 4px; }
+.cenPowtPoz{
+  display:flex; align-items:baseline; justify-content:space-between; gap:10px;
+  width:100%; text-align:left; cursor:pointer;
+  margin:0; padding:8px; border:0; border-top:1px solid var(--border);
+  border-radius:9px; background:none; color:var(--text);
+  font-size:calc(13.5px * var(--uiw, 1));
+}
+.cenPowtPoz:hover{ background:var(--sel); }
+.cenPowtPoz:focus-visible{ outline:2px solid var(--heroK); outline-offset:-2px; }
+.cenPowtNazwa{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cenPowtKiedy{ flex:0 0 auto; font-size:calc(11px * var(--uiw, 1)); color:var(--muted); }
+.cenPowtKiedy.zal{ color:var(--cenPilny); font-weight:700; }
+
+/* ——— STOPKA KARTY: „Zobacz wszystkie" ——— */
+.cenWiecej{
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  width:100%; margin:6px 0 0; padding:9px 8px 3px;
+  border:0; border-top:1px solid var(--border); background:none;
+  color:var(--sekK, var(--accent)); cursor:pointer;
+  font-size:calc(12px * var(--uiw, 1)); font-weight:600;
+}
+.cenWiecej:hover{ text-decoration:underline; }
+.cenWiecej:focus-visible{ outline:2px solid var(--sekK, var(--accent)); outline-offset:-2px; }
+.cenWiecejStrz{ font-size:17px; line-height:1; }
+.cenPozStrz{ flex:0 0 auto; color:var(--muted); font-size:17px; line-height:1; }
+
+/* ——— OSTATNIO STUDIOWANE: ile z notatki za mną ——— */
+.cenPoz.cenPozS{
+  display:grid; grid-template-columns:auto minmax(0, 1fr) auto;
+  align-items:center; column-gap:9px; row-gap:3px; padding:8px;
+}
+.cenPozS .cenPozIko{ grid-column:1; grid-row:1 / span 2; align-self:start; margin-top:1px; display:flex; }
+.cenPozS .cenPozIko .ic{ width:17px; height:17px; color:var(--sekK, var(--accent)); }
+.cenPozS .cenNazwa{ grid-column:2; grid-row:1; -webkit-line-clamp:2; }
+.cenPozS .cenOpis{ grid-column:2; grid-row:2; justify-self:start; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+.cenPozS .cenPozStrz{ grid-column:3; grid-row:1 / span 2; }
+.cenPozS .cenPasek{
+  grid-column:2; grid-row:3; align-self:center;
+  height:5px; border-radius:9px; background:var(--border); overflow:hidden;
+}
+.cenPozS .cenPasek i{ display:block; height:100%; border-radius:9px; background:var(--sekK, var(--accent)); }
+.cenPozS .cenPasekP{
+  grid-column:3; grid-row:3; align-self:center;
+  font-size:calc(10px * var(--uiw, 1)); color:var(--muted); font-variant-numeric:tabular-nums;
+}
+
+/* ——— OSTATNIO DODANE: data z przodu ——— */
+.cenPoz.cenPozD{
+  display:grid; grid-template-columns:auto minmax(0, 1fr) auto;
+  align-items:baseline; column-gap:10px; padding:8px;
+}
+.cenPozD .cenData{
+  font-size:calc(11.5px * var(--uiw, 1)); font-weight:700;
+  color:var(--sekK, var(--accent)); font-variant-numeric:tabular-nums; white-space:nowrap;
+}
+.cenPozD .cenNazwa{ -webkit-line-clamp:1; }
+
+/* ——— ULUBIONE PUBLIKACJE: okładki ———
+   Publikację rozpoznaje się po wyglądzie, nie po nazwie: „Strażnica styczeń
+   2020" i „Strażnica luty 2020" jako dwa wiersze tekstu wyglądają identycznie,
+   jako dwie okładki — nie. Kolor bierze się z symbolu publikacji, więc ta sama
+   publikacja ma zawsze ten sam. */
+.cenListaP{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:4px; }
+.cenPoz.cenPozP{
+  display:flex; flex-direction:column; align-items:center; gap:5px;
+  text-align:center; padding:9px 3px; margin:0;
+}
+/* ——— OKŁADKA JAKO BRYŁA (v2.66) ———
+   Cztery warstwy, bo tyle widać na książce obróconej lekko do widza. Kolejność
+   od tyłu: przednia okładka z gradientem bryłowym, blok kartek u góry, grzbiet
+   po prawej, biała etykieta z symbolem. Obrót to `rotateY` z perspektywą —
+   3 stopnie wystarczają, żeby grzbiet czytał się jako druga płaszczyzna,
+   a nie jako pasek namalowany na płasko. Więcej rozmywa etykietę. */
+.cenOkladka{
+  position:relative; flex:0 0 auto;
+  width:36px; height:46px; border-radius:2px 4px 4px 2px;
+  background:linear-gradient(140deg,
+    color-mix(in srgb, var(--ok) 82%, #fff) 0%,
+    var(--ok) 46%,
+    color-mix(in srgb, var(--ok) 68%, #000) 100%);
+  box-shadow:0 3px 7px rgba(0,0,0,.24), 0 1px 0 rgba(255,255,255,.25) inset;
+  transform:perspective(160px) rotateY(-4deg);
+}
+/* Blok kartek: jasny pasek u góry, wąski, nie dochodzi do grzbietu. */
+.cenOkladkaGora{
+  position:absolute; left:1.5px; right:6px; top:0; height:3px;
+  border-radius:2px 2px 0 0;
+  background:linear-gradient(180deg, #fff, #dcdcdc);
+}
+/* Grzbiet po PRAWEJ — tam jest, gdy patrzymy na przód książki obróconej
+   w lewo. Ciemniejszy od okładki, bo odwrócony od światła. */
+.cenOkladkaGrz{
+  position:absolute; right:0; top:0; bottom:0; width:6px;
+  border-radius:0 4px 4px 0;
+  background:linear-gradient(90deg,
+    color-mix(in srgb, var(--ok) 60%, #000),
+    color-mix(in srgb, var(--ok) 44%, #000));
+}
+/* Etykieta jest WĘŻSZA niż okładka i wyśrodkowana na przedniej płaszczyźnie —
+   naklejka, nie pasek na całą szerokość. Prawy margines większy od lewego, bo
+   po prawej stoi grzbiet. */
+.cenOkladkaEt{
+  position:absolute; left:5px; right:11px; top:27%;
+  height:22%; border-radius:1.5px;
+  display:flex; align-items:center; justify-content:center;
+  background:#fdfdfd; box-shadow:0 0 0 .5px rgba(0,0,0,.10);
+  font-size:7px; font-weight:700; letter-spacing:.01em; line-height:1;
+  color:color-mix(in srgb, var(--ok) 55%, #000);
+  overflow:hidden;
+}
+.cenPozP .cenNazwa{
+  flex:0 0 auto; font-size:calc(10.5px * var(--uiw, 1)); line-height:1.3;
+  -webkit-line-clamp:2;
+}
+.cenPozP .cenNazwa i{ display:block; font-style:normal; color:var(--muted); }
+.cenPozP .cenOpis{ font-size:calc(10px * var(--uiw, 1)); white-space:normal; }
+
+/* ——— NIŻSZY RZĄD ——— */
+.cenSiatkaM{
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(258px, 1fr));
+  gap:12px; margin:12px 0 0; align-items:start;
+}
+
+/* ——— TWOJE STUDIUM ——— */
+.cenStat{ margin:12px 0 0; }
+.cenStatTresc{
+  display:grid; grid-template-columns:minmax(0, 1.25fr) minmax(0, 1fr);
+  gap:10px; align-items:stretch;
+}
+.cenStat .cenKafel{ justify-content:center; }
+.cenKafelIko{ display:flex; margin:0 0 4px; }
+
+/* ——— CZTERY KOLORY, NIE JEDEN ———
+   Do 2.65 wszystkie cztery kafelki miały zieleń akcentu: cztery identyczne
+   płytki, na których jedyną różnicą był rysunek ikony wielkości 16 px. Kolor
+   jest tu szybszy od kształtu — po nim wzrok trafia w „wersety" bez czytania
+   podpisu. Każdy kafelek dostaje więc własny odcień, użyty w trzech miejscach:
+   ikona, jej podkładka (13 %) i tło kafelka (4 %). */
+:root{
+  --kaf-notatki:#0a5f3d; --kaf-wersety:#00578c;
+  --kaf-tematy:#c07a00;  --kaf-ulubione:#59239c;
+}
+html[data-theme="dark"]{
+  --kaf-notatki:#5fd0a0; --kaf-wersety:#6bb2ff;
+  --kaf-tematy:#e8a33d;  --kaf-ulubione:#b18cf0;
+}
+html[data-theme="sepia"]{
+  --kaf-notatki:#0a5233; --kaf-wersety:#0d4c78;
+  --kaf-tematy:#9c5a00;  --kaf-ulubione:#4c1f86;
+}
+.cenKafel[data-cstat="notatki"]{  --kafK:var(--kaf-notatki); }
+.cenKafel[data-cstat="wersety"]{  --kafK:var(--kaf-wersety); }
+.cenKafel[data-cstat="tematy"]{   --kafK:var(--kaf-tematy); }
+.cenKafel[data-cstat="ulubione"]{ --kafK:var(--kaf-ulubione); }
+.cenStat .cenKafel{
+  background:color-mix(in srgb, var(--kafK, var(--accent)) 5%, var(--panel));
+  border-color:color-mix(in srgb, var(--kafK, var(--accent)) 20%, var(--border));
+}
+.cenStat .cenKafelIle{ color:var(--kafK, var(--accent)); }
+.cenKafelIko .ic{
+  width:24px; height:24px; box-sizing:border-box; padding:4px; border-radius:7px;
+  color:var(--kafK, var(--accent));
+  background:color-mix(in srgb, var(--kafK, var(--accent)) 15%, transparent);
+}
+.cenWykres{
+  display:flex; flex-direction:column; gap:6px;
+  padding:10px 12px; border-radius:13px;
+  border:1px solid var(--border); background:var(--panel);
+}
+.cenWykresGl b{ font-size:calc(12.5px * var(--uiw, 1)); }
+/* Wykres wypełnia to, co zostaje po nagłówku i przełączniku — inaczej przy
+   wysokim panelu linia siedziała u góry pudełka, a pod nią zostawało 100 px
+   pustki. Rysunek rozciąga się w pionie razem z pudełkiem. */
+.cenWykresPlot{ flex:1 1 auto; min-height:0; display:flex; flex-direction:column; gap:4px; }
+.cenWykresRys{ display:block; width:100%; flex:1 1 auto; min-height:88px; color:var(--accent); }
+.cenWykresPole{ fill:currentColor; opacity:.13; }
+/* Rysunek rozciąga się na szerokość pola (preserveAspectRatio="none"), więc
+   grubość kreski musiałaby rozciągać się razem z nim. `non-scaling-stroke`
+   trzyma ją na 2,2 px niezależnie od tego, jak szeroka jest kolumna. */
+.cenWykresLinia{
+  fill:none; stroke:currentColor; stroke-width:2.2;
+  stroke-linejoin:round; stroke-linecap:round; vector-effect:non-scaling-stroke;
+}
+/* Kropki WYPEŁNIONE, nie obwódki. Pusty środek przy promieniu 2,6 px zostawia
+   na obwódkę pół piksela i punkt gubi się w linii — a punkty są tu jedyną
+   informacją o tym, że wykres jest dzienny, a nie ciągły. */
+.cenWykresKropki circle{ fill:currentColor; stroke:none; }
+.cenWykresOsie{
+  display:flex; align-items:baseline; justify-content:space-between; gap:8px;
+  font-size:calc(10px * var(--uiw, 1)); color:var(--muted);
+}
+.cenWykresMax{ text-align:center; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cenZakres{ display:flex; gap:4px; }
+.cenZakresB{
+  flex:1 1 auto; padding:5px 8px; border-radius:8px;
+  border:1px solid transparent; background:none; color:var(--muted);
+  font-size:calc(11px * var(--uiw, 1)); cursor:pointer;
+}
+.cenZakresB:hover{ background:var(--sel); }
+.cenZakresB.on{ background:var(--sel); border-color:var(--border); color:var(--accent); font-weight:700; }
+/* Kreska pod wybranym zakresem. Sama pigułka tła jest przy trzech pozycjach
+   obok siebie zbyt cicha — zwłaszcza w sepii, gdzie --sel niczym nie różni się
+   od tła karty. */
+.cenZakresB.on::after{
+  content:""; display:block; width:56%; height:2px; margin:3px auto 0;
+  border-radius:2px; background:color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.cenZakresB:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+
+/* ——— PASEK NA DOLE ——— */
+.cenStopka{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:12px; flex-wrap:wrap;
+  margin:14px 0 0; padding:12px 14px; border-radius:13px;
+  background:var(--sel); font-size:calc(12px * var(--uiw, 1)); color:var(--muted);
+}
+.cenStopkaL{ display:flex; align-items:center; gap:9px; min-width:0; }
+.cenStopkaL .ic{ width:15px; height:15px; flex:0 0 auto; color:var(--cenPilny); }
+.cenStopkaP{ flex:0 0 auto; display:flex; align-items:center; gap:7px; font-weight:700; color:var(--accent); }
+/* Serce WYPEŁNIONE i w zieleni, nie w czerwieni: czerwone serce w narzędziu do
+   studium czyta się jak „polubienie" z sieci społecznościowej. Ścieżka ikony
+   jest zamknięta, więc wystarczy zamienić kreskę na wypełnienie. */
+.cenStopkaP .ic{ width:15px; height:15px; flex:0 0 auto; fill:currentColor; stroke:none; }
+
+/* ——— TELEFON ———
+   Wąska kolumna: ilustracje ustępują treści (na 360 px zabierały jej połowę),
+   liczby i wykres idą jedno pod drugim. */
+@media (max-width:620px){
+  .cenGora{ grid-template-columns:1fr; }
+  .cenHero{ padding:14px; }
+  .cenHeroObraz{ width:34%; max-width:120px; min-width:0; opacity:.5; }
+  .cenHeroPas{ padding:13px 14px 12px; }
+  .cenHeroPas .cenHeroObraz{ width:70px; max-width:70px; right:10px; opacity:.75; }
+  .cenHeroDol{ padding:2px 14px 14px; }
+  .cenHeroTyt{ font-size:calc(19px * var(--uiw, 1)); }
+  .cenHeroKafle{ gap:6px; }
+  .cenStatTresc{ grid-template-columns:1fr; }
+  .cenSiatkaM{ grid-template-columns:1fr; }
+  /* Wiersze o własnym kształcie zostają siatką — reguła ogólna z v2.58
+     ustawia .cenPoz na kolumnę, co rozsypałoby pasek postępu i datę. */
+  .cenPoz.cenPozS, .cenPoz.cenPozD{ display:grid; }
+  .cenPozD .cenNazwa{ -webkit-line-clamp:2; }
+}
+
+
+/* ══════════════ IKONY I SKRÓTY (v2.65) ══════════════
+
+   Zestaw ikon jest od tego wydania JEDEN — wszystkie rysunki jadą ze zbioru
+   ICO w module 09, w tej samej siatce 24×24 i z tą samą grubością kreski.
+   Wcześniej ta sama rzecz miała różne rysunki w różnych miejscach: księga
+   w kolumnie Publikacje wyglądała inaczej niż księga w Centrum. */
+
+/* ——— STRZAŁKI ———
+   Były znakiem „›" z kroju pisma. Znak z kroju ma inną grubość niż wszystko
+   dookoła, inaczej wypada w motywie ciemnym i skacze przy zmianie czcionki
+   systemowej. Teraz to zwykła ikona, więc słucha tych samych reguł. */
+.cenPozStrz, .cenWiecejStrz, .cenHeroStrz{ display:flex; align-items:center; }
+.cenPozStrz .ic{ width:15px; height:15px; }
+.cenWiecejStrz .ic{ width:15px; height:15px; }
+.cenHeroStrz .ic{ width:16px; height:16px; }
+
+/* ——— SZEŚĆ SKRÓTÓW ———
+   Kafelek jest kwadratowy i podpisany, bo sama ikona nie mówi, dokąd prowadzi:
+   „cel ze strzałką" to powtórki tylko dla kogoś, kto już wie. Kolor niesie
+   rozpoznawanie, podpis niesie znaczenie — potrzebne są oba. */
+.cenSzybkie{
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(104px, 1fr));
+  gap:8px; margin:0 0 12px;
+}
+.cenSzyb{
+  display:flex; flex-direction:column; align-items:center; gap:7px;
+  padding:13px 6px 11px; cursor:pointer;
+  border:1px solid var(--border); border-radius:14px;
+  background:var(--panel); color:var(--text);
+  transition:transform var(--dur-szybko) var(--ease), box-shadow var(--dur-szybko) var(--ease);
+}
+.cenSzyb:hover{ box-shadow:var(--cien-2); }
+.cenSzyb:active{ transform:scale(.97); }
+.cenSzyb:focus-visible{ outline:2px solid var(--szK, var(--accent)); outline-offset:2px; }
+.cenSzybIko{
+  display:flex; align-items:center; justify-content:center;
+  width:40px; height:40px; border-radius:13px;
+  color:var(--szK, var(--accent));
+  background:color-mix(in srgb, var(--szK, var(--accent)) 14%, transparent);
+}
+.cenSzybIko .ic{ width:21px; height:21px; }
+.cenSzybTxt{
+  font-size:calc(11px * var(--uiw, 1)); font-weight:600; line-height:1.25;
+  text-align:center; overflow-wrap:anywhere;
+}
+.cenSzyb[data-cszyb="notatka"]{  --szK:var(--cenK-studiowane); }
+.cenSzyb[data-cszyb="biblia"]{   --szK:var(--cenK-wersety); }
+.cenSzyb[data-cszyb="powtorki"]{ --szK:var(--cenPilny); }
+.cenSzyb[data-cszyb="sync"]{     --szK:var(--cenK-dodane); }
+.cenSzyb[data-cszyb="ulubione"]{ --szK:var(--cenSerce); }
+.cenSzyb[data-cszyb="postepy"]{  --szK:var(--cenK-niedok); }
+:root{ --cenSerce:#c62828; }
+html[data-theme="dark"]{ --cenSerce:#ef6b6b; }
+html[data-theme="sepia"]{ --cenSerce:#a83232; }
+
+/* ——— PODŚWIETLENIE PO SKOKU ———
+   Kafelek „Postępy" przewija do podsumowania na dole. Sama zmiana przewinięcia
+   bywa niezauważalna, gdy karta i tak była częściowo widoczna, więc na moment
+   dostaje obwódkę. */
+.cenKarta.cenMrug{ animation:cenMrug 1.4s ease-out; }
+@keyframes cenMrug{ 0%,100%{ box-shadow:var(--cien-1) } 20%,55%{ box-shadow:0 0 0 3px var(--sekK, var(--accent)) } }
+@media (prefers-reduced-motion:reduce){
+  .cenKarta.cenMrug{ animation:none; box-shadow:0 0 0 3px var(--sekK, var(--accent)); }
+}
+
+@media (max-width:620px){
+  /* Trzy w rzędzie zamiast sześciu — przy 340 px sześć kafelków miałoby po
+     50 px i podpis „Synchronizacja" łamałby się na cztery wiersze. */
+  .cenSzybkie{ grid-template-columns:repeat(3, minmax(0, 1fr)); gap:6px; }
+  .cenSzyb{ padding:11px 4px 9px; }
+  .cenSzybIko{ width:36px; height:36px; border-radius:12px; }
+}
+
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -5475,7 +6098,7 @@ label.roz-opcja .roz-data:empty{ display:none; }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.62</span></div>
+      <div class="brand-name">JW Study <span class="ver">v2.67</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -5520,7 +6143,7 @@ label.roz-opcja .roz-data:empty{ display:none; }
   </div>
   <button class="btn ico-btn" id="btnBackup" title="Kopia zapasowa danych"></button>
   <button class="btn primary" id="btnNew"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> <span class="tb-txt">Nowa notatka</span></button>
-  <button class="btn" id="btnMenu"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.6v2.4M12 19v2.4M21.4 12H19M5 12H2.6M18.6 5.4l-1.7 1.7M7.1 16.9l-1.7 1.7M18.6 18.6l-1.7-1.7M7.1 7.1L5.4 5.4"/></svg> Plik</button>
+  <button class="btn" id="btnMenu"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 7.4A1.6 1.6 0 0 1 5.1 5.8h3.7l1.9 2.1h8.2a1.6 1.6 0 0 1 1.6 1.6v8.1a1.6 1.6 0 0 1-1.6 1.6H5.1a1.6 1.6 0 0 1-1.6-1.6z"/></svg> Plik</button>
 </header>
 
 <div id="mobileTabs">
@@ -8262,7 +8885,7 @@ function odswiezPodswietlenie(lista){
 function norm(s){ return (s||"").toLowerCase().replace(/\u0142/g,"l").normalize("NFD").replace(/[\u0300-\u036f]/g,""); }
 const _svg = p => `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
 const ICO = {
-  star:_svg('<path d="M12 4.2l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4-3.9-3.8 5.4-.8z"/>'),
+  star:_svg('<path d="M12 3.6l2.6 5.3 5.8.85-4.2 4.1 1 5.75L12 16.9l-5.2 2.7 1-5.75-4.2-4.1 5.8-.85z"/>'),
   ext:_svg('<path d="M14 4h6v6"/><path d="M20 4l-8.5 8.5"/><path d="M18 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h5"/>'),
   fs:_svg('<path d="M4 9V5a1 1 0 0 1 1-1h4"/><path d="M15 4h4a1 1 0 0 1 1 1v4"/><path d="M20 15v4a1 1 0 0 1-1 1h-4"/><path d="M9 20H5a1 1 0 0 1-1-1v-4"/>'),
   copy:_svg('<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>'),
@@ -8303,7 +8926,32 @@ const ICO = {
   dots:_svg('<circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/>'),
   doc:_svg('<path d="M6 3h8l4 4v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v4h4"/><path d="M9 12h6M9 16h4"/>'),
   printer:_svg('<path d="M6 9V4h12v5"/><path d="M6 17H4a1 1 0 0 1-1-1v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a1 1 0 0 1-1 1h-2"/><rect x="7" y="13" width="10" height="7" rx="1"/>'),
-  bookmark:_svg('<path d="M7 4h10a1 1 0 0 1 1 1v15l-6-4-6 4V5a1 1 0 0 1 1-1z"/>')
+  bookmark:_svg('<path d="M7 4h10a1 1 0 0 1 1 1v15l-6-4-6 4V5a1 1 0 0 1 1-1z"/>'),
+
+  /* ——— ZESTAW Z 2.65 ———
+     Do wydania 2.64 ikony powstawały tam, gdzie były akurat potrzebne: część
+     w tym zbiorze, część wprost w index.html, część w module Centrum. Te same
+     rzeczy miały przez to różne rysunki — księga w kolumnie Publikacje wyglądała
+     inaczej niż księga w Centrum. Wszystko nowe idzie już TYLKO tutaj, w jednej
+     siatce 24×24 i z tą samą grubością kreski. */
+  bookOpen:_svg('<path d="M12 7.2C10.2 5.6 7.7 4.9 5 5.1a1 1 0 0 0-1 1v11a1 1 0 0 0 1.1 1c2.5-.2 4.9.5 6.9 2 2-1.5 4.4-2.2 6.9-2a1 1 0 0 0 1.1-1v-11a1 1 0 0 0-1-1c-2.7-.2-5.2.5-7 2.1z"/><path d="M12 7.2V20"/>'),
+  books:_svg('<rect x="4.6" y="5" width="15" height="4.2" rx="1.3"/><rect x="3.4" y="10.4" width="17.2" height="4.2" rx="1.3"/><rect x="5.4" y="15.8" width="13.4" height="4.2" rx="1.3"/>'),
+  clock:_svg('<circle cx="12" cy="12" r="8.2"/><path d="M12 7.4V12l3.1 2"/>'),
+  chevron:_svg('<path d="M9.5 5.5L16 12l-6.5 6.5"/>'),
+  bars:_svg('<path d="M6 20V13.5M12 20V7M18 20v-9.5"/>'),
+  trend:_svg('<path d="M3.8 19.8h16.4"/><path d="M6.4 15.6 10.9 11l3 2.6 5.7-6.1"/><path d="M15.9 7.5h3.7v3.7"/>'),
+  /* Serce BEZ gałązki — o to prosił autor aplikacji wprost. */
+  heart:_svg('<path d="M12 20s-7.2-4.4-7.2-9.3A4.2 4.2 0 0 1 12 8.1a4.2 4.2 0 0 1 7.2 2.6c0 4.9-7.2 9.3-7.2 9.3z"/>'),
+  target:_svg('<circle cx="12" cy="12" r="8.2"/><circle cx="12" cy="12" r="4.4"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/>'),
+  /* Chmurka ze strzałkami w środku była przy 21 px plamą: na strzałki zostawały
+     cztery piksele wysokości. Pierścień z dwóch strzałek zajmuje całą kratkę
+     i czyta się nawet w miniaturze — a że plik uzgadniania leży w iCloud Drive
+     albo w Dysku Google, chmurka i tak nie mówiła nic ponad „gdzieś w sieci". */
+  cloudSync:_svg('<path d="M20.3 12.6a8.3 8.3 0 0 1-14 5.6"/><path d="M3.7 11.4a8.3 8.3 0 0 1 14-5.6"/><path d="M17.9 2.2v3.9h-3.9"/><path d="M6.1 21.8v-3.9H10"/>'),
+  notePen:_svg('<path d="M19 12.5V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h6.5"/><path d="M8.5 8.5h4M8.5 12.5h3"/><path d="M15.6 9.4 21 4a1.7 1.7 0 0 0-2.4-2.4l-5.4 5.4-.5 2.9z"/>'),
+  calendar:_svg('<rect x="3.5" y="5" width="17" height="15.5" rx="2.2"/><path d="M8 3v4M16 3v4M3.5 10h17"/>'),
+  check:_svg('<rect x="3.5" y="3.5" width="17" height="17" rx="3.4"/><path d="M8 12.4l2.7 2.7L16.2 9.6"/>'),
+  bulb:_svg('<path d="M9.5 18.2h5M10 21h4"/><path d="M12 3a6 6 0 0 1 3.5 10.9c-.6.4-.9 1-.9 1.7v.4H9.4v-.4c0-.7-.3-1.3-.9-1.7A6 6 0 0 1 12 3z"/>')
 };
 /* ——— karta notatki ———
    Budowa karty jest rozbita na cztery kawałki, żeby dało się je czytać osobno:
@@ -8818,7 +9466,15 @@ function stepFsFind(cont, dir, box){
 }
 /* ===== zapamiętane miejsce czytania ===== */
 const READPOS_KEY = KP+"ReadPos";
+/* ILE PRZECZYTANE — osobny zapis, obok miejsca czytania.
+   W ReadPos leży przewinięcie w pikselach i tak musi zostać: restoreReadPos()
+   ustawia dokładnie tę liczbę i zmiana kształtu zapisu zepsułaby powrót
+   w notatkach zapisanych wcześniej. Ułamek („ile z notatki za mną") wymaga
+   jeszcze wysokości treści, której w pikselach nie widać — więc jedzie
+   w drugim kluczu. Stara wersja aplikacji go nie zna i po prostu pomija. */
+const READFRAC_KEY = KP+"ReadFrac";
 function readPosAll(){ try{ return JSON.parse(localStorage.getItem(READPOS_KEY)||"{}"); }catch(e){ return {}; } }
+function readFracAll(){ try{ return JSON.parse(localStorage.getItem(READFRAC_KEY)||"{}"); }catch(e){ return {}; } }
 /**
  * Zapamiętuje miejsce czytania notatki. Zapis jest odroczony, bo przewijanie
  * potrafi wołać tę funkcję dziesiątki razy na sekundę.
@@ -8827,11 +9483,22 @@ function saveReadPos(){
   if(!fsGuid) return;
   const fm=$("modalFs").querySelector(".fsmodal"); if(!fm) return;
   const max=fm.scrollHeight-fm.clientHeight;
-  const all=readPosAll();
-  if(max>200 && fm.scrollTop>60) all[fsGuid]=Math.round(fm.scrollTop);
-  else delete all[fsGuid];
+  const all=readPosAll(), fr=readFracAll();
+  if(max>200 && fm.scrollTop>60){
+    all[fsGuid]=Math.round(fm.scrollTop);
+    fr[fsGuid]=Math.max(1, Math.min(100, Math.round(fm.scrollTop / max * 100)));
+  }else{
+    delete all[fsGuid];
+    /* Notatka przewinięta na sam dół nie ma już „miejsca, gdzie skończyłem",
+       ale ma wynik: przeczytana w całości. Kasowanie ułamka razem z pozycją
+       zabierałoby pasek postępu dokładnie tym notatkom, które są skończone. */
+    if(max>200 && fm.scrollTop>=max-8) fr[fsGuid]=100;
+    else delete fr[fsGuid];
+  }
   const keys=Object.keys(all); if(keys.length>60) delete all[keys[0]];
+  const kf=Object.keys(fr); if(kf.length>120) delete fr[kf[0]];
   lsSetSoon(READPOS_KEY, JSON.stringify(all), 400);   // przewijanie potrafi wołać to dziesiątki razy
+  lsSetSoon(READFRAC_KEY, JSON.stringify(fr), 400);
 }
 function restoreReadPos(g){
   const pos=readPosAll()[g]; if(!pos) return;
@@ -13558,12 +14225,13 @@ function openSettings(){
        <div class="st-lbl">Centrum studium na starcie</div>
        ${optionGroup("centrum", [["1","Pokazuj"],["0","Nie pokazuj"]],
                      (typeof centrWlaczone!=="undefined" && centrWlaczone) ? "1" : "0")}
-       <div class="st-hint">Po uruchomieniu kolumna notatek pokazuje podsumowanie: co jest
-         na dziś do powtórki, na czym skończyłeś, co niedokończone, ostatnio używane wersety
-         i publikacje. Pierwsze kliknięcie etykiety, księgi albo szukanie przełącza na zwykłą
-         listę. Do Centrum wracasz przyciskiem <b>domku</b> w pasku górnym albo klawiszem
-         <b>H</b>. Nic nie jest tu dodatkowo zliczane — wszystko liczy się z danych, które
-         notatki już mają.</div>
+       <div class="st-hint">Po uruchomieniu kolumna notatek pokazuje podsumowanie. U góry dwie
+         duże karty: <b>na czym skończyłeś</b> i <b>co masz dziś powtórzyć</b>. Niżej cztery karty
+         z powrotami do notatek — ostatnio studiowane, ostatnio dodane, używane wersety i ulubione
+         publikacje. Na dole <b>Twoje studium</b>: cztery liczby i wykres aktywności. Pierwsze
+         kliknięcie etykiety, księgi albo szukanie przełącza na zwykłą listę. Do Centrum wracasz
+         przyciskiem <b>domku</b> w pasku górnym albo klawiszem <b>H</b>. Nic nie jest tu
+         dodatkowo zliczane — wszystko liczy się z danych, które notatki już mają.</div>
      </div>
      <div class="st-sec">
        <div class="st-lbl">Układ listy notatek</div>
@@ -16142,9 +16810,6 @@ const A6_STOSUNEK = 1.4142;
 /* Kartka bierze jeszcze trzydzieści procent zapasu — w praniu okazała się
    odrobinę za mała, żeby wygodnie czytać. */
 const A6_ZAPAS = 1.3;
-/* O tyle wydobyta karteczka musi być większa od tej, która stała w rzędzie.
-   Poniżej tego progu „powiększenie" wygląda jak pomyłka. */
-const WYD_MIN_WZROST = 1.12;
 /* Poszerzenie względem czystej proporcji A6 (v2.56).
    Sama kartka A6 jest wąska: przy wysokości 667 px wychodziło 472 px szerokości,
    czyli wiersz tekstu na 470 px. Notatki ze studium mają zwykle jeden akapit
@@ -16184,25 +16849,25 @@ function rozmiarWydobycia(lista, maleRect){
   const maxSzer = Math.min(r.width - 16, ob.szer - 24);
   const maxWys  = Math.min(ob.wys - 40, r.height - rezerwa - oddech * 2);
 
-  let wys = Math.min(520 * A6_ZAPAS, Math.max(300 * A6_ZAPAS, ob.wys * 0.66 * A6_ZAPAS));
+  /* WYSOKOŚĆ BIERZE SIĘ Z OKNA, NIE Z MINIATURY.
+     Do 2.66 karta musiała być o 12 % większa od tej, która stała w rzędzie —
+     przez to jej rozmiar szedł za ustawieniem wielkości miniatur: przy „bardzo
+     dużych" okno do czytania rosło razem z nimi, a przy „bardzo małych" było
+     ciasne. A to ma być JEDNO okno do czytania, zawsze tak samo duże, bo tekst
+     w nim czyta się tak samo niezależnie od tego, jak wygląda siatka obok. */
+  let wys = Math.min(560 * A6_ZAPAS, Math.max(300 * A6_ZAPAS, ob.wys * 0.70 * A6_ZAPAS));
   wys = Math.min(wys, maxWys);
-  let szer = wys / A6_STOSUNEK * WYD_POSZERZENIE;
+  let szer = Math.min(wys / A6_STOSUNEK * WYD_POSZERZENIE, maxSzer);
 
-  /* Gwarancja wzrostu — najpierw wysokość, potem szerokość. */
-  if(maleRect){
-    const chcianaWys = maleRect.height * WYD_MIN_WZROST;
-    if(wys < chcianaWys){ wys = Math.min(chcianaWys, maxWys); szer = wys / A6_STOSUNEK * WYD_POSZERZENIE; }
-    const chcianaSzer = maleRect.width * WYD_MIN_WZROST;
-    if(szer < chcianaSzer) szer = chcianaSzer;
-  }
-
-  /* Na koniec mieścimy się w tym, co jest — a gdy i to nie starcza, zostaje
-     tyle, ile się da. Karteczka bywa wtedy równa tej z rzędu, ale nigdy mniejsza. */
-  szer = Math.min(szer, maxSzer);
-  wys  = Math.min(wys,  maxWys);
+  /* Jedyne, co bierzemy z miniatury: karta NIE MOŻE BYĆ OD NIEJ MNIEJSZA.
+     Przy trzech szerokich kolumnach sama kartka A6 wychodzi węższa od miniatury
+     i kliknięcie wyglądałoby jak pomniejszenie. */
   if(maleRect){
     szer = Math.max(szer, Math.min(maleRect.width,  maxSzer));
     wys  = Math.max(wys,  Math.min(maleRect.height, maxWys));
+    /* Gdy szerokość podniosła się od miniatury, wysokość idzie za nią — inaczej
+       kartka robi się przysadzista i przestaje wyglądać jak kartka. */
+    wys  = Math.min(maxWys, Math.max(wys, szer * 1.15));
   }
   return {szer:Math.round(szer), wys:Math.round(wys)};
 }
@@ -16327,6 +16992,7 @@ function schowajKarteczke(natychmiast){
   if(!_wydobyta) return;
   const {karta, podkladka} = _wydobyta;
   _wydobyta = null;
+  const lista = $("noteList");
   const r = podkladka.getBoundingClientRect();
   const rl = karta.offsetParent ? karta.offsetParent.getBoundingClientRect() : {top:0,left:0};
   rozbierzKarteczke(karta);       // oprawa znika od razu — ma nie jechać razem z kartą
@@ -16340,11 +17006,26 @@ function schowajKarteczke(natychmiast){
     }
   };
   if(natychmiast){ wroc(); return; }
-  /* Wracamy do miejsca, które przez cały czas trzymała podkładka. */
-  karta.style.top    = (r.top  - rl.top)  + "px";
-  karta.style.left   = (r.left - rl.left) + "px";
-  karta.style.width  = r.width  + "px";
-  karta.style.height = r.height + "px";
+
+  /* RUCH W OBIE STRONY. Klasa z przejściem jest zdejmowana po podniesieniu, więc
+     przy odkładaniu karta nie miała czego animować: skakała na miejsce od razu,
+     a program i tak czekał 260 ms przed sprzątaniem. Był czas ruchu, nie było
+     ruchu — i to właśnie widać było jako przeskok. Klasa wraca na czas powrotu,
+     a docelowe położenie ustawiamy w następnej klatce, żeby przeglądarka miała
+     od czego zacząć przejście. */
+  podkladka.classList.add("wydPodkladkaZnika");
+  karta.classList.add("wRuchuWydobycia");
+  /* Przewinięcie listy MUSI wejść do rachunku tak samo jak przy podnoszeniu —
+     karta jest ustawiana względem pola wypełnienia listy, a `getBoundingClientRect`
+     podkładki jest względem okna. Bez tego karta na przewiniętej liście wracała
+     w inne miejsce niż to, z którego wyszła. */
+  const przew = lista ? lista.scrollTop : 0;
+  requestAnimationFrame(()=>{
+    karta.style.top    = (r.top  - rl.top + przew) + "px";
+    karta.style.left   = (r.left - rl.left) + "px";
+    karta.style.width  = r.width  + "px";
+    karta.style.height = r.height + "px";
+  });
   setTimeout(wroc, WYD_CZAS);
 }
 
@@ -18594,6 +19275,22 @@ function centrPoDacie(pole){
     .filter(n=>n[pole])
     .sort((a, b)=>String(b[pole]).localeCompare(String(a[pole])));
 }
+/**
+ * Odmiana liczebnika: 1 notatka, 2 notatki, 5 notatek.
+ *
+ * Ta sama reguła siedzi w mapie tematów (mapaOdmiana), ale Centrum ma własną
+ * kopię z powodu KOLEJNOŚCI WCZYTYWANIA: mapa jedzie w module 56, Centrum
+ * w 52, a rysowanie Centrum rusza z `setTimeout(…, 0)` zaraz po module 52.
+ * Przeglądarka może wykonać taki licznik pomiędzy dwoma znacznikami <script>,
+ * więc funkcja z 56 bywa jeszcze nieznana — i naprawdę bywała: pierwsze
+ * rysowanie panelu leciało wtedy na „mapaOdmiana is not defined".
+ */
+function centrOdmiana(n, jeden, dwa, wiele){
+  const x = Math.abs(n) % 100, y = Math.abs(n) % 10;
+  if(x === 1) return jeden;
+  if(y >= 2 && y <= 4 && !(x >= 12 && x <= 14)) return dwa;
+  return wiele;
+}
 /** Ile dni temu — do podpisów w rodzaju „3 dni temu". */
 function centrKiedy(iso){
   if(!iso) return "";
@@ -18727,39 +19424,596 @@ function centrTytulNotatki(n){
   const c = (n.c || "").replace(/\s+/g, " ").trim();
   return c ? c.slice(0, 60) + (c.length > 60 ? "…" : "") : "(bez tytułu)";
 }
+/**
+ * DRUGA LINIA W WIERSZU: skąd ta notatka jest.
+ *
+ * Sam tytuł nie wystarcza do rozpoznania. „Pokora Dawida" i „Pokora
+ * w codziennym życiu" różnią się dopiero tym, że jedna wisi przy 1 Samuela 24,
+ * a druga przy Strażnicy. Bierzemy najwyżej dwie rzeczy — etykietę (z jej
+ * kolorem, tym samym co w kolumnie po lewej) i werset ALBO publikację. Więcej
+ * zamienia wiersz z powrotem w papkę, przed którą uciekamy.
+ */
+function centrSkadNotatka(n){
+  /* Każdy kawałek w osobnym spanie: druga linia ma zostać JEDNĄ linią.
+     Gdy części były gołym tekstem, „Ciekawostki · 1 Samuela 24:6" zawijało się
+     na dwa wiersze i wiersz notatki rósł z 52 do 72 px — czyli oszczędność
+     miejsca, po którą tu przyszliśmy, znikała. */
+  const czesci = [];
+  const t = (n.tg && n.tg.length) ? tags.find(x=>x.id === n.tg[0]) : null;
+  /* Tekst zawsze w osobnym <span class="cenCzT">. Goły tekst wewnątrz elementu
+     flex staje się „anonimowym elementem" — a do takiego przeglądarka nie
+     stosuje text-overflow, więc nazwa ucinała się w pół litery, bez wielokropka
+     („Poranne Wiell"). Własny span dostaje wielokropek jak należy. */
+  const kawalek = (tresc, kropka) => '<span class="cenCz">'
+    + (kropka ? '<span class="cenKropka" style="background:' + esc(kropka) + '"></span>' : '')
+    + '<span class="cenCzT">' + esc(tresc) + '</span></span>';
+  if(t) czesci.push(kawalek(t.name, t.color || "var(--accent2)"));
+  if(n.b && typeof BOOKS !== "undefined" && BOOKS[n.b])
+    czesci.push(kawalek(BOOKS[n.b] + (n.ch ? " " + n.ch + (n.v ? ":" + n.v : "") : ""), ""));
+  else if(n.pub) czesci.push(kawalek(String(n.pub), ""));
+  if(!czesci.length) return "";
+  return '<span class="cenMeta">' + czesci.join('<span class="cenSep">·</span>') + '</span>';
+}
 /** Wiersz z notatką — wszędzie ten sam, więc wszędzie klika się tak samo. */
-function centrWierszNotatki(n, opis){
-  return '<button type="button" class="cenPoz" data-cnota="' + esc(n.g) + '">'
+function centrWierszNotatki(n, opis, pilne){
+  return '<button type="button" class="cenPoz cenPozN" data-cnota="' + esc(n.g) + '">'
     + '<span class="cenNazwa">' + esc(centrTytulNotatki(n)) + '</span>'
-    + '<span class="cenOpis">' + esc(opis || "") + '</span>'
+    + '<span class="cenOpis' + (pilne ? " cenZal" : "") + '">' + esc(opis || "") + '</span>'
+    + centrSkadNotatka(n)
     + '</button>';
 }
-function centrSekcja(id, tytul, ikona, wiersze, dopisek){
+/**
+ * Karta sekcji.
+ *
+ * Kolejność w nagłówku jest ustalona i sprawdzana przez zestaw „centrum":
+ * PIERWSZY span to zawsze tytuł. Plakietka z liczbą i dopisek idą po nim.
+ */
+function centrSekcja(id, tytul, ikona, wiersze, opcje){
   if(!wiersze.length) return "";
+  const o = opcje || {};
   return '<section class="cenKarta" data-sek="' + id + '">'
+    /* Ikona zostaje GOŁA, bez opakowania w span. Pierwszy span w nagłówku musi
+       być tytułem — po tym rozpoznaje sekcje zestaw „centrum", a opakowanie
+       ikony przesunęłoby tytuł na drugie miejsce i wszystkie nazwy sekcji
+       zniknęłyby z pomiarów. Kafelek pod ikoną robi arkusz stylów. */
     + '<h3>' + ikona + '<span>' + esc(tytul) + '</span>'
-    + (dopisek ? '<span class="cenLicz">' + esc(dopisek) + '</span>' : '')
+    + (o.plakietka ? '<span class="cenPlak">' + esc(String(o.plakietka)) + '</span>' : '')
+    + (o.dopisek ? '<span class="cenLicz">' + esc(o.dopisek) + '</span>' : '')
     + '</h3>'
-    + '<div class="cenLista">' + wiersze.join("") + '</div>'
+    + '<div class="cenLista' + (o.klasa ? " " + o.klasa : "") + '">' + wiersze.join("") + '</div>'
+    /* Stopka karty. Sekcja pokazuje sześć pozycji — bez tego wyjścia sześć
+       wyglądało jak WSZYSTKO, co jest, a nie jak początek listy. */
+    + (o.wszystkie
+        ? '<button type="button" class="cenWiecej" data-cwszystkie="' + esc(o.wszystkie) + '">'
+          + '<span>Zobacz wszystkie</span><span class="cenWiecejStrz">' + CEN_IKO.strz + '</span></button>'
+        : '')
     + '</section>';
 }
 
-/* Ikony rysowane na miejscu — Centrum jest jedynym miejscem, gdzie występują. */
+/* ——— IKONY ———
+   Do 2.64 Centrum miało własne rysunki, bo „jest jedynym miejscem, gdzie
+   występują". Przestało to być prawdą, gdy te same rzeczy — księga, gwiazdka,
+   etykieta — zaczęły się pojawiać i tu, i na kartach notatek, i w oknach.
+   Dwa rysunki tej samej rzeczy to nie jest wybór stylu, tylko usterka, więc
+   od 2.65 Centrum bierze ikony ze wspólnego zbioru ICO (moduł 09).
+
+   Zbiór jest w module 09, a Centrum w 52 — czyli wcześniej, więc w chwili
+   rysowania na pewno już istnieje. Wolno tu na niego patrzeć, ale NIE wolno
+   liczyć na moduły o wyższym numerze (patrz centrOdmiana wyżej). */
 const CEN_IKO = {
-  dzis:  '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M8 3v3M16 3v3M3.5 10h17"/><path d="M9 14.5l2 2 4-4"/></svg>',
-  czyt:  '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v18H6.5A2.5 2.5 0 0 1 4 18.5z"/><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H13v18h4.5A2.5 2.5 0 0 0 20 18.5z"/></svg>',
-  nowe:  '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
-  zadan: '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg>',
-  wers:  '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4.5h9a3 3 0 0 1 3 3V20a2.5 2.5 0 0 0-2.5-2.5H4z"/><path d="M20 7v13"/></svg>',
-  pub:   '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5h9.5A2.5 2.5 0 0 1 18 6v14.5H8.5A2.5 2.5 0 0 1 6 18z"/><path d="M6 16.5h12"/></svg>',
-  szuk:  '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>'
+  dzis:   ICO.calendar,
+  czyt:   ICO.bookOpen,
+  nowe:   ICO.plus,
+  zadan:  ICO.check,
+  wers:   ICO.bookmark,
+  pub:    ICO.book,
+  szuk:   ICO.search,
+  nota:   ICO.doc,
+  /* Zegar, nie „odśwież": obok stoi budzik, a plakietka mówi o TERMINIE,
+     nie o odświeżaniu. Pierścień strzałek poszedł do uzgadniania. */
+  powt:   ICO.clock,
+  gwiazd: ICO.star,
+  etyk:   ICO.tag,
+  wykr:   ICO.bars,
+  zarow:  ICO.bulb,
+  strz:   ICO.chevron
 };
+
+/* ——— ILUSTRACJE ———
+   Rysowane w kodzie, nie wczytywane z sieci: aplikacja ma działać bez połączenia,
+   a dwa obrazki w PNG kosztowałyby więcej niż cały ten plik. Kolory biorą się
+   z `currentColor` i z półprzezroczystej bieli, więc te same kształty pasują do
+   motywu jasnego, ciemnego i sepii bez trzech osobnych wersji. */
+const CEN_ILU = {
+  /* BRYLA, NIE KONTUR.
+     Ksztalt buduje roznica walorow, a nie kreska — tak jak na rysunku
+     wzorcowym. Gradienty sa zbudowane z `currentColor` przy roznym kryciu,
+     wiec ilustracja nadal przyjmuje kolor karty i sama dopasowuje sie do
+     motywu ciemnego i sepii. Stale barwy sa wpisane tylko tam, gdzie material
+     jest materialem: papier jest bialy, a wstazka zlota, niezaleznie od motywu.
+     Wstazka ma wciecie w ksztalcie V i drugi odcinek opadajacy poza krawedz
+     ksiazki — to najbardziej rozpoznawalny detal calej ilustracji. */
+  ksiega: '<svg class="cenIlu" viewBox="0 0 200 150" fill="none" aria-hidden="true"><defs><linearGradient id="cenKsO" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="currentColor" stop-opacity=".92"/><stop offset="1" stop-color="currentColor" stop-opacity=".58"/></linearGradient><linearGradient id="cenKsL" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff"/><stop offset=".72" stop-color="#f5f7f5"/><stop offset="1" stop-color="#dde3de"/></linearGradient><linearGradient id="cenKsP" x1="1" y1="0" x2="0" y2="0"><stop offset="0" stop-color="#fff"/><stop offset=".72" stop-color="#f5f7f5"/><stop offset="1" stop-color="#dde3de"/></linearGradient><linearGradient id="cenKsW" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e8bd63"/><stop offset="1" stop-color="#c48f2c"/></linearGradient><radialGradient id="cenKsC" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="currentColor" stop-opacity=".26"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></radialGradient></defs><ellipse cx="100" cy="129" rx="80" ry="13" fill="url(#cenKsC)"/><path d="M100 50C82 38 58 34 37 36a6 6 0 0 0-5.5 6v64a6 6 0 0 0 6.5 6c19-1.6 43 2 62 13 19-11 43-14.6 62-13a6 6 0 0 0 6.5-6V42a6 6 0 0 0-5.5-6c-21-2-45 2-63 14z" fill="url(#cenKsO)"/><path d="M97 53C80 42 58 39 40 40.6a3.4 3.4 0 0 0-3.2 3.4v58a3.4 3.4 0 0 0 3.7 3.4C58 103.8 80 107 97 117z" fill="#cfd6d0"/><path d="M103 53c17-11 39-14 57-12.4a3.4 3.4 0 0 1 3.2 3.4v58a3.4 3.4 0 0 1-3.7 3.4C142 103.8 120 107 103 117z" fill="#cfd6d0"/><path d="M97 50C80 39 58 36 40 37.6a3.4 3.4 0 0 0-3.2 3.4v58a3.4 3.4 0 0 0 3.7 3.4C58 100.8 80 104 97 114z" fill="url(#cenKsL)"/><path d="M103 50c17-11 39-14 57-12.4a3.4 3.4 0 0 1 3.2 3.4v58a3.4 3.4 0 0 1-3.7 3.4C142 100.8 120 104 103 114z" fill="url(#cenKsP)"/><path d="M100 55c-2 20-2 40 0 60" stroke="#b6bfb8" stroke-opacity=".45" stroke-width="4" stroke-linecap="round"/><g stroke="#c3cbc5" stroke-opacity=".55" stroke-width="2" stroke-linecap="round"><path d="M52 60h34M52 70h34M52 80h34M52 90h27"/><path d="M114 60h24M114 70h24M114 80h24M114 90h19"/></g><path d="M143 40h11v52l-5.5-7-5.5 7z" fill="url(#cenKsW)"/></svg>',
+  budzik: '<svg class="cenIlu" viewBox="0 0 150 150" fill="none" aria-hidden="true"><defs><linearGradient id="cenBuK" x1=".2" y1="0" x2=".8" y2="1"><stop offset="0" stop-color="currentColor" stop-opacity=".78"/><stop offset="1" stop-color="currentColor" stop-opacity=".45"/></linearGradient><linearGradient id="cenBuD" x1=".3" y1="0" x2=".7" y2="1"><stop offset="0" stop-color="currentColor" stop-opacity=".62"/><stop offset="1" stop-color="currentColor" stop-opacity=".38"/></linearGradient><radialGradient id="cenBuT" cx=".4" cy=".34" r=".72"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#f1ece0"/></radialGradient><radialGradient id="cenBuC" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="currentColor" stop-opacity=".28"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></radialGradient></defs><ellipse cx="68" cy="133" rx="52" ry="9" fill="url(#cenBuC)"/><path d="M50 118 42 134M100 118l8 16" stroke="currentColor" stroke-opacity=".5" stroke-width="9" stroke-linecap="round"/><ellipse cx="30" cy="27" rx="15" ry="13" transform="rotate(-22 30 27)" fill="url(#cenBuD)"/><ellipse cx="120" cy="27" rx="15" ry="13" transform="rotate(22 120 27)" fill="url(#cenBuD)"/><ellipse cx="26" cy="22" rx="6" ry="4" transform="rotate(-22 26 22)" fill="#fff" fill-opacity=".35"/><ellipse cx="116" cy="22" rx="6" ry="4" transform="rotate(22 116 22)" fill="#fff" fill-opacity=".35"/><rect x="70" y="14" width="10" height="9" rx="4" fill="url(#cenBuD)"/><circle cx="75" cy="76" r="47" fill="url(#cenBuK)"/><circle cx="75" cy="76" r="39" fill="url(#cenBuT)"/><circle cx="75" cy="76" r="39" stroke="currentColor" stroke-opacity=".18" stroke-width="1.5"/><g stroke="currentColor" stroke-opacity=".55" stroke-width="2.6" stroke-linecap="round">M75.0 46.5L75.0 40.5M91.0 48.3L92.8 45.3M102.7 60.0L105.7 58.2M104.5 76.0L110.5 76.0M102.7 92.0L105.7 93.8M91.0 103.7L92.8 106.7M75.0 105.5L75.0 111.5M59.0 103.7L57.3 106.7M47.3 92.0L44.3 93.8M45.5 76.0L39.5 76.0M47.3 60.0L44.3 58.2M59.0 48.3L57.2 45.3</g><path d="M75 76V50" stroke="currentColor" stroke-opacity=".85" stroke-width="4.6" stroke-linecap="round"/><path d="M75 76l15 10" stroke="currentColor" stroke-opacity=".85" stroke-width="4.6" stroke-linecap="round"/><circle cx="75" cy="76" r="4.2" fill="currentColor" fill-opacity=".85"/></svg>'
+};
+
+/* ════════════════════════════════════════════════════════════════════════
+   DWIE DUŻE KARTY U GÓRY
+
+   Panel odpowiada na dwa pytania, które zadaje się po włączeniu aplikacji:
+   „na czym skończyłem" i „co mam dziś powtórzyć". Do wydania 2.63 obie
+   odpowiedzi leżały w tym samym szeregu co „ostatnie wyszukiwania" — czyli
+   rzecz, po którą się przyszło, miała ten sam głos co rzecz, która wpadła po
+   drodze. Teraz mają własne miejsce, własny kolor i własny przycisk.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/** „Wczoraj o 18:42" — przy ostatnim studium liczy się też pora dnia. */
+function centrKiedyGodz(iso){
+  const kiedy = centrKiedy(iso);
+  if(!kiedy) return "";
+  const d = new Date(iso);
+  if(isNaN(d) || (kiedy !== "dziś" && kiedy !== "wczoraj")) return kiedy;
+  const dwie = (x)=>String(x).padStart(2, "0");
+  return kiedy + " o " + dwie(d.getHours()) + ":" + dwie(d.getMinutes());
+}
+
+/**
+ * OTOCZENIE OSTATNIEJ NOTATKI — czym właściwie było to studium.
+ *
+ * Sama nazwa notatki nie mówi, do czego się wraca. Etykieta, przy której
+ * wisi, ma zwykle jeszcze kilkanaście innych notatek i kilka wersetów — i to
+ * dopiero jest „studium", a nie pojedyncza kartka.
+ */
+function centrKontekstStudium(n){
+  const t = (n.tg && n.tg.length) ? tags.find(x=>x.id === n.tg[0]) : null;
+  let ile = 0;
+  const wers = new Set();
+  if(t) for(const x of notes){
+    if(x.del || !x.tg || x.tg.indexOf(t.id) < 0) continue;
+    ile++;
+    if(x.b && x.ch) wers.add(x.b + ":" + x.ch + ":" + (x.v || 0));
+  }
+  let pubNazwa = "", pubWyd = "";
+  if(n.ks && typeof pubFullName === "function"){
+    pubNazwa = pubFullName(n.ks);
+    if(n.itn && typeof issueLabel === "function") pubWyd = issueLabel(n.itn);
+  }else if(n.pub){ pubNazwa = String(n.pub); }
+  else if(n.b && typeof BOOKS !== "undefined" && BOOKS[n.b]){
+    pubNazwa = BOOKS[n.b]; pubWyd = n.ch ? String(n.ch) : "";
+  }
+  return {tag:t, ile, wersetow:wers.size, pubNazwa, pubWyd};
+}
+
+function centrHeroKafel(iko, glowne, pod, male){
+  return '<span class="cenHeroKafel">' + iko
+    + '<span class="cenHeroKafelTxt">'
+    + '<b' + (male ? ' class="male"' : '') + '>' + esc(glowne) + '</b>'
+    + '<i>' + esc(pod || "") + '</i></span></span>';
+}
+
+/** LEWA KARTA: wróć tam, gdzie skończyłeś. */
+function centrHeroStudium(kont){
+  if(!kont) return "";
+  const n = kont.n;
+  const k = centrKontekstStudium(n);
+  const kafle = [];
+  if(k.ile) kafle.push(centrHeroKafel(CEN_IKO.nota, String(k.ile),
+    centrOdmiana(k.ile, "notatka", "notatki", "notatek")));
+  if(k.wersetow) kafle.push(centrHeroKafel(CEN_IKO.wers, String(k.wersetow),
+    centrOdmiana(k.wersetow, "werset", "wersety", "wersetów")));
+  if(k.pubNazwa) kafle.push(centrHeroKafel(CEN_IKO.pub, k.pubNazwa, k.pubWyd, true));
+
+  return '<section class="cenHero cenHeroStud">'
+    + '<div class="cenHeroTresc">'
+    + '<span class="cenChip">' + CEN_IKO.dzis + '<span>Dzisiejsze studium</span></span>'
+    + '<h2 class="cenHeroTyt">Kontynuuj ostatnie studium</h2>'
+    + '<p class="cenHeroPod">' + esc(k.tag ? k.tag.name : centrTytulNotatki(n)) + '</p>'
+    + '<p class="cenHeroMal">Ostatnio studiowane: ' + esc(centrKiedyGodz(n.la) || "niedawno")
+    + (kont.wMiejscu ? " · wrócisz tam, gdzie skończyłeś" : "") + '</p>'
+    + (kafle.length ? '<div class="cenHeroKafle">' + kafle.join("") + '</div>' : '')
+    + '<button type="button" class="cenHeroBtn" data-cnota="' + esc(n.g) + '">'
+    + '<span>Otwórz studium</span><span class="cenHeroStrz">' + CEN_IKO.strz + '</span></button>'
+    + '</div>'
+    + '<div class="cenHeroObraz">' + CEN_ILU.ksiega + '</div>'
+    + '</section>';
+}
+
+/** PRAWA KARTA: powtórki na dziś. */
+function centrHeroPowtorki(dzis){
+  const dzien = (typeof dzisRRMMDD === "function") ? dzisRRMMDD()
+              : new Date().toISOString().slice(0, 10);
+  const ileDni = (d)=>Math.round((Date.parse(dzien) - Date.parse(d)) / 86400000);
+  let srodek, dol;
+
+  if(dzis.length){
+    srodek = '<div class="cenHeroLicz"><b>' + dzis.length + '</b><span>'
+      + esc(centrOdmiana(dzis.length, "notatka", "notatki", "notatek")) + '</span></div>';
+    dol = '<div class="cenPowtLista">'
+      + dzis.slice(0, 3).map(n=>{
+          const ile = ileDni(String(n.pwt.d));
+          const kiedy = (isFinite(ile) && ile > 0)
+            ? ile + " " + centrOdmiana(ile, "dzień", "dni", "dni") + " temu" : "na dziś";
+          return '<button type="button" class="cenPowtPoz" data-cnota="' + esc(n.g) + '">'
+            + '<span class="cenPowtNazwa">' + esc(centrTytulNotatki(n)) + '</span>'
+            + '<span class="cenPowtKiedy' + (ile > 0 ? " zal" : "") + '">' + esc(kiedy) + '</span>'
+            + '</button>';
+        }).join("")
+      + '</div>'
+      + '<button type="button" class="cenHeroBtn cenHeroBtnP" data-cakcja="powtorki">'
+      + '<span>Rozpocznij powtórki</span><span class="cenHeroStrz">' + CEN_IKO.strz + '</span></button>';
+  }else{
+    /* Zero powtórek to dobra wiadomość, więc nie pokazujemy wielkiego zera —
+       zero wygląda jak zaległość, a jest jej brakiem. */
+    const przyszle = centrZywe().filter(n=>n.pwt && n.pwt.d && String(n.pwt.d) > dzien)
+      .sort((a, b)=>String(a.pwt.d).localeCompare(String(b.pwt.d)));
+    const za = przyszle.length ? -ileDni(String(przyszle[0].pwt.d)) : 0;
+    srodek = '<div class="cenHeroLicz cenHeroLiczOk"><b>✓</b><span>nic na dziś</span></div>';
+    dol = '<p class="cenHeroMal">' + (przyszle.length
+      ? "Najbliższa powtórka za " + za + " " + esc(centrOdmiana(za, "dzień", "dni", "dni"))
+        + ": " + esc(centrTytulNotatki(przyszle[0]))
+      : "Powtórkę ustawia się w notatce: ⋯ → Powróć do tego za…") + '</p>';
+  }
+
+  /* Karta powtórek dzieli się na dwa piętra: kolorowy pas z liczbą i budzikiem,
+     pod nim spokojna lista. Gdy budzik leżał na całej karcie, wchodził na
+     pierwszy wiersz listy i zasłaniał „6 dni temu" — czyli akurat to, po co
+     ta lista jest. Pas zamyka rysunek w miejscu, gdzie nie ma tekstu. */
+  return '<section class="cenHero cenHeroPowt">'
+    + '<div class="cenHeroTresc">'
+    + '<div class="cenHeroPas">'
+    + '<span class="cenChip">' + CEN_IKO.powt + '<span>Do powtórki dziś</span></span>'
+    + srodek
+    + '<div class="cenHeroObraz">' + CEN_ILU.budzik + '</div>'
+    + '</div>'
+    + '<div class="cenHeroDol">' + dol + '</div>'
+    + '</div>'
+    + '</section>';
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   TWOJE STUDIUM — CZTERY LICZBY I WYKRES
+
+   Liczby liczą się z notatek przy każdym rysowaniu, jednym przebiegiem.
+   Nic nie jest zapisywane „od teraz": ktoś, kto wgrał osiem tysięcy notatek
+   z JW Library, ma pełną statystykę od pierwszego uruchomienia.
+   ════════════════════════════════════════════════════════════════════════ */
+
+const CENTR_ZAKRES_KLUCZ = KP + "CentrumZakres";
+const CENTR_ZAKRESY = [7, 30, 90];
+
+/**
+ * Cztery liczby razem z przyrostem z ostatniego tygodnia — wszystko jednym
+ * przebiegiem po notatkach, bo przy ośmiu tysiącach cztery osobne przebiegi
+ * to cztery razy ta sama praca.
+ *
+ * „+3 w tym tygodniu" przy wersetach znaczy: tyle wersetów pojawiło się
+ * w notatkach z tego tygodnia, a NIE występowało w żadnej starszej. Inaczej
+ * przyrost pokazywałby powroty do wersetów, które są w bazie od lat.
+ */
+function centrStatystyki(){
+  const tydzien = Date.now() - 7 * 86400000;
+  const wersStare = new Set(), wersNowe = new Set();
+  const tagStare = new Set(), tagNowe = new Set();
+  let notatek = 0, notatekNowych = 0, ulubione = 0, ulubioneNowe = 0;
+  for(const n of notes){
+    if(n.del) continue;
+    notatek++;
+    const cr = Date.parse(n.cr || "");
+    const swieza = isFinite(cr) && cr >= tydzien;
+    if(swieza) notatekNowych++;
+    if(n.fav){ ulubione++; if(swieza) ulubioneNowe++; }
+    if(n.b && n.ch) (swieza ? wersNowe : wersStare).add(n.b + ":" + n.ch + ":" + (n.v || 0));
+    if(n.tg) for(const id of n.tg) (swieza ? tagNowe : tagStare).add(id);
+  }
+  let wersDelta = 0;
+  wersNowe.forEach(w=>{ if(!wersStare.has(w)) wersDelta++; });
+  let tagDelta = 0;
+  tagNowe.forEach(id=>{ if(!tagStare.has(id)) tagDelta++; });
+  return {
+    notatek, notatekNowych,
+    wersetow:wersStare.size + wersDelta, wersDelta,
+    tematow:tags.length, tagDelta,
+    ulubione, ulubioneNowe
+  };
+}
+
+/**
+ * AKTYWNOŚĆ DZIEŃ PO DNIU: ile notatek danego dnia doszło albo było zmienionych.
+ *
+ * Same „dodane" pokazywałyby dzień spędzony na poprawianiu starych notatek
+ * jako dzień pusty — a to najczęstszy rodzaj studium po pierwszym roku.
+ * Notatka dodana i zmieniona tego samego dnia liczy się raz.
+ */
+function centrAktywnosc(dni){
+  const kubelki = new Array(dni).fill(0);
+  const t = new Date();
+  const baza = new Date(t.getFullYear(), t.getMonth(), t.getDate()).getTime();
+  const gdzie = (iso)=>{
+    const ms = Date.parse(iso || "");
+    if(!isFinite(ms)) return -1;
+    const d = new Date(ms);
+    const doba = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    const wstecz = Math.round((baza - doba) / 86400000);
+    return (wstecz >= 0 && wstecz < dni) ? (dni - 1 - wstecz) : -1;
+  };
+  for(const n of notes){
+    if(n.del) continue;
+    const a = gdzie(n.cr);
+    if(a >= 0) kubelki[a]++;
+    const b = gdzie(n.mo);
+    if(b >= 0 && b !== a) kubelki[b]++;
+  }
+  return kubelki;
+}
+
+function centrDataKrotka(przesun){
+  const t = new Date();
+  const d = new Date(t.getFullYear(), t.getMonth(), t.getDate() - przesun);
+  return d.getDate() + "." + String(d.getMonth() + 1).padStart(2, "0");
+}
+
+/** Sam rysunek — osobno, bo przełącznik 7/30/90 odświeża tylko jego. */
+function centrWykresRys(dni){
+  const dane = centrAktywnosc(dni);
+  const max = Math.max(1, ...dane);
+  const W = 320, H = 96, mX = 6, mY = 10;
+  const x = (i)=>mX + (dane.length === 1 ? (W - 2 * mX) / 2 : i * (W - 2 * mX) / (dane.length - 1));
+  const y = (v)=>mY + (H - 2 * mY) * (1 - v / max);
+  const punkty = dane.map((v, i)=>x(i).toFixed(1) + "," + y(v).toFixed(1));
+  const obszar = "M" + x(0).toFixed(1) + "," + (H - mY).toFixed(1)
+    + "L" + punkty.join("L") + "L" + x(dane.length - 1).toFixed(1) + "," + (H - mY).toFixed(1) + "Z";
+  /* Kropki tylko przy krótkich zakresach: dziewięćdziesiąt kółek na 320 px
+     zlewa się w pasek i zamiast pokazywać dni, zamazuje linię. */
+  const kropki = dni <= 30
+    ? dane.map((v, i)=>'<circle cx="' + x(i).toFixed(1) + '" cy="' + y(v).toFixed(1)
+        + '" r="2.6"><title>' + centrDataKrotka(dane.length - 1 - i) + ": " + v + " "
+        + centrOdmiana(v, "notatka", "notatki", "notatek") + '</title></circle>').join("")
+    : "";
+  const suma = dane.reduce((a, b)=>a + b, 0);
+  return '<svg class="cenWykresRys" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none"'
+    + ' role="img" aria-label="Aktywność z ostatnich ' + dni + ' dni: razem ' + suma
+    + ' notatek, najwięcej ' + max + ' jednego dnia">'
+    + '<path class="cenWykresPole" d="' + obszar + '"/>'
+    + '<polyline class="cenWykresLinia" points="' + punkty.join(" ") + '"/>'
+    + '<g class="cenWykresKropki">' + kropki + '</g>'
+    + '</svg>'
+    + '<div class="cenWykresOsie"><span>' + esc(centrDataKrotka(dni - 1)) + '</span>'
+    + '<span class="cenWykresMax">najwięcej ' + max + ' dziennie · razem ' + suma + '</span>'
+    + '<span>dziś</span></div>';
+}
+
+function centrWykres(){
+  let dni = parseInt(lsGet(CENTR_ZAKRES_KLUCZ, "30"), 10);
+  if(CENTR_ZAKRESY.indexOf(dni) < 0) dni = 30;
+  return '<div class="cenWykres" id="cenWykres">'
+    + '<div class="cenWykresGl"><b>Twoja aktywność</b></div>'
+    + '<div class="cenWykresPlot">' + centrWykresRys(dni) + '</div>'
+    + '<div class="cenZakres">' + CENTR_ZAKRESY.map(d=>
+        '<button type="button" class="cenZakresB' + (d === dni ? " on" : "") + '" data-czakres="'
+        + d + '">' + d + ' dni</button>').join("") + '</div>'
+    + '</div>';
+}
+
+function centrStatKafel(id, iko, ile, tyt, delta){
+  return '<button type="button" class="cenKafel" data-cstat="' + id + '">'
+    + '<span class="cenKafelIko">' + iko + '</span>'
+    + '<span class="cenKafelIle">' + ile + '</span>'
+    + '<span class="cenKafelTyt">' + esc(tyt) + '</span>'
+    + '<span class="cenKafelOpis">' + (delta > 0 ? "+" + delta + " w tym tygodniu" : "bez zmian") + '</span>'
+    + '</button>';
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   PASEK SZYBKICH DZIAŁAŃ
+
+   Sześć rzeczy, które robi się najczęściej, a do których dotąd trzeba było
+   wiedzieć, gdzie iść: nowa notatka siedzi w pasku górnym, ulubione pod
+   szybkim filtrem w kolumnie etykiet, uzgadnianie w Ustawieniach, postępy
+   na samym dole panelu. Każdy kafelek prowadzi TAM, GDZIE TA RZECZ SIĘ DZIEJE
+   — żaden nie jest ozdobą ani drugą drogą do tego samego okna.
+   ════════════════════════════════════════════════════════════════════════ */
+const CENTR_SZYBKIE = [
+  {id:"notatka",  iko:"notePen",   napis:"Szybka notatka"},
+  {id:"biblia",   iko:"books",     napis:"Studium biblijne"},
+  {id:"powtorki", iko:"target",    napis:"Powtórki"},
+  {id:"sync",     iko:"cloudSync", napis:"Synchronizacja"},
+  {id:"ulubione", iko:"heart",     napis:"Ulubione"},
+  {id:"postepy",  iko:"trend",     napis:"Postępy"}
+];
+function centrSzybkie(){
+  return '<div class="cenSzybkie">' + CENTR_SZYBKIE.map(k=>
+    '<button type="button" class="cenSzyb" data-cszyb="' + k.id + '">'
+    + '<span class="cenSzybIko">' + ICO[k.iko] + '</span>'
+    + '<span class="cenSzybTxt">' + esc(k.napis) + '</span>'
+    + '</button>').join("") + '</div>';
+}
+
+/**
+ * Dokąd prowadzi kafelek. Wydzielone z obsługi kliknięć, bo to jest cała
+ * treść tej funkcji — reszta to tylko znalezienie, w co kliknięto.
+ */
+function centrSzybkieDzialanie(co){
+  const naListe = ()=>{
+    centrumSchowaj();
+    if(innerWidth <= 900 && typeof mobileShow === "function") mobileShow("colNotes");
+  };
+  if(co === "notatka"){ const b = $("btnNew"); if(b) b.click(); return; }
+  if(co === "biblia"){
+    if(typeof quickFilter !== "undefined") quickFilter = "all";
+    if(typeof sortMode !== "undefined"){
+      sortMode = "bible";
+      const sel = $("sortSel");
+      if(sel && [...sel.options].some(o=>o.value === "bible")){ sel.value = "bible"; lsSet(KP + "Sort", "bible"); }
+    }
+    centrumSchowaj();
+    /* Na telefonie kolumny są jedna na raz, więc „studium biblijne" musi
+       pokazać KSIĘGI, a nie listę notatek posortowaną biblijnie — inaczej
+       kafelek wyglądałby, jakby nic nie zrobił. */
+    if(innerWidth <= 900 && typeof mobileShow === "function") mobileShow("colBooks");
+    return;
+  }
+  if(co === "powtorki"){
+    if(typeof quickFilter !== "undefined") quickFilter = "powtorka";
+    naListe(); return;
+  }
+  if(co === "ulubione"){
+    if(typeof quickFilter !== "undefined") quickFilter = "fav";
+    naListe(); return;
+  }
+  if(co === "sync"){
+    /* Gdy plik uzgadniania jest wskazany — uzgadniamy od razu. Gdy nie ma go
+       jeszcze wcale, sam komunikat „wskaż plik w Ustawieniach" byłby ślepym
+       zaułkiem, więc otwieramy te Ustawienia. */
+    if(typeof syncUchwyt === "function" && typeof syncTeraz === "function"){
+      syncUchwyt().then(u=>{
+        if(u) syncTeraz("ręcznie");
+        else if(typeof openSettings === "function") openSettings();
+      }).catch(()=>{ if(typeof openSettings === "function") openSettings(); });
+    }else if(typeof openSettings === "function") openSettings();
+    return;
+  }
+  if(co === "postepy"){
+    const cel = $("centrum") && $("centrum").querySelector('.cenKarta[data-sek="statystyki"]');
+    if(cel){
+      cel.scrollIntoView({block:"nearest", behavior:"smooth"});
+      cel.classList.remove("cenMrug");
+      void cel.offsetWidth;
+      cel.classList.add("cenMrug");
+      setTimeout(()=>cel.classList.remove("cenMrug"), 1400);
+    }
+  }
+}
+
+function centrTwojeStudium(){
+  const s = centrStatystyki();
+  /* Ta sama klasa co karty sekcji — nagłówek, ramka, pasek koloru u góry
+     i zachowanie na telefonie mają być te same, więc nie ma po co pisać ich
+     drugi raz. `cenStat` dokłada tylko własny środek. */
+  return '<section class="cenKarta cenStat" data-sek="statystyki">'
+    + '<h3>' + CEN_IKO.wykr + '<span>Twoje studium</span></h3>'
+    + '<div class="cenStatTresc">'
+    + '<div class="cenStatKafle">'
+    + centrStatKafel("notatki", CEN_IKO.nota, s.notatek,
+        centrOdmiana(s.notatek, "notatka", "notatki", "notatek"), s.notatekNowych)
+    /* Otwarta ksiega, nie zakladka: zakladka zostaje sekcji „Ostatnio uzywane
+       wersety", zeby dwie rozne rzeczy nie mialy tego samego rysunku. */
+    + centrStatKafel("wersety", CEN_IKO.czyt, s.wersetow,
+        centrOdmiana(s.wersetow, "werset", "wersety", "wersetów"), s.wersDelta)
+    + centrStatKafel("tematy", CEN_IKO.etyk, s.tematow,
+        centrOdmiana(s.tematow, "temat", "tematy", "tematów"), s.tagDelta)
+    + centrStatKafel("ulubione", CEN_IKO.gwiazd, s.ulubione,
+        centrOdmiana(s.ulubione, "ulubiona", "ulubione", "ulubionych"), s.ulubioneNowe)
+    + '</div>'
+    + centrWykres()
+    + '</div></section>';
+}
+
+/**
+ * PASEK NA DOLE.
+ *
+ * Świadomie NIE cytuje tu Pisma. Aplikacja nie ma w sobie tekstu biblijnego —
+ * ma tylko nazwy ksiąg — więc każdy „werset" w tym miejscu byłby wpisany
+ * z pamięci, a wpisany z pamięci werset w narzędziu do studium to ostatnia
+ * rzecz, jakiej ktokolwiek tu potrzebuje. Zamiast tego krótkie zdanie
+ * o samym studiowaniu, zmieniane co dzień.
+ */
+const CENTR_ZDANIA = [
+  "Krótkie i regularne studium zostawia więcej niż długie i rzadkie.",
+  "Notatka zapisana dziś jest warta więcej niż doskonała notatka za tydzień.",
+  "Powtórka po kilku dniach utrwala więcej niż ponowne czytanie tego samego.",
+  "Własnymi słowami zapamiętuje się lepiej niż cudzymi.",
+  "Jedno dobrze zrozumiane zagadnienie znaczy więcej niż dziesięć przejrzanych.",
+  "Warto zapisać pytanie, nawet gdy odpowiedź przyjdzie później.",
+  "Studium bez notatek ulatuje szybciej, niż się wydaje."
+];
+function centrStopka(){
+  const t = new Date();
+  const dzien = Math.floor((t - new Date(t.getFullYear(), 0, 0)) / 86400000);
+  return '<div class="cenStopka">'
+    + '<span class="cenStopkaL">' + CEN_IKO.zarow
+    + '<span>' + esc(CENTR_ZDANIA[dzien % CENTR_ZDANIA.length]) + '</span></span>'
+    + '<span class="cenStopkaP">' + ICO.heart + '<span>Miłego studium!</span></span>'
+    + '</div>';
+}
+
+/* ——— WIERSZE O WŁASNYM KSZTAŁCIE ———
+   Trzy sekcje pokazują co innego niż samą nazwę, więc mają własne wiersze.
+   Wszystkie zostają przy klasie `.cenPoz`: po niej liczy się pozycje w karcie
+   (sekcja pokazuje najwyżej sześć, i to jest sprawdzane). */
+
+/** OSTATNIO STUDIOWANE — z paskiem „ile z notatki za mną". */
+function centrWierszStudiowane(n, ulamek){
+  const skad = [];
+  if(n.ks && typeof pubFullName === "function") skad.push(pubFullName(n.ks));
+  else if(n.b && typeof BOOKS !== "undefined" && BOOKS[n.b])
+    skad.push(BOOKS[n.b] + (n.ch ? " " + n.ch : ""));
+  skad.push(centrKiedy(n.la));
+  return '<button type="button" class="cenPoz cenPozS" data-cnota="' + esc(n.g) + '">'
+    + '<span class="cenPozIko">' + CEN_IKO.nota + '</span>'
+    + '<span class="cenNazwa">' + esc(centrTytulNotatki(n)) + '</span>'
+    + '<span class="cenOpis">' + esc(skad.filter(Boolean).join(" · ")) + '</span>'
+    + '<span class="cenPozStrz">' + CEN_IKO.strz + '</span>'
+    + (ulamek
+        ? '<span class="cenPasek"><i style="width:' + ulamek + '%"></i></span>'
+          + '<span class="cenPasekP">' + ulamek + '%</span>'
+        : '')
+    + '</button>';
+}
+
+/** OSTATNIO DODANE — data z przodu, bo tu pytanie brzmi KIEDY, nie SKĄD. */
+function centrWierszDodane(n){
+  const d = new Date(n.cr);
+  /* Rok tylko wtedy, gdy inny niż bieżący. W karcie szerokiej na 259 px pełna
+     data zabierała 80 px i tytuł zostawał w postaci „Chwast i pszenic…" —
+     a rok „2026" przy notatce sprzed dwóch dni i tak niczego nie wnosi. */
+  const teraz = new Date().getFullYear();
+  const data = isNaN(d) ? "" : String(d.getDate()).padStart(2, "0") + "."
+    + String(d.getMonth() + 1).padStart(2, "0")
+    + (d.getFullYear() === teraz ? "" : "." + String(d.getFullYear()).slice(2));
+  return '<button type="button" class="cenPoz cenPozD" data-cnota="' + esc(n.g) + '">'
+    + '<span class="cenData">' + esc(data) + '</span>'
+    + '<span class="cenNazwa">' + esc(centrTytulNotatki(n)) + '</span>'
+    + '<span class="cenOpis">' + esc(centrKiedy(n.cr)) + '</span>'
+    + '</button>';
+}
+
+/* Kolor okładki bierze się z symbolu publikacji, więc ta sama publikacja ma
+   zawsze ten sam kolor — inaczej okładki zmieniałyby barwę przy każdym
+   przerysowaniu i przestałyby cokolwiek znaczyć. */
+const CEN_OKLADKI = ["#2e7d32", "#1565c0", "#8e24aa", "#c62828", "#00796b", "#ef6c00", "#4527a0", "#5d4037"];
+function centrPubKolor(klucz){
+  let h = 0;
+  const s = String(klucz);
+  for(let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return CEN_OKLADKI[h % CEN_OKLADKI.length];
+}
+
+/** ULUBIONE PUBLIKACJE — okładki, bo publikację rozpoznaje się po wyglądzie. */
+function centrKafelPublikacji(pu){
+  const [ks, itn] = String(pu.klucz).split("|");
+  const nazwa = (ks === "—" || !ks) ? "Bez oznaczenia"
+    : (typeof pubFullName === "function" ? pubFullName(ks) : ks);
+  const wyd = (itn && typeof issueLabel === "function") ? issueLabel(itn) : "";
+  /* Okładka złożona z czterech warstw, bo tak wygląda książka postawiona na
+     półce i obrócona lekko do widza: przednia okładka, ciemniejszy GRZBIET po
+     prawej, jasny BLOK KARTEK u góry i biała ETYKIETA z symbolem publikacji.
+     Jednowarstwowy prostokąt z gradientem czytał się jak kolorowa płytka. */
+  return '<button type="button" class="cenPoz cenPozP" data-cpub="' + esc(pu.klucz) + '">'
+    + '<span class="cenOkladka" style="--ok:' + centrPubKolor(pu.klucz) + '">'
+    + '<span class="cenOkladkaGora"></span>'
+    + '<span class="cenOkladkaGrz"></span>'
+    + '<span class="cenOkladkaEt">' + esc((ks || "?").slice(0, 4)) + '</span></span>'
+    + '<span class="cenNazwa">' + esc(nazwa) + (wyd ? '<i>' + esc(wyd) + '</i>' : '') + '</span>'
+    + '<span class="cenOpis">' + pu.ile + " " + esc(centrOdmiana(pu.ile, "notatka", "notatki", "notatek")) + '</span>'
+    + '</button>';
+}
 
 function rysujCentrum(){
   const el = $("centrum"); if(!el) return;
   const kont = centrKontynuuj();
   const dzis = centrNaDzis();
   const niedok = centrNiedokonczone();
+  const ulamki = (typeof readFracAll === "function") ? readFracAll() : {};
 
   let html = '<div class="cenNagl">'
     + '<div class="cenTyt"><b>Centrum studium</b>'
@@ -18767,69 +20021,59 @@ function rysujCentrum(){
     + '<button type="button" class="btn" data-cakcja="lista">Pokaż wszystkie notatki</button>'
     + '</div>';
 
-  /* KONTYNUUJ — na samej górze, bo to jedna rzecz, którą robi się najczęściej. */
-  if(kont){
-    html += '<button type="button" class="cenDalej" data-cnota="' + esc(kont.n.g) + '" data-cwmiejscu="'
-      + (kont.wMiejscu ? "1" : "") + '">'
-      + '<span class="cenDalejIko">' + CEN_IKO.czyt + '</span>'
-      + '<span class="cenDalejTxt">'
-      + '<b>Kontynuuj ostatnie studium</b>'
-      + '<span>' + esc(centrTytulNotatki(kont.n))
-      + (kont.wMiejscu ? " · wrócisz tam, gdzie skończyłeś" : "")
-      + ' · ' + esc(centrKiedy(kont.n.la)) + '</span>'
-      + '</span>'
-      + '<span class="cenDalejStrz">›</span>'
-      + '</button>';
-  }
+  /* ——— DWIE DUŻE KARTY: na czym skończyłem, co mam dziś powtórzyć ——— */
+  const hero = centrHeroStudium(kont) + centrHeroPowtorki(dzis);
+  if(hero) html += '<div class="cenGora">' + hero + '</div>';
 
+  /* ——— SZEŚĆ SKRÓTÓW ——— */
+  html += centrSzybkie();
+
+  /* ——— CZTERY KARTY: skąd wracać do notatek ——— */
   html += '<div class="cenSiatka">';
 
-  html += centrSekcja("dzis", "Na dziś", CEN_IKO.dzis,
-    dzis.map(n=>{
-      /* Data w postaci „2026-08-16" nic nie mówi bez liczenia w głowie. Przy
-         zaległej powtórce ważne jest JAK DAWNO, nie kiedy dokładnie. */
-      const dzien = (typeof dzisRRMMDD === "function") ? dzisRRMMDD() : "";
-      if(String(n.pwt.d) >= dzien) return centrWierszNotatki(n, "na dziś");
-      const ile = Math.round((Date.parse(dzien) - Date.parse(n.pwt.d)) / 86400000);
-      return centrWierszNotatki(n, isFinite(ile) && ile > 0
-        ? "zaległe " + ile + (ile === 1 ? " dzień" : ile < 5 ? " dni" : " dni")
-        : "zaległe");
-    }),
-    dzis.length > CENTR_ILE ? dzis.length + " razem" : "");
-
-  html += centrSekcja("niedok", "Niedokończone", CEN_IKO.zadan,
-    niedok.map(x=>centrWierszNotatki(x.n,
-      "zostało " + x.zostalo + " z " + x.razem + (x.razem === 1 ? " zadania" : " zadań"))));
-
   html += centrSekcja("studiowane", "Ostatnio studiowane", CEN_IKO.czyt,
-    centrOstatnioStudiowane(kont ? kont.n.g : null).map(n=>centrWierszNotatki(n, centrKiedy(n.la))));
+    centrOstatnioStudiowane(kont ? kont.n.g : null)
+      .map(n=>centrWierszStudiowane(n, ulamki[n.g] || 0)),
+    {wszystkie:"studiowane"});
 
   html += centrSekcja("dodane", "Ostatnio dodane", CEN_IKO.nowe,
-    centrOstatnioDodane().map(n=>centrWierszNotatki(n, centrKiedy(n.cr))));
+    centrOstatnioDodane().map(centrWierszDodane),
+    {wszystkie:"dodane"});
 
   html += centrSekcja("wersety", "Ostatnio używane wersety", CEN_IKO.wers,
     centrWersety().map(w=>
       '<button type="button" class="cenPoz" data-cwers="' + w.b + ":" + w.ch + '">'
       + '<span class="cenNazwa">' + esc(w.etykieta) + '</span>'
-      + '<span class="cenOpis">' + w.ile + (w.ile === 1 ? " notatka" : " notatek") + '</span>'
-      + '</button>'));
+      + '<span class="cenOpis">' + w.ile + " " + esc(centrOdmiana(w.ile, "notatka", "notatki", "notatek")) + '</span>'
+      + '<span class="cenPozStrz">' + CEN_IKO.strz + '</span>'
+      + '</button>'),
+    {wszystkie:"wersety"});
 
   html += centrSekcja("publikacje", "Ulubione publikacje", CEN_IKO.pub,
-    centrPublikacje().map(pu=>
-      '<button type="button" class="cenPoz" data-cpub="' + esc(pu.klucz) + '">'
-      + '<span class="cenNazwa">' + esc(pu.etykieta) + '</span>'
-      + '<span class="cenOpis">' + pu.ile + (pu.ile === 1 ? " notatka" : " notatek") + '</span>'
-      + '</button>'),
-    "z ostatnich " + CENTR_DNI + " dni");
-
-  html += centrSekcja("szukania", "Ostatnie wyszukiwania", CEN_IKO.szuk,
-    centrSzukania().map(q=>
-      '<button type="button" class="cenPoz" data-cszuk="' + esc(q) + '">'
-      + '<span class="cenNazwa">' + esc(q) + '</span>'
-      + '<span class="cenOpis">szukaj znowu</span>'
-      + '</button>'));
+    centrPublikacje().map(centrKafelPublikacji),
+    {dopisek:"z ostatnich " + CENTR_DNI + " dni", klasa:"cenListaP", wszystkie:"publikacje"});
 
   html += '</div>';
+
+  /* ——— NIŻSZY RZĄD: rzeczy, po które się nie przychodzi, ale które szkoda
+     zgubić. Mniejsze karty, bo mniejszy ciężar. ——— */
+  const maly = centrSekcja("niedok", "Niedokończone", CEN_IKO.zadan,
+      niedok.map(x=>centrWierszNotatki(x.n,
+        "zostało " + x.zostalo + " z " + x.razem + (x.razem === 1 ? " zadania" : " zadań"))),
+      {plakietka:niedok.length, wszystkie:"niedok"})
+    + centrSekcja("szukania", "Ostatnie wyszukiwania", CEN_IKO.szuk,
+      centrSzukania().map(q=>
+        '<button type="button" class="cenPoz" data-cszuk="' + esc(q) + '">'
+        + '<span class="cenNazwa">' + esc(q) + '</span>'
+        + '<span class="cenOpis">szukaj znowu</span>'
+        + '<span class="cenPozStrz">' + CEN_IKO.strz + '</span>'
+        + '</button>'));
+  if(maly) html += '<div class="cenSiatkaM">' + maly + '</div>';
+
+  /* ——— TWOJE STUDIUM: cztery liczby i wykres ———
+     Przy pustej bazie podsumowanie odpada: cztery zera i płaska linia to nie
+     jest powitanie, tylko wypomnienie. Wraca z pierwszą notatką. */
+  if(notes.some(n=>!n.del)) html += centrTwojeStudium();
 
   /* Puste Centrum musi tłumaczyć, a nie tylko być puste. */
   if(!kont && !dzis.length && !niedok.length && !centrOstatnioDodane().length){
@@ -18840,6 +20084,8 @@ function rysujCentrum(){
       + 'Dodaj pierwszą notatkę albo wczytaj kopię z JW Library — wypełni się samo.'
       + '</div>';
   }
+
+  html += centrStopka();
   setHtml(el, html);
 }
 
@@ -18910,7 +20156,65 @@ function centrumUstawWlaczone(on){
 if($("centrum")){
   $("centrum").addEventListener("click", ev=>{
     const akcja = ev.target.closest("[data-cakcja]");
-    if(akcja){ if(akcja.dataset.cakcja === "lista") centrumSchowaj(); return; }
+    if(akcja){
+      if(akcja.dataset.cakcja === "lista") centrumSchowaj();
+      /* „Rozpocznij powtórki" otwiera notatkę najdłużej zaległą. Panel zostaje
+         pod spodem, więc po zamknięciu widać kolejną — to wystarcza za tryb
+         powtarzania i nie wprowadza drugiego sposobu chodzenia po notatkach. */
+      if(akcja.dataset.cakcja === "powtorki"){
+        const pierwsza = centrNaDzis()[0];
+        if(pierwsza){
+          if(typeof touchAccess === "function") touchAccess(pierwsza);
+          openFs(pierwsza);
+        }
+      }
+      return;
+    }
+
+    /* Przełącznik zakresu wykresu przerysowuje SAM wykres. Całe Centrum
+       znaczyłoby przy ośmiu tysiącach notatek ponowne policzenie wszystkich
+       sekcji po to, żeby zmienić jedną linię. */
+    const szyb = ev.target.closest("[data-cszyb]");
+    if(szyb){ centrSzybkieDzialanie(szyb.dataset.cszyb); return; }
+
+    const zakres = ev.target.closest("[data-czakres]");
+    if(zakres){
+      const dni = parseInt(zakres.dataset.czakres, 10);
+      lsSet(CENTR_ZAKRES_KLUCZ, String(dni));
+      const box = $("cenWykres");
+      if(box){
+        const plot = box.querySelector(".cenWykresPlot");
+        if(plot) setHtml(plot, centrWykresRys(dni));
+        box.querySelectorAll("[data-czakres]").forEach(b=>
+          b.classList.toggle("on", b.dataset.czakres === String(dni)));
+      }
+      return;
+    }
+
+    /* „Zobacz wszystkie" i kafelki statystyk prowadzą na listę ustawioną tak,
+       żeby zaczynała się od tego, co widać w karcie — inaczej wyjście z sekcji
+       wyrzucałoby w przypadkowe miejsce. */
+    const wszystkie = ev.target.closest("[data-cwszystkie]");
+    const stat = ev.target.closest("[data-cstat]");
+    if(wszystkie || stat){
+      const co = wszystkie ? wszystkie.dataset.cwszystkie : stat.dataset.cstat;
+      const ustawSort = (m)=>{
+        if(typeof sortMode === "undefined") return;
+        sortMode = m;
+        const sel = $("sortSel");
+        if(sel && [...sel.options].some(o=>o.value === m)){ sel.value = m; lsSet(KP + "Sort", m); }
+      };
+      if(typeof quickFilter !== "undefined") quickFilter = "all";
+      if(co === "studiowane"){ ustawSort("recent"); centrTryb = "auto"; renderAll(); return; }
+      if(co === "dodane" || co === "notatki") ustawSort("createdNew");
+      else if(co === "wersety") ustawSort("bible");
+      else if(co === "publikacje") ustawSort("pub");
+      else if(co === "ulubione" && typeof quickFilter !== "undefined") quickFilter = "fav";
+      else if(co === "tematy" && typeof otworzMape === "function"){ otworzMape(); return; }
+      centrumSchowaj();
+      if(innerWidth <= 900 && typeof mobileShow === "function") mobileShow("colNotes");
+      return;
+    }
 
     const nota = ev.target.closest("[data-cnota]");
     if(nota){
