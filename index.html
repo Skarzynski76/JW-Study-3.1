@@ -6090,6 +6090,50 @@ html[data-theme="sepia"]{ --cenSerce:#a83232; }
   .cenSzybIko{ width:36px; height:36px; border-radius:12px; }
 }
 
+
+/* ══════════════ KOLOR TŁA NOTATKI NA WYCIĄGNIĘCIE RĘKI (v2.69) ══════════════
+
+   Kolor leżał trzy poziomy w głąb menu: ⋯ → „Wygląd" → „Tło notatki…" →
+   próbka. Cztery dotknięcia na rzecz, którą robi się wzrokiem, przeglądając
+   listę — i niewidoczną, bo nic w menu głównym nie mówiło, że kolory istnieją.
+   Pasek próbek stoi teraz jako pierwszy wiersz menu notatki i menu podręcznego.
+
+   Sześć w rzędzie, nie jedenaście: przy jedenastu kwadracik miałby 16 px, czyli
+   mniej niż palec. Dwa rzędy po sześć dają 30 px i mieszczą się w szerokości
+   menu bez rozpychania go. */
+#dropdown .ddTla{
+  display:grid; grid-template-columns:repeat(6, 1fr);
+  gap:6px; padding:8px 10px 6px;
+}
+/* „Bez koloru" — biała próbka z przekreśleniem, bo pusty kwadrat wyglądałby
+   jak biały kolor do wyboru, a to co innego. */
+#dropdown .tloSw.tloZdejmij{
+  background:var(--panel);
+  background-image:linear-gradient(45deg, transparent 44%, var(--muted) 44%,
+    var(--muted) 56%, transparent 56%);
+}
+/* Wejście do pełnego menu tła: paletka, nie kolor. Ma się różnić od próbek
+   na pierwszy rzut oka, bo robi co innego. */
+#dropdown .tloSw.tloWiecej{
+  display:flex; align-items:center; justify-content:center;
+  background:var(--sel); color:var(--accent); border-style:dashed;
+}
+#dropdown .tloSw.tloWiecej .ic{ width:15px; height:15px; }
+#dropdown .tloSw:hover{ filter:brightness(.94); }
+#dropdown .tloSw:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+
+/* ══════════════ MIEJSCE POD OSTATNIM RZĘDEM (v2.70) ══════════════
+
+   Odstęp u dołu listy nie jest już stały. Liczy go `dopasujDolListy`
+   w 09-notes.js z wysokości widoku, tak żeby ostatni rząd dał się podciągnąć
+   pod górną krawędź okna. Tutaj tylko miejsce, w które ta liczba wchodzi.
+
+   Dwa selektory, bo tablica ma własny skrót `padding` z wyższą specyficznością
+   — sam `#noteList` by go nie przebił. */
+#noteList,
+#noteList.v-tablica{ padding-bottom:var(--dolListy, 40px); }
+
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -6098,7 +6142,7 @@ html[data-theme="sepia"]{ --cenSerce:#a83232; }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.67</span></div>
+      <div class="brand-name">JW Study <span class="ver">v2.70</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -7120,6 +7164,11 @@ async function boot(){
   }
   $("loading").style.display = "none";
   updateBackupBadge();
+  /* Pierwsze wciśnięcie klawisza w polu szukania buduje pamięć podręczną tekstu
+     dla WSZYSTKICH notatek — przy ośmiu tysiącach to trzy czwarte sekundy
+     zamrożonego okna. Robimy tę pracę teraz, w przerwach między klatkami, gdy
+     użytkownik dopiero patrzy na świeżo narysowaną listę. */
+  if(typeof rozgrzejCacheSzukania === "function") setTimeout(rozgrzejCacheSzukania, 60);
   /* Zamiast znikającego dymka z instrukcją szukania przycisku — pasek, który
      zostaje i sam robi kopię. Z opóźnieniem, żeby nie wyskakiwał w tej samej
      chwili, w której pojawiają się notatki. */
@@ -7607,6 +7656,55 @@ function searchTextOf(n){
   _searchCache.set(n, c);
   return c;
 }
+/* ——— ROZGRZEWKA PAMIĘCI PODRĘCZNEJ ———
+ *
+ * Cache jest budowany leniwie, notatka po notatce — a to znaczy, że PIERWSZE
+ * wciśnięcie klawisza po uruchomieniu płaci za wszystkie notatki naraz.
+ * Zmierzone na 8050 notatkach: pierwszy klawisz 751 ms, każdy następny 30 ms.
+ * Trzy czwarte sekundy zamrożonego okna w chwili, w której użytkownik właśnie
+ * zaczął pisać — czyli w najgorszej możliwej chwili.
+ *
+ * Rozwiązanie nie polega na przyspieszeniu tej pracy, tylko na PRZESUNIĘCIU JEJ
+ * W CZAS, w którym i tak nic się nie dzieje: zaraz po narysowaniu pierwszego
+ * widoku, porcjami po 400 notatek, w przerwach między klatkami. Gdy przeglądarka
+ * ma coś ważniejszego do zrobienia, `requestIdleCallback` po prostu nie woła
+ * kolejnej porcji — rozgrzewka nigdy nie konkuruje z przewijaniem ani z pisaniem.
+ *
+ * Funkcję można wołać wielokrotnie i bez sprawdzania, czy już się wykonała:
+ * przy ciepłym cache jeden `searchTextOf` to porównanie znacznika, czyli całość
+ * kosztuje wtedy kilkanaście milisekund rozłożonych na porcje. Dlatego wołamy ją
+ * także po wczytaniu kopii zapasowej i po uzgodnieniu z plikiem — czyli wszędzie
+ * tam, gdzie do tablicy trafia naraz dużo notatek.
+ */
+let _rozgrzewkaTrwa = false;
+function rozgrzejCacheSzukania(){
+  if(_rozgrzewkaTrwa || typeof notes === "undefined") return;
+  _rozgrzewkaTrwa = true;
+  const jestBezczynnosc = (typeof requestIdleCallback === "function");
+  /* Z prawdziwą bezczynnością o wielkości porcji decyduje TERMIN, nie licznik:
+     przeglądarka daje do 50 ms na porcję i sama mówi, ile jeszcze zostało.
+     Górna granica jest tylko zabezpieczeniem. Bez requestIdleCallback (Safari
+     poniżej 17) nie ma terminu, więc porcja musi być mała z góry — 300 notatek
+     to około 20 ms, czyli poniżej jednej klatki. */
+  const KROK = jestBezczynnosc ? 2500 : 300;
+  let i = 0;
+  const kolejka = jestBezczynnosc
+    ? (f)=>requestIdleCallback(f, {timeout:1200})
+    : (f)=>setTimeout(()=>f(null), 60);
+  const porcja = (termin)=>{
+    let ile = 0;
+    while(i < notes.length && ile < KROK
+          && (!termin || ile === 0 || termin.timeRemaining() > 8)){
+      const n = notes[i++];
+      if(n && !n.del) searchTextOf(n);
+      ile++;
+    }
+    if(i < notes.length) kolejka(porcja);
+    else _rozgrzewkaTrwa = false;
+  };
+  kolejka(porcja);
+}
+
 /* Wyszukiwanie rozszerzone:
    słowo1 słowo2   → oba muszą wystąpić
    miłos*          → gwiazdka = dowolna końcówka/odmiana
@@ -8859,7 +8957,58 @@ function renderNotes(){
   if(typeof odswiezOdnosnikiNotatek==="function") odswiezOdnosnikiNotatek(el);
   pruneCardCache(keep);
   fsNavList = arr.map(n=>n.g);
+  /* Miejsce pod ostatnim rzędem — dopiero gdy widać CAŁĄ listę. Przy niepełnej
+     pustka pojawiłaby się pod przyciskiem „Pokaż więcej", czyli w środku. */
+  dopasujDolListy(arr.length <= visibleCount);
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   MIEJSCE POD OSTATNIM RZĘDEM
+
+   Lista kończyła się czterdziestoma pikselami odstępu, więc ostatnia notatka
+   zostawała przyklejona do dolnej krawędzi okna — dokładnie tam, gdzie czyta
+   się najgorzej i gdzie na telefonie leży kciuk. Żeby ją przeczytać, trzeba
+   było przewinąć i patrzeć w dół ekranu.
+
+   Teraz odstęp jest tak duży, że OSTATNI RZĄD DA SIĘ PODCIĄGNĄĆ POD GÓRNĄ
+   KRAWĘDŹ — czyli każda notatka, także ostatnia, może stanąć w miejscu,
+   w którym się czyta. To samo robią edytory tekstu i czytniki.
+
+   Trzy warunki, bez których wyszłaby z tego usterka:
+
+     • odstęp rośnie TYLKO wtedy, gdy lista i tak się przewija. Przy dwóch
+       notatkach pusty ekran pod spodem wyglądałby jak zgubiona treść;
+     • liczony jest z WYSOKOŚCI WIDOKU, nie z jakiejś stałej — na telefonie
+       i na monitorze wychodzi co innego, a chodzi o to samo;
+     • odejmujemy wysokość ostatniej karty, bo ona ma stanąć u góry, nie zniknąć
+       nad krawędzią.
+   ══════════════════════════════════════════════════════════════════════════ */
+const DOL_LISTY_MIN = 40;
+function dopasujDolListy(pelnaLista){
+  const el = $("noteList");
+  if(!el || el.style.display === "none") return;
+  const teraz = parseFloat(getComputedStyle(el).paddingBottom) || 0;
+  const widok = el.clientHeight;
+  /* Wysokość SAMEJ treści: bez odstępu, który sami przed chwilą nadaliśmy —
+     inaczej każde przeliczenie brałoby pod uwagę swój własny wynik i odstęp
+     rósłby w nieskończoność. */
+  const tresc = el.scrollHeight - teraz;
+  let dol = DOL_LISTY_MIN;
+  if(pelnaLista && widok > 0 && tresc > widok){
+    const karty = el.querySelectorAll(".ncard");
+    const ost = karty[karty.length - 1];
+    const wysOst = ost ? Math.round(ost.getBoundingClientRect().height) : 0;
+    dol = Math.max(DOL_LISTY_MIN, Math.round(widok - wysOst - 24));
+  }
+  el.style.setProperty("--dolListy", dol + "px");
+}
+/* Obrót telefonu, Split View na iPadzie, zmiana wielkości okna na Macu —
+   wysokość widoku się zmienia, więc odstęp trzeba przeliczyć od nowa. */
+addEventListener("resize", ()=>{
+  clearTimeout(_dolListyTimer);
+  _dolListyTimer = setTimeout(()=>dopasujDolListy(!_moreObserver), 150);
+});
+let _dolListyTimer = 0;
 /* ==========================================================================
    PODŚWIETLENIE TRAFIEŃ NA GOTOWYCH KARTACH
 
@@ -9111,6 +9260,10 @@ function noteCard(n){
     if(act==="more" || act==="exp"){
       const dd=$("dropdown");
       dd.innerHTML =
+        /* Kolory na samej górze: dwa dotknięcia zamiast czterech i widać je
+           od razu po otwarciu menu. Budowa i obsługa siedzą w 39-tablica.js
+           razem z resztą rzeczy o tle notatki. */
+        (typeof paskTlaNotatki==="function" ? paskTlaNotatki(n) + `<div class="dd-sep"></div>` : "") +
         `<div data-x="fav">${ICO.star}${n.fav?"Usuń z ulubionych":"Dodaj do ulubionych"}</div>
          <div data-x="pin">${ICO.pin}${n.pin?"Odepnij z góry":"Przypnij na górze"}</div>
          <div class="dd-sep"></div>
@@ -9131,9 +9284,12 @@ function noteCard(n){
       dd.style.display="block";
       placeDropdown(dd, e.target);
       dd.onclick = ev=>{
+        const kotwica = e.target.closest(".ncard") || document.body;
+        /* Pasek kolorów pytamy PIERWSZY: jego przyciski nie mają `data-x`,
+           więc bez tego wiersza kliknięcie w próbkę nie robiłoby nic. */
+        if(typeof obsluzPaskTla==="function" && obsluzPaskTla(ev, n, kotwica)) return;
         const it=ev.target.closest("[data-x]"); if(!it) return;
         const x=it.dataset.x; dd.style.display="none";
-        const kotwica = e.target.closest(".ncard") || document.body;
         if(x==="grMiejsce" || x==="grWyglad" || x==="grZapis"){
           setTimeout(()=>podmenuNotatki(x, n, kotwica), 40); return; }
         if(x==="ptb"){ setTimeout(()=>pubTabMenu(n, kotwica), 40); return; }
@@ -10373,7 +10529,13 @@ function histStart(ce){
   });
   /* Cmd/Ctrl+Z w treści też idzie do naszego stosu — inaczej przeglądarka
      robiłaby swoje cofanie równolegle do naszego. */
-  ce.addEventListener("keydown", e=>{ skrotPisania(e, ce); });
+  ce.addEventListener("keydown", e=>{
+    /* Najpierw skróty z klawiszem polecenia (⌘/Ctrl), potem skróty pisania
+       (spacja po „## ", „- " i tak dalej) — te drugie działają BEZ modyfikatora,
+       więc kolejność jest tu bez znaczenia, ale czyta się ją w tej. */
+    if(skrotFormatowania(e, ce)) return;
+    skrotPisania(e, ce);
+  });
   const karta = ce.closest(".ncard") || ce;
   karta.addEventListener("keydown", e=>{
     if((e.metaKey||e.ctrlKey) && e.key && e.key.toLowerCase()==="z"){
@@ -10461,6 +10623,109 @@ function ustawKursorOffset(ce, poz){
     r.collapse(true);
     const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
   }catch(e){}
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SKRÓTY KLAWISZOWE W TREŚCI NOTATKI
+
+   Pogrubienie, kursywa i podkreślenie działały wcześniej „same" — bo obsługuje
+   je przeglądarka w każdym polu edytowalnym. Działały jednak OBOK aplikacji:
+   szły wprost do dokumentu, więc omijały nasz stos cofania, nie zapisywały
+   notatki i nie odświeżały stanu przycisków na pasku. Tekst robił się pogrubiony,
+   ale „Cofnij" o tym nie wiedziało.
+
+   Wszystkie skróty idą teraz tą samą drogą co przyciski paska —
+   przez `wykonajWTresci`, czyli z historią, zapisem i odświeżeniem paska.
+
+   KAŻDE URZĄDZENIE
+
+   • Mac i iPad z klawiaturą: ⌘. Windows, Linux, Android: Ctrl. Rozpoznajemy
+     jedno i drugie (`metaKey || ctrlKey`), więc nie ma dwóch list skrótów.
+   • Cyfry bierzemy z `e.code`, nie z `e.key`. Na polskiej klawiaturze Shift+7
+     daje „&", na niemieckiej „/" — a `Digit7` jest wszędzie tą samą klawiszą.
+   • Litery z `e.key`, bo tu chodzi o literę, którą użytkownik widzi na klawiszu.
+   • Bez klawiatury (telefon, tablet dotykowy) nic się nie zmienia: te same
+     polecenia siedzą na pasku edycji i w menu „Wstaw".
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/** Pasek edycji tej samej notatki co podane pole treści. */
+function paskEdycjiDla(ce){
+  return (ce && ce.parentElement) ? ce.parentElement.querySelector(".editbar") : null;
+}
+
+/* Opis do listy skrótów w Ustawieniach trzymamy RAZEM z obsługą — inaczej
+   dopisanie skrótu i zapomnienie o liście jest kwestią czasu. */
+const SKROTY_EDYCJI = [
+  {kl:"b",                     cmd:"bold",               nazwa:"pogrubienie"},
+  {kl:"i",                     cmd:"italic",             nazwa:"kursywa"},
+  {kl:"u",                     cmd:"underline",          nazwa:"podkreślenie"},
+  {kl:"x", shift:true,         cmd:"strikeThrough",      nazwa:"przekreślenie"},
+  {kod:"Digit8", shift:true,   cmd:"insertUnorderedList", nazwa:"lista punktowana"},
+  {kod:"Digit7", shift:true,   cmd:"insertOrderedList",   nazwa:"lista numerowana"},
+  {kod:"Digit9", shift:true,   akcja:"zadania",           nazwa:"lista zadań"},
+  {kl:"k",                     akcja:"link",              nazwa:"wstaw link"},
+  {kod:"Backslash",            cmd:"removeFormat",        nazwa:"wyczyść formatowanie"},
+  /* Style akapitu dokładnie te, które aplikacja ma na pasku (BLOK_STYLE):
+     Tytuł, Nagłówek, Cytat, Treść. Skrót na `h1` byłby skrótem do stylu,
+     którego nigdzie indziej nie da się wybrać ani zobaczyć. */
+  {kod:"Digit1", alt:true,     blok:"h2",                 nazwa:"styl: Tytuł"},
+  {kod:"Digit2", alt:true,     blok:"h3",                 nazwa:"styl: Nagłówek"},
+  {kod:"Digit3", alt:true,     blok:"blockquote",         nazwa:"styl: Cytat"},
+  {kod:"Digit0", alt:true,     blok:"div",                nazwa:"styl: Treść"}
+];
+
+/** Blok (akapit, nagłówek, cytat), w którym stoi kursor — jako ELEMENT. */
+function blokKursora(ce){
+  const sel = getSelection();
+  if(!sel || !sel.rangeCount) return null;
+  let el = sel.getRangeAt(0).startContainer;
+  if(el.nodeType === 3) el = el.parentElement;
+  while(el && el !== ce && el.parentElement !== ce) el = el.parentElement;
+  return (el && el !== ce) ? el : null;
+}
+
+/**
+ * Obsługa skrótu formatowania. Oddaje `true`, gdy skrót został rozpoznany —
+ * wtedy wołający nie robi już nic więcej.
+ * @param {KeyboardEvent} e
+ * @param {HTMLElement} ce  pole treści notatki
+ */
+function skrotFormatowania(e, ce){
+  if(!ce || !ce.isContentEditable) return false;
+  if(!(e.metaKey || e.ctrlKey)) return false;
+  const litera = (e.key || "").toLowerCase();
+  const wpis = SKROTY_EDYCJI.find(x=>
+    (x.kod ? e.code === x.kod : litera === x.kl)
+    && !!x.shift === !!e.shiftKey
+    && !!x.alt === !!e.altKey);
+  if(!wpis) return false;
+  e.preventDefault();
+  const bar = paskEdycjiDla(ce);
+
+  if(wpis.cmd){ wykonajWTresci(wpis.cmd, bar); return true; }
+
+  if(wpis.blok){
+    /* Nagłówki idą przez zamienBlok, nie przez execCommand("formatBlock") —
+       powód opisany przy samej funkcji: w PUSTYM bloku formatBlock bierze blok
+       poprzedni i nagłówkiem staje się nie ten akapit, w którym stoi kursor. */
+    const blok = (typeof blokKursora === "function") ? blokKursora(ce) : null;
+    if(blok && typeof zamienBlok === "function") zamienBlok(blok, wpis.blok, ce);
+    else document.execCommand("formatBlock", false, "<" + wpis.blok + ">");
+    commitLiveEdit(ce);
+    if(typeof histZapisz === "function") histZapisz(ce);
+    if(bar) updateEditbarState(bar);
+    return true;
+  }
+
+  if(wpis.akcja === "zadania"){ insertTaskList(ce); return true; }
+  if(wpis.akcja === "link"){
+    /* Okienko linku czyta zapamiętane zaznaczenie, nie bieżące — bo w chwili
+       pisania w polu okienka zaznaczenie w notatce już nie istnieje. */
+    edSavedRange = captureRange();
+    insertUrlLink(ce);
+    return true;
+  }
+  return false;
 }
 
 /**
@@ -12113,6 +12378,9 @@ async function handleImportFile(e){
                                 "To może być kopia z innej wersji JW Library."); }
     if(idb){ await idbPut("files",buf,"lastBackup"); await idbPut("meta",file.name,"lastBackupName"); await idbPut("meta",new Date().toISOString(),"lastBackupDate"); }
     renderAll();
+    /* Do tablicy trafiło naraz dużo notatek — pamięć podręczna szukania
+       buduje się od nowa w bezczynności, a nie przy pierwszym klawiszu. */
+    if(typeof rozgrzejCacheSzukania === "function") setTimeout(rozgrzejCacheSzukania, 300);
     /* NAJPIERW RÓŻNICE, POTEM PODSUMOWANIE.
        Odwrotna kolejność kazałaby zamknąć okno z liczbami, żeby dopiero zobaczyć,
        że coś czeka na decyzję — a podsumowanie bez rozstrzygniętych różnic i tak
@@ -13231,6 +13499,9 @@ async function wczytajKopieZTekstu(tekstPliku){
       }
       const kontrolaM = idb ? await sprawdzZapis(notes.length, tags.length) : null;
       renderAll();
+      /* Do tablicy trafiło naraz dużo notatek — pamięć podręczna szukania
+         buduje się od nowa w bezczynności, a nie przy pierwszym klawiszu. */
+      if(typeof rozgrzejCacheSzukania === "function") setTimeout(rozgrzejCacheSzukania, 300);
       showInfo("Kopia dołączona",
         (kontrolaM
           ? (kontrolaM.zgadza
@@ -13297,6 +13568,9 @@ async function wczytajKopieZTekstu(tekstPliku){
     if(typeof szablony!=="undefined"){ szablony = noweSzablony;
       if(typeof rysujSzablony==="function") rysujSzablony(); }
     renderAll();
+    /* Do tablicy trafiło naraz dużo notatek — pamięć podręczna szukania
+       buduje się od nowa w bezczynności, a nie przy pierwszym klawiszu. */
+    if(typeof rozgrzejCacheSzukania === "function") setTimeout(rozgrzejCacheSzukania, 300);
     showInfo("Zastąpiono dane",
       `Zapisano i sprawdzono w bazie urządzenia:<br>`+
       `• Notatek: <b>${kontrola ? kontrola.notatki : noweNotes.length}</b><br>`+
@@ -13866,6 +14140,9 @@ function noteContextMenu(n, card, x, y){
   const link = finderUrl(n);
   dd.innerHTML =
     `<div class="dd-lbl">${esc((n.t||refLabel(n)||"Notatka").substring(0,42))}</div>` +
+    /* Kolory także tutaj: z menu podręcznego to JEDNO dotknięcie od notatki
+       do koloru. Wcześniej menu podręczne nie miało tła w ogóle. */
+    (typeof paskTlaNotatki==="function" ? paskTlaNotatki(n) + `<div class="dd-sep"></div>` : "") +
     `<div data-c="edit">${ICO.edit}Edytuj</div>` +
     `<div data-c="fs">${ICO.fs}Otwórz na pełnym ekranie</div>` +
     `<div class="dd-sep"></div>` +
@@ -13881,6 +14158,7 @@ function noteContextMenu(n, card, x, y){
     `<div data-c="del" class="dd-danger">${ICO.trash}Usuń notatkę</div>`;
   placeMenuAt(dd, x, y);
   dd.onclick = ev=>{
+    if(typeof obsluzPaskTla==="function" && obsluzPaskTla(ev, n, card)) return;
     const it = ev.target.closest("[data-c]"); if(!it) return;
     dd.style.display = "none";
     const c = it.dataset.c;
@@ -14193,6 +14471,37 @@ async function pokazMiejsceWersji(){
     + " · około " + ile;
 }
 
+/* ——— LISTA SKRÓTÓW EDYCJI ———
+   Budowana z tej samej tablicy, którą obsługuje edytor (SKROTY_EDYCJI
+   w 13-editor.js). Dwa osobne spisy — jeden do działania, drugi do pokazania —
+   rozjeżdżają się przy pierwszym dopisanym skrócie.
+
+   Znak klawisza polecenia zależy od urządzenia: na Macu i iPadzie ⌘, wszędzie
+   indziej Ctrl. Obsługa rozpoznaje jedno i drugie, ale POKAZAĆ trzeba to, co
+   użytkownik ma naprawdę na klawiaturze — inaczej lista uczy nieswojego. */
+function znakPolecenia(){
+  const p = (navigator.userAgentData && navigator.userAgentData.platform)
+         || navigator.platform || navigator.userAgent || "";
+  return /Mac|iPhone|iPad|iPod/i.test(p) ? {mod:"\u2318", alt:"\u2325"} : {mod:"Ctrl", alt:"Alt"};
+}
+function skrotyEdycjiHtml(){
+  if(typeof SKROTY_EDYCJI === "undefined") return "";
+  const z = znakPolecenia();
+  const nazwaKlawisza = (x)=>{
+    if(!x.kod) return (x.kl || "").toUpperCase();
+    if(x.kod === "Backslash") return "\\";
+    return x.kod.replace("Digit", "");
+  };
+  return SKROTY_EDYCJI.map(x=>{
+    const klawisze = [z.mod]
+      .concat(x.shift ? ["Shift"] : [])
+      .concat(x.alt ? [z.alt] : [])
+      .concat([nazwaKlawisza(x)]);
+    return "<div>" + klawisze.map(k=>"<kbd>" + esc(k) + "</kbd>").join("+")
+      + "<span>" + esc(x.nazwa) + "</span></div>";
+  }).join("");
+}
+
 function openSettings(){
   const box = $("setBody");
   box.innerHTML =
@@ -14327,6 +14636,8 @@ function openSettings(){
          <div><kbd>Alt</kbd>+<kbd>←</kbd> lub <kbd>Backspace</kbd><span>w czytniku: wróć do notatki, z której przyszedłeś</span></div>
          <div><kbd>Esc</kbd><span>zamknij okno lub czytnik</span></div>
        </div>
+       <div class="st-lbl" style="margin-top:14px">W trakcie pisania notatki</div>
+       <div class="st-keys">${skrotyEdycjiHtml()}</div>
        <div class="st-hint">Skróty działają, gdy nie piszesz w polu tekstowym. Prawy przycisk myszy (albo przytrzymanie palcem) otwiera szybkie akcje.</div>
      </div>
      <div class="st-sec">
@@ -16660,6 +16971,59 @@ function ustawTloNotatki(n, kol){
   if(typeof idb!=="undefined" && idb)
     idbBulk("notes", [n]).catch(e=>reportSaveError(e,"kolor notatki"));
   if(typeof bumpDirty==="function") bumpDirty();
+}
+
+/* ——— PASEK KOLORÓW NA GÓRZE MENU NOTATKI (v2.69) ———
+ *
+ * Kolor tła leżał trzy poziomy w głąb: ⋯ → „Wygląd" → „Tło notatki…" → próbka.
+ * Cztery dotknięcia na rzecz, którą robi się wzrokiem, przeglądając listę —
+ * i, co gorsza, niewidoczną: nie dało się jej znaleźć inaczej niż przez
+ * przypadek, bo nic w menu głównym nie mówiło, że kolory w ogóle są.
+ *
+ * Próbki idą więc na samą górę menu, jako pierwszy wiersz. Dwa dotknięcia
+ * zamiast czterech, a paleta widoczna od razu po otwarciu menu.
+ *
+ * Pełne menu tła zostaje — kryje się pod ostatnim kwadracikiem z paletką.
+ * Trzyma rzeczy rzadsze i takie, których nie da się pokazać jako próbki:
+ * dowolny kolor z pipety systemowej. Skrót nie może zabierać możliwości,
+ * ma tylko skracać drogę do tych, po które sięga się najczęściej.
+ */
+function paskTlaNotatki(n){
+  const teraz = (n.bg || "").toLowerCase();
+  const sw = (hex, nazwa, klasa, tresc)=>
+    '<button type="button" class="tloSw' + (klasa ? " " + klasa : "")
+    + (teraz === String(hex).toLowerCase() ? " sel" : "") + '"'
+    + ' data-tlo="' + hex + '" title="' + esc(nazwa) + '" aria-label="' + esc(nazwa) + '"'
+    + (hex ? ' style="background:' + hex + '"' : "") + '>' + (tresc || "") + '</button>';
+  return '<div class="ddTla" role="group" aria-label="Tło notatki">'
+    + TLA_KARTECZEK.map(([nazwa, hex])=>sw(hex, nazwa)).join("")
+    + sw("", "Bez koloru", "tloZdejmij")
+    /* Ten jeden nie jest próbką, tylko wejściem do pełnego menu — stąd własny
+       znacznik, żeby obsługa kliknięć nie wzięła go za kolor pusty. */
+    + '<button type="button" class="tloSw tloWiecej" data-tlowiecej="1"'
+    + ' title="Dowolny kolor…" aria-label="Dowolny kolor…">' + (ICO.paint || "") + '</button>'
+    + '</div>';
+}
+
+/**
+ * Obsługa kliknięcia w pasek kolorów. Oddaje `true`, gdy kliknięcie było jej —
+ * dzięki temu menu, w którym pasek siedzi, może po prostu zapytać na wejściu
+ * i nie wiedzieć nic o kolorach.
+ */
+function obsluzPaskTla(ev, n, kotwica){
+  const dd = $("dropdown");
+  if(ev.target.closest("[data-tlowiecej]")){
+    dd.style.display = "none";
+    setTimeout(()=>menuTlaNotatki(n, kotwica || document.body), 40);
+    return true;
+  }
+  const sw = ev.target.closest(".ddTla [data-tlo]");
+  if(!sw) return false;
+  dd.style.display = "none";
+  ustawTloNotatki(n, sw.dataset.tlo || null);
+  renderNotes();
+  toastOk(sw.dataset.tlo ? "Zmieniono tło notatki" : "Zdjęto kolor notatki");
+  return true;
 }
 
 /** Menu kolorów karteczki: paleta + dowolny kolor + zdjęcie koloru. */
@@ -19267,13 +19631,28 @@ function centrumWidoczne(){
 /* ——— ZBIERANIE DANYCH ———
    Każda funkcja oddaje gotową listę pozycji. Notatki w koszu wypadają wszędzie. */
 
+/* ——— PAMIĘĆ NA CZAS JEDNEGO RYSOWANIA ———
+   Sekcje sięgają po te same dwie rzeczy: listę żywych notatek i listę
+   posortowaną po dacie. Przy ośmiu tysiącach notatek każde takie sięgnięcie
+   to przebiegnięcie i posortowanie całej tablicy — a w jednym rysowaniu
+   panelu zdarza się ich kilka. Pamięć żyje WYŁĄCZNIE w trakcie rysowania
+   (`rysujCentrum` zakłada ją na wejściu i zdejmuje na wyjściu), więc nie ma
+   jak się zestarzeć: poza rysowaniem każde wywołanie liczy od nowa. */
+let _cenPamiec = null;
 function centrZywe(){
-  return notes.filter(n=>!n.del);
+  if(_cenPamiec && _cenPamiec.zywe) return _cenPamiec.zywe;
+  const lista = notes.filter(n=>!n.del);
+  if(_cenPamiec) _cenPamiec.zywe = lista;
+  return lista;
 }
 function centrPoDacie(pole){
-  return centrZywe()
+  if(_cenPamiec && _cenPamiec[pole]) return _cenPamiec[pole];
+  /* `filter` oddaje NOWĄ tablicę, więc sortowanie nie rusza tej zapamiętanej. */
+  const lista = centrZywe()
     .filter(n=>n[pole])
     .sort((a, b)=>String(b[pole]).localeCompare(String(a[pole])));
+  if(_cenPamiec) _cenPamiec[pole] = lista;
+  return lista;
 }
 /**
  * Odmiana liczebnika: 1 notatka, 2 notatki, 5 notatek.
@@ -19371,6 +19750,16 @@ function centrNiedokonczone(){
 
 /** OSTATNIO UŻYWANE WERSETY: różne odnośniki z ostatnio otwieranych notatek. */
 function centrWersety(){
+  /* Ile notatek przy rozdziale — JEDNYM przebiegiem do mapy. Wcześniej każdy
+     z sześciu wierszy przeglądał całą tablicę osobno, czyli przy ośmiu
+     tysiącach notatek sekcja robiła sześć przebiegów po czterdzieści osiem
+     tysięcy sprawdzeń, żeby podać sześć liczb. */
+  const licznik = new Map();
+  for(const n of notes){
+    if(n.del || !n.b || !n.ch) continue;
+    const k = n.b + ":" + n.ch;
+    licznik.set(k, (licznik.get(k) || 0) + 1);
+  }
   const widziane = new Set();
   const wynik = [];
   for(const n of centrPoDacie("la")){
@@ -19378,8 +19767,8 @@ function centrWersety(){
     const klucz = n.b + ":" + n.ch;
     if(widziane.has(klucz)) continue;
     widziane.add(klucz);
-    const ile = centrZywe().filter(x=>x.b === n.b && x.ch === n.ch).length;
-    wynik.push({b:n.b, ch:n.ch, etykieta:BOOKS[n.b] + " " + n.ch, ile, kiedy:n.la});
+    wynik.push({b:n.b, ch:n.ch, etykieta:BOOKS[n.b] + " " + n.ch,
+                ile:licznik.get(klucz) || 0, kiedy:n.la});
     if(wynik.length >= CENTR_ILE) break;
   }
   return wynik;
@@ -20010,6 +20399,11 @@ function centrKafelPublikacji(pu){
 
 function rysujCentrum(){
   const el = $("centrum"); if(!el) return;
+  _cenPamiec = {};                 // pamięć na czas tego jednego rysowania
+  try{ rysujCentrumWnetrze(el); }
+  finally{ _cenPamiec = null; }    // i ani chwili dłużej
+}
+function rysujCentrumWnetrze(el){
   const kont = centrKontynuuj();
   const dzis = centrNaDzis();
   const niedok = centrNiedokonczone();
@@ -21277,6 +21671,9 @@ async function syncScalDane(dane, bezPytania){
   if(cosWeszlo){
     if(typeof sortTags === "function") sortTags();
     if(typeof renderAll === "function") renderAll();
+    /* Do tablicy trafiło naraz dużo notatek — pamięć podręczna szukania
+       buduje się od nowa w bezczynności, a nie przy pierwszym klawiszu. */
+    if(typeof rozgrzejCacheSzukania === "function") setTimeout(rozgrzejCacheSzukania, 300);
     if(typeof centrumOdswiez === "function") centrumOdswiez();
   }
   /* W podstawie zapisujemy OSOBNO nasz stan i stan pliku — po co, mówi
