@@ -5691,8 +5691,16 @@ html[data-theme="dark"]{
   margin:0;
   position:relative; overflow:hidden;
   padding-top:14px;
+  transition:transform var(--dur-szybko) var(--ease), box-shadow var(--dur-szybko) var(--ease), border-color var(--dur-szybko) var(--ease);
 }
 .cenKarta .cenLista{ flex:1 1 auto; }
+@media (hover:hover){
+  .cenKarta:hover{
+    transform:translateY(-1px);
+    box-shadow:var(--cien-2);
+    border-color:color-mix(in srgb, var(--sekK, var(--accent)) var(--tintRamkaMoc), var(--border));
+  }
+}
 /* Pasek koloru sekcji u góry karty — cienki, na całą szerokość. */
 .cenKarta::before{
   content:""; position:absolute; left:0; right:0; top:0; height:3px;
@@ -5806,6 +5814,11 @@ html[data-theme="dark"]{
 }
 .cenHeroStud{ --heroK:var(--accent); }
 .cenHeroPowt{ --heroK:var(--cenPilny); }
+.cenHero::after{
+  content:""; position:absolute; z-index:0; pointer-events:none;
+  width:220px; height:220px; right:-88px; top:-105px; border-radius:50%;
+  background:radial-gradient(circle, color-mix(in srgb, var(--heroK) 20%, transparent) 0%, transparent 69%);
+}
 .cenHeroTresc{ position:relative; z-index:1; flex:1 1 auto; min-width:0; }
 /* Ilustracja siedzi w rogu i wychodzi poza kartę — ma być tłem, nie
    ilustracją do podpisu. `pointer-events:none`, bo cała karta jest klikalna
@@ -5814,6 +5827,7 @@ html[data-theme="dark"]{
   position:absolute; right:-4px; bottom:0; z-index:0;
   width:40%; max-width:190px; min-width:110px;
   color:var(--heroK); opacity:.92; pointer-events:none;
+  filter:drop-shadow(0 12px 14px color-mix(in srgb, var(--heroK) 18%, transparent));
 }
 .cenIlu{ display:block; width:100%; height:auto; }
 
@@ -5865,7 +5879,8 @@ html[data-theme="dark"]{
 .cenHeroKafel{
   display:flex; align-items:center; gap:8px; min-width:0;
   padding:8px 11px; border-radius:12px;
-  border:1px solid var(--border); background:var(--panel);
+  border:1px solid color-mix(in srgb, var(--heroK) var(--tintRamka), var(--border));
+  background:color-mix(in srgb, var(--panel) 88%, var(--heroK));
 }
 .cenHeroKafel .ic{ width:16px; height:16px; flex:0 0 auto; color:var(--heroK); }
 .cenHeroKafelTxt{ display:flex; flex-direction:column; min-width:0; }
@@ -6237,7 +6252,7 @@ html[data-theme="sepia"]{ --cenSerce:#a83232; }
 @media (max-width:620px){
   /* Plakietki zawijają się same, ile ich wejdzie w rząd. Zostaje tylko palec:
      wysokość rośnie do 38 px, żeby był w co trafić. */
-  .cenSzyb{ padding:9px 13px 9px 11px; min-height:38px; }
+  .cenSzyb{ padding:10px 13px 10px 11px; min-height:42px; }
 }
 
 
