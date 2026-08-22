@@ -1403,23 +1403,11 @@ html[data-anim="ograniczone"] #msgModal .askbox{ animation:ovIn .12s ease-out; }
   .brand-name{ font-size:15px; }
   #counts{ padding-left:12px; }
 }
-/* TELEFON W POZIOMIE — NAJCIAŚNIEJSZY EKRAN, JAKI TA APLIKACJA WIDZI.
-
-   iPhone położony bokiem to 393 px wysokości. Zmierzone w 2.76: nagłówek 80 +
-   zakładki kolumn 35 + pasek listy 72 = 187 px, czyli PIERWSZA NOTATKA
-   ZACZYNAŁA SIĘ W 53 % EKRANU. Zostawało miejsce na jedną kartę.
-
-   Trzy oszczędności, każda bez usuwania czegokolwiek:
-     • szukanie wraca do wspólnego rzędu z przyciskami — przy 850 px szerokości
-       jest na to miejsce, a osobny rząd kosztował 40 px (interfejs zwarty
-       wypycha je w osobny wiersz, bo liczy się szerokością telefonu w PIONIE);
-     • zakładki kolumn i pasek listy tracą po kilka pikseli wypełnienia;
-     • filtry idą jednym rzędem — i tak są już przewijane w bok. */
+/* Telefon w poziomie: nagłówek zabiera zbyt dużo z niskiego ekranu. */
 @media (max-height:460px) and (orientation:landscape){
   header{ padding-top:calc(5px + env(safe-area-inset-top,0px)); padding-bottom:5px; }
   .btn{ min-height:30px; }
-  #mobileTabs{ padding:3px 10px; }
-  #pasekListy > #counts{ font-size:calc(10.5px * var(--uiw)); }
+  #mobileTabs{ padding:5px 10px; }
 }
 /* Bezpieczne marginesy przy „uchu" iPhone'a w poziomie. */
 @supports (padding:max(0px)){
@@ -2444,38 +2432,10 @@ header{ gap:calc(9px * var(--uiw)); }
   #colTags { width:250px; }
   #colPubs { width:240px; }
 }
-/* iPAD W POZIOMIE, 900–1180 px — GDZIE SIĘ PODZIAŁY NOTATKI (v2.77)
-
-   Zmierzone na iPadzie 9. generacji (1024 px):
-
-       Biblia 180 + Etykiety 190 + Publikacje 180 = 550 px NAWIGACJI
-       kolumna notatek                            = 369 px TREŚCI
-
-   Trzy spisy, do których się zagląda, zajmowały półtora raza więcej miejsca niż
-   to, po co się aplikację otwiera. Notatki dostawały 36 % szerokości okna,
-   a przy tak wąskiej kolumnie filtry nad listą łamały się na TRZY rzędy
-   i zjadały jeszcze 171 px wysokości.
-
-   Kolumny boczne schodzą więc w tym paśmie do swojego minimum. Najdłuższe
-   nazwy ksiąg („Powtórzonego Prawa") nie mieszczą się w żadnej z tych
-   szerokości — ucinają się wielokropkiem tak samo przy 180, jak przy 150 px —
-   a nazwy etykiet zawijają się do dwóch wierszy. Kto woli inaczej, przeciąga
-   uchwyt: szerokość jest zapamiętywana. */
 @media (max-width:1180px){
-  #colBooks{ width:150px; min-width:132px; }
-  #colTags { width:165px; min-width:142px; }
-  #colPubs { width:150px; min-width:132px; }
-}
-/* Filtry nad listą w JEDNYM rzędzie, przewijanym w bok — tak samo jak
-   w interfejsie zwartym na telefonie. Trzy złamane rzędy kosztowały tyle,
-   co pół karty notatki. */
-@media (max-width:1180px){
-  #quickFilters{
-    flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none;
-    -webkit-overflow-scrolling:touch;
-  }
-  #quickFilters::-webkit-scrollbar{ display:none; }
-  #quickFilters .qf{ flex:0 0 auto; }
+  #colBooks{ width:180px; min-width:150px; }
+  #colTags { width:190px; min-width:158px; }
+  #colPubs { width:180px; min-width:150px; }
 }
 @media (max-width:900px){
   /* na telefonie i wąskim tablecie widać jedną kolumnę naraz */
@@ -2836,26 +2796,8 @@ body.przenoszenieNotatki{ cursor:grabbing; user-select:none; }
 }
 #btnWszystkie:hover .bwN{ background:rgba(255,255,255,.22); color:inherit; }
 @keyframes bwPokaz{ from{ opacity:0; transform:translateY(-3px); } to{ opacity:1; transform:none; } }
-/* NAPIS ZOSTAJE TAKŻE NA TELEFONIE (poprawione w 2.77).
-
-   Do 2.76 poniżej 1100 px zostawała sama strzałka. Wśród sześciu innych ikon
-   w pasku wyglądała jak „cofnij" i była w praktyce niewidoczna — a to jedyne
-   wyjście z zawężonego widoku i jedyny przycisk w pasku, który MÓWI O STANIE:
-   pokazuje się wyłącznie wtedy, gdy coś listę zawęża. Ikona bez podpisu nadaje
-   się do rzeczy, które są zawsze na swoim miejscu; ta pojawia się i znika, więc
-   za każdym razem trzeba ją rozpoznać od nowa.
-
-   Napis skraca się do „Wszystkie" (reguła przy 1400 px), a na telefonie
-   przycisk dostaje tło, żeby odróżniał się od ikon obok. Miejsce się znajduje:
-   przy 375 px lista wyboru kolejności schodzi do drugiego rzędu, który i tak
-   istnieje. */
-@media (max-width:900px){
-  #btnWszystkie{
-    background:rgba(255,255,255,.16);
-    border-color:rgba(255,255,255,.28);
-  }
-  #btnWszystkie .bwTxt::after{ font-size:calc(12.5px * var(--uiw,1)); }
-}
+/* Na wąskim pasku zostaje sama strzałka z liczbą — napis by się nie zmieścił. */
+@media (max-width:1100px){ #btnWszystkie .bwTxt{ display:none; } }
 
 /* Znaczek przy pozycji menu, której miejsce ustawiono ręcznie (v2.03). */
 #dropdown .ddZnak{
@@ -3321,14 +3263,6 @@ html.zwarty header #btnUndo{ display:none; }
 html.zwarty header #btnNew .ic{ margin-right:2px; }
 html.zwarty header .searchwrap{ flex:1 1 100%; order:9; }
 html.zwarty #search{ padding-top:7px; padding-bottom:7px; }
-/* ...ale o osobnym rzędzie dla szukania decyduje SZEROKOŚĆ, nie sama zwartość.
-   Telefon położony bokiem jest zwarty z powodu niskiego ekranu, a szerokości
-   ma 850 px — tam pole spokojnie mieści się obok przycisków, a własny rząd
-   kosztuje 40 px z 393, czyli jedną dziesiątą ekranu. Reguła musi stać PO
-   tamtej, bo ma tę samą siłę selektora. */
-@media (min-width:701px) and (max-height:520px) and (orientation:landscape){
-  html.zwarty header .searchwrap{ flex:1 1 170px; order:0; }
-}
 
 /* ——— PASEK PRZEŁĄCZANIA KOLUMN ——— */
 html.zwarty #mobileTabs{ padding:4px 8px; gap:4px; }
@@ -6467,36 +6401,6 @@ html[data-theme="sepia"]{ --cenSerce:#a83232; }
   #modalMapa #mapaSzukaj{ flex:1 1 140px; }
 }
 
-/* ══════════════ POZYCJA MENU BEZ TREŚCI (v2.77) ══════════════
-
-   „Cofnij ostatnią zmianę" stoi w menu Plik zawsze, także wtedy, gdy stos
-   cofania jest pusty — pozycja, która raz jest, a raz jej nie ma, zmusza do
-   szukania za każdym razem. Wygaszona mówi „to tu mieszka, dziś nic tu nie ma".
-   Nie chowamy jej, bo wtedy nikt by się nie dowiedział, że istnieje. */
-#dropdown .dd-off{ opacity:.45; cursor:default; }
-#dropdown .dd-off:hover{ background:none; }
-
-/* ══════════════ TELEFON POŁOŻONY BOKIEM — JEDEN RZĄD NAD LISTĄ (v2.77) ══════
-
-   Musi stać na końcu arkusza: `#pasekListy{ flex-wrap:wrap }` pada w dwóch
-   miejscach wyżej, a selektor jest tej samej siły — o wyniku decyduje więc
-   kolejność, nie specyficzność.
-
-   Widoki, filtry i licznik dzielą jeden rząd. Filtry i tak przewijają się
-   w bok, więc złamany wiersz niczego nie odsłaniał — zabierał tylko 30 px
-   z 393, jakie ma iPhone położony bokiem. */
-@media (max-height:460px) and (orientation:landscape){
-  #pasekListy{ flex-wrap:nowrap; }
-  #pasekListy > #quickFilters{ min-width:0; }
-  #pasekListy > #counts{ margin-left:8px; }
-}
-/* Zakładki kolumn na telefonie położonym bokiem: niższe niż w pionie, ale nie
-   niższe niż palec. 26 px to za mało — 30 px to minimum, przy którym trafia się
-   za pierwszym razem. */
-@media (max-height:460px) and (orientation:landscape){
-  #mobileTabs button{ min-height:30px; }
-}
-
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -6505,7 +6409,7 @@ html[data-theme="sepia"]{ --cenSerce:#a83232; }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.77</span></div>
+      <div class="brand-name">JW Study <span class="ver">v2.76</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -12497,7 +12401,6 @@ $("btnMenu").onclick = e=>{
   const lastBk = lsGet(KP+"LastBk", null);
   const dirty = +(lsGet(KP+"Dirty",0)||0);
   const trashN = trashList().length;
-  const undoIle = (typeof undoStack !== "undefined" && undoStack) ? undoStack.length : 0;
   const ic = {
     down:_svg('<path d="M12 4v11"/><path d="M8 11l4 4 4-4"/><path d="M4 19h16"/>'),
     up:_svg('<path d="M12 20V9"/><path d="M8 13l4-4 4 4"/><path d="M4 5h16"/>'),
@@ -12521,14 +12424,6 @@ $("btnMenu").onclick = e=>{
     <div data-m="loadjson">${ic.folder}Wczytaj kopię danych…</div>
     ${backupStatusHtml()}
     <div class="dd-sep"></div>
-    <!-- COFNIJ TAKŻE TUTAJ (2.77). W pasku górnym ten przycisk znika na
-         telefonie razem z regulacją pisma i zapisem kopii — tylko że kopia ma
-         swoje miejsce niżej w tym menu, pismo w Ustawieniach, a cofanie nie
-         miało NIGDZIE. Na iPhonie nie ma też ⌘Z. Jedyna zmiana, której nie dało
-         się odwołać, była zarazem tą, którą najłatwiej zrobić przez pomyłkę. -->
-    <div data-m="undo"${undoIle ? "" : ' class="dd-off"'}>${ICO.undo}Cofnij ostatnią zmianę${
-      undoIle ? ` <span class="dd-badge">${undoIle}</span>` : ' <span class="dd-hint">nie ma czego cofać</span>'}</div>
-    <div class="dd-sep"></div>
     <div data-m="trash">${ICO.trash}Kosz${trashN ? ` <span class="dd-badge">${trashN}</span>` : ""}</div>
     <div data-m="info">${ic.info}Gdzie zapisują się moje dane?</div>
     <div data-m="help">${ic.help}Jak to działa — samouczek</div>
@@ -12547,7 +12442,6 @@ $("btnMenu").onclick = e=>{
     else if(m==="json")exportJson();
     else if(m==="cloud")shareBackup();
     else if(m==="loadjson")openFilePicker("json");
-    else if(m==="undo"){ if(typeof doUndo === "function" && undoIle) doUndo(); }
     else if(m==="trash")openTrash();
     else if(m==="info")openModal("modalInfo");
     else if(m==="help")openModal("modalHelp");
