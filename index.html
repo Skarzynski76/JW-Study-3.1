@@ -1403,11 +1403,23 @@ html[data-anim="ograniczone"] #msgModal .askbox{ animation:ovIn .12s ease-out; }
   .brand-name{ font-size:15px; }
   #counts{ padding-left:12px; }
 }
-/* Telefon w poziomie: nagłówek zabiera zbyt dużo z niskiego ekranu. */
+/* TELEFON W POZIOMIE — NAJCIAŚNIEJSZY EKRAN, JAKI TA APLIKACJA WIDZI.
+
+   iPhone położony bokiem to 393 px wysokości. Zmierzone w 2.76: nagłówek 80 +
+   zakładki kolumn 35 + pasek listy 72 = 187 px, czyli PIERWSZA NOTATKA
+   ZACZYNAŁA SIĘ W 53 % EKRANU. Zostawało miejsce na jedną kartę.
+
+   Trzy oszczędności, każda bez usuwania czegokolwiek:
+     • szukanie wraca do wspólnego rzędu z przyciskami — przy 850 px szerokości
+       jest na to miejsce, a osobny rząd kosztował 40 px (interfejs zwarty
+       wypycha je w osobny wiersz, bo liczy się szerokością telefonu w PIONIE);
+     • zakładki kolumn i pasek listy tracą po kilka pikseli wypełnienia;
+     • filtry idą jednym rzędem — i tak są już przewijane w bok. */
 @media (max-height:460px) and (orientation:landscape){
   header{ padding-top:calc(5px + env(safe-area-inset-top,0px)); padding-bottom:5px; }
   .btn{ min-height:30px; }
-  #mobileTabs{ padding:5px 10px; }
+  #mobileTabs{ padding:3px 10px; }
+  #pasekListy > #counts{ font-size:calc(10.5px * var(--uiw)); }
 }
 /* Bezpieczne marginesy przy „uchu" iPhone'a w poziomie. */
 @supports (padding:max(0px)){
@@ -2432,10 +2444,38 @@ header{ gap:calc(9px * var(--uiw)); }
   #colTags { width:250px; }
   #colPubs { width:240px; }
 }
+/* iPAD W POZIOMIE, 900–1180 px — GDZIE SIĘ PODZIAŁY NOTATKI (v2.77)
+
+   Zmierzone na iPadzie 9. generacji (1024 px):
+
+       Biblia 180 + Etykiety 190 + Publikacje 180 = 550 px NAWIGACJI
+       kolumna notatek                            = 369 px TREŚCI
+
+   Trzy spisy, do których się zagląda, zajmowały półtora raza więcej miejsca niż
+   to, po co się aplikację otwiera. Notatki dostawały 36 % szerokości okna,
+   a przy tak wąskiej kolumnie filtry nad listą łamały się na TRZY rzędy
+   i zjadały jeszcze 171 px wysokości.
+
+   Kolumny boczne schodzą więc w tym paśmie do swojego minimum. Najdłuższe
+   nazwy ksiąg („Powtórzonego Prawa") nie mieszczą się w żadnej z tych
+   szerokości — ucinają się wielokropkiem tak samo przy 180, jak przy 150 px —
+   a nazwy etykiet zawijają się do dwóch wierszy. Kto woli inaczej, przeciąga
+   uchwyt: szerokość jest zapamiętywana. */
 @media (max-width:1180px){
-  #colBooks{ width:180px; min-width:150px; }
-  #colTags { width:190px; min-width:158px; }
-  #colPubs { width:180px; min-width:150px; }
+  #colBooks{ width:150px; min-width:132px; }
+  #colTags { width:165px; min-width:142px; }
+  #colPubs { width:150px; min-width:132px; }
+}
+/* Filtry nad listą w JEDNYM rzędzie, przewijanym w bok — tak samo jak
+   w interfejsie zwartym na telefonie. Trzy złamane rzędy kosztowały tyle,
+   co pół karty notatki. */
+@media (max-width:1180px){
+  #quickFilters{
+    flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none;
+    -webkit-overflow-scrolling:touch;
+  }
+  #quickFilters::-webkit-scrollbar{ display:none; }
+  #quickFilters .qf{ flex:0 0 auto; }
 }
 @media (max-width:900px){
   /* na telefonie i wąskim tablecie widać jedną kolumnę naraz */
@@ -2796,8 +2836,26 @@ body.przenoszenieNotatki{ cursor:grabbing; user-select:none; }
 }
 #btnWszystkie:hover .bwN{ background:rgba(255,255,255,.22); color:inherit; }
 @keyframes bwPokaz{ from{ opacity:0; transform:translateY(-3px); } to{ opacity:1; transform:none; } }
-/* Na wąskim pasku zostaje sama strzałka z liczbą — napis by się nie zmieścił. */
-@media (max-width:1100px){ #btnWszystkie .bwTxt{ display:none; } }
+/* NAPIS ZOSTAJE TAKŻE NA TELEFONIE (poprawione w 2.77).
+
+   Do 2.76 poniżej 1100 px zostawała sama strzałka. Wśród sześciu innych ikon
+   w pasku wyglądała jak „cofnij" i była w praktyce niewidoczna — a to jedyne
+   wyjście z zawężonego widoku i jedyny przycisk w pasku, który MÓWI O STANIE:
+   pokazuje się wyłącznie wtedy, gdy coś listę zawęża. Ikona bez podpisu nadaje
+   się do rzeczy, które są zawsze na swoim miejscu; ta pojawia się i znika, więc
+   za każdym razem trzeba ją rozpoznać od nowa.
+
+   Napis skraca się do „Wszystkie" (reguła przy 1400 px), a na telefonie
+   przycisk dostaje tło, żeby odróżniał się od ikon obok. Miejsce się znajduje:
+   przy 375 px lista wyboru kolejności schodzi do drugiego rzędu, który i tak
+   istnieje. */
+@media (max-width:900px){
+  #btnWszystkie{
+    background:rgba(255,255,255,.16);
+    border-color:rgba(255,255,255,.28);
+  }
+  #btnWszystkie .bwTxt::after{ font-size:calc(12.5px * var(--uiw,1)); }
+}
 
 /* Znaczek przy pozycji menu, której miejsce ustawiono ręcznie (v2.03). */
 #dropdown .ddZnak{
@@ -3263,6 +3321,14 @@ html.zwarty header #btnUndo{ display:none; }
 html.zwarty header #btnNew .ic{ margin-right:2px; }
 html.zwarty header .searchwrap{ flex:1 1 100%; order:9; }
 html.zwarty #search{ padding-top:7px; padding-bottom:7px; }
+/* ...ale o osobnym rzędzie dla szukania decyduje SZEROKOŚĆ, nie sama zwartość.
+   Telefon położony bokiem jest zwarty z powodu niskiego ekranu, a szerokości
+   ma 850 px — tam pole spokojnie mieści się obok przycisków, a własny rząd
+   kosztuje 40 px z 393, czyli jedną dziesiątą ekranu. Reguła musi stać PO
+   tamtej, bo ma tę samą siłę selektora. */
+@media (min-width:701px) and (max-height:520px) and (orientation:landscape){
+  html.zwarty header .searchwrap{ flex:1 1 170px; order:0; }
+}
 
 /* ——— PASEK PRZEŁĄCZANIA KOLUMN ——— */
 html.zwarty #mobileTabs{ padding:4px 8px; gap:4px; }
@@ -5517,23 +5583,82 @@ label.roz-opcja .roz-data:empty{ display:none; }
    pasek u góry karty. Tła kart zostają białe — siedem kolorowych prostokątów
    obok siebie byłoby jarmarkiem, a chodzi tylko o to, żeby dało się je
    rozróżniać kątem oka. */
+/* NASYCENIE JEST TERAZ WSPÓLNE (v2.76).
+
+   Odcienie zostają — zielony to studiowane, niebieski dodane, fioletowy
+   niedokończone. Zmieniło się to, ILE w nich chromy. Było: 11, 41, 49, 52, 80,
+   100, 100 %. Siedem kolorów w siedmiu różnych mocach czyta się jak siedem
+   różnych aplikacji; najgłośniejszy — pomarańczowy „do powtórki" przy 100 % —
+   przebijał wszystko inne, choć niesie tę samą wagę co reszta.
+
+   Teraz wszystkie siedzą w paśmie 45–72 %, przy niezmienionej jasności:
+
+     pomarańczowy   100 → 72 %   (zostaje najmocniejszy, bo znaczy „pilne",
+                                  ale przestał krzyczeć; kontrast z bielą
+                                  4,24 → 5,42, czyli wchodzi w normę AA)
+     niebieski       80 → 52 %
+     turkusowy      100 → 52 %   + odcień 173 → 186°, żeby przy równej chromie
+                                  nie zlał się z zielenią (14 → 28° różnicy)
+     fioletowy, zielony, brązowy, szary — bez zmian, były już w paśmie
+
+   Szary „ostatnie wyszukiwania" (11 %) zostaje szarym celowo: szukanie nie ma
+   własnego koloru, bo dotyczy wszystkiego. */
 :root{
-  --cenPilny:#b26a00;  --cenPilnyTlo:#fff6e6;
-  --cenK-dzis:#b26a00; --cenK-niedok:#7b4fb5; --cenK-studiowane:#256b52;
-  --cenK-dodane:#1565c0; --cenK-wersety:#00796b; --cenK-publikacje:#8a5a2b;
+  --cenPilny:#916018;
+  --cenK-dzis:#916018; --cenK-niedok:#7b4fb5; --cenK-studiowane:#256b52;
+  --cenK-dodane:#31639b; --cenK-wersety:#256c74; --cenK-publikacje:#8a5a2b;
   --cenK-szukania:#5a6570;
 }
-/* Sepia ma kremowe tło kart, więc kremowe #fff6e6 znikało w nim bez śladu —
-   plakietka „zaległe 6 dni" wyglądała jak zwykły tekst. Tu tło musi być
-   procentem koloru, nie własnym odcieniem. */
 html[data-theme="sepia"]{
-  --cenPilny:#9c5a00;  --cenPilnyTlo:rgba(156,90,0,.14);
+  --cenPilny:#885816;
+}
+/* W ciemnym motywie pasmo jest o kilka punktów wyżej (55–70 %): jasna barwa na
+   ciemnym tle wygląda na mniej nasyconą, niż jest. */
+html[data-theme="dark"]{
+  --cenPilny:#dea147;
+  --cenK-dzis:#dea147; --cenK-niedok:#b498e4; --cenK-studiowane:#5fd0a0;
+  --cenK-dodane:#8ab3e0; --cenK-wersety:#5cc0cc; --cenK-publikacje:#d7a06a;
+  --cenK-szukania:#9aa7b3;
+}
+
+/* ══════════════ ILE KOLORU NA CZYM (v2.76) ══════════════
+
+   Kolorów jest siedem i tak zostaje — po to są, żeby rozpoznawać sekcję kątem
+   oka. Zmienia się ICH NASYCENIE NA POWIERZCHNIACH. Do 2.75 każde miejsce
+   dobierało procent osobno: 5, 12, 13, 15, 16, 20, 22, 32, 45 %. Osiem różnych
+   mocy tego samego pomysłu w jednym panelu — stąd wrażenie jarmarku.
+
+   Od 2.76 obowiązuje JEDNA SKALA, trzy stopnie:
+
+     IKONA I TEKST   pełny kolor            — nośnik rozpoznania, ma być mocny
+     TŁO             6 % koloru             — sam ślad, „ta karta jest zielona"
+     TŁO NA KOLORZE  8 % koloru             — kafelki i plakietki, które leżą
+                                              na już podbarwionej karcie i przy
+                                              6 % zlałyby się z nią
+     RAMKA           18 % koloru            — widać kształt, nie widać barwy
+     RAMKA WSKAZANA  34 % koloru            — tylko `:hover`, ma odpowiadać
+
+   PEŁNE WYPEŁNIENIA ZOSTAJĄ tam, gdzie kolor nie jest ozdobą, tylko treścią:
+   przyciski główne („Otwórz studium"), pasek górny, wybrana pozycja w kolumnie,
+   3-pikselowy pasek koloru na karcie i słupki postępu. To są znaki, nie tła.
+
+   W CIEMNYM MOTYWIE procenty są WIĘKSZE. Tam kolory palety są jasne, a leżą na
+   ciemnym panelu: 6 % jasnej barwy na ciemnym tle to różnica, której oko nie
+   złapie. Sepia siedzi pośrodku, bo jej tło samo jest kremowe. */
+:root{
+  --tintTlo:6%;
+  --tintTloMoc:8%;
+  --tintRamka:18%;
+  --tintRamkaMoc:34%;
+  /* Tło plakietki „zaległe" — ten sam procent, tylko pod własną nazwą, bo
+     używa go też kilka miejsc poza Centrum. */
+  --cenPilnyTlo:color-mix(in srgb, var(--cenPilny) var(--tintTloMoc), transparent);
+}
+html[data-theme="sepia"]{
+  --tintTlo:7%; --tintTloMoc:10%; --tintRamka:20%; --tintRamkaMoc:36%;
 }
 html[data-theme="dark"]{
-  --cenPilny:#e8a33d;  --cenPilnyTlo:rgba(232,163,61,.12);
-  --cenK-dzis:#e8a33d; --cenK-niedok:#b18cf0; --cenK-studiowane:#5fd0a0;
-  --cenK-dodane:#6bb2ff; --cenK-wersety:#4ecdc4; --cenK-publikacje:#d7a06a;
-  --cenK-szukania:#9aa7b3;
+  --tintTlo:11%; --tintTloMoc:15%; --tintRamka:26%; --tintRamkaMoc:45%;
 }
 .cenKarta[data-sek="statystyki"]{  --sekK:var(--cenK-szukania); }
 .cenKarta[data-sek="niedok"]{      --sekK:var(--cenK-niedok); }
@@ -5577,13 +5702,18 @@ html[data-theme="dark"]{
   width:26px; height:26px; flex:0 0 auto; box-sizing:border-box;
   padding:5px; border-radius:8px;
   color:var(--sekK, var(--accent));
-  background:color-mix(in srgb, var(--sekK, var(--accent)) 13%, transparent);
+  background:color-mix(in srgb, var(--sekK, var(--accent)) var(--tintTloMoc), transparent);
 }
 .cenPlak{
   flex:0 0 auto; min-width:20px; padding:1px 7px; border-radius:20px;
   font-size:calc(11px * var(--uiw, 1)); font-weight:700;
   letter-spacing:0; text-transform:none; font-variant-numeric:tabular-nums;
-  color:#fff; background:var(--sekK, var(--accent));
+  /* Plakietka z liczbą: była pełnym kolorem z białym napisem. Przy siedmiu
+     sekcjach dawało to siedem nasyconych pigułek na jednym ekranie — a niosą
+     one liczbę, nie ostrzeżenie. Teraz tło jest 8 % koloru, a napis pełnym
+     kolorem: tak samo czytelne, o ton ciszej. */
+  color:var(--sekK, var(--accent));
+  background:color-mix(in srgb, var(--sekK, var(--accent)) var(--tintTloMoc), transparent);
 }
 
 /* ——— WIERSZ W DWÓCH LINIACH ———
@@ -5665,10 +5795,10 @@ html[data-theme="dark"]{
 .cenHero{
   position:relative; overflow:hidden;
   display:flex; align-items:stretch;
-  border:1px solid color-mix(in srgb, var(--heroK) 32%, var(--border));
+  border:1px solid color-mix(in srgb, var(--heroK) var(--tintRamka), var(--border));
   border-radius:18px; padding:16px 18px;
   background:linear-gradient(135deg,
-    color-mix(in srgb, var(--heroK) 12%, var(--panel)) 0%, var(--panel) 65%);
+    color-mix(in srgb, var(--heroK) var(--tintTlo), var(--panel)) 0%, var(--panel) 65%);
 }
 .cenHeroStud{ --heroK:var(--accent); }
 .cenHeroPowt{ --heroK:var(--cenPilny); }
@@ -5692,10 +5822,10 @@ html[data-theme="dark"]{
 .cenHeroPas{
   position:relative; overflow:hidden;
   padding:15px 18px 14px;
-  border-bottom:1px solid color-mix(in srgb, var(--heroK) 22%, var(--border));
+  border-bottom:1px solid color-mix(in srgb, var(--heroK) var(--tintRamka), var(--border));
   background:linear-gradient(135deg,
-    color-mix(in srgb, var(--heroK) 20%, var(--panel)) 0%,
-    color-mix(in srgb, var(--heroK) 7%, var(--panel)) 100%);
+    color-mix(in srgb, var(--heroK) var(--tintTloMoc), var(--panel)) 0%,
+    color-mix(in srgb, var(--heroK) var(--tintTlo), var(--panel)) 100%);
 }
 .cenHeroPas .cenHeroObraz{
   top:50%; bottom:auto; right:16px; transform:translateY(-50%);
@@ -5708,7 +5838,7 @@ html[data-theme="dark"]{
 .cenChip{
   display:inline-flex; align-items:center; gap:6px;
   padding:4px 10px; border-radius:20px;
-  background:color-mix(in srgb, var(--heroK) 16%, transparent);
+  background:color-mix(in srgb, var(--heroK) var(--tintTloMoc), transparent);
   color:var(--heroK);
   font-size:calc(10.5px * var(--uiw, 1)); font-weight:700;
   text-transform:uppercase; letter-spacing:.06em;
@@ -5927,14 +6057,14 @@ html[data-theme="sepia"]{
 .cenKafel[data-cstat="tematy"]{   --kafK:var(--kaf-tematy); }
 .cenKafel[data-cstat="ulubione"]{ --kafK:var(--kaf-ulubione); }
 .cenStat .cenKafel{
-  background:color-mix(in srgb, var(--kafK, var(--accent)) 5%, var(--panel));
-  border-color:color-mix(in srgb, var(--kafK, var(--accent)) 20%, var(--border));
+  background:color-mix(in srgb, var(--kafK, var(--accent)) var(--tintTlo), var(--panel));
+  border-color:color-mix(in srgb, var(--kafK, var(--accent)) var(--tintRamka), var(--border));
 }
 .cenStat .cenKafelIle{ color:var(--kafK, var(--accent)); }
 .cenKafelIko .ic{
   width:24px; height:24px; box-sizing:border-box; padding:4px; border-radius:7px;
   color:var(--kafK, var(--accent));
-  background:color-mix(in srgb, var(--kafK, var(--accent)) 15%, transparent);
+  background:color-mix(in srgb, var(--kafK, var(--accent)) var(--tintTloMoc), transparent);
 }
 .cenWykres{
   display:flex; flex-direction:column; gap:6px;
@@ -6070,7 +6200,7 @@ html[data-theme="sepia"]{
 }
 .cenSzyb:hover{
   background:var(--sel);
-  border-color:color-mix(in srgb, var(--szK, var(--accent)) 45%, var(--border));
+  border-color:color-mix(in srgb, var(--szK, var(--accent)) var(--tintRamkaMoc), var(--border));
 }
 .cenSzyb:active{ transform:scale(.97); }
 .cenSzyb:focus-visible{ outline:2px solid var(--szK, var(--accent)); outline-offset:2px; }
@@ -6337,6 +6467,36 @@ html[data-theme="sepia"]{ --cenSerce:#a83232; }
   #modalMapa #mapaSzukaj{ flex:1 1 140px; }
 }
 
+/* ══════════════ POZYCJA MENU BEZ TREŚCI (v2.77) ══════════════
+
+   „Cofnij ostatnią zmianę" stoi w menu Plik zawsze, także wtedy, gdy stos
+   cofania jest pusty — pozycja, która raz jest, a raz jej nie ma, zmusza do
+   szukania za każdym razem. Wygaszona mówi „to tu mieszka, dziś nic tu nie ma".
+   Nie chowamy jej, bo wtedy nikt by się nie dowiedział, że istnieje. */
+#dropdown .dd-off{ opacity:.45; cursor:default; }
+#dropdown .dd-off:hover{ background:none; }
+
+/* ══════════════ TELEFON POŁOŻONY BOKIEM — JEDEN RZĄD NAD LISTĄ (v2.77) ══════
+
+   Musi stać na końcu arkusza: `#pasekListy{ flex-wrap:wrap }` pada w dwóch
+   miejscach wyżej, a selektor jest tej samej siły — o wyniku decyduje więc
+   kolejność, nie specyficzność.
+
+   Widoki, filtry i licznik dzielą jeden rząd. Filtry i tak przewijają się
+   w bok, więc złamany wiersz niczego nie odsłaniał — zabierał tylko 30 px
+   z 393, jakie ma iPhone położony bokiem. */
+@media (max-height:460px) and (orientation:landscape){
+  #pasekListy{ flex-wrap:nowrap; }
+  #pasekListy > #quickFilters{ min-width:0; }
+  #pasekListy > #counts{ margin-left:8px; }
+}
+/* Zakładki kolumn na telefonie położonym bokiem: niższe niż w pionie, ale nie
+   niższe niż palec. 26 px to za mało — 30 px to minimum, przy którym trafia się
+   za pierwszym razem. */
+@media (max-height:460px) and (orientation:landscape){
+  #mobileTabs button{ min-height:30px; }
+}
+
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -6345,7 +6505,7 @@ html[data-theme="sepia"]{ --cenSerce:#a83232; }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.75</span></div>
+      <div class="brand-name">JW Study <span class="ver">v2.77</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -12337,6 +12497,7 @@ $("btnMenu").onclick = e=>{
   const lastBk = lsGet(KP+"LastBk", null);
   const dirty = +(lsGet(KP+"Dirty",0)||0);
   const trashN = trashList().length;
+  const undoIle = (typeof undoStack !== "undefined" && undoStack) ? undoStack.length : 0;
   const ic = {
     down:_svg('<path d="M12 4v11"/><path d="M8 11l4 4 4-4"/><path d="M4 19h16"/>'),
     up:_svg('<path d="M12 20V9"/><path d="M8 13l4-4 4 4"/><path d="M4 5h16"/>'),
@@ -12360,6 +12521,14 @@ $("btnMenu").onclick = e=>{
     <div data-m="loadjson">${ic.folder}Wczytaj kopię danych…</div>
     ${backupStatusHtml()}
     <div class="dd-sep"></div>
+    <!-- COFNIJ TAKŻE TUTAJ (2.77). W pasku górnym ten przycisk znika na
+         telefonie razem z regulacją pisma i zapisem kopii — tylko że kopia ma
+         swoje miejsce niżej w tym menu, pismo w Ustawieniach, a cofanie nie
+         miało NIGDZIE. Na iPhonie nie ma też ⌘Z. Jedyna zmiana, której nie dało
+         się odwołać, była zarazem tą, którą najłatwiej zrobić przez pomyłkę. -->
+    <div data-m="undo"${undoIle ? "" : ' class="dd-off"'}>${ICO.undo}Cofnij ostatnią zmianę${
+      undoIle ? ` <span class="dd-badge">${undoIle}</span>` : ' <span class="dd-hint">nie ma czego cofać</span>'}</div>
+    <div class="dd-sep"></div>
     <div data-m="trash">${ICO.trash}Kosz${trashN ? ` <span class="dd-badge">${trashN}</span>` : ""}</div>
     <div data-m="info">${ic.info}Gdzie zapisują się moje dane?</div>
     <div data-m="help">${ic.help}Jak to działa — samouczek</div>
@@ -12378,6 +12547,7 @@ $("btnMenu").onclick = e=>{
     else if(m==="json")exportJson();
     else if(m==="cloud")shareBackup();
     else if(m==="loadjson")openFilePicker("json");
+    else if(m==="undo"){ if(typeof doUndo === "function" && undoIle) doUndo(); }
     else if(m==="trash")openTrash();
     else if(m==="info")openModal("modalInfo");
     else if(m==="help")openModal("modalHelp");
