@@ -2233,6 +2233,21 @@ body.wTrakcieChwytu #pubList{
   overscroll-behavior:contain;
   overflow-anchor:none;
 }
+/* Strefa pojawia się tylko w trakcie przenoszenia. Nie zajmuje miejsca podczas
+   zwykłego przeglądania, a po złapaniu zakładki daje szeroki, jednoznaczny cel
+   nad pierwszym wierszem — łatwy do trafienia palcem na iPadzie. */
+.strefaPoczatku{
+  display:none; align-items:center; justify-content:center; gap:6px;
+  min-height:34px; margin:3px 5px 5px; padding:5px 9px;
+  border:1.5px dashed color-mix(in srgb, var(--accent) 55%, var(--border));
+  border-radius:9px; color:var(--accent); background:color-mix(in srgb, var(--accent) 8%, transparent);
+  font-size:11.5px; font-weight:700; letter-spacing:.02em; pointer-events:auto;
+}
+body.wTrakcieChwytu .strefaPoczatku{ display:flex; }
+.strefaPoczatku.gotowa{
+  border-style:solid; background:color-mix(in srgb, var(--accent) 18%, var(--panel));
+  box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 22%, transparent);
+}
 
 /* ══════════════ PUSTA NOTATKA NA PEŁNYM EKRANIE ══════════════
 
@@ -5571,13 +5586,16 @@ label.roz-opcja .roz-data:empty{ display:none; }
    w stopce panelu („Twoje studium”): u góry siedzi teraz to, co się ROBI,
    a liczby mówią, ile tego w ogóle jest — a to inne pytanie i inne miejsce. */
 .cenStatKafle{
-  display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));
-  gap:8px; align-content:start;
+  /* Cztery liczniki tworzą własny, równy blok 2×2. Przy szerokim Centrum
+     pojedynczy rząd zostawiał pod sobą wielką pustą plamę, podczas gdy wykres
+     obok miał pełną wysokość. */
+  display:grid; grid-template-columns:repeat(2, minmax(0, 1fr));
+  grid-auto-rows:minmax(92px, 1fr); gap:8px; align-content:stretch;
 }
 .cenKafel{
   display:flex; flex-direction:column; gap:1px; align-items:flex-start;
   text-align:left; cursor:pointer;
-  padding:10px 12px; border-radius:13px;
+  min-height:92px; padding:12px 13px; border-radius:13px;
   border:1px solid var(--border); background:var(--panel); color:var(--text);
   transition:transform var(--dur-szybko) var(--ease), box-shadow var(--dur-szybko) var(--ease);
 }
@@ -5585,7 +5603,7 @@ label.roz-opcja .roz-data:empty{ display:none; }
 .cenKafel:active{ transform:scale(.985); }
 .cenKafel:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
 .cenKafelIle{
-  font-size:calc(23px * var(--uiw, 1)); font-weight:700; line-height:1.1;
+  font-size:calc(27px * var(--uiw, 1)); font-weight:750; line-height:1.05;
   letter-spacing:-.02em; font-variant-numeric:tabular-nums; color:var(--accent);
 }
 .cenKafelTyt{ font-size:calc(12px * var(--uiw, 1)); font-weight:600; }
@@ -6167,11 +6185,16 @@ html[data-theme="sepia"]{
   .cenHeroTyt{ font-size:calc(19px * var(--uiw, 1)); }
   .cenHeroKafle{ gap:6px; }
   .cenStatTresc{ grid-template-columns:1fr; }
+  .cenStatKafle{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
   .cenSiatkaM{ grid-template-columns:1fr; }
   /* Wiersze o własnym kształcie zostają siatką — reguła ogólna z v2.58
      ustawia .cenPoz na kolumnę, co rozsypałoby pasek postępu i datę. */
   .cenPoz.cenPozS, .cenPoz.cenPozD{ display:grid; }
   .cenPozD .cenNazwa{ -webkit-line-clamp:2; }
+}
+@media (max-width:390px){
+  .cenStatKafle{ grid-template-columns:1fr; }
+  .cenKafel{ min-height:76px; }
 }
 
 
@@ -6538,6 +6561,44 @@ html[data-theme="dark"] #modalMapa .mapaCialo{ background:#111114; }
   #mobileTabs button{ min-height:30px; }
 }
 
+/* ══════════════ CZYTELNOŚĆ I TRYB SKUPIENIA (v2.78) ══════════════ */
+/* W trybie skupienia Centrum i lista notatek dostają całą szerokość.
+   Boczne listy nie są zamykane ani tracone — tylko chwilowo schowane. */
+body.focus-mode #colBooks,
+body.focus-mode #colTags,
+body.focus-mode #colPubs,
+body.focus-mode .colResizer{ display:none!important; }
+body.focus-mode #glowna{ gap:0; }
+body.focus-mode #colNotes{
+  display:flex!important;
+  flex:1 1 100%;
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+}
+
+/* Czytnik ma być prawdziwą stroną ponad aplikacją: bez widocznych boków,
+   bez niższych przycisków nad nim i bez ramy ograniczającej go na komputerze. */
+#modalFs{
+  position:fixed;
+  inset:0;
+  z-index:10000!important;
+  width:100vw;
+  width:100dvw;
+  height:100vh;
+  height:100dvh;
+  padding:0!important;
+  background:var(--bg);
+  isolation:isolate;
+}
+#modalFs .fsmodal{
+  width:100%!important;
+  min-width:100%!important;
+  height:100%!important;
+  min-height:100%!important;
+  max-height:none!important;
+  border-radius:0!important;
+}
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -6546,7 +6607,7 @@ html[data-theme="dark"] #modalMapa .mapaCialo{ background:#111114; }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.77</span></div>
+      <div class="brand-name">JW Study <span class="ver">v2.78</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -6585,7 +6646,7 @@ html[data-theme="dark"] #modalMapa .mapaCialo{ background:#111114; }
     <button class="btn ico-btn" id="btnColors" title="Kolory kolumn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18c1.4 0 2-.9 2-1.8 0-1.3 1-2.2 2.2-2.2H18a3 3 0 0 0 3-3A8 8 0 0 0 12 3z"/><circle cx="7.5" cy="11" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="7.5" r="1" fill="currentColor" stroke="none"/><circle cx="16.3" cy="11" r="1" fill="currentColor" stroke="none"/></svg></button>
     <button class="btn ico-btn" id="btnUndo" title="Cofnij ostatnią zmianę"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 7L4 12l5 5"/><path d="M4 12h11a5 5 0 0 1 0 10h-3"/></svg></button>
   </div>
-  <div class="fontctl" title="Rozmiar czcionki (notatki i kolumny)">
+  <div class="fontctl" title="Rozmiar tekstu w notatkach">
     <button id="fMinus">A−</button>
     <button id="fPlus" style="font-size:15px">A+</button>
   </div>
@@ -10317,6 +10378,9 @@ applyColors();
 
 /* ================= ROZMIAR CZCIONKI ================= */
 let noteFs = 14;
+/* Osobny rozmiar list jest niezależny od treści notatki. Starsze ustawienie
+   „Font” pozostaje rozmiarem treści, aby nikomu nie zmienić wyglądu po aktualizacji. */
+let listFs = 13.5;
 /* Zakres regulacji: od 6 px (bardzo dużo treści na ekranie) do 30 px (duży druk). */
 const FS_MIN = 6, FS_MAX = 30, FS_BAZA = 14;
 /**
@@ -10328,7 +10392,7 @@ const FS_MIN = 6, FS_MAX = 30, FS_BAZA = 14;
 function applyFs(){
   const r = document.documentElement.style;
   r.setProperty("--noteFs", noteFs+"px");
-  r.setProperty("--colFs", (noteFs-0.5)+"px");
+  r.setProperty("--colFs", listFs+"px");
   const ui = Math.round((noteFs / FS_BAZA) * 1000) / 1000;
   r.setProperty("--ui", ui);
   r.setProperty("--uiFs", (13 * ui).toFixed(2)+"px");
@@ -10338,6 +10402,7 @@ function applyFs(){
   document.documentElement.dataset.fsband = noteFs <= 9 ? "male" : (noteFs >= 22 ? "duze" : "srednie");
 }
 try{ noteFs = Math.min(FS_MAX, Math.max(FS_MIN, +(lsGet(KP+"Font", FS_BAZA)||FS_BAZA) )); }catch(e){}
+try{ listFs = Math.min(FS_MAX, Math.max(FS_MIN, +(lsGet(KP+"ListFont", noteFs-0.5)||noteFs-0.5) )); }catch(e){}
 applyFs();
 /* szerokość czytania (marginesy) w otwartej notatce: wąski / komfort / pełny */
 const FSW = ["620px","760px","100%"];
@@ -10365,8 +10430,27 @@ try{
 }catch(e){ fsWidth = 2; }
 function applyFsWidth(){ document.documentElement.style.setProperty("--fsMax", FSW[fsWidth]||"100%"); }
 applyFsWidth();
-$("fMinus").onclick = ()=>{ noteFs = Math.max(FS_MIN, noteFs-1); lsSetSoon(KP+"Font", noteFs); applyFs(); toast("Wielkość: "+noteFs+" px"); };
-$("fPlus").onclick = ()=>{ noteFs = Math.min(FS_MAX, noteFs+1); lsSetSoon(KP+"Font", noteFs); applyFs(); toast("Wielkość: "+noteFs+" px"); };
+function ustawRozmiarTresci(roznica){
+  noteFs = Math.min(FS_MAX, Math.max(FS_MIN, noteFs + roznica));
+  lsSetSoon(KP+"Font", noteFs); applyFs();
+}
+function ustawRozmiarList(roznica){
+  listFs = Math.min(FS_MAX, Math.max(FS_MIN, listFs + roznica));
+  lsSetSoon(KP+"ListFont", listFs); applyFs();
+}
+$("fMinus").onclick = ()=>{ ustawRozmiarTresci(-1); toast("Treść notatek: "+noteFs+" px"); };
+$("fPlus").onclick = ()=>{ ustawRozmiarTresci(1); toast("Treść notatek: "+noteFs+" px"); };
+
+/* Tryb skupienia nie zmienia układu na stałe: jednym wyborem ukrywa boczne
+   kolumny, a drugim przywraca dokładnie ich wcześniejszy stan i szerokości. */
+let focusMode = String(lsGet(KP+"FocusMode", "0")) === "1";
+function applyFocusMode(){ document.body.classList.toggle("focus-mode", focusMode); }
+function setFocusMode(on){
+  focusMode = !!on;
+  lsSet(KP+"FocusMode", focusMode ? "1" : "0");
+  applyFocusMode();
+}
+applyFocusMode();
 $("btnBackup").onclick = ()=>{ exportJson(); };   // sama zdecyduje: nadpisać wskazany plik czy pobrać nowy
 /* filtry zmieniają się przy każdym kliknięciu kolumny — zapis sklejamy w jeden */
 function persistFilt(){ lsSetSoon(KP+"Filt", JSON.stringify(filt), 300); }
@@ -14911,13 +14995,22 @@ function openSettings(){
   box.innerHTML =
     `<div class="st-karta" data-karta="wyglad">
      <div class="st-sec">
-       <div class="st-lbl">Wielkość czcionki</div>
-       <div class="st-fs">
+       <div class="st-lbl">Wielkość tekstu w notatkach</div>
+       <div class="st-fs" data-font="note">
          <button class="st-opt" data-fs="-">A−</button>
          <span class="st-val" id="stFsVal">${noteFs} px</span>
          <button class="st-opt" data-fs="+">A+</button>
        </div>
-       <div class="st-hint">Skaluje całą aplikację — treść notatek, kolumny, menu i okna. Zakres od 6 do 30 px. To samo, co przyciski A− / A+ na górze.</div>
+       <div class="st-hint">Rozmiar treści wewnątrz notatek. Przyciski A− / A+ na górze zmieniają właśnie ten rozmiar.</div>
+     </div>
+     <div class="st-sec">
+       <div class="st-lbl">Wielkość tekstu na listach</div>
+       <div class="st-fs" data-font="list">
+         <button class="st-opt" data-fs="-">A−</button>
+         <span class="st-val" id="stListFsVal">${listFs} px</span>
+         <button class="st-opt" data-fs="+">A+</button>
+       </div>
+       <div class="st-hint">Dotyczy list notatek oraz kolumn Biblia, Etykiety i Publikacje. Oba rozmiary można ustawić niezależnie.</div>
      </div>
      <div class="st-sec">
        <div class="st-lbl">Gęstość interfejsu</div>
@@ -14945,6 +15038,11 @@ function openSettings(){
          kliknięcie etykiety, księgi albo szukanie przełącza na zwykłą listę. Do Centrum wracasz
          przyciskiem <b>domku</b> w pasku górnym albo klawiszem <b>H</b>. Nic nie jest tu
          dodatkowo zliczane — wszystko liczy się z danych, które notatki już mają.</div>
+     </div>
+     <div class="st-sec">
+       <div class="st-lbl">Tryb skupienia na iPadzie</div>
+       ${optionGroup("focus", [["0","Pełny układ"],["1","Tylko Centrum i notatki"]], focusMode ? "1" : "0")}
+       <div class="st-hint">Ukrywa na chwilę kolumny Biblia, Etykiety i Publikacje. Centrum studium oraz lista notatek zajmują całą szerokość. Po powrocie boczne kolumny zachowują swoje ustawienia.</div>
      </div>
      <div class="st-sec">
        <div class="st-lbl">Układ listy notatek</div>
@@ -15094,8 +15192,14 @@ function openSettings(){
     if(e.target.closest("#stBledyCzysc")){ diagWyczysc(); return; }
     const fs = e.target.closest(".st-fs [data-fs]");   // tylko przyciski A− / A+, nie dowolny przodek
     if(fs){
-      $(fs.dataset.fs==="+" ? "fPlus" : "fMinus").click();
-      $("stFsVal").textContent = noteFs + " px";
+      const roznica = fs.dataset.fs === "+" ? 1 : -1;
+      if(fs.closest('[data-font="list"]')){
+        ustawRozmiarList(roznica);
+        $("stListFsVal").textContent = listFs + " px";
+      }else{
+        ustawRozmiarTresci(roznica);
+        $("stFsVal").textContent = noteFs + " px";
+      }
       return;
     }
     const komp = e.target.closest("[data-komp]");
@@ -15192,6 +15296,7 @@ function openSettings(){
     else if(grp==="anim") setAnim(v);
     else if(grp==="theme") setTheme(v);
     else if(grp==="view") setNoteView(v);
+    else if(grp==="focus") setFocusMode(v === "1");
     opt.parentElement.querySelectorAll(".st-opt").forEach(b=>b.classList.toggle("on", b===opt));
     toastOk("Zapisano ustawienie");
   };
@@ -15418,7 +15523,9 @@ function pubTabRowsHtml(ks){
   if(!ks) return "";
   const lista = pubTabsFor(ks);
   const stat = pubStats(ks);            // jeden przebieg po notatkach na cały blok
-  let h = "";
+  let h = lista.length
+    ? `<div class="strefaPoczatku" data-upusc-start="zakladkaPub" data-cel="${lista[0].id}">⇧ Upuść na początku zakładek</div>`
+    : "";
   lista.forEach(t=>{
     const act = String(filt.book)==="ptb:"+t.id;
     h += `<div class="item ptbItem${act?" active":""}" data-ptb="${t.id}" data-ord="${t.id}">`+
@@ -15898,7 +16005,8 @@ function przesunSecTab(id, kier){
 function secTabRowsHtml(secId){
   const lista = secTabsFor(secId);
   if(!lista.length) return "";
-  return lista.map(z=>{
+  const strefa = `<div class="strefaPoczatku" data-upusc-start="zakladka" data-cel="${lista[0].id}" data-sek="${secId}">⇧ Upuść na początku zakładek</div>`;
+  return strefa + lista.map(z=>{
     const akt = String(filt.tag)==="stb:"+z.id;
     const ile = secTabCount(z.id);
     const kol = kolorZakladki(z);
@@ -16399,6 +16507,7 @@ function zakonczChwyt(zapisz){
   if(wskaznik) wskaznik.remove();
   el.classList.remove("chwytany");
   document.body.classList.remove("wTrakcieChwytu");
+  document.querySelectorAll(".strefaPoczatku.gotowa").forEach(x=>x.classList.remove("gotowa"));
   /* Po ZAKOŃCZONYM przeniesieniu przeglądarka wyśle jeszcze kliknięcie — nie
      chcemy, żeby przy okazji zmieniło filtr. Połykamy tylko je i tylko przez
      chwilę. Po przerwanym geście nie blokujemy nic. */
@@ -16664,6 +16773,7 @@ document.addEventListener("pointerdown", ev=>{
   const przelicz = (x, y)=>{
     if(!_chwyt) return;
     przesunDuszka(_chwyt.duszek, x, y);
+    document.querySelectorAll(".strefaPoczatku.gotowa").forEach(z=>z.classList.remove("gotowa"));
 
     /* Notatka nad kolumną etykiet? Wtedy nie porządkujemy, tylko przypisujemy. */
     if(notatka && typeof celDlaNotatki==="function"){
@@ -16672,6 +16782,25 @@ document.addEventListener("pointerdown", ev=>{
       if(typeof podswietlCel==="function") podswietlCel(obcy);
       _chwyt.celObcy = obcy;
       if(obcy){ _chwyt.cel = null; _chwyt.wskaznik.style.display = "none"; return; }
+    }
+
+    /* Szeroka strefa nad pierwszą zakładką. To nie jest nowy rekord, tylko
+       wygodny cel upuszczenia: wskazuje istniejącą pierwszą pozycję i zawsze
+       zapisuje przenoszony element PRZED nią. */
+    const pod = document.elementFromPoint(x, y);
+    const strefa = pod && pod.closest ? pod.closest(".strefaPoczatku[data-upusc-start]") : null;
+    if(strefa && strefa.dataset.upuscStart === info.rodzaj){
+      const ident = strefa.dataset.cel;
+      const sel = info.rodzaj === "zakladka" ? `.stbItem[data-stb="${ident}"]`
+                : `.ptbItem[data-ptb="${ident}"]`;
+      const pierwszy = document.querySelector(sel);
+      if(pierwszy){
+        strefa.classList.add("gotowa");
+        _chwyt.cel = pierwszy; _chwyt.przed = true;
+        _chwyt.sekcjaCel = strefa.dataset.sek === undefined ? undefined : +strefa.dataset.sek;
+        _chwyt.wskaznik.style.display = "none";
+        return;
+      }
     }
 
     /* Szukamy najbliższej pozycji tego samego rodzaju — także w innych sekcjach. */
@@ -16739,6 +16868,17 @@ document.addEventListener("pointerdown", ev=>{
   document.addEventListener("pointerup", koniec, true);
   document.addEventListener("pointercancel", przerwij, true);
 }, true);
+
+/* iPadOS/Safari potrafi rozpocząć własne przewijanie strony mimo
+   `touch-action:none` na małym uchwycie — wystarczy, że palec wyjedzie poza
+   jego obszar. Gdy trwa chwyt elementu listy, zatrzymujemy wyłącznie ten
+   natywny ruch; automatyczne przewijanie właściwej listy nadal wykonuje
+   `krokPrzewijania`, więc można dojechać do jej pierwszej pozycji. */
+document.addEventListener("touchmove", ev=>{
+  if(!_chwyt) return;
+  if(["etykieta", "zakladka", "publikacja", "zakladkaPub"].includes(_chwyt.rodzaj))
+    ev.preventDefault();
+}, {capture:true, passive:false});
 
 /* ==========================================================================
    BLOKADA KLIKNIĘĆ MUSI BYĆ CHWILOWA
