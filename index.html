@@ -800,6 +800,10 @@ html[data-theme="dark"]{
   --bg:#111114; --panel:#1c1c1e; --border:rgba(84,84,88,.55); --text:#f2f2f7; --muted:#98989f;
   --accent:#48c08d; --accent2:#6ed3a8; --sel:#2c2c2e;
 }
+/* Gotowa kompozycja może zabarwiać kolumny, ale w nocy tło wokół kart
+   Centrum ma zostać czarne.  W przeciwnym razie np. Lawenda mieszała się z
+   czernią i dawała szare tło zamiast spokojnej, ciemnej przestrzeni. */
+html[data-theme="dark"] #centrum{background:#111114;}
 html[data-theme="dark"] main{background:radial-gradient(900px 520px at 12% -5%,rgba(90,80,140,.4),transparent 60%),radial-gradient(820px 560px at 105% 15%,rgba(40,90,110,.4),transparent 58%),radial-gradient(700px 500px at 50% 115%,rgba(110,80,60,.32),transparent 60%),linear-gradient(180deg,#141416,#0e0e10)}
 html[data-theme="dark"] #colBooks,html[data-theme="dark"] #colTags,html[data-theme="dark"] #colNotes{box-shadow:0 6px 18px rgba(0,0,0,.4)}
 /* ——— dopracowanie trybu nocnego ——— */
@@ -6293,7 +6297,16 @@ html[data-theme="sepia"]{ --cenSerce:#a83232; }
    Zostaje w tym samym mechanizmie okien (openModal/closeModal), bo to on
    trzyma Escape, ognisko klawiatury i powrót do miejsca, z którego się przyszło.
    Zmienia się wygląd, nie sposób otwierania. */
-#modalMapa{ background:var(--bg); backdrop-filter:none; padding:0; }
+#modalMapa{
+  /* iOS w trybie „z ekranu początkowego” rysuje stronę także pod paskiem
+     statusu. Sama pozycja fixed nie wystarcza — bez tych odstępów nagłówek
+     mapy zaczynał się pod godziną i ikonami systemowymi.  Padding należy do
+     nakładki (a nie do nagłówka), dzięki czemu bezpieczne są też boki i dół
+     w poziomie, na iPhonie oraz iPadzie. */
+  background:var(--bg); backdrop-filter:none;
+  padding:env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+          env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+}
 #modalMapa .mapamodal{
   width:100%; max-width:none; height:100%; max-height:none;
   border:0; border-radius:0; box-shadow:none; background:transparent;
@@ -6314,6 +6327,10 @@ html[data-theme="sepia"]{ --cenSerce:#a83232; }
 #modalMapa .mapaTytul span{ font-size:calc(12px * var(--uiw, 1)); color:var(--muted); }
 #modalMapa .mapaCialo{ background:var(--bg); }
 #modalMapa .mapaLewa{ background:var(--panel); }
+/* Mapa jest pełną stroną: w trybie nocnym przestrzeń między kartami ma być
+   prawdziwie ciemna, niezależnie od aktywnej pastelowej kompozycji. */
+html[data-theme="dark"] #modalMapa,
+html[data-theme="dark"] #modalMapa .mapaCialo{ background:#111114; }
 
 /* ══════════════ SIATKA KART TEMATÓW ══════════════ */
 #modalMapa .mapaWstep{ padding:18px 20px 4px; max-width:70ch; }
