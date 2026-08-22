@@ -2224,6 +2224,15 @@ html[data-theme="dark"] #fsWrap .nmeta2{ border-bottom-color:rgba(255,255,255,.1
 #tagList.reordering,#pubList.reordering{ cursor:grabbing; }
 #tagList.reordering .item,#pubList.reordering .item{ transition:none; }
 .dragOrd:active{ cursor:grabbing; opacity:.9; }
+/* Podczas przeciągania uchwyt ma sterować wyłącznie swoją listą. iOS potrafi
+   przekazać dalszy gest do nadrzędnej kolumny, gdy lista dojedzie do krańca;
+   wtedy zamiast zmienić kolejność przesuwał się cały widok. */
+body.wTrakcieChwytu #tagList,
+body.wTrakcieChwytu #pubList{
+  touch-action:none;
+  overscroll-behavior:contain;
+  overflow-anchor:none;
+}
 
 /* ══════════════ PUSTA NOTATKA NA PEŁNYM EKRANIE ══════════════
 
@@ -16498,8 +16507,22 @@ function przenumeruj(grupa, element, sasiad, przed){
 const CHWYT_STREFA   = 64;    // px od krawędzi, w których zaczyna się przewijanie
 const CHWYT_MAX_KROK = 18;    // px na klatkę tuż przy krawędzi
 
-/** Najbliższy przodek, który faktycznie da się przewinąć. */
-function przewijalny(el){
+/**
+ * Lista, którą wolno przewijać podczas chwytu.
+ *
+ * Etykiety i zakładki mają zawsze wskazany własny kontener. Zwracamy go nawet
+ * wtedy, gdy jest akurat na początku/końcu albo ma za mało pozycji do
+ * przewijania — dzięki temu nie przechodzimy potem do `main` czy całej strony.
+ * To pozwala przeciągnąć pozycję na samą górę bez „odjechania” kolumny.
+ */
+function przewijalny(el, rodzaj){
+  const listaWlasna = (rodzaj==="etykieta" || rodzaj==="zakladka") ? el.closest("#tagList")
+                    : (rodzaj==="publikacja" || rodzaj==="zakladkaPub") ? el.closest("#pubList")
+                    : null;
+  if(listaWlasna) return listaWlasna;
+
+  /* Dla notatek zostaje dotychczasowa, ogólna droga: ich lista może być
+     pojedynczym panelem na telefonie albo osobną kolumną na większym ekranie. */
   let w = el;
   while(w && w !== document.body){
     if(w.scrollHeight > w.clientHeight + 4){
@@ -16631,7 +16654,7 @@ document.addEventListener("pointerdown", ev=>{
     _chwyt = {el, rodzaj:info.rodzaj, id:info.id,
               duszek: zrobDuszka(el, startX, startY), wskaznik: zrobWskaznik(),
               cel:null, przed:false, sekcjaCel:undefined, celObcy:null,
-              przewijak: przewijalny(el), x:startX, y:startY, klatka:0,
+              przewijak: przewijalny(el, info.rodzaj), x:startX, y:startY, klatka:0,
               ostatniRuch: Date.now()};
     petlaPrzewijania();
     if(navigator.vibrate) try{ navigator.vibrate(12); }catch(e){}
@@ -16679,7 +16702,12 @@ document.addEventListener("pointerdown", ev=>{
 
   /* Z uchwytu chwytamy od razu; z samego wiersza dopiero po przytrzymaniu,
      żeby zwykłe kliknięcie filtrujące działało jak dotąd. */
-  if(zUchwytu){ ev.preventDefault(); odklej(); }
+  if(zUchwytu){
+    /* Przejęcie wskaźnika zatrzymuje natywny gest przewijania po tym, gdy
+       palec wyjedzie poza sam mały uchwyt. */
+    try{ el.setPointerCapture(ev.pointerId); }catch(e){}
+    ev.preventDefault(); odklej();
+  }
   else licznik = setTimeout(odklej, CHWYT_PRZYTRZYMANIE);
 
 
