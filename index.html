@@ -594,7 +594,7 @@ mark{padding:0 1px;border-radius:3px}
 #hlBar .tb.fmt{font-family:Georgia,serif;width:25px;text-align:center;font-size:14.5px}
 #hlBar .sep{width:1px;height:20px;background:rgba(0,0,0,.12)}
 .qhl{background:#9fd9ff;border-radius:3px;box-shadow:0 0 0 1px #6db9e8}
-#hlBar{position:fixed;display:none;background:rgba(255,255,255,.94);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid rgba(0,0,0,.08);border-radius:21px;box-shadow:0 8px 28px rgba(0,0,0,.26),inset 0 1px 0 #fff;padding:7px 11px;z-index:10020;gap:7px;align-items:center}
+#hlBar{position:fixed;display:none;background:rgba(255,255,255,.94);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid rgba(0,0,0,.08);border-radius:21px;box-shadow:0 8px 28px rgba(0,0,0,.26),inset 0 1px 0 #fff;padding:7px 11px;z-index:120;gap:7px;align-items:center}
 #hlBar .sw{width:24px;height:24px;border-radius:50%;border:1px solid rgba(0,0,0,.18);cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.15);transition:transform .1s}
 #hlBar .sw:hover{transform:scale(1.18)}
 #hlBar .sw:active{transform:scale(.94)}
@@ -800,10 +800,6 @@ html[data-theme="dark"]{
   --bg:#111114; --panel:#1c1c1e; --border:rgba(84,84,88,.55); --text:#f2f2f7; --muted:#98989f;
   --accent:#48c08d; --accent2:#6ed3a8; --sel:#2c2c2e;
 }
-/* Gotowa kompozycja może zabarwiać kolumny, ale w nocy tło wokół kart
-   Centrum ma zostać czarne.  W przeciwnym razie np. Lawenda mieszała się z
-   czernią i dawała szare tło zamiast spokojnej, ciemnej przestrzeni. */
-html[data-theme="dark"] #centrum{background:#111114;}
 html[data-theme="dark"] main{background:radial-gradient(900px 520px at 12% -5%,rgba(90,80,140,.4),transparent 60%),radial-gradient(820px 560px at 105% 15%,rgba(40,90,110,.4),transparent 58%),radial-gradient(700px 500px at 50% 115%,rgba(110,80,60,.32),transparent 60%),linear-gradient(180deg,#141416,#0e0e10)}
 html[data-theme="dark"] #colBooks,html[data-theme="dark"] #colTags,html[data-theme="dark"] #colNotes{box-shadow:0 6px 18px rgba(0,0,0,.4)}
 /* ——— dopracowanie trybu nocnego ——— */
@@ -1407,23 +1403,11 @@ html[data-anim="ograniczone"] #msgModal .askbox{ animation:ovIn .12s ease-out; }
   .brand-name{ font-size:15px; }
   #counts{ padding-left:12px; }
 }
-/* TELEFON W POZIOMIE — NAJCIAŚNIEJSZY EKRAN, JAKI TA APLIKACJA WIDZI.
-
-   iPhone położony bokiem to 393 px wysokości. Zmierzone w 2.76: nagłówek 80 +
-   zakładki kolumn 35 + pasek listy 72 = 187 px, czyli PIERWSZA NOTATKA
-   ZACZYNAŁA SIĘ W 53 % EKRANU. Zostawało miejsce na jedną kartę.
-
-   Trzy oszczędności, każda bez usuwania czegokolwiek:
-     • szukanie wraca do wspólnego rzędu z przyciskami — przy 850 px szerokości
-       jest na to miejsce, a osobny rząd kosztował 40 px (interfejs zwarty
-       wypycha je w osobny wiersz, bo liczy się szerokością telefonu w PIONIE);
-     • zakładki kolumn i pasek listy tracą po kilka pikseli wypełnienia;
-     • filtry idą jednym rzędem — i tak są już przewijane w bok. */
+/* Telefon w poziomie: nagłówek zabiera zbyt dużo z niskiego ekranu. */
 @media (max-height:460px) and (orientation:landscape){
   header{ padding-top:calc(5px + env(safe-area-inset-top,0px)); padding-bottom:5px; }
   .btn{ min-height:30px; }
-  #mobileTabs{ padding:3px 10px; }
-  #pasekListy > #counts{ font-size:calc(10.5px * var(--uiw)); }
+  #mobileTabs{ padding:5px 10px; }
 }
 /* Bezpieczne marginesy przy „uchu" iPhone'a w poziomie. */
 @supports (padding:max(0px)){
@@ -2224,30 +2208,6 @@ html[data-theme="dark"] #fsWrap .nmeta2{ border-bottom-color:rgba(255,255,255,.1
 #tagList.reordering,#pubList.reordering{ cursor:grabbing; }
 #tagList.reordering .item,#pubList.reordering .item{ transition:none; }
 .dragOrd:active{ cursor:grabbing; opacity:.9; }
-/* Podczas przeciągania uchwyt ma sterować wyłącznie swoją listą. iOS potrafi
-   przekazać dalszy gest do nadrzędnej kolumny, gdy lista dojedzie do krańca;
-   wtedy zamiast zmienić kolejność przesuwał się cały widok. */
-body.wTrakcieChwytu #tagList,
-body.wTrakcieChwytu #pubList{
-  touch-action:none;
-  overscroll-behavior:contain;
-  overflow-anchor:none;
-}
-/* Strefa pojawia się tylko w trakcie przenoszenia. Nie zajmuje miejsca podczas
-   zwykłego przeglądania, a po złapaniu zakładki daje szeroki, jednoznaczny cel
-   nad pierwszym wierszem — łatwy do trafienia palcem na iPadzie. */
-.strefaPoczatku{
-  display:none; align-items:center; justify-content:center; gap:6px;
-  min-height:34px; margin:3px 5px 5px; padding:5px 9px;
-  border:1.5px dashed color-mix(in srgb, var(--accent) 55%, var(--border));
-  border-radius:9px; color:var(--accent); background:color-mix(in srgb, var(--accent) 8%, transparent);
-  font-size:11.5px; font-weight:700; letter-spacing:.02em; pointer-events:auto;
-}
-body.wTrakcieChwytu .strefaPoczatku{ display:flex; }
-.strefaPoczatku.gotowa{
-  border-style:solid; background:color-mix(in srgb, var(--accent) 18%, var(--panel));
-  box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 22%, transparent);
-}
 
 /* ══════════════ PUSTA NOTATKA NA PEŁNYM EKRANIE ══════════════
 
@@ -2472,38 +2432,10 @@ header{ gap:calc(9px * var(--uiw)); }
   #colTags { width:250px; }
   #colPubs { width:240px; }
 }
-/* iPAD W POZIOMIE, 900–1180 px — GDZIE SIĘ PODZIAŁY NOTATKI (v2.77)
-
-   Zmierzone na iPadzie 9. generacji (1024 px):
-
-       Biblia 180 + Etykiety 190 + Publikacje 180 = 550 px NAWIGACJI
-       kolumna notatek                            = 369 px TREŚCI
-
-   Trzy spisy, do których się zagląda, zajmowały półtora raza więcej miejsca niż
-   to, po co się aplikację otwiera. Notatki dostawały 36 % szerokości okna,
-   a przy tak wąskiej kolumnie filtry nad listą łamały się na TRZY rzędy
-   i zjadały jeszcze 171 px wysokości.
-
-   Kolumny boczne schodzą więc w tym paśmie do swojego minimum. Najdłuższe
-   nazwy ksiąg („Powtórzonego Prawa") nie mieszczą się w żadnej z tych
-   szerokości — ucinają się wielokropkiem tak samo przy 180, jak przy 150 px —
-   a nazwy etykiet zawijają się do dwóch wierszy. Kto woli inaczej, przeciąga
-   uchwyt: szerokość jest zapamiętywana. */
 @media (max-width:1180px){
-  #colBooks{ width:150px; min-width:132px; }
-  #colTags { width:165px; min-width:142px; }
-  #colPubs { width:150px; min-width:132px; }
-}
-/* Filtry nad listą w JEDNYM rzędzie, przewijanym w bok — tak samo jak
-   w interfejsie zwartym na telefonie. Trzy złamane rzędy kosztowały tyle,
-   co pół karty notatki. */
-@media (max-width:1180px){
-  #quickFilters{
-    flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none;
-    -webkit-overflow-scrolling:touch;
-  }
-  #quickFilters::-webkit-scrollbar{ display:none; }
-  #quickFilters .qf{ flex:0 0 auto; }
+  #colBooks{ width:180px; min-width:150px; }
+  #colTags { width:190px; min-width:158px; }
+  #colPubs { width:180px; min-width:150px; }
 }
 @media (max-width:900px){
   /* na telefonie i wąskim tablecie widać jedną kolumnę naraz */
@@ -2864,26 +2796,8 @@ body.przenoszenieNotatki{ cursor:grabbing; user-select:none; }
 }
 #btnWszystkie:hover .bwN{ background:rgba(255,255,255,.22); color:inherit; }
 @keyframes bwPokaz{ from{ opacity:0; transform:translateY(-3px); } to{ opacity:1; transform:none; } }
-/* NAPIS ZOSTAJE TAKŻE NA TELEFONIE (poprawione w 2.77).
-
-   Do 2.76 poniżej 1100 px zostawała sama strzałka. Wśród sześciu innych ikon
-   w pasku wyglądała jak „cofnij" i była w praktyce niewidoczna — a to jedyne
-   wyjście z zawężonego widoku i jedyny przycisk w pasku, który MÓWI O STANIE:
-   pokazuje się wyłącznie wtedy, gdy coś listę zawęża. Ikona bez podpisu nadaje
-   się do rzeczy, które są zawsze na swoim miejscu; ta pojawia się i znika, więc
-   za każdym razem trzeba ją rozpoznać od nowa.
-
-   Napis skraca się do „Wszystkie" (reguła przy 1400 px), a na telefonie
-   przycisk dostaje tło, żeby odróżniał się od ikon obok. Miejsce się znajduje:
-   przy 375 px lista wyboru kolejności schodzi do drugiego rzędu, który i tak
-   istnieje. */
-@media (max-width:900px){
-  #btnWszystkie{
-    background:rgba(255,255,255,.16);
-    border-color:rgba(255,255,255,.28);
-  }
-  #btnWszystkie .bwTxt::after{ font-size:calc(12.5px * var(--uiw,1)); }
-}
+/* Na wąskim pasku zostaje sama strzałka z liczbą — napis by się nie zmieścił. */
+@media (max-width:1100px){ #btnWszystkie .bwTxt{ display:none; } }
 
 /* Znaczek przy pozycji menu, której miejsce ustawiono ręcznie (v2.03). */
 #dropdown .ddZnak{
@@ -3349,14 +3263,6 @@ html.zwarty header #btnUndo{ display:none; }
 html.zwarty header #btnNew .ic{ margin-right:2px; }
 html.zwarty header .searchwrap{ flex:1 1 100%; order:9; }
 html.zwarty #search{ padding-top:7px; padding-bottom:7px; }
-/* ...ale o osobnym rzędzie dla szukania decyduje SZEROKOŚĆ, nie sama zwartość.
-   Telefon położony bokiem jest zwarty z powodu niskiego ekranu, a szerokości
-   ma 850 px — tam pole spokojnie mieści się obok przycisków, a własny rząd
-   kosztuje 40 px z 393, czyli jedną dziesiątą ekranu. Reguła musi stać PO
-   tamtej, bo ma tę samą siłę selektora. */
-@media (min-width:701px) and (max-height:520px) and (orientation:landscape){
-  html.zwarty header .searchwrap{ flex:1 1 170px; order:0; }
-}
 
 /* ——— PASEK PRZEŁĄCZANIA KOLUMN ——— */
 html.zwarty #mobileTabs{ padding:4px 8px; gap:4px; }
@@ -5586,16 +5492,13 @@ label.roz-opcja .roz-data:empty{ display:none; }
    w stopce panelu („Twoje studium”): u góry siedzi teraz to, co się ROBI,
    a liczby mówią, ile tego w ogóle jest — a to inne pytanie i inne miejsce. */
 .cenStatKafle{
-  /* Cztery liczniki tworzą własny, równy blok 2×2. Przy szerokim Centrum
-     pojedynczy rząd zostawiał pod sobą wielką pustą plamę, podczas gdy wykres
-     obok miał pełną wysokość. */
-  display:grid; grid-template-columns:repeat(2, minmax(0, 1fr));
-  grid-auto-rows:minmax(92px, 1fr); gap:8px; align-content:stretch;
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));
+  gap:8px; align-content:start;
 }
 .cenKafel{
   display:flex; flex-direction:column; gap:1px; align-items:flex-start;
   text-align:left; cursor:pointer;
-  min-height:92px; padding:12px 13px; border-radius:13px;
+  padding:10px 12px; border-radius:13px;
   border:1px solid var(--border); background:var(--panel); color:var(--text);
   transition:transform var(--dur-szybko) var(--ease), box-shadow var(--dur-szybko) var(--ease);
 }
@@ -5603,7 +5506,7 @@ label.roz-opcja .roz-data:empty{ display:none; }
 .cenKafel:active{ transform:scale(.985); }
 .cenKafel:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
 .cenKafelIle{
-  font-size:calc(27px * var(--uiw, 1)); font-weight:750; line-height:1.05;
+  font-size:calc(23px * var(--uiw, 1)); font-weight:700; line-height:1.1;
   letter-spacing:-.02em; font-variant-numeric:tabular-nums; color:var(--accent);
 }
 .cenKafelTyt{ font-size:calc(12px * var(--uiw, 1)); font-weight:600; }
@@ -5614,82 +5517,23 @@ label.roz-opcja .roz-data:empty{ display:none; }
    pasek u góry karty. Tła kart zostają białe — siedem kolorowych prostokątów
    obok siebie byłoby jarmarkiem, a chodzi tylko o to, żeby dało się je
    rozróżniać kątem oka. */
-/* NASYCENIE JEST TERAZ WSPÓLNE (v2.76).
-
-   Odcienie zostają — zielony to studiowane, niebieski dodane, fioletowy
-   niedokończone. Zmieniło się to, ILE w nich chromy. Było: 11, 41, 49, 52, 80,
-   100, 100 %. Siedem kolorów w siedmiu różnych mocach czyta się jak siedem
-   różnych aplikacji; najgłośniejszy — pomarańczowy „do powtórki" przy 100 % —
-   przebijał wszystko inne, choć niesie tę samą wagę co reszta.
-
-   Teraz wszystkie siedzą w paśmie 45–72 %, przy niezmienionej jasności:
-
-     pomarańczowy   100 → 72 %   (zostaje najmocniejszy, bo znaczy „pilne",
-                                  ale przestał krzyczeć; kontrast z bielą
-                                  4,24 → 5,42, czyli wchodzi w normę AA)
-     niebieski       80 → 52 %
-     turkusowy      100 → 52 %   + odcień 173 → 186°, żeby przy równej chromie
-                                  nie zlał się z zielenią (14 → 28° różnicy)
-     fioletowy, zielony, brązowy, szary — bez zmian, były już w paśmie
-
-   Szary „ostatnie wyszukiwania" (11 %) zostaje szarym celowo: szukanie nie ma
-   własnego koloru, bo dotyczy wszystkiego. */
 :root{
-  --cenPilny:#916018;
-  --cenK-dzis:#916018; --cenK-niedok:#7b4fb5; --cenK-studiowane:#256b52;
-  --cenK-dodane:#31639b; --cenK-wersety:#256c74; --cenK-publikacje:#8a5a2b;
+  --cenPilny:#b26a00;  --cenPilnyTlo:#fff6e6;
+  --cenK-dzis:#b26a00; --cenK-niedok:#7b4fb5; --cenK-studiowane:#256b52;
+  --cenK-dodane:#1565c0; --cenK-wersety:#00796b; --cenK-publikacje:#8a5a2b;
   --cenK-szukania:#5a6570;
 }
+/* Sepia ma kremowe tło kart, więc kremowe #fff6e6 znikało w nim bez śladu —
+   plakietka „zaległe 6 dni" wyglądała jak zwykły tekst. Tu tło musi być
+   procentem koloru, nie własnym odcieniem. */
 html[data-theme="sepia"]{
-  --cenPilny:#885816;
+  --cenPilny:#9c5a00;  --cenPilnyTlo:rgba(156,90,0,.14);
 }
-/* W ciemnym motywie pasmo jest o kilka punktów wyżej (55–70 %): jasna barwa na
-   ciemnym tle wygląda na mniej nasyconą, niż jest. */
 html[data-theme="dark"]{
-  --cenPilny:#dea147;
-  --cenK-dzis:#dea147; --cenK-niedok:#b498e4; --cenK-studiowane:#5fd0a0;
-  --cenK-dodane:#8ab3e0; --cenK-wersety:#5cc0cc; --cenK-publikacje:#d7a06a;
+  --cenPilny:#e8a33d;  --cenPilnyTlo:rgba(232,163,61,.12);
+  --cenK-dzis:#e8a33d; --cenK-niedok:#b18cf0; --cenK-studiowane:#5fd0a0;
+  --cenK-dodane:#6bb2ff; --cenK-wersety:#4ecdc4; --cenK-publikacje:#d7a06a;
   --cenK-szukania:#9aa7b3;
-}
-
-/* ══════════════ ILE KOLORU NA CZYM (v2.76) ══════════════
-
-   Kolorów jest siedem i tak zostaje — po to są, żeby rozpoznawać sekcję kątem
-   oka. Zmienia się ICH NASYCENIE NA POWIERZCHNIACH. Do 2.75 każde miejsce
-   dobierało procent osobno: 5, 12, 13, 15, 16, 20, 22, 32, 45 %. Osiem różnych
-   mocy tego samego pomysłu w jednym panelu — stąd wrażenie jarmarku.
-
-   Od 2.76 obowiązuje JEDNA SKALA, trzy stopnie:
-
-     IKONA I TEKST   pełny kolor            — nośnik rozpoznania, ma być mocny
-     TŁO             6 % koloru             — sam ślad, „ta karta jest zielona"
-     TŁO NA KOLORZE  8 % koloru             — kafelki i plakietki, które leżą
-                                              na już podbarwionej karcie i przy
-                                              6 % zlałyby się z nią
-     RAMKA           18 % koloru            — widać kształt, nie widać barwy
-     RAMKA WSKAZANA  34 % koloru            — tylko `:hover`, ma odpowiadać
-
-   PEŁNE WYPEŁNIENIA ZOSTAJĄ tam, gdzie kolor nie jest ozdobą, tylko treścią:
-   przyciski główne („Otwórz studium"), pasek górny, wybrana pozycja w kolumnie,
-   3-pikselowy pasek koloru na karcie i słupki postępu. To są znaki, nie tła.
-
-   W CIEMNYM MOTYWIE procenty są WIĘKSZE. Tam kolory palety są jasne, a leżą na
-   ciemnym panelu: 6 % jasnej barwy na ciemnym tle to różnica, której oko nie
-   złapie. Sepia siedzi pośrodku, bo jej tło samo jest kremowe. */
-:root{
-  --tintTlo:6%;
-  --tintTloMoc:8%;
-  --tintRamka:18%;
-  --tintRamkaMoc:34%;
-  /* Tło plakietki „zaległe" — ten sam procent, tylko pod własną nazwą, bo
-     używa go też kilka miejsc poza Centrum. */
-  --cenPilnyTlo:color-mix(in srgb, var(--cenPilny) var(--tintTloMoc), transparent);
-}
-html[data-theme="sepia"]{
-  --tintTlo:7%; --tintTloMoc:10%; --tintRamka:20%; --tintRamkaMoc:36%;
-}
-html[data-theme="dark"]{
-  --tintTlo:11%; --tintTloMoc:15%; --tintRamka:26%; --tintRamkaMoc:45%;
 }
 .cenKarta[data-sek="statystyki"]{  --sekK:var(--cenK-szukania); }
 .cenKarta[data-sek="niedok"]{      --sekK:var(--cenK-niedok); }
@@ -5718,16 +5562,8 @@ html[data-theme="dark"]{
   margin:0;
   position:relative; overflow:hidden;
   padding-top:14px;
-  transition:transform var(--dur-szybko) var(--ease), box-shadow var(--dur-szybko) var(--ease), border-color var(--dur-szybko) var(--ease);
 }
 .cenKarta .cenLista{ flex:1 1 auto; }
-@media (hover:hover){
-  .cenKarta:hover{
-    transform:translateY(-1px);
-    box-shadow:var(--cien-2);
-    border-color:color-mix(in srgb, var(--sekK, var(--accent)) var(--tintRamkaMoc), var(--border));
-  }
-}
 /* Pasek koloru sekcji u góry karty — cienki, na całą szerokość. */
 .cenKarta::before{
   content:""; position:absolute; left:0; right:0; top:0; height:3px;
@@ -5741,18 +5577,13 @@ html[data-theme="dark"]{
   width:26px; height:26px; flex:0 0 auto; box-sizing:border-box;
   padding:5px; border-radius:8px;
   color:var(--sekK, var(--accent));
-  background:color-mix(in srgb, var(--sekK, var(--accent)) var(--tintTloMoc), transparent);
+  background:color-mix(in srgb, var(--sekK, var(--accent)) 13%, transparent);
 }
 .cenPlak{
   flex:0 0 auto; min-width:20px; padding:1px 7px; border-radius:20px;
   font-size:calc(11px * var(--uiw, 1)); font-weight:700;
   letter-spacing:0; text-transform:none; font-variant-numeric:tabular-nums;
-  /* Plakietka z liczbą: była pełnym kolorem z białym napisem. Przy siedmiu
-     sekcjach dawało to siedem nasyconych pigułek na jednym ekranie — a niosą
-     one liczbę, nie ostrzeżenie. Teraz tło jest 8 % koloru, a napis pełnym
-     kolorem: tak samo czytelne, o ton ciszej. */
-  color:var(--sekK, var(--accent));
-  background:color-mix(in srgb, var(--sekK, var(--accent)) var(--tintTloMoc), transparent);
+  color:#fff; background:var(--sekK, var(--accent));
 }
 
 /* ——— WIERSZ W DWÓCH LINIACH ———
@@ -5834,18 +5665,13 @@ html[data-theme="dark"]{
 .cenHero{
   position:relative; overflow:hidden;
   display:flex; align-items:stretch;
-  border:1px solid color-mix(in srgb, var(--heroK) var(--tintRamka), var(--border));
+  border:1px solid color-mix(in srgb, var(--heroK) 32%, var(--border));
   border-radius:18px; padding:16px 18px;
   background:linear-gradient(135deg,
-    color-mix(in srgb, var(--heroK) var(--tintTlo), var(--panel)) 0%, var(--panel) 65%);
+    color-mix(in srgb, var(--heroK) 12%, var(--panel)) 0%, var(--panel) 65%);
 }
 .cenHeroStud{ --heroK:var(--accent); }
 .cenHeroPowt{ --heroK:var(--cenPilny); }
-.cenHero::after{
-  content:""; position:absolute; z-index:0; pointer-events:none;
-  width:220px; height:220px; right:-88px; top:-105px; border-radius:50%;
-  background:radial-gradient(circle, color-mix(in srgb, var(--heroK) 20%, transparent) 0%, transparent 69%);
-}
 .cenHeroTresc{ position:relative; z-index:1; flex:1 1 auto; min-width:0; }
 /* Ilustracja siedzi w rogu i wychodzi poza kartę — ma być tłem, nie
    ilustracją do podpisu. `pointer-events:none`, bo cała karta jest klikalna
@@ -5854,7 +5680,6 @@ html[data-theme="dark"]{
   position:absolute; right:-4px; bottom:0; z-index:0;
   width:40%; max-width:190px; min-width:110px;
   color:var(--heroK); opacity:.92; pointer-events:none;
-  filter:drop-shadow(0 12px 14px color-mix(in srgb, var(--heroK) 18%, transparent));
 }
 .cenIlu{ display:block; width:100%; height:auto; }
 
@@ -5867,10 +5692,10 @@ html[data-theme="dark"]{
 .cenHeroPas{
   position:relative; overflow:hidden;
   padding:15px 18px 14px;
-  border-bottom:1px solid color-mix(in srgb, var(--heroK) var(--tintRamka), var(--border));
+  border-bottom:1px solid color-mix(in srgb, var(--heroK) 22%, var(--border));
   background:linear-gradient(135deg,
-    color-mix(in srgb, var(--heroK) var(--tintTloMoc), var(--panel)) 0%,
-    color-mix(in srgb, var(--heroK) var(--tintTlo), var(--panel)) 100%);
+    color-mix(in srgb, var(--heroK) 20%, var(--panel)) 0%,
+    color-mix(in srgb, var(--heroK) 7%, var(--panel)) 100%);
 }
 .cenHeroPas .cenHeroObraz{
   top:50%; bottom:auto; right:16px; transform:translateY(-50%);
@@ -5883,7 +5708,7 @@ html[data-theme="dark"]{
 .cenChip{
   display:inline-flex; align-items:center; gap:6px;
   padding:4px 10px; border-radius:20px;
-  background:color-mix(in srgb, var(--heroK) var(--tintTloMoc), transparent);
+  background:color-mix(in srgb, var(--heroK) 16%, transparent);
   color:var(--heroK);
   font-size:calc(10.5px * var(--uiw, 1)); font-weight:700;
   text-transform:uppercase; letter-spacing:.06em;
@@ -5906,8 +5731,7 @@ html[data-theme="dark"]{
 .cenHeroKafel{
   display:flex; align-items:center; gap:8px; min-width:0;
   padding:8px 11px; border-radius:12px;
-  border:1px solid color-mix(in srgb, var(--heroK) var(--tintRamka), var(--border));
-  background:color-mix(in srgb, var(--panel) 88%, var(--heroK));
+  border:1px solid var(--border); background:var(--panel);
 }
 .cenHeroKafel .ic{ width:16px; height:16px; flex:0 0 auto; color:var(--heroK); }
 .cenHeroKafelTxt{ display:flex; flex-direction:column; min-width:0; }
@@ -6103,14 +5927,14 @@ html[data-theme="sepia"]{
 .cenKafel[data-cstat="tematy"]{   --kafK:var(--kaf-tematy); }
 .cenKafel[data-cstat="ulubione"]{ --kafK:var(--kaf-ulubione); }
 .cenStat .cenKafel{
-  background:color-mix(in srgb, var(--kafK, var(--accent)) var(--tintTlo), var(--panel));
-  border-color:color-mix(in srgb, var(--kafK, var(--accent)) var(--tintRamka), var(--border));
+  background:color-mix(in srgb, var(--kafK, var(--accent)) 5%, var(--panel));
+  border-color:color-mix(in srgb, var(--kafK, var(--accent)) 20%, var(--border));
 }
 .cenStat .cenKafelIle{ color:var(--kafK, var(--accent)); }
 .cenKafelIko .ic{
   width:24px; height:24px; box-sizing:border-box; padding:4px; border-radius:7px;
   color:var(--kafK, var(--accent));
-  background:color-mix(in srgb, var(--kafK, var(--accent)) var(--tintTloMoc), transparent);
+  background:color-mix(in srgb, var(--kafK, var(--accent)) 15%, transparent);
 }
 .cenWykres{
   display:flex; flex-direction:column; gap:6px;
@@ -6185,16 +6009,11 @@ html[data-theme="sepia"]{
   .cenHeroTyt{ font-size:calc(19px * var(--uiw, 1)); }
   .cenHeroKafle{ gap:6px; }
   .cenStatTresc{ grid-template-columns:1fr; }
-  .cenStatKafle{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
   .cenSiatkaM{ grid-template-columns:1fr; }
   /* Wiersze o własnym kształcie zostają siatką — reguła ogólna z v2.58
      ustawia .cenPoz na kolumnę, co rozsypałoby pasek postępu i datę. */
   .cenPoz.cenPozS, .cenPoz.cenPozD{ display:grid; }
   .cenPozD .cenNazwa{ -webkit-line-clamp:2; }
-}
-@media (max-width:390px){
-  .cenStatKafle{ grid-template-columns:1fr; }
-  .cenKafel{ min-height:76px; }
 }
 
 
@@ -6251,7 +6070,7 @@ html[data-theme="sepia"]{
 }
 .cenSzyb:hover{
   background:var(--sel);
-  border-color:color-mix(in srgb, var(--szK, var(--accent)) var(--tintRamkaMoc), var(--border));
+  border-color:color-mix(in srgb, var(--szK, var(--accent)) 45%, var(--border));
 }
 .cenSzyb:active{ transform:scale(.97); }
 .cenSzyb:focus-visible{ outline:2px solid var(--szK, var(--accent)); outline-offset:2px; }
@@ -6284,7 +6103,7 @@ html[data-theme="sepia"]{ --cenSerce:#a83232; }
 @media (max-width:620px){
   /* Plakietki zawijają się same, ile ich wejdzie w rząd. Zostaje tylko palec:
      wysokość rośnie do 38 px, żeby był w co trafić. */
-  .cenSzyb{ padding:10px 13px 10px 11px; min-height:42px; }
+  .cenSzyb{ padding:9px 13px 9px 11px; min-height:38px; }
 }
 
 
@@ -6344,16 +6163,7 @@ html[data-theme="sepia"]{ --cenSerce:#a83232; }
    Zostaje w tym samym mechanizmie okien (openModal/closeModal), bo to on
    trzyma Escape, ognisko klawiatury i powrót do miejsca, z którego się przyszło.
    Zmienia się wygląd, nie sposób otwierania. */
-#modalMapa{
-  /* iOS w trybie „z ekranu początkowego” rysuje stronę także pod paskiem
-     statusu. Sama pozycja fixed nie wystarcza — bez tych odstępów nagłówek
-     mapy zaczynał się pod godziną i ikonami systemowymi.  Padding należy do
-     nakładki (a nie do nagłówka), dzięki czemu bezpieczne są też boki i dół
-     w poziomie, na iPhonie oraz iPadzie. */
-  background:var(--bg); backdrop-filter:none;
-  padding:env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
-          env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
-}
+#modalMapa{ background:var(--bg); backdrop-filter:none; padding:0; }
 #modalMapa .mapamodal{
   width:100%; max-width:none; height:100%; max-height:none;
   border:0; border-radius:0; box-shadow:none; background:transparent;
@@ -6374,10 +6184,6 @@ html[data-theme="sepia"]{ --cenSerce:#a83232; }
 #modalMapa .mapaTytul span{ font-size:calc(12px * var(--uiw, 1)); color:var(--muted); }
 #modalMapa .mapaCialo{ background:var(--bg); }
 #modalMapa .mapaLewa{ background:var(--panel); }
-/* Mapa jest pełną stroną: w trybie nocnym przestrzeń między kartami ma być
-   prawdziwie ciemna, niezależnie od aktywnej pastelowej kompozycji. */
-html[data-theme="dark"] #modalMapa,
-html[data-theme="dark"] #modalMapa .mapaCialo{ background:#111114; }
 
 /* ══════════════ SIATKA KART TEMATÓW ══════════════ */
 #modalMapa .mapaWstep{ padding:18px 20px 4px; max-width:70ch; }
@@ -6531,74 +6337,6 @@ html[data-theme="dark"] #modalMapa .mapaCialo{ background:#111114; }
   #modalMapa #mapaSzukaj{ flex:1 1 140px; }
 }
 
-/* ══════════════ POZYCJA MENU BEZ TREŚCI (v2.77) ══════════════
-
-   „Cofnij ostatnią zmianę" stoi w menu Plik zawsze, także wtedy, gdy stos
-   cofania jest pusty — pozycja, która raz jest, a raz jej nie ma, zmusza do
-   szukania za każdym razem. Wygaszona mówi „to tu mieszka, dziś nic tu nie ma".
-   Nie chowamy jej, bo wtedy nikt by się nie dowiedział, że istnieje. */
-#dropdown .dd-off{ opacity:.45; cursor:default; }
-#dropdown .dd-off:hover{ background:none; }
-
-/* ══════════════ TELEFON POŁOŻONY BOKIEM — JEDEN RZĄD NAD LISTĄ (v2.77) ══════
-
-   Musi stać na końcu arkusza: `#pasekListy{ flex-wrap:wrap }` pada w dwóch
-   miejscach wyżej, a selektor jest tej samej siły — o wyniku decyduje więc
-   kolejność, nie specyficzność.
-
-   Widoki, filtry i licznik dzielą jeden rząd. Filtry i tak przewijają się
-   w bok, więc złamany wiersz niczego nie odsłaniał — zabierał tylko 30 px
-   z 393, jakie ma iPhone położony bokiem. */
-@media (max-height:460px) and (orientation:landscape){
-  #pasekListy{ flex-wrap:nowrap; }
-  #pasekListy > #quickFilters{ min-width:0; }
-  #pasekListy > #counts{ margin-left:8px; }
-}
-/* Zakładki kolumn na telefonie położonym bokiem: niższe niż w pionie, ale nie
-   niższe niż palec. 26 px to za mało — 30 px to minimum, przy którym trafia się
-   za pierwszym razem. */
-@media (max-height:460px) and (orientation:landscape){
-  #mobileTabs button{ min-height:30px; }
-}
-
-/* ══════════════ CZYTELNOŚĆ I TRYB SKUPIENIA (v2.78) ══════════════ */
-/* W trybie skupienia Centrum i lista notatek dostają całą szerokość.
-   Boczne listy nie są zamykane ani tracone — tylko chwilowo schowane. */
-body.focus-mode #colBooks,
-body.focus-mode #colTags,
-body.focus-mode #colPubs,
-body.focus-mode .colResizer{ display:none!important; }
-body.focus-mode #glowna{ gap:0; }
-body.focus-mode #colNotes{
-  display:flex!important;
-  flex:1 1 100%;
-  width:100%!important;
-  min-width:0!important;
-  max-width:none!important;
-}
-
-/* Czytnik ma być prawdziwą stroną ponad aplikacją: bez widocznych boków,
-   bez niższych przycisków nad nim i bez ramy ograniczającej go na komputerze. */
-#modalFs{
-  position:fixed;
-  inset:0;
-  z-index:10000!important;
-  width:100vw;
-  width:100dvw;
-  height:100vh;
-  height:100dvh;
-  padding:0!important;
-  background:var(--bg);
-  isolation:isolate;
-}
-#modalFs .fsmodal{
-  width:100%!important;
-  min-width:100%!important;
-  height:100%!important;
-  min-height:100%!important;
-  max-height:none!important;
-  border-radius:0!important;
-}
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -6607,7 +6345,7 @@ body.focus-mode #colNotes{
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.78</span></div>
+      <div class="brand-name">JW Study <span class="ver">v2.75</span></div>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -6646,7 +6384,7 @@ body.focus-mode #colNotes{
     <button class="btn ico-btn" id="btnColors" title="Kolory kolumn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18c1.4 0 2-.9 2-1.8 0-1.3 1-2.2 2.2-2.2H18a3 3 0 0 0 3-3A8 8 0 0 0 12 3z"/><circle cx="7.5" cy="11" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="7.5" r="1" fill="currentColor" stroke="none"/><circle cx="16.3" cy="11" r="1" fill="currentColor" stroke="none"/></svg></button>
     <button class="btn ico-btn" id="btnUndo" title="Cofnij ostatnią zmianę"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 7L4 12l5 5"/><path d="M4 12h11a5 5 0 0 1 0 10h-3"/></svg></button>
   </div>
-  <div class="fontctl" title="Rozmiar tekstu w notatkach">
+  <div class="fontctl" title="Rozmiar czcionki (notatki i kolumny)">
     <button id="fMinus">A−</button>
     <button id="fPlus" style="font-size:15px">A+</button>
   </div>
@@ -9205,9 +8943,8 @@ function refLabel(n){
   if(n.b){ let s=BOOKS[n.b]; if(n.ch)s+=" "+n.ch+(n.v?":"+n.v:""); return s; }
   return n.pub||"";
 }
-// Główne odsyłacze wersetów mają zawsze otwierać
-// polskie „Pismo Święte w Przekładzie Nowego Świata — wydanie do studium”.
-let bibleKs = "nwtsty";
+let bibleKs = "";
+try{ bibleKs = localStorage.getItem(KP+"BibleKs") || ""; }catch(e){}
 /**
  * Buduje odnośnik do jw.org/finder, który na urządzeniu z JW Library otwiera
  * dane miejsce wprost w aplikacji.
@@ -10379,9 +10116,6 @@ applyColors();
 
 /* ================= ROZMIAR CZCIONKI ================= */
 let noteFs = 14;
-/* Osobny rozmiar list jest niezależny od treści notatki. Starsze ustawienie
-   „Font” pozostaje rozmiarem treści, aby nikomu nie zmienić wyglądu po aktualizacji. */
-let listFs = 13.5;
 /* Zakres regulacji: od 6 px (bardzo dużo treści na ekranie) do 30 px (duży druk). */
 const FS_MIN = 6, FS_MAX = 30, FS_BAZA = 14;
 /**
@@ -10393,7 +10127,7 @@ const FS_MIN = 6, FS_MAX = 30, FS_BAZA = 14;
 function applyFs(){
   const r = document.documentElement.style;
   r.setProperty("--noteFs", noteFs+"px");
-  r.setProperty("--colFs", listFs+"px");
+  r.setProperty("--colFs", (noteFs-0.5)+"px");
   const ui = Math.round((noteFs / FS_BAZA) * 1000) / 1000;
   r.setProperty("--ui", ui);
   r.setProperty("--uiFs", (13 * ui).toFixed(2)+"px");
@@ -10403,7 +10137,6 @@ function applyFs(){
   document.documentElement.dataset.fsband = noteFs <= 9 ? "male" : (noteFs >= 22 ? "duze" : "srednie");
 }
 try{ noteFs = Math.min(FS_MAX, Math.max(FS_MIN, +(lsGet(KP+"Font", FS_BAZA)||FS_BAZA) )); }catch(e){}
-try{ listFs = Math.min(FS_MAX, Math.max(FS_MIN, +(lsGet(KP+"ListFont", noteFs-0.5)||noteFs-0.5) )); }catch(e){}
 applyFs();
 /* szerokość czytania (marginesy) w otwartej notatce: wąski / komfort / pełny */
 const FSW = ["620px","760px","100%"];
@@ -10431,27 +10164,8 @@ try{
 }catch(e){ fsWidth = 2; }
 function applyFsWidth(){ document.documentElement.style.setProperty("--fsMax", FSW[fsWidth]||"100%"); }
 applyFsWidth();
-function ustawRozmiarTresci(roznica){
-  noteFs = Math.min(FS_MAX, Math.max(FS_MIN, noteFs + roznica));
-  lsSetSoon(KP+"Font", noteFs); applyFs();
-}
-function ustawRozmiarList(roznica){
-  listFs = Math.min(FS_MAX, Math.max(FS_MIN, listFs + roznica));
-  lsSetSoon(KP+"ListFont", listFs); applyFs();
-}
-$("fMinus").onclick = ()=>{ ustawRozmiarTresci(-1); toast("Treść notatek: "+noteFs+" px"); };
-$("fPlus").onclick = ()=>{ ustawRozmiarTresci(1); toast("Treść notatek: "+noteFs+" px"); };
-
-/* Tryb skupienia nie zmienia układu na stałe: jednym wyborem ukrywa boczne
-   kolumny, a drugim przywraca dokładnie ich wcześniejszy stan i szerokości. */
-let focusMode = String(lsGet(KP+"FocusMode", "0")) === "1";
-function applyFocusMode(){ document.body.classList.toggle("focus-mode", focusMode); }
-function setFocusMode(on){
-  focusMode = !!on;
-  lsSet(KP+"FocusMode", focusMode ? "1" : "0");
-  applyFocusMode();
-}
-applyFocusMode();
+$("fMinus").onclick = ()=>{ noteFs = Math.max(FS_MIN, noteFs-1); lsSetSoon(KP+"Font", noteFs); applyFs(); toast("Wielkość: "+noteFs+" px"); };
+$("fPlus").onclick = ()=>{ noteFs = Math.min(FS_MAX, noteFs+1); lsSetSoon(KP+"Font", noteFs); applyFs(); toast("Wielkość: "+noteFs+" px"); };
 $("btnBackup").onclick = ()=>{ exportJson(); };   // sama zdecyduje: nadpisać wskazany plik czy pobrać nowy
 /* filtry zmieniają się przy każdym kliknięciu kolumny — zapis sklejamy w jeden */
 function persistFilt(){ lsSetSoon(KP+"Filt", JSON.stringify(filt), 300); }
@@ -12623,7 +12337,6 @@ $("btnMenu").onclick = e=>{
   const lastBk = lsGet(KP+"LastBk", null);
   const dirty = +(lsGet(KP+"Dirty",0)||0);
   const trashN = trashList().length;
-  const undoIle = (typeof undoStack !== "undefined" && undoStack) ? undoStack.length : 0;
   const ic = {
     down:_svg('<path d="M12 4v11"/><path d="M8 11l4 4 4-4"/><path d="M4 19h16"/>'),
     up:_svg('<path d="M12 20V9"/><path d="M8 13l4-4 4 4"/><path d="M4 5h16"/>'),
@@ -12647,14 +12360,6 @@ $("btnMenu").onclick = e=>{
     <div data-m="loadjson">${ic.folder}Wczytaj kopię danych…</div>
     ${backupStatusHtml()}
     <div class="dd-sep"></div>
-    <!-- COFNIJ TAKŻE TUTAJ (2.77). W pasku górnym ten przycisk znika na
-         telefonie razem z regulacją pisma i zapisem kopii — tylko że kopia ma
-         swoje miejsce niżej w tym menu, pismo w Ustawieniach, a cofanie nie
-         miało NIGDZIE. Na iPhonie nie ma też ⌘Z. Jedyna zmiana, której nie dało
-         się odwołać, była zarazem tą, którą najłatwiej zrobić przez pomyłkę. -->
-    <div data-m="undo"${undoIle ? "" : ' class="dd-off"'}>${ICO.undo}Cofnij ostatnią zmianę${
-      undoIle ? ` <span class="dd-badge">${undoIle}</span>` : ' <span class="dd-hint">nie ma czego cofać</span>'}</div>
-    <div class="dd-sep"></div>
     <div data-m="trash">${ICO.trash}Kosz${trashN ? ` <span class="dd-badge">${trashN}</span>` : ""}</div>
     <div data-m="info">${ic.info}Gdzie zapisują się moje dane?</div>
     <div data-m="help">${ic.help}Jak to działa — samouczek</div>
@@ -12673,7 +12378,6 @@ $("btnMenu").onclick = e=>{
     else if(m==="json")exportJson();
     else if(m==="cloud")shareBackup();
     else if(m==="loadjson")openFilePicker("json");
-    else if(m==="undo"){ if(typeof doUndo === "function" && undoIle) doUndo(); }
     else if(m==="trash")openTrash();
     else if(m==="info")openModal("modalInfo");
     else if(m==="help")openModal("modalHelp");
@@ -13007,9 +12711,11 @@ function importFromDb(db){
     }
   });
   if(idb&&changed.length) idbBulk("notes",changed).catch(e=>reportSaveError(e,"import"));
-// Nie nadpisujemy nwtsty przekładem wykrytym z bazy JW Library.
-// Główny werset notatki ma zawsze otwierać wydanie do studium.
-bibleKs = "nwtsty";
+  // wykryj symbol Biblii używany na tym urządzeniu (nwt / nwtsty / inne), do budowania linków do wersetów
+  try{
+    const bk=db.exec("SELECT KeySymbol, COUNT(*) c FROM Location WHERE BookNumber IS NOT NULL AND KeySymbol IS NOT NULL GROUP BY KeySymbol ORDER BY c DESC LIMIT 1");
+    if(bk.length && bk[0].values[0][0]){ bibleKs = bk[0].values[0][0]; try{ localStorage.setItem(KP+"BibleKs", bibleKs); }catch(e){} }
+  }catch(e){}
   return {added,updated,skipped,polozenia,wlasne,roznice};
 }
 /* ===== podkreślenia: kolory, etykieta, link ===== */
@@ -14994,22 +14700,13 @@ function openSettings(){
   box.innerHTML =
     `<div class="st-karta" data-karta="wyglad">
      <div class="st-sec">
-       <div class="st-lbl">Wielkość tekstu w notatkach</div>
-       <div class="st-fs" data-font="note">
+       <div class="st-lbl">Wielkość czcionki</div>
+       <div class="st-fs">
          <button class="st-opt" data-fs="-">A−</button>
          <span class="st-val" id="stFsVal">${noteFs} px</span>
          <button class="st-opt" data-fs="+">A+</button>
        </div>
-       <div class="st-hint">Rozmiar treści wewnątrz notatek. Przyciski A− / A+ na górze zmieniają właśnie ten rozmiar.</div>
-     </div>
-     <div class="st-sec">
-       <div class="st-lbl">Wielkość tekstu na listach</div>
-       <div class="st-fs" data-font="list">
-         <button class="st-opt" data-fs="-">A−</button>
-         <span class="st-val" id="stListFsVal">${listFs} px</span>
-         <button class="st-opt" data-fs="+">A+</button>
-       </div>
-       <div class="st-hint">Dotyczy list notatek oraz kolumn Biblia, Etykiety i Publikacje. Oba rozmiary można ustawić niezależnie.</div>
+       <div class="st-hint">Skaluje całą aplikację — treść notatek, kolumny, menu i okna. Zakres od 6 do 30 px. To samo, co przyciski A− / A+ na górze.</div>
      </div>
      <div class="st-sec">
        <div class="st-lbl">Gęstość interfejsu</div>
@@ -15037,11 +14734,6 @@ function openSettings(){
          kliknięcie etykiety, księgi albo szukanie przełącza na zwykłą listę. Do Centrum wracasz
          przyciskiem <b>domku</b> w pasku górnym albo klawiszem <b>H</b>. Nic nie jest tu
          dodatkowo zliczane — wszystko liczy się z danych, które notatki już mają.</div>
-     </div>
-     <div class="st-sec">
-       <div class="st-lbl">Tryb skupienia na iPadzie</div>
-       ${optionGroup("focus", [["0","Pełny układ"],["1","Tylko Centrum i notatki"]], focusMode ? "1" : "0")}
-       <div class="st-hint">Ukrywa na chwilę kolumny Biblia, Etykiety i Publikacje. Centrum studium oraz lista notatek zajmują całą szerokość. Po powrocie boczne kolumny zachowują swoje ustawienia.</div>
      </div>
      <div class="st-sec">
        <div class="st-lbl">Układ listy notatek</div>
@@ -15191,14 +14883,8 @@ function openSettings(){
     if(e.target.closest("#stBledyCzysc")){ diagWyczysc(); return; }
     const fs = e.target.closest(".st-fs [data-fs]");   // tylko przyciski A− / A+, nie dowolny przodek
     if(fs){
-      const roznica = fs.dataset.fs === "+" ? 1 : -1;
-      if(fs.closest('[data-font="list"]')){
-        ustawRozmiarList(roznica);
-        $("stListFsVal").textContent = listFs + " px";
-      }else{
-        ustawRozmiarTresci(roznica);
-        $("stFsVal").textContent = noteFs + " px";
-      }
+      $(fs.dataset.fs==="+" ? "fPlus" : "fMinus").click();
+      $("stFsVal").textContent = noteFs + " px";
       return;
     }
     const komp = e.target.closest("[data-komp]");
@@ -15295,7 +14981,6 @@ function openSettings(){
     else if(grp==="anim") setAnim(v);
     else if(grp==="theme") setTheme(v);
     else if(grp==="view") setNoteView(v);
-    else if(grp==="focus") setFocusMode(v === "1");
     opt.parentElement.querySelectorAll(".st-opt").forEach(b=>b.classList.toggle("on", b===opt));
     toastOk("Zapisano ustawienie");
   };
@@ -15522,9 +15207,7 @@ function pubTabRowsHtml(ks){
   if(!ks) return "";
   const lista = pubTabsFor(ks);
   const stat = pubStats(ks);            // jeden przebieg po notatkach na cały blok
-  let h = lista.length
-    ? `<div class="strefaPoczatku" data-upusc-start="zakladkaPub" data-cel="${lista[0].id}">⇧ Upuść na początku zakładek</div>`
-    : "";
+  let h = "";
   lista.forEach(t=>{
     const act = String(filt.book)==="ptb:"+t.id;
     h += `<div class="item ptbItem${act?" active":""}" data-ptb="${t.id}" data-ord="${t.id}">`+
@@ -16004,8 +15687,7 @@ function przesunSecTab(id, kier){
 function secTabRowsHtml(secId){
   const lista = secTabsFor(secId);
   if(!lista.length) return "";
-  const strefa = `<div class="strefaPoczatku" data-upusc-start="zakladka" data-cel="${lista[0].id}" data-sek="${secId}">⇧ Upuść na początku zakładek</div>`;
-  return strefa + lista.map(z=>{
+  return lista.map(z=>{
     const akt = String(filt.tag)==="stb:"+z.id;
     const ile = secTabCount(z.id);
     const kol = kolorZakladki(z);
@@ -16506,7 +16188,6 @@ function zakonczChwyt(zapisz){
   if(wskaznik) wskaznik.remove();
   el.classList.remove("chwytany");
   document.body.classList.remove("wTrakcieChwytu");
-  document.querySelectorAll(".strefaPoczatku.gotowa").forEach(x=>x.classList.remove("gotowa"));
   /* Po ZAKOŃCZONYM przeniesieniu przeglądarka wyśle jeszcze kliknięcie — nie
      chcemy, żeby przy okazji zmieniło filtr. Połykamy tylko je i tylko przez
      chwilę. Po przerwanym geście nie blokujemy nic. */
@@ -16615,22 +16296,8 @@ function przenumeruj(grupa, element, sasiad, przed){
 const CHWYT_STREFA   = 64;    // px od krawędzi, w których zaczyna się przewijanie
 const CHWYT_MAX_KROK = 18;    // px na klatkę tuż przy krawędzi
 
-/**
- * Lista, którą wolno przewijać podczas chwytu.
- *
- * Etykiety i zakładki mają zawsze wskazany własny kontener. Zwracamy go nawet
- * wtedy, gdy jest akurat na początku/końcu albo ma za mało pozycji do
- * przewijania — dzięki temu nie przechodzimy potem do `main` czy całej strony.
- * To pozwala przeciągnąć pozycję na samą górę bez „odjechania” kolumny.
- */
-function przewijalny(el, rodzaj){
-  const listaWlasna = (rodzaj==="etykieta" || rodzaj==="zakladka") ? el.closest("#tagList")
-                    : (rodzaj==="publikacja" || rodzaj==="zakladkaPub") ? el.closest("#pubList")
-                    : null;
-  if(listaWlasna) return listaWlasna;
-
-  /* Dla notatek zostaje dotychczasowa, ogólna droga: ich lista może być
-     pojedynczym panelem na telefonie albo osobną kolumną na większym ekranie. */
+/** Najbliższy przodek, który faktycznie da się przewinąć. */
+function przewijalny(el){
   let w = el;
   while(w && w !== document.body){
     if(w.scrollHeight > w.clientHeight + 4){
@@ -16762,7 +16429,7 @@ document.addEventListener("pointerdown", ev=>{
     _chwyt = {el, rodzaj:info.rodzaj, id:info.id,
               duszek: zrobDuszka(el, startX, startY), wskaznik: zrobWskaznik(),
               cel:null, przed:false, sekcjaCel:undefined, celObcy:null,
-              przewijak: przewijalny(el, info.rodzaj), x:startX, y:startY, klatka:0,
+              przewijak: przewijalny(el), x:startX, y:startY, klatka:0,
               ostatniRuch: Date.now()};
     petlaPrzewijania();
     if(navigator.vibrate) try{ navigator.vibrate(12); }catch(e){}
@@ -16772,7 +16439,6 @@ document.addEventListener("pointerdown", ev=>{
   const przelicz = (x, y)=>{
     if(!_chwyt) return;
     przesunDuszka(_chwyt.duszek, x, y);
-    document.querySelectorAll(".strefaPoczatku.gotowa").forEach(z=>z.classList.remove("gotowa"));
 
     /* Notatka nad kolumną etykiet? Wtedy nie porządkujemy, tylko przypisujemy. */
     if(notatka && typeof celDlaNotatki==="function"){
@@ -16781,25 +16447,6 @@ document.addEventListener("pointerdown", ev=>{
       if(typeof podswietlCel==="function") podswietlCel(obcy);
       _chwyt.celObcy = obcy;
       if(obcy){ _chwyt.cel = null; _chwyt.wskaznik.style.display = "none"; return; }
-    }
-
-    /* Szeroka strefa nad pierwszą zakładką. To nie jest nowy rekord, tylko
-       wygodny cel upuszczenia: wskazuje istniejącą pierwszą pozycję i zawsze
-       zapisuje przenoszony element PRZED nią. */
-    const pod = document.elementFromPoint(x, y);
-    const strefa = pod && pod.closest ? pod.closest(".strefaPoczatku[data-upusc-start]") : null;
-    if(strefa && strefa.dataset.upuscStart === info.rodzaj){
-      const ident = strefa.dataset.cel;
-      const sel = info.rodzaj === "zakladka" ? `.stbItem[data-stb="${ident}"]`
-                : `.ptbItem[data-ptb="${ident}"]`;
-      const pierwszy = document.querySelector(sel);
-      if(pierwszy){
-        strefa.classList.add("gotowa");
-        _chwyt.cel = pierwszy; _chwyt.przed = true;
-        _chwyt.sekcjaCel = strefa.dataset.sek === undefined ? undefined : +strefa.dataset.sek;
-        _chwyt.wskaznik.style.display = "none";
-        return;
-      }
     }
 
     /* Szukamy najbliższej pozycji tego samego rodzaju — także w innych sekcjach. */
@@ -16830,12 +16477,7 @@ document.addEventListener("pointerdown", ev=>{
 
   /* Z uchwytu chwytamy od razu; z samego wiersza dopiero po przytrzymaniu,
      żeby zwykłe kliknięcie filtrujące działało jak dotąd. */
-  if(zUchwytu){
-    /* Przejęcie wskaźnika zatrzymuje natywny gest przewijania po tym, gdy
-       palec wyjedzie poza sam mały uchwyt. */
-    try{ el.setPointerCapture(ev.pointerId); }catch(e){}
-    ev.preventDefault(); odklej();
-  }
+  if(zUchwytu){ ev.preventDefault(); odklej(); }
   else licznik = setTimeout(odklej, CHWYT_PRZYTRZYMANIE);
 
 
@@ -16867,17 +16509,6 @@ document.addEventListener("pointerdown", ev=>{
   document.addEventListener("pointerup", koniec, true);
   document.addEventListener("pointercancel", przerwij, true);
 }, true);
-
-/* iPadOS/Safari potrafi rozpocząć własne przewijanie strony mimo
-   `touch-action:none` na małym uchwycie — wystarczy, że palec wyjedzie poza
-   jego obszar. Gdy trwa chwyt elementu listy, zatrzymujemy wyłącznie ten
-   natywny ruch; automatyczne przewijanie właściwej listy nadal wykonuje
-   `krokPrzewijania`, więc można dojechać do jej pierwszej pozycji. */
-document.addEventListener("touchmove", ev=>{
-  if(!_chwyt) return;
-  if(["etykieta", "zakladka", "publikacja", "zakladkaPub"].includes(_chwyt.rodzaj))
-    ev.preventDefault();
-}, {capture:true, passive:false});
 
 /* ==========================================================================
    BLOKADA KLIKNIĘĆ MUSI BYĆ CHWILOWA
