@@ -9205,8 +9205,9 @@ function refLabel(n){
   if(n.b){ let s=BOOKS[n.b]; if(n.ch)s+=" "+n.ch+(n.v?":"+n.v:""); return s; }
   return n.pub||"";
 }
-let bibleKs = "";
-try{ bibleKs = localStorage.getItem(KP+"BibleKs") || ""; }catch(e){}
+// Główne odsyłacze wersetów mają zawsze otwierać
+// polskie „Pismo Święte w Przekładzie Nowego Świata — wydanie do studium”.
+let bibleKs = "nwtsty";
 /**
  * Buduje odnośnik do jw.org/finder, który na urządzeniu z JW Library otwiera
  * dane miejsce wprost w aplikacji.
@@ -13006,11 +13007,9 @@ function importFromDb(db){
     }
   });
   if(idb&&changed.length) idbBulk("notes",changed).catch(e=>reportSaveError(e,"import"));
-  // wykryj symbol Biblii używany na tym urządzeniu (nwt / nwtsty / inne), do budowania linków do wersetów
-  try{
-    const bk=db.exec("SELECT KeySymbol, COUNT(*) c FROM Location WHERE BookNumber IS NOT NULL AND KeySymbol IS NOT NULL GROUP BY KeySymbol ORDER BY c DESC LIMIT 1");
-    if(bk.length && bk[0].values[0][0]){ bibleKs = bk[0].values[0][0]; try{ localStorage.setItem(KP+"BibleKs", bibleKs); }catch(e){} }
-  }catch(e){}
+// Nie nadpisujemy nwtsty przekładem wykrytym z bazy JW Library.
+// Główny werset notatki ma zawsze otwierać wydanie do studium.
+bibleKs = "nwtsty";
   return {added,updated,skipped,polozenia,wlasne,roznice};
 }
 /* ===== podkreślenia: kolory, etykieta, link ===== */
