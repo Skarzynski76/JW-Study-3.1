@@ -25,10 +25,25 @@ uruchom(async ({w, d, errors, zrodlo})=>{
   T("napis w pasku dobrany do jasności tła", ()=>/\.brand-name\{color:#/.test(po));
   T("przycisk „Nowa notatka\" nadal czytelny", ()=>/header \.btn\.primary\{background:#[0-9a-f]+;color:#/.test(po));
   T("zakładki na telefonie objęte", ()=>/#mobileTabs button\.on/.test(po));
+  /* Motyw nocny trzymał --accent na html[data-theme], więc pasek (malowany
+     wprost) był lawendowy, a filtry i zaznaczenia zostawały zielone. */
+  T("motyw nocny też bierze --accent z kompozycji", ()=>
+     /html\[data-theme="dark"\],html\[data-theme="sepia"\]\{--accent:#/.test(po));
+  T("filtry szybkiego wyboru biorą kolor kompozycji", ()=>
+     /\.qf\.on,/.test(po) && /html\[data-theme="dark"\] \.qf\.on/.test(po));
+  T("wybrana księga i etykieta biorą kolor kompozycji", ()=>
+     /#colBooks \.item\.active/.test(po) && /#colTags \.item\.active/.test(po));
   T("kolumna Biblia objęta", ()=>/#colBooks\{background/.test(po));
   T("kolumna Etykiety objęta", ()=>/#colTags\{background/.test(po));
   T("kolumna Publikacje objęta", ()=>/#colPubs\{background/.test(po));
   T("belka notatki objęta", ()=>/\.nhead\{background/.test(po));
+  /* Pastel na czerni dawał szare tło apki. Kompozycja maluje kolumny
+     tylko w motywie dziennym; w nocy zostaje tło motywu. */
+  T("tło kolumn tylko w motywie dziennym", ()=>
+     /html:not\(\[data-theme="dark"\]\) #colBooks\{background/.test(po)
+     && /html:not\(\[data-theme="dark"\]\) #colNotes\{background/.test(po));
+  T("w nocy tło notatek zostaje tłem motywu", ()=>
+     /html\[data-theme="dark"\] #colNotes\{ background:var\(--panel\)/.test(css));
   T("wybór odhacza się od razu", ()=>d.querySelectorAll("#setBody .st-kafel.on").length===1);
 
   console.log("═══ POWRÓT DO DOMYŚLNEGO ═══");

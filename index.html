@@ -2463,6 +2463,10 @@ header{ gap:calc(9px * var(--uiw)); }
 html[data-theme="dark"] #colBooks,
 html[data-theme="dark"] #colTags,
 html[data-theme="dark"] #colPubs{ background:var(--bg); }
+/* Gotowa kompozycja maluje kolumny pastelą. W nocy ta sama farba na czerni
+   daje szare tło zamiast spokojnej, ciemnej przestrzeni — notatki zostają
+   więc przy tle motywu, tak jak lewe kolumny. */
+html[data-theme="dark"] #colNotes{ background:var(--panel); }
 
 /* białe kafelki na szarym tle — jednakowo we wszystkich trzech kolumnach */
 #colBooks .item, #colTags .item, #colPubs .item{
@@ -8489,15 +8493,19 @@ function akcentCzytelny(baza){
 }
 function buildColorCSS(){
   const cfg = loadColorCfg(); let css="";
+  /* W nocy tło kolumn ma zostać tłem motywu. Pastele na czerni mieszają się
+     do szarości — to samo, co w jasnym motywie wygląda na spójną kompozycję.
+     Pasek górny i belki notatek idą za kolorem niezależnie od jasności. */
+  const dzien = 'html:not([data-theme="dark"]) ';
   // spokojne, MATOWE i WYCISZONE tło w wybranym odcieniu (bez ostrych barw; kafelki zostają jasne)
   ["colBooks","colTags","colPubs"].forEach(id=>{
     const raw=cfg[id]; if(!raw) return; const c=desat(raw,.42);
-    css+=`#${id}{background:${hexA(shade(c,.6),.45)};border-color:${hexA(shade(c,-.05),.3)}}`;
-    css+=`#${id} h2,#${id} .divider,#${id} .cnt{color:${shade(desat(raw,.55),-.28)}!important}`;
-    css+=`#${id} .item{border-color:${hexA(shade(c,-.05),.28)}}`;
-    css+=`#${id} .item:hover{border-color:${shade(c,-.12)}}`;
+    css+=`${dzien}#${id}{background:${hexA(shade(c,.6),.45)};border-color:${hexA(shade(c,-.05),.3)}}`;
+    css+=`${dzien}#${id} h2,${dzien}#${id} .divider,${dzien}#${id} .cnt{color:${shade(desat(raw,.55),-.28)}!important}`;
+    css+=`${dzien}#${id} .item{border-color:${hexA(shade(c,-.05),.28)}}`;
+    css+=`${dzien}#${id} .item:hover{border-color:${shade(c,-.12)}}`;
   });
-  if(cfg.colNotes){ const c=desat(cfg.colNotes,.42); css+=`#colNotes{background:${hexA(shade(c,.74),.45)}}`; }
+  if(cfg.colNotes){ const c=desat(cfg.colNotes,.42); css+=`${dzien}#colNotes{background:${hexA(shade(c,.74),.45)}}`; }
   if(cfg.nhead){
     /* Płaski, wyciszony kolor zamiast gradientu; tytuł dostaje kolor dobrany do jasności tła
        i pion wyrównany do środka paska — wcześniej „wisiał" przy górnej krawędzi. */
@@ -8522,6 +8530,11 @@ function buildColorCSS(){
     const tekst   = czytelnyTekst(akcent);
     const slaby   = czytelnyTekstSlaby(akcent);
     css += `:root{--accent:${akcent};--accent2:${akcent2}}`;
+    /* Motyw nocny i sepia ustawiają --accent na html[data-theme], co bije :root.
+       Pasek maluje się wprost, więc zmieniał kolor, a przyciski i zaznaczenia
+       zostawały przy zieleni motywu. */
+    css += `html,html[data-theme="light"],html[data-theme="dark"],html[data-theme="sepia"]`+
+           `{--accent:${akcent};--accent2:${akcent2}}`;
     css += `header{background:${akcent}}`;
     css += `.brand-name{color:${tekst}!important}`;
     css += `.brand-name .ver,.brand-sub{color:${slaby}!important}`;
@@ -8529,6 +8542,24 @@ function buildColorCSS(){
     css += `header .btn.primary{background:${tekst};color:${akcent}}`;
     css += `header .fontctl button{color:${tekst}}`;
     css += `#mobileTabs button.on{background:${akcent};border-color:${akcent};color:${tekst}}`;
+    /* Filtry, kafelki i przyciski, które w arkuszu mają zieleń wpisaną na sztywno
+       (albo biorą --accent z motywu, który właśnie nadpisujemy). */
+    css += `.qf.on,.vb.on,.chip-ch.active,.nn-ic,.hs-n,.exp-n,`+
+           `#colBooks .item.active,#colTags .item.active,#colPubs .item.active,`+
+           `#bookList .item.active,#tagList .item.active,#pubList .item.active,`+
+           `html[data-theme="dark"] .qf.on,html[data-theme="dark"] .vb.on,`+
+           `html[data-theme="dark"] #colBooks .item.active,`+
+           `html[data-theme="dark"] #colTags .item.active,`+
+           `html[data-theme="dark"] #colPubs .item.active`+
+           `{background:${akcent};border-color:${akcent};color:${tekst}}`;
+    css += `html[data-theme="dark"] #bookList .item.active .nm,`+
+           `html[data-theme="dark"] #tagList .item.active .nm,`+
+           `html[data-theme="dark"] #pubList .item.active .nm{color:${tekst}}`;
+    css += `#colBooks .item.active .cnt,#colTags .item.active .cnt,#colPubs .item.active .cnt,`+
+           `html[data-theme="dark"] #bookList .item.active .cnt,`+
+           `html[data-theme="dark"] #tagList .item.active .cnt,`+
+           `html[data-theme="dark"] #pubList .item.active .cnt{color:${slaby}}`;
+    css += `.qf.on .qf-n{color:${tekst}}`;
   }
   return css;
 }
