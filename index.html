@@ -900,7 +900,7 @@ html[data-theme="sepia"]{--bg:#efe6d3;--panel:#fbf5e9;--border:rgba(90,72,40,.16
 header{background:var(--accent);border-bottom:0;box-shadow:none;padding:10px 14px;
   padding-top:calc(10px + env(safe-area-inset-top,0px));gap:8px}
 .brand-logo{box-shadow:none;border-radius:9px}
-.brand-name{font-weight:600;font-size:16px;letter-spacing:-.02em}
+.brand-name{font-weight:600;font-size:16px;letter-spacing:-.02em;margin:0}
 header .btn{background:rgba(255,255,255,.15);border:0;color:#fff;border-radius:10px;font-weight:500;padding:8px 13px}
 header .btn:hover{background:rgba(255,255,255,.26)}
 header .btn.primary{background:#fff;border:0;color:var(--accent);font-weight:500}
@@ -6355,7 +6355,7 @@ html[data-theme="sepia"]{ --cenSerce:#a83232; }
           env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
 }
 #modalMapa .mapamodal{
-  width:100%; max-width:none; height:100%; max-height:none;
+  width:100%; max-width:none; height:100%; max-height:100dvh;
   border:0; border-radius:0; box-shadow:none; background:transparent;
 }
 /* ——— nagłówek strony ——— */
@@ -6596,9 +6596,71 @@ body.focus-mode #colNotes{
   min-width:100%!important;
   height:100%!important;
   min-height:100%!important;
-  max-height:none!important;
+  max-height:100dvh!important;
   border-radius:0!important;
 }
+
+/* Menu „⋯” jest elementem wspólnym dla całej aplikacji i leży poza #modalFs.
+   Sam czytnik ma warstwę 10000, dlatego zwykłe z-index:70 chowało menu POD
+   pełnym ekranem: polecenie działało, ale użytkownik nie widział absolutnie nic. */
+/* Zwykły porządek warstw: narzędzia nad treścią, okna nad narzędziami. */
+#hlBar{ z-index:120; }
+#readPop,#ebPop{ z-index:121; }
+#imgBar{ z-index:122; }
+.overlay{ z-index:150; }
+
+body.fs-open #dropdown{ z-index:10030; }
+body.fs-open #colorMenu,
+body.fs-open #ebPop{ z-index:10035; }
+body.fs-open #readPop{ z-index:10035; }
+body.fs-open #hlBar{ z-index:10036; }
+body.fs-open #imgBar{ z-index:10037; }
+body.fs-open .overlay:not(#modalFs){ z-index:10040; }
+
+/* W czytniku działania są zawsze pod ręką, jak w nowoczesnym czytniku książek.
+   Pasek nie znika na końcu długiej notatki, a półprzezroczyste tło nie odcina
+   go ciężką belką od tekstu. */
+#fsWrap .ntools{
+  position:sticky;
+  bottom:max(8px, env(safe-area-inset-bottom,0px));
+  z-index:10;
+  margin-bottom:8px;
+  border:1px solid var(--border);
+  border-radius:16px;
+  background:color-mix(in srgb, var(--panel) 90%, transparent);
+  -webkit-backdrop-filter:blur(16px) saturate(1.15);
+  backdrop-filter:blur(16px) saturate(1.15);
+  box-shadow:0 8px 26px rgba(22,32,27,.14);
+  opacity:1;
+}
+#fsWrap .ntools .btnrow{ justify-content:center; gap:4px; }
+#fsWrap .ntools .sbtn.ico{ min-width:42px; min-height:40px; }
+
+/* Zaznaczanie ma należeć do systemu: pionowy gest przewija, długie
+   przytrzymanie zaznacza, a aplikacja nie próbuje interpretować go jako menu. */
+#fsWrap .ncontent{
+  -webkit-user-select:text;
+  user-select:text;
+  touch-action:pan-y;
+  -webkit-touch-callout:default;
+}
+#hlBar{
+  overflow-x:auto;
+  overflow-y:hidden;
+  overscroll-behavior:contain;
+  scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+}
+#hlBar::-webkit-scrollbar{ display:none; }
+body.ma-zaznaczenie #modalFs .fsNav,
+body.ma-zaznaczenie #fsWrap .ntools{ opacity:.12; pointer-events:none; }
+
+/* Kolor pierwszej etykiety był rysowany jako pionowa kreska przez całą
+   karteczkę. W gęstej tablicy kilkanaście jednakowych zielonych linii wygląda
+   jak błąd siatki, a w czytniku odciąga wzrok od tekstu. W zwykłej liście
+   akcent nadal pomaga rozpoznawać kategorie, ale w tych dwóch widokach znika. */
+#noteList.v-tablica .ncard::before,
+#fsWrap .ncard::before{ display:none; }
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -6607,7 +6669,7 @@ body.focus-mode #colNotes{
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.78</span></div>
+      <h1 class="brand-name">JW Study <span class="ver">v2.82</span></h1>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -7226,6 +7288,25 @@ function setHtml(el, html){ if(el && el.innerHTML !== html){ el.innerHTML = html
    błędem „store already exists", a wraz z nią odczyt notatek. */
 function idbOpen(){return new Promise((res,rej)=>{
   const r = indexedDB.open(DBNAME, 2);
+  let zakonczone = false;
+  /* Otwarta karta starej wersji potrafi zablokować aktualizację bazy na zawsze.
+     Wtedy boot() czekał bez końca, a pełnoekranowy #loading połykał każdy dotyk.
+     Po kilku sekundach uruchamiamy aplikację bez bazy; odświeżenie po zamknięciu
+     innych kart przywróci normalny zapis. Spóźnione połączenie od razu zamykamy. */
+  const limit = setTimeout(()=>{
+    if(zakonczone) return;
+    zakonczone = true;
+    rej(new Error("Otwarcie pamięci trwało zbyt długo"));
+  }, 3500);
+  const zakoncz = (fn, wartosc)=>{
+    if(zakonczone){
+      if(wartosc && typeof wartosc.close==="function") try{ wartosc.close(); }catch(_){}
+      return;
+    }
+    zakonczone = true;
+    clearTimeout(limit);
+    fn(wartosc);
+  };
   r.onupgradeneeded = e=>{
     const d = e.target.result;
     const zaloz = (nazwa, opcje)=>{
@@ -7237,8 +7318,9 @@ function idbOpen(){return new Promise((res,rej)=>{
     zaloz("files");
     zaloz("wersje", {keyPath:"g"});
   };
-  r.onsuccess = e=>res(e.target.result);
-  r.onerror = e=>rej(e);
+  r.onsuccess = e=>zakoncz(res, e.target.result);
+  r.onerror = e=>zakoncz(rej, r.error || e);
+  r.onblocked = ()=>zakoncz(rej, new Error("Pamięć jest zablokowana przez inną kartę aplikacji"));
 });}
 function idbAll(store){return new Promise((res,rej)=>{const t=idb.transaction(store).objectStore(store).getAll();t.onsuccess=()=>res(t.result);t.onerror=rej;});}
 function idbPut(store,val,key){return new Promise((res,rej)=>{const t=idb.transaction(store,"readwrite").objectStore(store).put(val,key);t.onsuccess=()=>res();t.onerror=rej;});}
@@ -7754,7 +7836,12 @@ async function wymusAktualizacje(){
       await Promise.all(rejs.map(r=>r.unregister()));
     }
   }catch(e){ console.warn("Nie udało się wyczyścić pamięci podręcznej", e); }
-  location.reload();
+  /* Zwykłe reload() może ponownie dostać dokument z pamięci HTTP GitHub Pages.
+     Jednorazowy parametr tworzy nowe żądanie i wymusza pobranie pliku
+     opublikowanego na serwerze. Nie dotyka danych użytkownika. */
+  const swiezy = new URL(location.href);
+  swiezy.searchParams.set("jw-odswiez", Date.now().toString());
+  location.replace(swiezy.href);
 }
 
 </script>
@@ -9701,12 +9788,12 @@ function noteCard(n){
          <div class="dd-sep"></div>
          <div data-x="read">${ICO.book}Tryb czytania</div>
          <div data-x="copy">${ICO.copy}Kopiuj treść</div>
+         <div data-x="wyslij">${ICO.send}Wyślij na inne urządzenie…</div>
          ${link?`<div data-x="link">${ICO.link}Kopiuj odnośnik</div>`:""}
          ${link?`<div data-x="open">${ICO.ext}Otwórz w JW Library</div>`:""}
          <div class="dd-sep"></div>
          <div data-x="powtorka">${IC_CLOCK}Przypomnij mi o niej…${(typeof maPowtorke==="function" && maPowtorke(n))?' <span class="ddZnak">✓</span>':""}</div>
          <div data-x="szablon">${ICO.doc}Zapisz jako szablon…</div>
-         <div data-x="wyslij">${ICO.send}Wyślij na inne urządzenie…</div>
          <div class="dd-sep"></div>
          <div data-x="grMiejsce">${ICO.bookmark}Gdzie leży<span class="ddStrz">›</span></div>
          <div data-x="grWyglad">${ICO.paint}Wygląd${(n.wys!==undefined||n.bg)?' <span class="ddZnak">✓</span>':""}<span class="ddStrz">›</span></div>
@@ -9864,7 +9951,9 @@ function openFs(n){
   } else if(!juzOtwarty){
     fsSlad.length = 0;
   }
-  fsGuid = n.g; renderFs(); openModal("modalFs");
+  fsGuid = n.g;
+  document.body.classList.add("fs-open");
+  renderFs(); openModal("modalFs");
   acquireWake(); updateFsNav();
   const fm=$("modalFs").querySelector(".fsmodal"); if(fm) fm.scrollTop=0;
   updateFsProgress();
@@ -10154,6 +10243,8 @@ function closeFs(){
   /* Notatkę do wskazania trzeba wziąć PRZED skasowaniem śladu i fsGuid. */
   const wrocDo = fsSlad.length ? fsSlad[0] : fsGuid;
   fsSlad.length = 0; fsGuid = null;
+  document.body.classList.remove("fs-open", "ma-zaznaczenie");
+  const zazn = getSelection(); if(zazn && typeof zazn.removeAllRanges==="function") zazn.removeAllRanges();
   closeModal("modalFs"); releaseWake(); updateFsNav();
   const p=$("readPop"); if(p) p.style.display="none";
   if(fsListDirty){ fsListDirty=false; renderNotes(); }
@@ -12353,17 +12444,25 @@ hlBar.innerHTML = [1,2,3,4,5,6,7].map(i=>`<div class="sw" style="background:var(
 const touchUI = ()=> matchMedia("(hover: none)").matches || isIOS();
 function showHlBar(){
   const sel=getSelection();
-  if(sel.isCollapsed||!sel.rangeCount){ hlBar.style.display="none"; return; }
+  if(sel.isCollapsed||!sel.rangeCount){
+    hlBar.style.display="none";
+    document.body.classList.remove("ma-zaznaczenie");
+    return;
+  }
   const range=sel.getRangeAt(0);
   const cac=range.commonAncestorContainer;
   const el=cac.nodeType===1?cac:cac.parentElement;
   const cont=el?el.closest(".ncard .ncontent"):null;
-  if(!cont){ hlBar.style.display="none"; return; }
+  if(!cont){ hlBar.style.display="none"; document.body.classList.remove("ma-zaznaczenie"); return; }
   // podczas edycji (także pisania Apple Pencil) nie wyskakuj z paskiem kolorów —
   // formatowanie jest wtedy w pasku edycji, a Scribble musi mieć spokój
-  if(cont.isContentEditable){ hlBar.style.display="none"; return; }
-  const r=range.getBoundingClientRect();
+  if(cont.isContentEditable){ hlBar.style.display="none"; document.body.classList.remove("ma-zaznaczenie"); return; }
+  /* Safari potrafi zwrócić pusty prostokąt dla zaznaczenia przez kilka wierszy.
+     Bierzemy wtedy rzeczywisty, widoczny fragment zakresu, nie punkt 0×0. */
+  const prostokaty = range.getClientRects ? [...range.getClientRects()].filter(x=>x.width||x.height) : [];
+  const r = prostokaty.length ? prostokaty[prostokaty.length-1] : range.getBoundingClientRect();
   hlBar.style.display="flex";
+  document.body.classList.add("ma-zaznaczenie");
   const w = hlBar.offsetWidth || 380;
   const h = hlBar.offsetHeight || 52;
   /* Granice bierzemy z obszaru FAKTYCZNIE widocznego, nie z wysokości okna.
@@ -12375,16 +12474,10 @@ function showHlBar(){
   hlBar.style.bottom="auto";
   hlBar.style.left = wLewo(r.left + r.width/2 - w/2) + "px";
   if(touchUI()){
-    // iPad/iPhone: pasek tuż POD zaznaczeniem, z odstępem na systemowe menu Apple
-    const off = r.top < ob.gora + 80 ? 95 : 55;   // przy górze menu Apple wyskakuje POD zaznaczeniem
-    let top = r.bottom + off;
-    if(top + h > ob.dol - 12){
-      /* Brak miejsca pod zaznaczeniem — próbujemy NAD nim, a dopiero gdy i tam
-         się nie mieści, przypinamy do dolnej krawędzi widocznego obszaru. */
-      const nad = r.top - h - 12;
-      top = (nad > ob.gora + 8) ? nad : (ob.dol - h - 12);
-    }
-    hlBar.style.top = Math.max(ob.gora + 8, top) + "px";
+    /* Stabilny pasek przy przeciwnej krawędzi ekranu. Nie ściga uchwytów
+       zaznaczenia i nie walczy o miejsce z systemowym menu iOS. */
+    const zaznaczenieNaDole = (r.top + r.bottom) / 2 > (ob.gora + ob.dol) / 2;
+    hlBar.style.top = (zaznaczenieNaDole ? ob.gora + 10 : ob.dol - h - 10) + "px";
   } else {
     hlBar.style.top = Math.max(ob.gora + 8,
                         Math.min(r.top - h - 4, ob.dol - h - 8)) + "px";
@@ -12441,23 +12534,41 @@ hlBar.addEventListener("pointerdown", e=>{
   const hl=t.dataset.hl, fmt=t.dataset.fmt;
   if(hl==="copy"){
     navigator.clipboard.writeText(sel.toString()).then(()=>toast("Skopiowano zaznaczenie"));
-    sel.removeAllRanges(); hlBar.style.display="none"; return;
+    sel.removeAllRanges(); hlBar.style.display="none";
+    document.body.classList.remove("ma-zaznaczenie");
+    return;
   }
   if(fmt){ wrapTag(range, fmt); }
   else if(hl==="0") unwrapMarks(range,contEl);
   else applyMark(range,+hl);
   sel.removeAllRanges();
   hlBar.style.display="none";
+  document.body.classList.remove("ma-zaznaczenie");
   saveContentEl(contEl, n);
 }, true);
 function applyMark(range,color){
-  // wyjmij zaznaczenie, usuń z niego istniejące kolory (żeby się nie nakładały), potem nałóż nowy
-  const frag=range.extractContents();
-  frag.querySelectorAll("mark").forEach(m=>{ while(m.firstChild) m.parentNode.insertBefore(m.firstChild,m); m.remove(); });
-  const mark=document.createElement("mark");
-  mark.className="hl"+color;
-  mark.appendChild(frag);
-  range.insertNode(mark);
+  /* Nie wkładamy kilku akapitów do jednego <mark> — taki HTML jest niepoprawny
+     i Safari potrafi go przebudować inaczej przy każdym zapisie. Kolorujemy
+     osobno rzeczywiste fragmenty tekstowe, od końca, więc zakres nie rozpada
+     się podczas zmian DOM. */
+  const root = range.commonAncestorContainer.nodeType===1
+    ? range.commonAncestorContainer : range.commonAncestorContainer.parentElement;
+  const walker=document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const odcinki=[]; let node;
+  while(node=walker.nextNode()){
+    if(!node.nodeValue || !node.nodeValue.length) continue;
+    try{ if(!range.intersectsNode(node)) continue; }catch(_){ continue; }
+    let a=node===range.startContainer ? range.startOffset : 0;
+    let b=node===range.endContainer ? range.endOffset : node.nodeValue.length;
+    a=Math.max(0,Math.min(a,node.nodeValue.length));
+    b=Math.max(a,Math.min(b,node.nodeValue.length));
+    if(b>a) odcinki.push([node,a,b]);
+  }
+  odcinki.reverse().forEach(([tekst,a,b])=>{
+    const cz=document.createRange(); cz.setStart(tekst,a); cz.setEnd(tekst,b);
+    const mark=document.createElement("mark"); mark.className="hl"+color;
+    mark.appendChild(cz.extractContents()); cz.insertNode(mark);
+  });
 }
 function wrapTag(range,tag){
   const el=document.createElement(tag);
@@ -17296,6 +17407,18 @@ window.addEventListener("error", e=>{
     slad("brak sieci: " + String(e.message).slice(0,60));
     return;
   }
+  /* Gołe „Script error.” bez pliku, linii i obiektu Error nie pochodzi z
+     mierzalnego miejsca naszej aplikacji. Tak przeglądarka zgłasza najczęściej
+     błąd skryptu wstrzykniętego przez rozszerzenie albo własny komponent,
+     którego źródło celowo ukrywa. Zapisywanie tego jako awarii JW Study dawało
+     czerwony alarm bez jednego szczegółu potrzebnego do naprawy. Prawdziwy błąd
+     naszego jednoplikowego index.html ma co najmniej numer linii lub obiekt
+     Error i nadal przechodzi do dziennika. */
+  if(/^Script error\.?$/i.test(String(e.message).trim())
+     && !e.filename && !e.lineno && !e.colno && !e.error){
+    slad("pominięto anonimowy błąd zewnętrznego skryptu");
+    return;
+  }
   /* Przy „Script error." przeglądarka ukrywa szczegóły, ale sam obiekt błędu
      bywa dostępny — wtedy stos mówi więcej niż komunikat. */
   const stos = (e.error && e.error.stack) ? String(e.error.stack).slice(0,300) : "";
@@ -17602,6 +17725,13 @@ function ustawTloNotatki(n, kol){
   if(typeof bumpDirty==="function") bumpDirty();
 }
 
+/** Odświeża kolor każdej widocznej kopii karty — listy i czytnika. */
+function pokazTloNotatkiNaEkranie(n){
+  document.querySelectorAll(".ncard").forEach(karta=>{
+    if(karta.dataset.g===n.g) zastosujTloNotatki(karta, n);
+  });
+}
+
 /* ——— PASEK KOLORÓW NA GÓRZE MENU NOTATKI (v2.69) ———
  *
  * Kolor tła leżał trzy poziomy w głąb: ⋯ → „Wygląd" → „Tło notatki…" → próbka.
@@ -17651,6 +17781,7 @@ function obsluzPaskTla(ev, n, kotwica){
   dd.style.display = "none";
   ustawTloNotatki(n, sw.dataset.tlo || null);
   renderNotes();
+  pokazTloNotatkiNaEkranie(n);
   toastOk(sw.dataset.tlo ? "Zmieniono tło notatki" : "Zdjęto kolor notatki");
   return true;
 }
@@ -17679,6 +17810,7 @@ function menuTlaNotatki(n, kotwica){
   const zastosuj = (kol)=>{
     ustawTloNotatki(n, kol||null);
     renderNotes();
+    pokazTloNotatkiNaEkranie(n);
     toastOk(kol ? "Zmieniono tło notatki" : "Zdjęto kolor notatki");
   };
   dd.onclick = e=>{
@@ -17692,13 +17824,13 @@ function menuTlaNotatki(n, kotwica){
     /* Podgląd na żywo przy przesuwaniu, zapis dopiero po wybraniu — inaczej
        każdy ruch suwaka byłby osobnym zapisem do bazy. */
     pole.oninput = ()=>{
-      const karta = document.querySelector('#noteList .ncard[data-g="'+n.g+'"]');
-      if(karta){
+      document.querySelectorAll(".ncard").forEach(karta=>{
+        if(karta.dataset.g!==n.g) return;
         karta.style.setProperty("--tloKarty", pole.value);
         if(typeof czytelnyTekst==="function")
           karta.style.setProperty("--tekstKarty", czytelnyTekst(pole.value));
         karta.classList.add("wlasneTlo");
-      }
+      });
     };
     pole.onchange = ()=>{ dd.style.display="none"; zastosuj(pole.value); };
   }
