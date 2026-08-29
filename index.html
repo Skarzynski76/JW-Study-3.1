@@ -900,7 +900,7 @@ html[data-theme="sepia"]{--bg:#efe6d3;--panel:#fbf5e9;--border:rgba(90,72,40,.16
 header{background:var(--accent);border-bottom:0;box-shadow:none;padding:10px 14px;
   padding-top:calc(10px + env(safe-area-inset-top,0px));gap:8px}
 .brand-logo{box-shadow:none;border-radius:9px}
-.brand-name{font-weight:600;font-size:16px;letter-spacing:-.02em}
+.brand-name{font-weight:600;font-size:16px;letter-spacing:-.02em;margin:0}
 header .btn{background:rgba(255,255,255,.15);border:0;color:#fff;border-radius:10px;font-weight:500;padding:8px 13px}
 header .btn:hover{background:rgba(255,255,255,.26)}
 header .btn.primary{background:#fff;border:0;color:var(--accent);font-weight:500}
@@ -6607,7 +6607,7 @@ body.focus-mode #colNotes{
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <div class="brand-name">JW Study <span class="ver">v2.78</span></div>
+      <h1 class="brand-name">JW Study <span class="ver">v2.79</span></h1>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -7226,6 +7226,25 @@ function setHtml(el, html){ if(el && el.innerHTML !== html){ el.innerHTML = html
    błędem „store already exists", a wraz z nią odczyt notatek. */
 function idbOpen(){return new Promise((res,rej)=>{
   const r = indexedDB.open(DBNAME, 2);
+  let zakonczone = false;
+  /* Otwarta karta starej wersji potrafi zablokować aktualizację bazy na zawsze.
+     Wtedy boot() czekał bez końca, a pełnoekranowy #loading połykał każdy dotyk.
+     Po kilku sekundach uruchamiamy aplikację bez bazy; odświeżenie po zamknięciu
+     innych kart przywróci normalny zapis. Spóźnione połączenie od razu zamykamy. */
+  const limit = setTimeout(()=>{
+    if(zakonczone) return;
+    zakonczone = true;
+    rej(new Error("Otwarcie pamięci trwało zbyt długo"));
+  }, 3500);
+  const zakoncz = (fn, wartosc)=>{
+    if(zakonczone){
+      if(wartosc && typeof wartosc.close==="function") try{ wartosc.close(); }catch(_){}
+      return;
+    }
+    zakonczone = true;
+    clearTimeout(limit);
+    fn(wartosc);
+  };
   r.onupgradeneeded = e=>{
     const d = e.target.result;
     const zaloz = (nazwa, opcje)=>{
@@ -7237,8 +7256,9 @@ function idbOpen(){return new Promise((res,rej)=>{
     zaloz("files");
     zaloz("wersje", {keyPath:"g"});
   };
-  r.onsuccess = e=>res(e.target.result);
-  r.onerror = e=>rej(e);
+  r.onsuccess = e=>zakoncz(res, e.target.result);
+  r.onerror = e=>zakoncz(rej, r.error || e);
+  r.onblocked = ()=>zakoncz(rej, new Error("Pamięć jest zablokowana przez inną kartę aplikacji"));
 });}
 function idbAll(store){return new Promise((res,rej)=>{const t=idb.transaction(store).objectStore(store).getAll();t.onsuccess=()=>res(t.result);t.onerror=rej;});}
 function idbPut(store,val,key){return new Promise((res,rej)=>{const t=idb.transaction(store,"readwrite").objectStore(store).put(val,key);t.onsuccess=()=>res();t.onerror=rej;});}

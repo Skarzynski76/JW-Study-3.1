@@ -37,8 +37,12 @@ module.exports = function(plik, port, opcje){
   }
   const dom=new JSDOM(html,{runScripts:"dangerously",url:"http://127.0.0.1:"+port+"/index.html",resources:"usable",pretendToBeVisual:true,virtualConsole:vc,
    beforeParse(w){w.matchMedia=q=>({matches:false,media:q,addEventListener(){},removeEventListener(){},addListener(){},removeListener(){}});
-    w.indexedDB={open(){const r={};setTimeout(function(){const db={objectStoreNames:{contains:()=>true},createObjectStore:()=>({createIndex(){}}),transaction:()=>mkTx(),close(){}};r.result=db;if(r.onsuccess)r.onsuccess({target:{result:db}});},0);return r;}};
+    w.indexedDB=(opcje && opcje.indexedDB) || {open(){const r={};setTimeout(function(){const db={objectStoreNames:{contains:()=>true},createObjectStore:()=>({createIndex(){}}),transaction:()=>mkTx(),close(){}};r.result=db;if(r.onsuccess)r.onsuccess({target:{result:db}});},0);return r;}};
     w.crypto={subtle:{digest:async()=>new ArrayBuffer(32)},randomUUID:()=>"X"};w.scrollTo=()=>{};w.open=()=>({});
+    /* jsdom nie implementuje hit-testu układu. Prawdziwe przeglądarki mają tę
+       funkcję; pusta odpowiedź pozwala testować drogę zapasową bez sztucznego
+       TypeError, który wcześniej udawał awarię dotyku. */
+    w.document.elementFromPoint=()=>null;
     w.IntersectionObserver=class{observe(){}disconnect(){}};w.requestAnimationFrame=cb=>setTimeout(cb,0);w.Element.prototype.scrollIntoView=function(){};
     w.navigator.storage={estimate:async()=>({usage:5e6,quota:1e9})};
     w.navigator.clipboard={writeText:()=>Promise.resolve()};w.scrollBy=()=>{};

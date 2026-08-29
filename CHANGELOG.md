@@ -5,7 +5,7 @@ bez niej po miesiącu nie wiadomo, dlaczego coś wygląda tak, a nie inaczej.
 
 ---
 
-## v2.78 — przywrócone uruchamianie z GitHub Pages
+## v2.79 — przywrócone uruchamianie i odblokowany dotyk po starcie
 
 **Co było nie tak.** Po wejściu na adres aplikacji GitHub Pages nie znajdował
 strony startowej. Plik aplikacji miał nazwę
@@ -19,6 +19,12 @@ z wersji 2.78, ale numer wydania i nazwa pamięci nie stanowiły jednego zestawu
 **Co zrobiono.** Przywrócono wymagany `index.html`, ujednolicono wersję 2.78
 w pliku `WERSJA` i pamięci service workera oraz ponownie sprawdzono publikację,
 manifest, pliki offline i zestawy testów.
+
+**Dodatkowa poprawka startu na dotyku.** Aktualizacja IndexedDB mogła pozostać
+zablokowana przez inną kartę albo starszą wersję uruchomioną z ikony. Start
+czekał wtedy bez końca, a pełnoekranowa warstwa ładowania przechwytywała każdy
+dotyk. Otwarcie pamięci ma teraz limit czasu i obsługę zdarzenia `blocked`;
+aplikacja uruchamia się awaryjnie zamiast pozostawać na martwym ekranie.
 
 ## v2.41 — koniec z dwoma dotknięciami; w edycji znów da się zaznaczyć słowo
 

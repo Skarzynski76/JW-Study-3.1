@@ -60,7 +60,7 @@ fi
 sprzataj(){ kill "$SERWER" 2>/dev/null; }
 trap sprzataj EXIT
 
-ZESTAWY=(regres edytor kolumny czytnik wyglad aktualizacja kopia bezpieczenstwo import-atomowy import-limity wydanie scenariusze dostepnosc sekcje onenote-strona porzadki przenoszenie udostepnianie chwytanie wszystkie kolejnosc-publikacji miejsce menu-dotyk klikalnosc telefon wydajnosc wysokosc gestosc tablica okienka wydobycie zwarty rysik jwlibrary szablony powiazane nowa-notatka warstwy)
+ZESTAWY=(start-blokada regres edytor kolumny czytnik wyglad aktualizacja kopia bezpieczenstwo import-atomowy import-limity wydanie scenariusze dostepnosc sekcje onenote-strona porzadki przenoszenie udostepnianie chwytanie wszystkie kolejnosc-publikacji miejsce menu-dotyk klikalnosc telefon wydajnosc wysokosc gestosc tablica okienka wydobycie zwarty rysik jwlibrary szablony powiazane nowa-notatka warstwy)
 declare -a WYNIKI
 
 for z in "${ZESTAWY[@]}"; do
