@@ -1,4 +1,4 @@
-JW STUDY 2.83 — PODMIANA NA GITHUB
+JW STUDY 2.84 — PODMIANA NA GITHUB
 
 1. Rozpakuj ten ZIP.
 2. Na GitHub otwórz repozytorium JW-Study-3.1 i gałąź main.
@@ -11,7 +11,7 @@ JW STUDY 2.83 — PODMIANA NA GITHUB
 5. Zatwierdź zmianę przyciskiem Commit changes.
 6. Poczekaj, aż Actions / pages-build-deployment pokaże Success.
 7. Otwórz:
-   https://skarzynski76.github.io/JW-Study-3.1/?v=283
+   https://skarzynski76.github.io/JW-Study-3.1/?v=284
 
 Nazw plików nie trzeba zmieniać — w paczce są już prawidłowe.
 

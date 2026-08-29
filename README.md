@@ -1,4 +1,4 @@
-# JW Study 2.83
+# JW Study 2.84
 
 Gotowa, jednoplikowa wersja aplikacji do publikacji przez GitHub Pages.
 

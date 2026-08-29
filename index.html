@@ -6795,6 +6795,78 @@ body.fs-open #colorMenu{
   .cenHero,.cenKarta,.cenPoz,.cenHeroBtn{ transition:none; }
   .cenHero:hover,.cenKarta:hover,.cenHeroBtn:hover{ transform:none; }
 }
+
+/* ══════════════ CZYTNIK: LEKKI DOK I WYRAŹNA NAWIGACJA (v2.84) ══════════════
+
+   Pasek działań nie jest zakończeniem dokumentu. Jest małym, niezależnym
+   dokiem nad dolną krawędzią, dlatego rozwinięcie „Powiązanych notatek” nie
+   przesuwa go i nie tworzy wielkiej pustej belki między tekstem a listą. */
+#fsWrap .ncard:not(.editing) .ntools{
+  position:fixed!important;
+  left:50%;
+  right:auto;
+  bottom:calc(14px + env(safe-area-inset-bottom,0px));
+  transform:translateX(-50%);
+  z-index:10020;
+  width:max-content;
+  max-width:calc(100vw - 32px);
+  margin:0!important;
+  padding:7px 8px!important;
+  border-radius:18px;
+}
+#fsWrap .ncard:not(.editing) .ntools .btnrow{
+  width:max-content;
+  max-width:calc(100vw - 50px);
+}
+/* Po rozwinięciu zarządzania etykietami dok staje się panelem, ale nadal nie
+   zajmuje całej szerokości ekranu i pozostaje ponad treścią. */
+#fsWrap .ncard.showtags:not(.editing) .ntools{
+  width:min(720px, calc(100vw - 32px));
+  max-height:min(48vh, 360px);
+  overflow:auto;
+}
+#fsWrap .ncard.showtags:not(.editing) .ntools .btnrow{ width:100%; }
+
+/* Powiązania zaczynają się zaraz po treści. Zapas jest dopiero pod ostatnią
+   pozycją i odpowiada wysokości doku, więc nic nie zostaje przez niego zasłonięte. */
+#fsWrap .powiazane{
+  margin-top:26px;
+  margin-bottom:0;
+  padding-bottom:calc(92px + env(safe-area-inset-bottom,0px));
+}
+#fsWrap .ncard:not(:has(.powiazane)):not(.editing){
+  padding-bottom:calc(86px + env(safe-area-inset-bottom,0px));
+}
+
+/* Aktywna strzałka wygląda jak prawdziwy przycisk. Przezroczystość oznacza
+   wyłącznie stan nieaktywny — gdy nie istnieje poprzednia lub następna notatka. */
+#modalFs .fsNav{
+  opacity:1!important;
+  background:var(--panel)!important;
+  color:var(--accent)!important;
+  border:1px solid var(--border)!important;
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+  box-shadow:0 8px 24px rgba(18,34,26,.18),0 1px 0 rgba(255,255,255,.45) inset!important;
+  transition:transform .14s var(--ease),background .14s var(--ease),box-shadow .14s var(--ease);
+}
+#modalFs .fsNav:hover{
+  background:var(--sel)!important;
+  box-shadow:0 10px 28px rgba(18,34,26,.24)!important;
+}
+#modalFs .fsNav:active{ transform:translateY(-50%) scale(.94); }
+#modalFs .fsNav[disabled]{
+  opacity:.28!important;
+  color:var(--muted)!important;
+  background:var(--bg)!important;
+  box-shadow:none!important;
+}
+@media (max-width:700px), (max-height:560px){
+  #modalFs .fsNav:active{ transform:scale(.94); }
+}
+@media (max-width:420px){
+  #modalFs .fsNav{ width:40px; height:40px; font-size:22px; }
+}
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -6803,7 +6875,7 @@ body.fs-open #colorMenu{
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <h1 class="brand-name">JW Study <span class="ver">v2.83</span></h1>
+      <h1 class="brand-name">JW Study <span class="ver">v2.84</span></h1>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
