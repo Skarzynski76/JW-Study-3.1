@@ -5,6 +5,13 @@ bez niej po miesiącu nie wiadomo, dlaczego coś wygląda tak, a nie inaczej.
 
 ---
 
+## v2.88 — podświetlanie bez konfliktu z menu Apple
+
+- na iPadzie i iPhonie pełna paleta kolorów nie otwiera się już automatycznie podczas zaznaczania,
+- przy tekście pojawia się tylko mały przycisk pędzla, zarówno w czytniku, jak i w miniaturach,
+- dotknięcie pędzla zapamiętuje zakres, zamyka systemowe menu Apple i dopiero potem rozwija narzędzia,
+- wybrany kolor, formatowanie i kopiowanie działają na zapamiętanym zakresie także po zniknięciu niebieskiego zaznaczenia.
+
 ## v2.87 — belka przy zaznaczeniu i zakładki ogólne
 
 - paleta podświetlania stoi przy zaznaczonym tekście, najpierw pod nim, aby nie nakładać się na systemowe menu iOS,

@@ -597,6 +597,11 @@ mark{padding:0 1px;border-radius:3px}
 #hlBar{position:fixed;display:none;background:rgba(255,255,255,.94);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid rgba(0,0,0,.08);border-radius:21px;box-shadow:0 8px 28px rgba(0,0,0,.26),inset 0 1px 0 #fff;padding:7px 11px;z-index:10023;gap:7px;align-items:center}
 #hlBar{max-width:calc(100vw - 16px);overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 #hlBar::-webkit-scrollbar{display:none}
+#hlBar .hlOpen{display:none;align-items:center;justify-content:center;width:42px;height:42px;padding:0!important;color:#fff;background:var(--accent)!important;border-radius:50%!important}
+#hlBar .hlOpen .ic{width:21px;height:21px}
+#hlBar.zwarta{width:46px;height:46px;min-width:46px;padding:2px;overflow:visible;border-radius:50%;gap:0}
+#hlBar.zwarta>:not(.hlOpen){display:none!important}
+#hlBar.zwarta .hlOpen{display:flex}
 #hlBar .sw{width:24px;height:24px;border-radius:50%;border:1px solid rgba(0,0,0,.18);cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.15);transition:transform .1s}
 #hlBar .sw:hover{transform:scale(1.18)}
 #hlBar .sw:active{transform:scale(.94)}
@@ -6973,7 +6978,7 @@ body.centrum-open #centrum{ padding-top:10px; }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <h1 class="brand-name">JW Study <span class="ver">v2.87</span></h1>
+      <h1 class="brand-name">JW Study <span class="ver">v2.88</span></h1>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -12816,7 +12821,8 @@ function htmlToPlain(html){
 "use strict";
 /* ================= KOLOROWANIE ZAZNACZEŃ ================= */
 const hlBar = $("hlBar");
-hlBar.innerHTML = [1,2,3,4,5,6,7].map(i=>`<div class="sw" style="background:var(--hl${i})" data-hl="${i}" title="Podświetl"></div>`).join("") +
+hlBar.innerHTML = `<button class="tb hlOpen" type="button" title="Kolor i formatowanie" aria-label="Otwórz kolory i formatowanie">${ICO.paint}</button>`+
+  [1,2,3,4,5,6,7].map(i=>`<div class="sw" style="background:var(--hl${i})" data-hl="${i}" title="Podświetl"></div>`).join("") +
   `<button class="tb" data-hl="0" title="Usuń kolor">⌫</button>
    <span class="sep"></span>
    <button class="tb fmt" data-fmt="b" title="Pogrubienie"><b>B</b></button>
@@ -12825,14 +12831,18 @@ hlBar.innerHTML = [1,2,3,4,5,6,7].map(i=>`<div class="sw" style="background:var(
    <span class="sep"></span>
    <button class="tb" data-hl="copy" title="Kopiuj zaznaczenie">${ICO.copy}</button>`;
 const touchUI = ()=> matchMedia("(hover: none)").matches || isIOS();
-function showHlBar(){
+let hlZakres=null;
+let hlRozwijanie=false;
+function showHlBar(wymusPelny, zakresZapisany){
   const sel=getSelection();
-  if(sel.isCollapsed||!sel.rangeCount){
+  const zywyZakres=sel.rangeCount&&!sel.isCollapsed ? sel.getRangeAt(0) : null;
+  const range=zywyZakres || (wymusPelny && zakresZapisany) || null;
+  if(!range){
+    if(hlRozwijanie) return;
     hlBar.style.display="none";
     document.body.classList.remove("ma-zaznaczenie");
     return;
   }
-  const range=sel.getRangeAt(0);
   const cac=range.commonAncestorContainer;
   const el=cac.nodeType===1?cac:cac.parentElement;
   const cont=el?el.closest(".ncard .ncontent"):null;
@@ -12840,11 +12850,22 @@ function showHlBar(){
   // podczas edycji (także pisania Apple Pencil) nie wyskakuj z paskiem kolorów —
   // formatowanie jest wtedy w pasku edycji, a Scribble musi mieć spokój
   if(cont.isContentEditable){ hlBar.style.display="none"; document.body.classList.remove("ma-zaznaczenie"); return; }
+  /* Zakres musi przeżyć zamknięcie menu Apple. Range.cloneRange() nadal
+     wskazuje te same węzły DOM, chociaż nie jest już niebieskim zaznaczeniem. */
+  if(zywyZakres){
+    try{ hlZakres=range.cloneRange(); }catch(_){ hlZakres=null; }
+  }
   /* Safari potrafi zwrócić pusty prostokąt dla zaznaczenia przez kilka wierszy.
      Bierzemy wtedy rzeczywisty, widoczny fragment zakresu, nie punkt 0×0. */
   const prostokaty = range.getClientRects ? [...range.getClientRects()].filter(x=>x.width||x.height) : [];
   const pierwszy = prostokaty.length ? prostokaty[0] : range.getBoundingClientRect();
   const ostatni = prostokaty.length ? prostokaty[prostokaty.length-1] : pierwszy;
+  const granice = prostokaty.length ? prostokaty.reduce((a,x)=>({
+    left:Math.min(a.left,x.left), right:Math.max(a.right,x.right),
+    top:Math.min(a.top,x.top), bottom:Math.max(a.bottom,x.bottom)
+  }),{left:pierwszy.left,right:pierwszy.right,top:pierwszy.top,bottom:pierwszy.bottom})
+  : {left:pierwszy.left,right:pierwszy.right,top:pierwszy.top,bottom:pierwszy.bottom};
+  hlBar.classList.remove("zwarta");
   hlBar.style.display="flex";
   document.body.classList.add("ma-zaznaczenie");
   const w = Math.min(hlBar.offsetWidth || 380, innerWidth-16);
@@ -12856,23 +12877,36 @@ function showHlBar(){
            : {lewo:0, gora:0, prawo:innerWidth, dol:innerHeight};
   const wLewo = (x)=>Math.max(ob.lewo+8, Math.min(x, ob.prawo-w-8));
   hlBar.style.bottom="auto";
-  hlBar.classList.remove("pod-zazn","nad-zazn");
+  hlBar.classList.remove("pod-zazn","nad-zazn","obok-zazn");
   if(touchUI()){
-    /* Systemowe menu iOS zajmuje zwykle miejsce NAD zaznaczeniem. Dlatego
-       własna paleta najpierw staje pod ostatnim wierszem. Gdy się nie mieści,
-       idzie nad pierwszy wiersz, ale zostawia 58 px dla menu systemowego. */
-    const odstep=12, systemowe=58;
-    const miesciPod = ostatni.bottom + odstep + h <= ob.dol - 8;
-    const punkt = miesciPod ? ostatni : pierwszy;
-    const lewo=wLewo(punkt.left + punkt.width/2 - w/2);
-    hlBar.style.left=lewo+"px";
-    hlBar.style.setProperty("--hlWsk", Math.max(14,Math.min(w-14,punkt.left+punkt.width/2-lewo))+"px");
-    if(miesciPod){
-      hlBar.style.top=(ostatni.bottom+odstep)+"px";
-      hlBar.classList.add("pod-zazn");
+    /* iOS może położyć własne menu zarówno nad, jak i pod zaznaczeniem i nie
+       udostępnia stronie jego prostokąta. Dlatego podczas aktywnego zaznaczenia
+       NIGDY nie pokazujemy pełnej palety — dotyczy to czytnika i miniaturek. */
+    const odstep=12;
+    const prawa=ob.prawo-granice.right-odstep;
+    const lewa=granice.left-ob.lewo-odstep;
+    if(!wymusPelny){
+      /* Mały przycisk stoi z tej strony, po której jest więcej miejsca, i na
+         wysokości PIERWSZEGO wiersza. Przy wielowierszowym zaznaczeniu menu
+         Apple zwykle kotwiczy się przy ostatnim — nie nakładamy obu elementów. */
+      hlBar.classList.add("zwarta");
+      const bw=46, bh=46;
+      const poPrawej=prawa>=bw || prawa>=lewa;
+      const lewo=poPrawej ? Math.min(granice.right+odstep,ob.prawo-bw-8)
+                           : Math.max(ob.lewo+8,granice.left-odstep-bw);
+      hlBar.style.left=Math.min(lewo,ob.prawo-bw-8)+"px";
+      hlBar.style.top=Math.max(ob.gora+8,Math.min(pierwszy.top+(pierwszy.height-bh)/2,ob.dol-bh-8))+"px";
     }else{
-      hlBar.style.top=Math.max(ob.gora+8,pierwszy.top-h-systemowe)+"px";
-      hlBar.classList.add("nad-zazn");
+      /* Zaznaczenie systemowe zostało już zdjęte, więc menu Apple jest
+         zamknięte. Pełna paleta może wykorzystać większą wolną przestrzeń. */
+      const pod=ob.dol-granice.bottom, nad=granice.top-ob.gora;
+      const naDole=pod>=h+12 || pod>=nad;
+      const punkt=naDole?ostatni:pierwszy;
+      hlBar.style.left=wLewo(punkt.left+punkt.width/2-w/2)+"px";
+      hlBar.style.top=(naDole
+        ? Math.min(ob.dol-h-8,granice.bottom+12)
+        : Math.max(ob.gora+8,granice.top-h-12))+"px";
+      hlBar.classList.add(naDole?"pod-zazn":"nad-zazn");
     }
   } else {
     const lewo=wLewo(pierwszy.left+pierwszy.width/2-w/2);
@@ -12890,6 +12924,7 @@ document.addEventListener("mouseup", e=>{
 // iPad/iPhone: pasek kolorów pojawia się szybko po zaznaczeniu palcem lub rysikiem
 let selTimer=null;
 document.addEventListener("selectionchange", ()=>{
+  if(hlRozwijanie) return;
   clearTimeout(selTimer);
   selTimer=setTimeout(showHlBar, touchUI()?90:30);
 });
@@ -12919,12 +12954,29 @@ function saveContentEl(contEl, n){
   if(fsGuid){ fsListDirty=true; } else { renderNotes(); }
 }
 hlBar.addEventListener("pointerdown", e=>{
+  const otworz=e.target.closest(".hlOpen");
+  if(otworz){
+    e.preventDefault(); e.stopPropagation();
+    const zapis=hlZakres;
+    if(!zapis) return;
+    hlRozwijanie=true;
+    /* Zdjęcie niebieskiego zaznaczenia jest jedynym pewnym sposobem
+       zamknięcia natywnego menu iOS — jego położenia Safari nie raportuje. */
+    const sel=getSelection();
+    if(sel.rangeCount) sel.removeAllRanges();
+    hlBar.classList.remove("zwarta");
+    setTimeout(()=>{
+      showHlBar(true,zapis);
+      hlRozwijanie=false;
+    },110);
+    return;
+  }
   e.preventDefault();
   const t = e.target.closest("[data-hl],[data-fmt]");
   if(!t) return;
   const sel=getSelection();
-  if(!sel.rangeCount) return;
-  const range=sel.getRangeAt(0);
+  const range=sel.rangeCount&&!sel.isCollapsed ? sel.getRangeAt(0) : hlZakres;
+  if(!range) return;
   const base=range.commonAncestorContainer;
   const el=base.nodeType===1?base:base.parentElement;
   const contEl=el?el.closest(".ncard .ncontent"):null;
@@ -12933,15 +12985,16 @@ hlBar.addEventListener("pointerdown", e=>{
   const n=notes.find(x=>x.g===card.dataset.g);
   const hl=t.dataset.hl, fmt=t.dataset.fmt;
   if(hl==="copy"){
-    navigator.clipboard.writeText(sel.toString()).then(()=>toast("Skopiowano zaznaczenie"));
-    sel.removeAllRanges(); hlBar.style.display="none";
+    navigator.clipboard.writeText(range.toString()).then(()=>toast("Skopiowano zaznaczenie"));
+    if(sel.rangeCount) sel.removeAllRanges(); hlZakres=null; hlBar.style.display="none";
     document.body.classList.remove("ma-zaznaczenie");
     return;
   }
   if(fmt){ wrapTag(range, fmt); }
   else if(hl==="0") unwrapMarks(range,contEl);
   else applyMark(range,+hl);
-  sel.removeAllRanges();
+  if(sel.rangeCount) sel.removeAllRanges();
+  hlZakres=null;
   hlBar.style.display="none";
   document.body.classList.remove("ma-zaznaczenie");
   saveContentEl(contEl, n);
