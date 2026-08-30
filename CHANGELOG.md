@@ -5,6 +5,83 @@ bez niej po miesiącu nie wiadomo, dlaczego coś wygląda tak, a nie inaczej.
 
 ---
 
+## v2.87 — belka przy zaznaczeniu i zakładki ogólne
+
+- paleta podświetlania stoi przy zaznaczonym tekście, najpierw pod nim, aby nie nakładać się na systemowe menu iOS,
+- przy braku miejsca paleta przechodzi nad tekst z dodatkowym odstępem dla menu systemowego,
+- w głównym widoku kolumny Publikacje pojawiły się „Moje zakładki”,
+- zakładka ogólna może zawierać dowolną notatkę: biblijną, z publikacji albo własną,
+- notatkę można przeciągnąć na zakładkę ogólną albo wybrać ją przez „Więcej → Gdzie leży”.
+
+## v2.86 — trwały import, bezpieczne aktualizacje i ponawianie
+
+- import `.jwlibrary` znajduje JSZip i sql.js zarówno w katalogu `lib/`, jak i obok `index.html`,
+- nowa wersja aplikacji czeka na zgodę; przed instalacją przypomina o kopii i może ją wykonać,
+- dodano „Ponów” obok „Cofnij” oraz w menu Plik,
+- pasek listy nie zasłania już grafik Centrum studium przy widocznych kolumnach,
+- Mapa tematów na telefonie ma jeden przewijany układ i stabilny, trzyrzędowy nagłówek.
+
+## v2.85 — subtelne komentarze i niższy dok czytnika
+
+- nazwa stałej serii ma postać „Komentarze — Biblia do studium” bez roku 2020,
+- podpis serii ma białe tło i delikatną, 30-procentową ramę koloru motywu,
+- wskazanie karty po zamknięciu czytnika jest lżejsze i zawsze samo znika,
+- pływający dok czytnika jest niemal o połowę niższy i mniej przezroczysty,
+- paczka wdrożeniowa zawiera cały katalog `lib/`, w tym `lib/jszip.min.js`.
+
+## v2.84 — lekki dok czytnika i pełne strzałki
+
+- pasek działań czytnika jest małym, pływającym dokiem zamiast szerokiej belki,
+- „Powiązane notatki” rozwijają się niezależnie bez przesuwania doku,
+- ostatnia pozycja powiązań ma bezpieczny odstęp i nie chowa się pod dokiem,
+- aktywne strzałki mają pełne tło, ramkę i cień; wyszarzone są tylko nieaktywne.
+
+## v2.83 — dopracowane okna, Centrum Studium i czytnik
+
+- spokojniejsze tło i czytelniejsza hierarchia Centrum Studium,
+- lżejsze karty, większe pola dotykowe i wyraźniejsze reakcje,
+- stały dok narzędzi czytnika z opisanym przyciskiem „Więcej”,
+- dopracowane okna dialogowe i menu na iPadzie.
+
+## v2.82 — bez zielonych linii na karteczkach
+
+**Co było nie tak.** Kolor pierwszej etykiety notatki był rysowany jako pasek
+przez całą lewą krawędź karty. W tablicy wiele notatek miało ten sam zielony
+kolor, więc powstawał rząd pionowych linii wyglądających jak błąd renderowania.
+
+**Co zrobiono.** Pasek jest ukryty w widoku karteczek i w pełnoekranowym
+czytniku. W zwykłej liście pozostaje jako dyskretne oznaczenie kategorii.
+
+## v2.81 — widoczne menu czytnika, pewniejsze zaznaczanie i twarde odświeżenie
+
+**Menu ⋯ na pełnym ekranie.** Polecenie otwierało wspólne menu aplikacji, ale
+menu miało warstwę 70, a pełnoekranowy czytnik 10000. Całość powstawała pod
+czytnikiem i wyglądała tak, jakby dotknięcie nic nie robiło. Podczas czytania
+menu trafia teraz nad pełny ekran; wróciły między innymi tło notatki, wysyłanie,
+kopiowanie, zapis do pliku i pozostałe działania. Dolny pasek jest przyklejony
+do krawędzi i ma większe pola dotyku.
+
+**Zaznaczanie.** Treść jawnie zachowuje natywne zaznaczanie i pionowe
+przewijanie. Pasek kolorów na telefonie stoi przy przeciwnej krawędzi ekranu,
+więc nie ściga uchwytów zaznaczenia ani menu systemu. Długie zaznaczenie przez
+kilka akapitów jest kolorowane fragmentami tekstu; aplikacja nie tworzy już
+niepoprawnego elementu `mark` zawierającego całe bloki.
+
+**Aktualizacja z GitHub Pages.** Awaryjne „Pobierz najnowszą wersję” po
+wyczyszczeniu service workera otwiera jednorazowy adres z parametrem. Dzięki
+temu przeglądarka nie może ponownie podać starego `index.html` z pamięci HTTP.
+
+## v2.80 — dziennik odróżnia aplikację od skryptów przeglądarki
+
+**Co było nie tak.** Przeglądarka potrafi zgłosić samo `Script error.` bez
+pliku, numeru linii, kolumny i obiektu błędu. Najczęściej dotyczy to skryptu
+wstrzykniętego przez rozszerzenie lub wewnętrzny komponent przeglądarki, ale
+dziennik przedstawiał go jako awarię JW Study.
+
+**Co zrobiono.** Całkowicie anonimowy komunikat jest teraz tylko śladem sesji.
+Każdy błąd posiadający plik, linię albo stos nadal trafia do dziennika i pokazuje
+alarm, więc diagnostyka prawdziwych usterek aplikacji pozostaje aktywna.
+
 ## v2.79 — przywrócone uruchamianie i odblokowany dotyk po starcie
 
 **Co było nie tak.** Po wejściu na adres aplikacji GitHub Pages nie znajdował

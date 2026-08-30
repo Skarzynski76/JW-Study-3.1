@@ -6,8 +6,12 @@ Wgrywaj index.html ZAWSZE razem z sw.js.
 Jeśli widzisz gdzieś drugi index.html o rozmiarze ~42 kB,
 to wersja robocza — na GitHub się nie nadaje.
 
-Katalog lib/ też wgrywaj: to z niego bierze się obsługa plików .jwlibrary
-i kopii zapasowych, także bez internetu.
+Żeby import .jwlibrary działał zawsze, wgraj do katalogu głównego także:
+jszip.min.js, sql-wasm.js i sql-wasm.wasm. Aplikacja potrafi użyć również
+kopii z katalogu lib/, ale nie jest już od niego uzależniona.
+
+Na GitHub usuń stare pliki „index 3.html”, „index 5.html” itp. Strona używa
+tylko pliku o dokładnej nazwie index.html, lecz stare kopie wprowadzają w błąd.
 
 Testów, narzędzi i dokumentacji tu nie ma i być nie powinno — zostają
 u Ciebie na dysku, w wersji roboczej.

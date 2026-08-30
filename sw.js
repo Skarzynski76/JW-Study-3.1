@@ -1,4 +1,4 @@
-const CACHE = 'jwstudy-v284';
+const CACHE = 'jwstudy-v287';
 /* Rdzeń: dokument + wszystkie arkusze i moduły — bez nich aplikacja nie ruszy offline.
 
    TA LISTA JEST WYPISYWANA PRZEZ NARZĘDZIE. Nie dopisuj do niej ręcznie.
@@ -25,6 +25,7 @@ const CORE = [
    po prostu wymaga internetu. */
 const EXTRA = [
   './lib/jszip.min.js', './lib/sql-wasm.js', './lib/sql-wasm.wasm',
+  './jszip.min.js', './sql-wasm.js', './sql-wasm.wasm',
   './manifest.webmanifest',
   './onenote.html',
   './icon-192.png', './icon-512.png', './icon-maskable-512.png',
@@ -48,7 +49,8 @@ self.addEventListener('install', (e) => {
     caches.open(CACHE)
       .then((c) => Promise.all(CORE.map((a) => pobierzSwieze(a).then((r) => c.put(a, r))))
         .then(() => Promise.allSettled(EXTRA.map((a) => pobierzSwieze(a).then((r) => c.put(a, r))))))
-      .then(() => self.skipWaiting())
+      /* Nie wywołujemy skipWaiting automatycznie: kolejna wersja czeka, aż
+         użytkownik zatwierdzi aktualizację w aplikacji. */
   );
 });
 

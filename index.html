@@ -595,6 +595,8 @@ mark{padding:0 1px;border-radius:3px}
 #hlBar .sep{width:1px;height:20px;background:rgba(0,0,0,.12)}
 .qhl{background:#9fd9ff;border-radius:3px;box-shadow:0 0 0 1px #6db9e8}
 #hlBar{position:fixed;display:none;background:rgba(255,255,255,.94);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid rgba(0,0,0,.08);border-radius:21px;box-shadow:0 8px 28px rgba(0,0,0,.26),inset 0 1px 0 #fff;padding:7px 11px;z-index:10023;gap:7px;align-items:center}
+#hlBar{max-width:calc(100vw - 16px);overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+#hlBar::-webkit-scrollbar{display:none}
 #hlBar .sw{width:24px;height:24px;border-radius:50%;border:1px solid rgba(0,0,0,.18);cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.15);transition:transform .1s}
 #hlBar .sw:hover{transform:scale(1.18)}
 #hlBar .sw:active{transform:scale(.94)}
@@ -1569,6 +1571,15 @@ html[data-theme="dark"] .tgdot{ box-shadow:0 0 0 1px rgba(255,255,255,.22); }
 #pubList .item.ptbItem:hover .more{ opacity:.6; }
 #pubList .item.ptbItem .more:hover{ opacity:1; }
 @media (hover:none){ #pubList .item.ptbItem .more{ opacity:.5; } }
+/* Ogólne zakładki stoją na pierwszym poziomie Publikacji i nie należą do
+   pozycji nad nimi, dlatego nie dostają wcięcia ani pionowej gałęzi. */
+#pubList .pubGlobal{ margin:0 0 12px; padding:0 0 11px; border-bottom:1px solid var(--border); }
+#pubList .pubGlobalNagl{ padding:4px 8px 7px; color:var(--muted); font-size:11px; font-weight:750; letter-spacing:.07em; text-transform:uppercase; }
+#pubList .pubGlobal .item.ptbItem,
+#pubList .pubGlobal .item.ptbNew{ margin-left:0; }
+#pubList .pubGlobal .item.ptbItem::after,
+#pubList .pubGlobal .item.ptbNew::after{ display:none; }
+#pubList .pubGlobal .item.ptbItem{ border-color:color-mix(in srgb,var(--accent) 18%,var(--border)); }
 
 /* ══════════════ KAFELKI W KOLUMNACH ══════════════ */
 
@@ -3345,7 +3356,7 @@ html.zwarty header .ic{ width:17px; height:17px; }
    na wąskim pasku zabierały cały rząd. */
 html.zwarty header .fontctl,
 html.zwarty header #btnBackup,
-html.zwarty header #btnUndo{ display:none; }
+html.zwarty header #btnUndo, html.zwarty header #btnRedo{ display:none; }
 html.zwarty header #btnNew .ic{ margin-right:2px; }
 html.zwarty header .searchwrap{ flex:1 1 100%; order:9; }
 html.zwarty #search{ padding-top:7px; padding-bottom:7px; }
@@ -4545,8 +4556,8 @@ html[data-theme="dark"] #noteList.v-tablica .ncard.wydUbrana .wydDzialanie:hover
   animation:wrocilemBlysk 1.6s ease-out;
 }
 @keyframes wrocilemBlysk{
-  0%   { box-shadow:0 0 0 3px var(--accent), 0 6px 18px rgba(0,0,0,.18); }
-  70%  { box-shadow:0 0 0 3px var(--accent), 0 6px 18px rgba(0,0,0,.18); }
+  0%   { box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 30%,transparent), 0 4px 14px rgba(0,0,0,.10); }
+  55%  { box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 30%,transparent), 0 4px 14px rgba(0,0,0,.10); }
   100% { box-shadow:0 0 0 0 transparent; }
 }
 /* Kto wyłączył animacje, dostaje to samo bez migania: obwódka po prostu jest,
@@ -4554,12 +4565,12 @@ html[data-theme="dark"] #noteList.v-tablica .ncard.wydUbrana .wydDzialanie:hover
 @media (prefers-reduced-motion:reduce){
   #noteList .ncard.wrocilem{
     animation:none;
-    box-shadow:0 0 0 3px var(--accent);
+    box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 30%,transparent);
   }
 }
 html[data-anim="off"] #noteList .ncard.wrocilem{
   animation:none;
-  box-shadow:0 0 0 3px var(--accent);
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 30%,transparent);
 }
 
 
@@ -6811,12 +6822,31 @@ body.fs-open #colorMenu{
   width:max-content;
   max-width:calc(100vw - 32px);
   margin:0!important;
-  padding:7px 8px!important;
-  border-radius:18px;
+  padding:2px 6px!important;
+  border-radius:14px;
+  background:color-mix(in srgb,var(--panel) 98%,transparent);
+  -webkit-backdrop-filter:blur(10px) saturate(1.05);
+  backdrop-filter:blur(10px) saturate(1.05);
+  box-shadow:0 7px 22px rgba(18,30,24,.15),0 1px 0 rgba(255,255,255,.45) inset;
 }
 #fsWrap .ncard:not(.editing) .ntools .btnrow{
   width:max-content;
   max-width:calc(100vw - 50px);
+  gap:1px;
+}
+#fsWrap .ncard:not(.editing) .ntools .sbtn.ico{
+  min-width:32px!important;
+  min-height:30px!important;
+  padding:2px 6px;
+  border-radius:10px;
+}
+#fsWrap .ncard:not(.editing) .ntools .sbtn.ico .ic{
+  width:15px;
+  height:15px;
+}
+#fsWrap .ncard:not(.editing) .ntools .more-btn{
+  padding-left:9px;
+  padding-right:10px;
 }
 /* Po rozwinięciu zarządzania etykietami dok staje się panelem, ale nadal nie
    zajmuje całej szerokości ekranu i pozostaje ponad treścią. */
@@ -6826,6 +6856,18 @@ body.fs-open #colorMenu{
   overflow:auto;
 }
 #fsWrap .ncard.showtags:not(.editing) .ntools .btnrow{ width:100%; }
+
+/* Komentarze z Biblii do studium są opisem źródła, nie zwykłą kolorową
+   etykietą użytkownika. Białe tło i delikatna rama motywu uspokajają ten
+   powtarzający się podpis. W miniaturach .chips pozostają ukryte jak dotąd. */
+.chip.chip-study{
+  background:#fff!important;
+  color:var(--accent)!important;
+  border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);
+  box-shadow:none!important;
+  font-weight:500;
+}
+.chip.chip-study .x{ color:var(--accent); }
 
 /* Powiązania zaczynają się zaraz po treści. Zapas jest dopiero pod ostatnią
    pozycją i odpowiada wysokości doku, więc nic nie zostaje przez niego zasłonięte. */
@@ -6867,6 +6909,62 @@ body.fs-open #colorMenu{
 @media (max-width:420px){
   #modalFs .fsNav{ width:40px; height:40px; font-size:22px; }
 }
+
+/* ══════════════ UKŁADY RESPONSYWNE I CENTRUM (v2.86) ══════════════ */
+/* Pasek filtrów należy wyłącznie do listy. W Centrum był nadal absolutnie
+   ułożony nad kartami i wchodził na ilustracje. */
+#pasekListy[hidden]{ display:none!important; }
+body.centrum-open #centrum{ padding-top:10px; }
+
+/* Reagujemy na rzeczywistą szerokość kolumny notatek, nie całego iPada.
+   Dzięki temu grafiki ustępują także wtedy, gdy obok są Biblia i Etykiety. */
+#colNotes{ container-type:inline-size; container-name:notatki; }
+@container notatki (max-width:680px){
+  .cenGora,.cenSiatka,.cenSiatkaM{ grid-template-columns:minmax(0,1fr); }
+  .cenHeroStud .cenHeroTresc{ padding-right:76px; }
+  .cenHeroStud .cenHeroObraz{ width:108px; min-width:0; opacity:.32; right:-10px; }
+  .cenHeroPas{ padding-right:102px; }
+  .cenHeroPas .cenHeroObraz{ width:76px; max-width:76px; right:12px; opacity:.68; }
+  .cenStatTresc{ grid-template-columns:minmax(0,1fr); }
+}
+@container notatki (max-width:430px){
+  .cenHeroStud .cenHeroTresc{ padding-right:0; }
+  .cenHeroStud .cenHeroObraz{ display:none; }
+  .cenHeroPas{ padding-right:86px; }
+}
+
+/* Telefon: jeden przewijany obszar zamiast dwóch okien przewijanych w sobie.
+   Nagłówek ma trzy stabilne rzędy, więc pole szukania i przyciski się nie mieszają. */
+@media (max-width:760px){
+  #modalMapa .mapamodal{ height:100dvh; overflow:hidden; }
+  #modalMapa .mapaHead{
+    display:grid; grid-template-columns:auto minmax(0,1fr);
+    grid-template-rows:auto auto auto; gap:8px; align-items:center;
+    flex:0 0 auto; padding:9px 10px;
+  }
+  #modalMapa .mapaHead .mapaWroc[data-zamknij]{ grid-column:1; grid-row:1; order:0; margin:0; }
+  #modalMapa .mapaTytul{ grid-column:2; grid-row:1; order:0; min-width:0; margin:0; }
+  #modalMapa .mapaTytul b,#modalMapa .mapaTytul span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #modalMapa #mapaSzukaj{ grid-column:1 / -1; grid-row:2; order:0; width:100%; min-width:0; }
+  #modalMapa #mapaNowyTemat{ grid-column:1 / -1; grid-row:3; order:0; width:100%; justify-content:center; }
+  #modalMapa .mapaCialo{
+    display:flex; flex-direction:column; min-height:0;
+    overflow-y:auto; overflow-x:hidden;
+  }
+  #modalMapa .mapaPrawa{ order:1; flex:0 0 auto; min-height:auto; overflow:visible; padding:10px; }
+  #modalMapa .mapaLewa{
+    order:2; flex:0 0 auto; min-height:auto; max-height:none;
+    overflow:visible; border-right:0; border-bottom:0; border-top:1px solid var(--border);
+  }
+  #modalMapa #mapaDrzewo{ min-height:auto; max-height:none; overflow:visible; padding:8px; }
+  #modalMapa .mapaKarty{ grid-template-columns:minmax(0,1fr); padding:10px 2px 22px; }
+  #modalMapa .mapaWstep{ padding:10px 2px 4px; }
+  #modalMapa .mapaNagl{ align-items:flex-start; }
+  #modalMapa .mapaWiersz{ grid-template-columns:minmax(0,1fr); gap:3px; }
+  #modalMapa .mapaTyt,#modalMapa .mapaGdzie,#modalMapa .mapaSkrot{ grid-column:1; }
+  #modalMapa .mapaGdzie{ grid-row:2; white-space:normal; }
+  #modalMapa .mapaSkrot{ grid-row:3; }
+}
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -6875,7 +6973,7 @@ body.fs-open #colorMenu{
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <h1 class="brand-name">JW Study <span class="ver">v2.84</span></h1>
+      <h1 class="brand-name">JW Study <span class="ver">v2.87</span></h1>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -6913,6 +7011,7 @@ body.fs-open #colorMenu{
     <button class="btn ico-btn" id="btnCols" title="Pokaż lub ukryj kolumny"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="2"/><path d="M9 4.5v15M15 4.5v15"/></svg></button>
     <button class="btn ico-btn" id="btnColors" title="Kolory kolumn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18c1.4 0 2-.9 2-1.8 0-1.3 1-2.2 2.2-2.2H18a3 3 0 0 0 3-3A8 8 0 0 0 12 3z"/><circle cx="7.5" cy="11" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="7.5" r="1" fill="currentColor" stroke="none"/><circle cx="16.3" cy="11" r="1" fill="currentColor" stroke="none"/></svg></button>
     <button class="btn ico-btn" id="btnUndo" title="Cofnij ostatnią zmianę"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 7L4 12l5 5"/><path d="M4 12h11a5 5 0 0 1 0 10h-3"/></svg></button>
+    <button class="btn ico-btn" id="btnRedo" title="Ponów cofniętą zmianę"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 7l5 5-5 5"/><path d="M20 12H9a5 5 0 0 0 0 10h3"/></svg></button>
   </div>
   <div class="fontctl" title="Rozmiar tekstu w notatkach">
     <button id="fMinus">A−</button>
@@ -7793,7 +7892,11 @@ function sanitizeTags(list, zrodlo, obce){
   for(const t of list){
     if(!t || typeof t!=="object"){ odrzucone++; continue; }
     const id=Number(t.id);
-    const name=typeof t.name==="string" ? t.name.trim() : "";
+    let name=typeof t.name==="string" ? t.name.trim() : "";
+    /* Importowane komentarze miały rok w nazwie stałej serii. Rok nie opisuje
+       konkretnej notatki i po kilku wydaniach wygląda jak nieaktualna data.
+       Normalizacja przy wczytaniu obejmuje listę, karty, czytnik i eksport. */
+    name=name.replace(/^(Komentarze\s*[—–-]\s*Biblia do studium)\s+2020$/i,"$1");
     if(!isFinite(id) || !name){ odrzucone++; continue; }
     if(uzyte.has(id)){ odrzucone++; continue; }     // powtórzone identyfikatory rozjeżdżają przypisania
     uzyte.add(id);
@@ -7975,6 +8078,9 @@ function zarejestrujSW(){
     const sprawdz = ()=>{ if(navigator.onLine === false) return; try{ rej.update(); }catch(e){} };
     setTimeout(sprawdz, 1200);
     document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) sprawdz(); });
+    /* Po wybraniu „Później” nowy pracownik już czeka. Przy kolejnym otwarciu
+       updatefound nie musi wystąpić, więc pokazujemy także wersję waiting. */
+    if(rej.waiting && navigator.serviceWorker.controller) pokazNowaWersje(rej.waiting);
     rej.addEventListener("updatefound", ()=>{
       const nowy = rej.installing;
       if(!nowy) return;
@@ -8010,18 +8116,36 @@ function przejeloObsluge(bylaObsluga){
   location.reload();
   return true;
 }
-/** Pasek z informacją o nowej wersji i przyciskiem odświeżenia. */
+/** Pasek z informacją o nowej wersji. Aktualizacja rusza dopiero po zgodzie. */
 function pokazNowaWersje(nowy){
   if(document.getElementById("nowaWersja")) return;
   const pasek = document.createElement("div");
   pasek.id = "nowaWersja";
-  pasek.innerHTML = '<span>Jest nowsza wersja aplikacji.</span>' +
-                    '<button type="button" id="nwOdswiez">Odśwież teraz</button>' +
+  pasek.innerHTML = '<span>Jest nowsza wersja. Przed aktualizacją warto zapisać kopię.</span>' +
+                    '<button type="button" id="nwOdswiez">Sprawdź i aktualizuj</button>' +
                     '<button type="button" id="nwPozniej" aria-label="Zamknij">✕</button>';
   document.body.appendChild(pasek);
-  pasek.querySelector("#nwOdswiez").onclick = ()=>{
+  pasek.querySelector("#nwOdswiez").onclick = async ()=>{
+    const dirty = +(lsGet(KP+"Dirty", 0)||0);
+    let decyzja;
+    if(dirty>0){
+      decyzja = await askChoice("Zaktualizować aplikację?",
+        "Masz <b>"+dirty+" niezapisanych w kopii zmian</b>. Aktualizacja nie powinna ich usunąć, ale kopia daje dodatkowe zabezpieczenie.", [
+          {label:"Zrób kopię i aktualizuj", value:"kopia", style:"primary"},
+          {label:"Aktualizuj bez kopii", value:"teraz"},
+          {label:"Anuluj", value:"nie"}
+        ]);
+    }else{
+      decyzja = await askChoice("Zaktualizować aplikację?",
+        "Nowa wersja jest gotowa. Aplikacja przeładuje się po Twojej zgodzie.", [
+          {label:"Aktualizuj", value:"teraz", style:"primary"},
+          {label:"Później", value:"nie"}
+        ]);
+    }
+    if(decyzja==="nie") return;
+    if(decyzja==="kopia") await exportJson();
     pasek.remove();
-    nowy.postMessage("SKIP_WAITING");     // controllerchange sam przeładuje stronę
+    nowy.postMessage("SKIP_WAITING");
   };
   pasek.querySelector("#nwPozniej").onclick = ()=>pasek.remove();
 }
@@ -8307,10 +8431,13 @@ function renderPubPanel(){
   let html="";
   if(!pubView.cat){
     // POZIOM 1: kategorie
+    if(typeof pubTabRowsHtml==="function"){
+      html += `<div class="pubGlobal"><div class="pubGlobalNagl">Moje zakładki</div>${pubTabRowsHtml("*")}</div>`;
+    }
     const cats={};
     base.forEach(n=>{ const c=pubCatOf(n); if(!cats[c.id]) cats[c.id]={name:c.name,byYear:c.byYear,cnt:0}; cats[c.id].cnt++; });
     const keys=applyPubOrder(Object.keys(cats).sort((a,b)=>cats[b].cnt-cats[a].cnt || cats[a].name.localeCompare(cats[b].name,"pl")));
-    if(!keys.length){ el.innerHTML='<div class="pubEmpty">Brak notatek z publikacji</div>'; if(rst) rst.style.display="none"; return; }
+    if(!keys.length && !html){ el.innerHTML='<div class="pubEmpty">Brak notatek z publikacji</div>'; if(rst) rst.style.display="none"; return; }
     keys.forEach(id=>{
       html+=`<div class="item pubCat pubMove" data-cat="${id}" data-ord="${id}">${grip}<span class="nm">${esc(cats[id].name)}</span><span class="arr">›</span><span class="cnt">${cats[id].cnt}</span></div>`;
     });
@@ -9884,9 +10011,10 @@ function noteCardChips(n){
   const chip = tid => {
     const t = tags.find(x=>x.id===tid);
     if(!t) return "";
+    const study = /^Komentarze\s*[—–-]\s*Biblia do studium$/i.test(t.name);
     const kol = (typeof kolorBezpieczny==="function" && kolorBezpieczny(t.color)) ? t.color : "";
-    const style = kol ? ` style="background:linear-gradient(180deg,${shade(kol,.15)},${shade(kol,-.18)});color:#fff"` : "";
-    return `<span class="chip"${style}>${esc(t.name)}<span class="x" data-untag="${tid}" title="Usuń z zakładki">×</span></span>`;
+    const style = !study && kol ? ` style="background:linear-gradient(180deg,${shade(kol,.15)},${shade(kol,-.18)});color:#fff"` : "";
+    return `<span class="chip${study?" chip-study":""}"${style}>${esc(t.name)}<span class="x" data-untag="${tid}" title="Usuń z zakładki">×</span></span>`;
   };
   return `<div class="chips">${n.tg.map(chip).join("")}</div>`;
 }
@@ -10442,7 +10570,11 @@ function wskazNaLiscie(g){
   clearTimeout(_wskazTimer);
   document.querySelectorAll("#noteList .ncard.wrocilem").forEach(k=>k.classList.remove("wrocilem"));
   karta.classList.add("wrocilem");
-  _wskazTimer = setTimeout(()=>karta.classList.remove("wrocilem"), 1600);
+  const zdejmijWskazanie = ()=>karta.classList.remove("wrocilem");
+  /* animationend zdejmuje klasę od razu po błysku, a timer jest zabezpieczeniem
+     dla iOS, wyłączonych animacji i kart podmienionych podczas renderowania. */
+  karta.addEventListener("animationend", zdejmijWskazanie, {once:true});
+  _wskazTimer = setTimeout(zdejmijWskazanie, 1200);
 }
 function closeFs(){
   saveReadPos();
@@ -10831,6 +10963,7 @@ function updateBackupBadge(){
    przyciskiem robiącym kopię (js/47-przypomnienie.js). */
 /* ================= COFNIJ ================= */
 const undoStack = [];
+const redoStack = [];
 /* Kopie na potrzeby cofania. structuredClone jest szybszy i radzi sobie z datami,
    ale nie ma go w starszych przeglądarkach — wtedy wracamy do JSON. */
 function deepCopy(obj){
@@ -10843,29 +10976,73 @@ function cloneTags(){ return deepCopy(tags); }
  * Odkłada operację na stos cofania (maksymalnie 30 pozycji).
  * @param {Object} u  pola: type, label, before
  */
-function pushUndo(u){ undoStack.push(u); if(undoStack.length>30) undoStack.shift(); updateUndoBtn(); }
-function updateUndoBtn(){ const b=$("btnUndo"); b.disabled=!undoStack.length; b.style.opacity=undoStack.length?"1":".45"; }
-function doUndo(){
-  const u = undoStack.pop(); updateUndoBtn();
-  if(!u){ toast("Nie ma czego cofnąć"); return; }
+function pushUndo(u){
+  undoStack.push(u); if(undoStack.length>30) undoStack.shift();
+  redoStack.length=0;
+  updateUndoBtn();
+}
+function updateUndoBtn(){
+  const u=$("btnUndo"), r=$("btnRedo");
+  if(u){ u.disabled=!undoStack.length; u.style.opacity=undoStack.length?"1":".45"; }
+  if(r){ r.disabled=!redoStack.length; r.style.opacity=redoStack.length?"1":".45"; }
+}
+function historiaPakiet(guidy){
+  return {type:"tagBundle", tags:cloneTags(),
+    notes:(guidy||[]).map(g=>notes.find(n=>n.g===g)).filter(Boolean).map(cloneNote),
+    deletedTagNames:deepCopy(deletedTagNames)};
+}
+/** Stosuje zapis historii i zwraca operację odwrotną. */
+function applyHistory(u){
   if(u.type==="note"){
+    const teraz=notes.find(x=>x.g===u.before.g);
+    const odw=teraz ? {type:"note", before:cloneNote(teraz), label:u.label} : null;
     const i = notes.findIndex(x=>x.g===u.before.g);
-    if(i>=0) notes[i]=u.before; else notes.push(u.before);
+    if(i>=0) notes[i]=cloneNote(u.before); else notes.push(cloneNote(u.before));
     saveNote(u.before);
+    return odw;
   } else if(u.type==="newNote"){
     const i = notes.findIndex(x=>x.g===u.g);
+    const n=i>=0?cloneNote(notes[i]):null;
     if(i>=0){ notes.splice(i,1); if(idb) idbDelKey("notes", u.g).catch(()=>{}); }
+    return n ? {type:"restoreNewNote", note:n, label:u.label} : null;
+  } else if(u.type==="restoreNewNote"){
+    if(u.note){ const i=notes.findIndex(x=>x.g===u.note.g); if(i>=0) notes[i]=cloneNote(u.note); else notes.push(cloneNote(u.note)); saveNote(u.note); }
+    return {type:"newNote", g:u.note&&u.note.g, label:u.label};
   } else if(u.type==="tags"){
-    tags = u.tags; saveTags();
+    const odw={type:"tags", tags:cloneTags(), label:u.label};
+    tags = deepCopy(u.tags); saveTags(); return odw;
   } else if(u.type==="delTag"){
-    tags = u.tags; saveTags();
-    u.notes.forEach(b=>{ const i=notes.findIndex(x=>x.g===b.g); if(i>=0){ notes[i]=b; saveNote(b); } });
+    const odw=historiaPakiet((u.notes||[]).map(n=>n.g)); odw.label=u.label;
+    tags = deepCopy(u.tags); saveTags();
+    u.notes.forEach(b=>{ const i=notes.findIndex(x=>x.g===b.g); if(i>=0){ notes[i]=cloneNote(b); saveNote(b); } });
     deletedTagNames = deletedTagNames.filter(nm=>nm!==u.name);
     saveDeletedTags();
+    return odw;
+  } else if(u.type==="tagBundle"){
+    const odw=historiaPakiet((u.notes||[]).map(n=>n.g)); odw.label=u.label;
+    tags=deepCopy(u.tags); saveTags();
+    (u.notes||[]).forEach(b=>{ const i=notes.findIndex(x=>x.g===b.g); if(i>=0) notes[i]=cloneNote(b); else notes.push(cloneNote(b)); saveNote(b); });
+    deletedTagNames=deepCopy(u.deletedTagNames||[]); saveDeletedTags();
+    return odw;
   }
+  return null;
+}
+function doUndo(){
+  const u = undoStack.pop();
+  if(!u){ updateUndoBtn(); toast("Nie ma czego cofnąć"); return; }
+  const odw=applyHistory(u); if(odw){ redoStack.push(odw); if(redoStack.length>30) redoStack.shift(); }
+  updateUndoBtn();
   renderAll(); toast("Cofnięto: "+(u.label||"ostatnią zmianę"));
 }
+function doRedo(){
+  const u=redoStack.pop();
+  if(!u){ updateUndoBtn(); toast("Nie ma czego ponowić"); return; }
+  const odw=applyHistory(u); if(odw){ undoStack.push(odw); if(undoStack.length>30) undoStack.shift(); }
+  updateUndoBtn();
+  renderAll(); toast("Ponowiono: "+(u.label||"ostatnią zmianę"));
+}
 $("btnUndo").onclick = doUndo;
+$("btnRedo").onclick = doRedo;
 updateUndoBtn();
 
 function touchAccess(n){ n.la = new Date().toISOString(); saveNote(n); }
@@ -12666,10 +12843,11 @@ function showHlBar(){
   /* Safari potrafi zwrócić pusty prostokąt dla zaznaczenia przez kilka wierszy.
      Bierzemy wtedy rzeczywisty, widoczny fragment zakresu, nie punkt 0×0. */
   const prostokaty = range.getClientRects ? [...range.getClientRects()].filter(x=>x.width||x.height) : [];
-  const r = prostokaty.length ? prostokaty[prostokaty.length-1] : range.getBoundingClientRect();
+  const pierwszy = prostokaty.length ? prostokaty[0] : range.getBoundingClientRect();
+  const ostatni = prostokaty.length ? prostokaty[prostokaty.length-1] : pierwszy;
   hlBar.style.display="flex";
   document.body.classList.add("ma-zaznaczenie");
-  const w = hlBar.offsetWidth || 380;
+  const w = Math.min(hlBar.offsetWidth || 380, innerWidth-16);
   const h = hlBar.offsetHeight || 52;
   /* Granice bierzemy z obszaru FAKTYCZNIE widocznego, nie z wysokości okna.
      Przy otwartej klawiaturze okno zostaje tej samej wysokości, tylko dolna
@@ -12678,15 +12856,31 @@ function showHlBar(){
            : {lewo:0, gora:0, prawo:innerWidth, dol:innerHeight};
   const wLewo = (x)=>Math.max(ob.lewo+8, Math.min(x, ob.prawo-w-8));
   hlBar.style.bottom="auto";
-  hlBar.style.left = wLewo(r.left + r.width/2 - w/2) + "px";
+  hlBar.classList.remove("pod-zazn","nad-zazn");
   if(touchUI()){
-    /* Stabilny pasek przy przeciwnej krawędzi ekranu. Nie ściga uchwytów
-       zaznaczenia i nie walczy o miejsce z systemowym menu iOS. */
-    const zaznaczenieNaDole = (r.top + r.bottom) / 2 > (ob.gora + ob.dol) / 2;
-    hlBar.style.top = (zaznaczenieNaDole ? ob.gora + 10 : ob.dol - h - 10) + "px";
+    /* Systemowe menu iOS zajmuje zwykle miejsce NAD zaznaczeniem. Dlatego
+       własna paleta najpierw staje pod ostatnim wierszem. Gdy się nie mieści,
+       idzie nad pierwszy wiersz, ale zostawia 58 px dla menu systemowego. */
+    const odstep=12, systemowe=58;
+    const miesciPod = ostatni.bottom + odstep + h <= ob.dol - 8;
+    const punkt = miesciPod ? ostatni : pierwszy;
+    const lewo=wLewo(punkt.left + punkt.width/2 - w/2);
+    hlBar.style.left=lewo+"px";
+    hlBar.style.setProperty("--hlWsk", Math.max(14,Math.min(w-14,punkt.left+punkt.width/2-lewo))+"px");
+    if(miesciPod){
+      hlBar.style.top=(ostatni.bottom+odstep)+"px";
+      hlBar.classList.add("pod-zazn");
+    }else{
+      hlBar.style.top=Math.max(ob.gora+8,pierwszy.top-h-systemowe)+"px";
+      hlBar.classList.add("nad-zazn");
+    }
   } else {
+    const lewo=wLewo(pierwszy.left+pierwszy.width/2-w/2);
+    hlBar.style.left=lewo+"px";
+    hlBar.style.setProperty("--hlWsk", Math.max(14,Math.min(w-14,pierwszy.left+pierwszy.width/2-lewo))+"px");
     hlBar.style.top = Math.max(ob.gora + 8,
-                        Math.min(r.top - h - 4, ob.dol - h - 8)) + "px";
+                        Math.min(pierwszy.top - h - 8, ob.dol - h - 8)) + "px";
+    hlBar.classList.add("nad-zazn");
   }
 }
 document.addEventListener("mouseup", e=>{
@@ -12697,11 +12891,11 @@ document.addEventListener("mouseup", e=>{
 let selTimer=null;
 document.addEventListener("selectionchange", ()=>{
   clearTimeout(selTimer);
-  selTimer=setTimeout(showHlBar, 30);
+  selTimer=setTimeout(showHlBar, touchUI()?90:30);
 });
 // po puszczeniu palca/rysika pokaż pasek od razu (bez wyczuwalnego opóźnienia)
-document.addEventListener("touchend", ()=>{ setTimeout(showHlBar, 12); }, {passive:true});
-document.addEventListener("pointerup", e=>{ if(e.pointerType==="pen"||e.pointerType==="touch") setTimeout(showHlBar, 12); }, {passive:true});
+document.addEventListener("touchend", ()=>{ setTimeout(showHlBar, 70); }, {passive:true});
+document.addEventListener("pointerup", e=>{ if(e.pointerType==="pen"||e.pointerType==="touch") setTimeout(showHlBar, 70); }, {passive:true});
 // kliknięcie w pokolorowany fragment (poza edycją) → zaznacz go i pokaż paletę do zmiany koloru
 document.addEventListener("click", e=>{
   const m = e.target && e.target.closest ? e.target.closest(".ncard .ncontent mark") : null;
@@ -12940,6 +13134,7 @@ $("btnMenu").onclick = e=>{
   const dirty = +(lsGet(KP+"Dirty",0)||0);
   const trashN = trashList().length;
   const undoIle = (typeof undoStack !== "undefined" && undoStack) ? undoStack.length : 0;
+  const redoIle = (typeof redoStack !== "undefined" && redoStack) ? redoStack.length : 0;
   const ic = {
     down:_svg('<path d="M12 4v11"/><path d="M8 11l4 4 4-4"/><path d="M4 19h16"/>'),
     up:_svg('<path d="M12 20V9"/><path d="M8 13l4-4 4 4"/><path d="M4 5h16"/>'),
@@ -12970,6 +13165,8 @@ $("btnMenu").onclick = e=>{
          się odwołać, była zarazem tą, którą najłatwiej zrobić przez pomyłkę. -->
     <div data-m="undo"${undoIle ? "" : ' class="dd-off"'}>${ICO.undo}Cofnij ostatnią zmianę${
       undoIle ? ` <span class="dd-badge">${undoIle}</span>` : ' <span class="dd-hint">nie ma czego cofać</span>'}</div>
+    <div data-m="redo"${redoIle ? "" : ' class="dd-off"'}><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 7l5 5-5 5"/><path d="M20 12H9a5 5 0 0 0 0 10h3"/></svg>Ponów cofniętą zmianę${
+      redoIle ? ` <span class="dd-badge">${redoIle}</span>` : ' <span class="dd-hint">nie ma czego ponawiać</span>'}</div>
     <div class="dd-sep"></div>
     <div data-m="trash">${ICO.trash}Kosz${trashN ? ` <span class="dd-badge">${trashN}</span>` : ""}</div>
     <div data-m="info">${ic.info}Gdzie zapisują się moje dane?</div>
@@ -12990,6 +13187,7 @@ $("btnMenu").onclick = e=>{
     else if(m==="cloud")shareBackup();
     else if(m==="loadjson")openFilePicker("json");
     else if(m==="undo"){ if(typeof doUndo === "function" && undoIle) doUndo(); }
+    else if(m==="redo"){ if(typeof doRedo === "function" && redoIle) doRedo(); }
     else if(m==="trash")openTrash();
     else if(m==="info")openModal("modalInfo");
     else if(m==="help")openModal("modalHelp");
@@ -13016,37 +13214,41 @@ $("trashEmpty").onclick = emptyTrash;
    biblioteki są po prostu częścią aplikacji.
    ===================================================================== */
 const BIBLIOTEKI = {
-  jszip: {plik: "./lib/jszip.min.js", nazwa: "JSZip"},
-  sqljs: {plik: "./lib/sql-wasm.js",  nazwa: "sql.js"}
+  jszip: {pliki: ["./lib/jszip.min.js", "./jszip.min.js"], nazwa: "JSZip"},
+  sqljs: {pliki: ["./lib/sql-wasm.js", "./sql-wasm.js"],  nazwa: "sql.js"}
 };
 
 /** Wczytuje skrypt z katalogu obok aplikacji. */
 function loadScript(src){
   return new Promise((res, rej)=>{
-    if(document.querySelector(`script[src="${src}"]`)) return res();
+    const jest=document.querySelector(`script[src="${src}"][data-ok="1"]`);
+    if(jest) return res();
     const s = document.createElement("script");
     s.src = src;
-    s.onload = res;
-    s.onerror = ()=>rej(new Error("Nie można wczytać: "+src));
+    s.onload = ()=>{ s.dataset.ok="1"; res(); };
+    s.onerror = ()=>{ s.remove(); rej(new Error("Nie można wczytać: "+src)); };
     document.head.appendChild(s);
   });
 }
-/** Czy plik leży obok aplikacji. */
-async function plikObok(url){
-  try{ const r = await fetch(url, {method:"HEAD", cache:"no-store"}); return r.ok; }
-  catch(e){ return false; }
-}
 let SQL = null;
 async function getLibs(){
+  let sqlPlik="";
   for(const klucz of ["jszip","sqljs"]){
     const opis = BIBLIOTEKI[klucz];
-    if(!(await plikObok(opis.plik)))
-      throw new Error("Brakuje biblioteki "+opis.nazwa+" ("+opis.plik+"). "+
-        "Wgraj katalog lib/ razem z aplikacją — jego zawartość jest w paczce, "+
-        "obok index.html. Bez tych plików nie da się otworzyć archiwum .jwlibrary.");
-    await loadScript(opis.plik);
+    let plik="";
+    /* Próba wczytania działa także offline z pamięci service workera. Sam test
+       HEAD nie działał bez sieci, choć biblioteka była już zapisana na urządzeniu. */
+    for(const kandydat of opis.pliki){
+      try{ await loadScript(kandydat); plik=kandydat; break; }catch(e){}
+    }
+    if(!plik)
+      throw new Error("Brakuje biblioteki "+opis.nazwa+". Wgraj pliki jszip.min.js, sql-wasm.js i sql-wasm.wasm z paczki obok index.html. Bez nich nie da się otworzyć archiwum .jwlibrary.");
+    if(klucz==="sqljs") sqlPlik=plik;
   }
-  if(!SQL) SQL = await initSqlJs({locateFile: f => "./lib/" + f});
+  if(!SQL){
+    const baza=sqlPlik.startsWith("./lib/") ? "./lib/" : "./";
+    SQL = await initSqlJs({locateFile: f => baza + f});
+  }
 }
 
 /* ================= WYBÓR PLIKU (import / kopia JSON) ================= */
@@ -15432,7 +15634,7 @@ function openSettings(){
      <div class="st-sec">
        <div class="st-lbl">Import z JW Library</div>
        <div class="st-ver" id="stLib"></div>
-       <div class="st-hint">Odczytanie pliku <b>.jwlibrary</b> wymaga dwóch bibliotek. Leżą w katalogu <code>lib/</code> obok aplikacji i są wgrywane razem z nią. Aplikacja <b>nie pobiera niczego z obcych serwerów</b> — nie potrafi tego zrobić.</div>
+       <div class="st-hint">Odczytanie pliku <b>.jwlibrary</b> wymaga plików <code>jszip.min.js</code>, <code>sql-wasm.js</code> i <code>sql-wasm.wasm</code>. Aplikacja znajdzie je w katalogu <code>lib/</code> albo obok <code>index.html</code>. Nie pobiera bibliotek z obcych serwerów.</div>
      </div>
      </div>
 
@@ -15756,11 +15958,14 @@ function pubCtxKs(){
 /* ——— tworzenie, zmiana nazwy, usuwanie ——— */
 async function createPubTab(ks){
   if(!ks){ toast("Najpierw wybierz publikację"); return null; }
+  const ogolna = ks==="*";
   const nazwa = await askText({
-    title:"Nowa zakładka w publikacji",
-    placeholder:"np. Rozdziały o modlitwie",
+    title:ogolna ? "Nowa zakładka ogólna" : "Nowa zakładka w publikacji",
+    placeholder:ogolna ? "np. Wykłady — wtorek" : "np. Rozdziały o modlitwie",
     okLabel:"Utwórz",
-    hint:"Zakładka należy do publikacji „"+esc(pubFullName(ks)||ks)+"”. Notatki dodasz do niej z menu notatki."
+    hint:ogolna
+      ? "Możesz tu włożyć dowolną notatkę — z Biblii, publikacji albo własną."
+      : "Zakładka należy do publikacji „"+esc(pubFullName(ks)||ks)+"”. Notatki dodasz do niej z menu notatki."
   });
   if(!nazwa || !nazwa.trim()) return null;
   const nm = nazwa.trim();
@@ -15793,9 +15998,10 @@ async function deletePubTab(id){
 }
 /** Przypisanie notatki do zakładki (albo wypisanie, gdy id jest puste). */
 function setNotePubTab(n, id){
+  if((id||null)===(n.ptb||null)) return;
+  pushUndo({type:"note", label:"zmianę zakładki ogólnej lub publikacji", before:cloneNote(n)});
   if(id) n.ptb = id; else delete n.ptb;
-  if(idb) saveNote(n);
-  bumpDirty(); renderAll();
+  markDirty(n); renderAll();
   const t = pubTabs.find(x=>x.id===id);
   toastOk(t ? "Dodano do zakładki „"+t.name+"”" : "Usunięto z zakładki");
 }
@@ -15804,25 +16010,27 @@ function setNotePubTab(n, id){
 function pubTabMenu(n, anchor){
   const ks = n.ks;
   const dd = $("dropdown");
-  if(!ks){
-    dd.innerHTML = `<div class="dd-note">Ta notatka nie pochodzi z publikacji, więc nie da się jej przypisać do zakładki publikacji.</div>`;
-    dd.style.display="block"; placeDropdown(dd, anchor); return;
-  }
-  const lista = pubTabsFor(ks);
+  const ogolne = pubTabsFor("*");
+  const lista = ks ? pubTabsFor(ks) : [];
   dd.innerHTML =
-    `<div class="dd-lbl">${esc(pubFullName(ks)||ks)}</div>` +
+    `<div class="dd-lbl">Moje zakładki</div>`+
+    (ogolne.length
+      ? ogolne.map(t=>`<div data-pt="${t.id}">${n.ptb===t.id?"✓ ":""}${esc(t.name)}<span class="dd-hint">${pubTabCount(t.id)}</span></div>`).join("")
+      : `<div class="dd-note">Nie masz jeszcze zakładek ogólnych.</div>`)+
+    `<div data-pt="new-global">${ICO.plus||"＋"} Nowa zakładka ogólna…</div>`+
+    (ks ? `<div class="dd-sep"></div><div class="dd-lbl">${esc(pubFullName(ks)||ks)}</div>` : ``) +
     (lista.length
       ? lista.map(t=>`<div data-pt="${t.id}">${n.ptb===t.id?"✓ ":""}${esc(t.name)}<span class="dd-hint">${pubTabCount(t.id)}</span></div>`).join("")
-      : `<div class="dd-note">Ta publikacja nie ma jeszcze zakładek.</div>`) +
-    `<div class="dd-sep"></div>` +
-    `<div data-pt="new">${ICO.plus||"＋"} Nowa zakładka…</div>` +
+      : (ks ? `<div class="dd-note">Ta publikacja nie ma jeszcze zakładek.</div>` : ``)) +
+    (ks ? `<div data-pt="new-pub">${ICO.plus||"＋"} Nowa zakładka tej publikacji…</div>` : ``) +
     (n.ptb ? `<div data-pt="none" class="dd-danger">Usuń z zakładki</div>` : ``);
   dd.style.display="block"; placeDropdown(dd, anchor);
   dd.onclick = async ev=>{
     const it = ev.target.closest("[data-pt]"); if(!it) return;
     dd.style.display="none";
     const v = it.dataset.pt;
-    if(v==="new"){ const t = await createPubTab(ks); if(t) setNotePubTab(n, t.id); return; }
+    if(v==="new-global"){ const t = await createPubTab("*"); if(t) setNotePubTab(n, t.id); return; }
+    if(v==="new-pub"){ const t = await createPubTab(ks); if(t) setNotePubTab(n, t.id); return; }
     if(v==="none"){ setNotePubTab(n, null); return; }
     setNotePubTab(n, +v);
   };
@@ -15852,7 +16060,7 @@ function pubTabRowsHtml(ks){
          `<span class="cnt">${stat.wZakladce.get(t.id)||0}</span></div>`;
   });
   h += `<div class="item ptbNew" data-ptadd="${esc(ks)}"><span class="ptbMark">＋</span>`+
-       `<span class="nm">Nowa zakładka</span></div>`;
+       `<span class="nm">${ks==="*" ? "Nowa zakładka ogólna" : "Nowa zakładka"}</span></div>`;
   // skrót do rozpisania publikacji na rozdziały — pokazujemy tylko, gdy jest z czego
   if(stat.rozdzialow > 1){
     h += `<div class="item ptbAuto" data-ptauto="${esc(ks)}"><span class="ptbMark">⇥</span>`+
@@ -19664,7 +19872,7 @@ const GRUPY_NOTATKI = {
     poz: n=>[
       ["verse",   (n.b?"Zmień":"Przypisz")+" werset…", true, n.b?"✓":""],
       ["miejsce", "Miejsce w publikacji…", true, n.pw?"✓":""],
-      ["ptb",     "Zakładka publikacji…", !!n.ks, n.ptb?"✓":""],
+      ["ptb",     "Zakładka ogólna lub publikacji…", true, n.ptb?"✓":""],
       ["stb",     "Zakładka w sekcji…", (typeof secTabs!=="undefined" && secTabs.length>0), n.stb?"✓":""]
     ]
   },
@@ -21486,6 +21694,8 @@ function centrumOdswiez(){
   if(pokaz) rysujCentrum();
   c.hidden = !pokaz;
   l.style.display = pokaz ? "none" : "";
+  const pasek=$("pasekListy"); if(pasek) pasek.hidden=pokaz;
+  document.body.classList.toggle("centrum-open", pokaz);
   /* Pasek widoku, filtry i licznik dotyczą LISTY — przy Centrum nie mają czego
      opisywać i tylko dublowałyby jego nagłówek. */
   ["viewBar", "quickFilters", "counts"].forEach(id=>{
@@ -24291,10 +24501,13 @@ document.addEventListener("keydown", e=>{
     if(e.key==="ArrowRight"||e.key==="PageDown"){ e.preventDefault(); fsGo(1); return; }
     if(e.key==="ArrowLeft"||e.key==="PageUp"){ e.preventDefault(); fsGo(-1); return; }
   }
-  /* Cmd/Ctrl+Z poza polem edycji: przeglądarka cofnęłaby ostatnią zmianę
-     gdziekolwiek w dokumencie — na Macu wygląda to jak cofnięcie całej strony.
-     Skoro nie ma czego cofać, blokujemy skrót. */
-  if(!typing && (e.metaKey||e.ctrlKey) && e.key.toLowerCase()==="z"){ e.preventDefault(); return; }
+  /* Poza edytorem te same skróty sterują historią całej aplikacji. W samym
+     edytorze zostaje dokładniejsza historia pisania z histSkocz(). */
+  if(!typing && (e.metaKey||e.ctrlKey) && e.key.toLowerCase()==="z"){
+    e.preventDefault();
+    if(e.shiftKey) doRedo(); else doUndo();
+    return;
+  }
   if(typing) return;
   /* SZUKANIE ZNACZY CO INNEGO W CZYTNIKU NIŻ NA LIŚCIE.
      Na liście ⌘F i „/" prowadzą do pola u góry — a od 2.75 samo ustawienie w nim
