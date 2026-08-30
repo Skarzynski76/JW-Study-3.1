@@ -7005,7 +7005,7 @@ body.centrum-open #centrum{ padding-top:10px; }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <h1 class="brand-name">JW Study <span class="ver">v2.89</span></h1>
+      <h1 class="brand-name">JW Study <span class="ver">v2.90</span></h1>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -12860,6 +12860,29 @@ hlBar.innerHTML = [1,2,3,4,5,6,7].map(i=>`<div class="sw" style="background:var(
    <span class="sep"></span>
    <button class="tb" data-hl="copy" title="Kopiuj zaznaczenie">${ICO.copy}</button>`;
 const touchUI = ()=> matchMedia("(hover: none)").matches || isIOS();
+/* Natywne menu zaznaczenia iPadOS/iOS nie jest częścią DOM, więc nie da się
+   odczytać jego prostokąta. Możemy jednak przewidzieć jego regułę: Apple stawia
+   je nad zaznaczeniem, gdy ma tam około jednego wiersza miejsca, a w przeciwnym
+   razie pod nim. Rezerwujemy cały jego pas i własną paletę układamy po drugiej
+   stronie — przede wszystkim pod całym zaznaczonym fragmentem. */
+const APPLE_CALLOUT_REZERWA = 72;
+const HL_ODSTEP_OD_ZAZN = 14;
+/** Czyste obliczenie pionowej pozycji — dzięki temu trzy układy iOS dają się
+    sprawdzić bez prawdziwego menu systemowego, którego przeglądarka nie ujawnia. */
+function pozycjaHlDotyk(granice, h, ob, ios){
+  const miejsceNad = granice.top-ob.gora;
+  const appleNad = ios && miejsceNad >= APPLE_CALLOUT_REZERWA;
+  let naDole = true;
+  let y = granice.bottom + HL_ODSTEP_OD_ZAZN;
+  if(ios && !appleNad) y += APPLE_CALLOUT_REZERWA;
+  if(y+h > ob.dol-8){
+    const nadApple = granice.top - (appleNad ? APPLE_CALLOUT_REZERWA : 0)
+                     - h - HL_ODSTEP_OD_ZAZN;
+    if(nadApple >= ob.gora+8){ y=nadApple; naDole=false; }
+    else { y=Math.max(ob.gora+8, ob.dol-h-8); }
+  }
+  return {y:Math.max(ob.gora+8,Math.min(y,ob.dol-h-8)), naDole, appleNad};
+}
 function showHlBar(){
   const sel=getSelection();
   if(sel.isCollapsed||!sel.rangeCount){
@@ -12898,15 +12921,14 @@ function showHlBar(){
   hlBar.style.bottom="auto";
   hlBar.classList.remove("pod-zazn","nad-zazn","obok-zazn");
   if(touchUI()){
-    /* Menu systemowe jest wyłączone tylko wewnątrz treści notatki, dlatego
-       pełna paleta może — jak w JW Library — od razu stanąć przy uchwytach. */
-    const pod=ob.dol-granice.bottom, nad=granice.top-ob.gora;
-    const naDole=nad<h+10 && pod>=nad;
+    const ios = isIOS();
+    /* Jeśli Apple nie ma miejsca nad tekstem, jego menu przejdzie pod tekst;
+       funkcja doliczy wtedy drugi, osobny pas pod zaznaczeniem. */
+    const poz = pozycjaHlDotyk(granice, h, ob, ios);
+    const naDole=poz.naDole, y=poz.y;
     const punkt=naDole?ostatni:pierwszy;
     hlBar.style.left=wLewo(punkt.left+punkt.width/2-w/2)+"px";
-    hlBar.style.top=(naDole
-      ? Math.min(ob.dol-h-8,granice.bottom+8)
-      : Math.max(ob.gora+8,granice.top-h-8))+"px";
+    hlBar.style.top=y+"px";
     hlBar.classList.add(naDole?"pod-zazn":"nad-zazn");
   } else {
     const lewo=wLewo(pierwszy.left+pierwszy.width/2-w/2);

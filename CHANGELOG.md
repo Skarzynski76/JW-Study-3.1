@@ -5,6 +5,14 @@ bez niej po miesiącu nie wiadomo, dlaczego coś wygląda tak, a nie inaczej.
 
 ---
 
+## v2.90 — belka zaznaczenia omija menu Apple
+
+- pasek kolorowania na iPadzie i iPhonie domyślnie pojawia się pod całym
+  zaznaczonym fragmentem, zamiast walczyć o miejsce z natywnym menu Apple,
+- gdy iOS przenosi swoje menu pod tekst, aplikacja rezerwuje dla niego osobny
+  pas i umieszcza własną paletę jeszcze niżej; przy krawędzi ekranu wybiera
+  przeciwną stronę bez zasłaniania zaznaczenia.
+
 ## v2.89 — belka jak w JW Library i uniwersalne zakładki
 
 - usunięto pośredni przycisk pędzla; po zaznaczeniu tekstu od razu pojawia się pełna, ciemna belka kolorów,
