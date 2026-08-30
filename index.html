@@ -597,16 +597,25 @@ mark{padding:0 1px;border-radius:3px}
 #hlBar{position:fixed;display:none;background:rgba(255,255,255,.94);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid rgba(0,0,0,.08);border-radius:21px;box-shadow:0 8px 28px rgba(0,0,0,.26),inset 0 1px 0 #fff;padding:7px 11px;z-index:10023;gap:7px;align-items:center}
 #hlBar{max-width:calc(100vw - 16px);overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 #hlBar::-webkit-scrollbar{display:none}
-#hlBar .hlOpen{display:none;align-items:center;justify-content:center;width:42px;height:42px;padding:0!important;color:#fff;background:var(--accent)!important;border-radius:50%!important}
-#hlBar .hlOpen .ic{width:21px;height:21px}
-#hlBar.zwarta{width:46px;height:46px;min-width:46px;padding:2px;overflow:visible;border-radius:50%;gap:0}
-#hlBar.zwarta>:not(.hlOpen){display:none!important}
-#hlBar.zwarta .hlOpen{display:flex}
 #hlBar .sw{width:24px;height:24px;border-radius:50%;border:1px solid rgba(0,0,0,.18);cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.15);transition:transform .1s}
 #hlBar .sw:hover{transform:scale(1.18)}
 #hlBar .sw:active{transform:scale(.94)}
 #hlBar button.tb{border:none;background:transparent;cursor:pointer;font-size:15px;padding:3px 6px;border-radius:8px;line-height:1}
 #hlBar button.tb:hover{background:var(--sel)}
+@media (hover:none){
+  /* Jak w JW Library: system daje uchwyty zaznaczenia, aplikacja — własną
+     paletę. Bez calloutu Safari nie dokłada drugiej belki w tym samym miejscu. */
+  .ncard .ncontent{-webkit-touch-callout:none}
+  #hlBar{
+    background:rgba(30,30,31,.97); color:#fff; border-color:rgba(255,255,255,.16);
+    border-radius:11px; padding:6px 9px; gap:6px;
+    box-shadow:0 7px 22px rgba(0,0,0,.34);
+  }
+  #hlBar button.tb{color:#fff}
+  #hlBar button.tb:hover{background:rgba(255,255,255,.13)}
+  #hlBar .sep{background:rgba(255,255,255,.22)}
+  #hlBar .sw{width:27px;height:27px;border-color:rgba(255,255,255,.34)}
+}
 #toast{position:fixed;bottom:calc(26px + env(safe-area-inset-bottom,0px));left:50%;background:rgba(24,32,26,.94);color:#fff;
   padding:11px 22px;border-radius:26px;font-size:13.5px;font-weight:500;pointer-events:none;z-index:99;max-width:82%;text-align:center;
   -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
@@ -1585,6 +1594,24 @@ html[data-theme="dark"] .tgdot{ box-shadow:0 0 0 1px rgba(255,255,255,.22); }
 #pubList .pubGlobal .item.ptbItem::after,
 #pubList .pubGlobal .item.ptbNew::after{ display:none; }
 #pubList .pubGlobal .item.ptbItem{ border-color:color-mix(in srgb,var(--accent) 18%,var(--border)); }
+#pubList .pubGlobal .item.ptbItem.dropTarget{
+  outline:2px dashed var(--accent); outline-offset:2px;
+  background:color-mix(in srgb,var(--accent) 13%,var(--panel));
+}
+#pubList .item.ptbRef{
+  margin:-3px 4px 5px 22px;
+  min-height:32px;
+  border-style:dashed;
+  box-shadow:none;
+  color:var(--muted);
+}
+#pubList .item.ptbRef .nm{ font-size:12px; font-weight:500; }
+#pubList .item.ptbRef .ptbMark{ color:var(--accent); }
+#pubList .ptbRefDel{
+  margin-left:auto; width:28px; height:28px; border:0; border-radius:50%;
+  background:transparent; color:var(--muted); font-size:18px; cursor:pointer;
+}
+#pubList .ptbRefDel:hover{ background:var(--sel); color:var(--text); }
 
 /* ══════════════ KAFELKI W KOLUMNACH ══════════════ */
 
@@ -6978,7 +7005,7 @@ body.centrum-open #centrum{ padding-top:10px; }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <h1 class="brand-name">JW Study <span class="ver">v2.88</span></h1>
+      <h1 class="brand-name">JW Study <span class="ver">v2.89</span></h1>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -8293,7 +8320,8 @@ function noteMatchesTag(n,t){
 function noteMatchesBook(n,b){
   if(b==="all") return true;
   /* własna zakładka wewnątrz publikacji — patrz 27-pubtabs.js */
-  if(typeof b==="string" && b.indexOf("ptb:")===0) return n.ptb===+b.slice(4);
+  if(typeof b==="string" && b.indexOf("ptb:")===0)
+    return typeof pubTabHasNote==="function" && pubTabHasNote(n,+b.slice(4));
   if(typeof b==="string" && b.indexOf("pub:")===0){
     const key=b.slice(4);
     if(n.b) return false;
@@ -8428,23 +8456,24 @@ function renderPubPanel(){
   const base = notes.filter(n=>!n.del && !n.b && noteMatchesTag(n,filt.tag) && noteMatchesQuery(n));
   const rst=$("pubReset");
   rysujSciezkePub();
-  const grip = '<span class="pubDrag" title="Przeciągnij, aby zmienić kolejność">'+IC_GRIP+'</span>';
+  const grip = '<span class="pubDrag" title="Przeciągnij: zmień kolejność lub dodaj do Mojej zakładki">'+IC_GRIP+'</span>';
   /* Publikacja, w kontekście której jesteśmy. Liczona RAZ na przerysowanie panelu —
      wcześniej wołana w pętli po publikacjach, czyli przy każdym renderowaniu tyle razy,
      ile publikacji, a każde wywołanie przeglądało wszystkie notatki. */
   const ksKontekst = (typeof pubCtxKs==="function") ? pubCtxKs() : null;
   let html="";
+  /* Zakładki ogólne zostają pod ręką na KAŻDYM poziomie. Dzięki temu można
+     przeciągnąć do nich rocznik lub publikację bez cofania się do początku. */
+  if(typeof pubTabRowsHtml==="function")
+    html += `<div class="pubGlobal"><div class="pubGlobalNagl">Moje zakładki</div>${pubTabRowsHtml("*")}</div>`;
   if(!pubView.cat){
     // POZIOM 1: kategorie
-    if(typeof pubTabRowsHtml==="function"){
-      html += `<div class="pubGlobal"><div class="pubGlobalNagl">Moje zakładki</div>${pubTabRowsHtml("*")}</div>`;
-    }
     const cats={};
     base.forEach(n=>{ const c=pubCatOf(n); if(!cats[c.id]) cats[c.id]={name:c.name,byYear:c.byYear,cnt:0}; cats[c.id].cnt++; });
     const keys=applyPubOrder(Object.keys(cats).sort((a,b)=>cats[b].cnt-cats[a].cnt || cats[a].name.localeCompare(cats[b].name,"pl")));
     if(!keys.length && !html){ el.innerHTML='<div class="pubEmpty">Brak notatek z publikacji</div>'; if(rst) rst.style.display="none"; return; }
     keys.forEach(id=>{
-      html+=`<div class="item pubCat pubMove" data-cat="${id}" data-ord="${id}">${grip}<span class="nm">${esc(cats[id].name)}</span><span class="arr">›</span><span class="cnt">${cats[id].cnt}</span></div>`;
+      html+=`<div class="item pubCat pubMove" data-cat="${id}" data-ord="${id}" data-pubref="cat:${id}" data-pubreflabel="${esc(cats[id].name)}">${grip}<span class="nm">${esc(cats[id].name)}</span><span class="arr">›</span><span class="cnt">${cats[id].cnt}</span></div>`;
     });
   } else if(!pubView.year){
     // POZIOM 2: roczniki albo poszczególne publikacje
@@ -8454,7 +8483,8 @@ function renderPubPanel(){
       const years={};
       inCat.forEach(n=>{ const y=pubYearOf(n)||"—"; years[y]=(years[y]||0)+1; });
       applyPubOrder(Object.keys(years).sort((a,b)=>b.localeCompare(a))).forEach(y=>{
-        html+=`<div class="item pubYear pubMove" data-year="${esc(y)}" data-ord="${esc(y)}">${grip}<span class="nm">${y==="—"?"Bez rocznika":y}</span><span class="cnt">${years[y]}</span></div>`;
+        const yl=(y==="—"?"Bez rocznika":y)+" — "+cat.name;
+        html+=`<div class="item pubYear pubMove" data-year="${esc(y)}" data-ord="${esc(y)}" data-pubref="year:${esc(pubView.cat)}:${esc(y)}" data-pubreflabel="${esc(yl)}">${grip}<span class="nm">${y==="—"?"Bez rocznika":y}</span><span class="cnt">${years[y]}</span></div>`;
       });
     } else {
       const items={};
@@ -8462,7 +8492,7 @@ function renderPubPanel(){
       applyPubOrder(Object.keys(items).sort((a,b)=>items[b]-items[a])).forEach(k=>{
         const wKs = String(k).split("|")[0];
         const act=String(filt.book)==="pub:"+k || (String(filt.book).indexOf("ptb:")===0 && ksKontekst===wKs);
-        html+=`<div class="item pubPick pubMove${String(filt.book)==="pub:"+k?" active":""}" data-key="${esc(k)}" data-ord="${esc(k)}">${grip}<span class="nm">${esc(pubKeyLabel(k))}</span><span class="cnt">${items[k]}</span></div>`;
+        html+=`<div class="item pubPick pubMove${String(filt.book)==="pub:"+k?" active":""}" data-key="${esc(k)}" data-ord="${esc(k)}" data-pubref="pub:${esc(k)}" data-pubreflabel="${esc(pubKeyLabel(k))}">${grip}<span class="nm">${esc(pubKeyLabel(k))}</span><span class="cnt">${items[k]}</span></div>`;
         // po wybraniu publikacji pokazujemy pod nią jej własne zakładki
         if(act && typeof pubTabRowsHtml==="function") html+=pubTabRowsHtml(String(k).split("|")[0]);
       });
@@ -8478,12 +8508,12 @@ function renderPubPanel(){
     }));
     // cały rocznik jednym kliknięciem — zawsze na górze, nie przenosi się
     const yKey="year:"+pubView.cat+":"+pubView.year;
-    html+=`<div class="item pubPick${String(filt.book)==="pub:"+yKey?" active":""}" data-key="${esc(yKey)}"><span class="nm">Cały rocznik ${esc(pubView.year)}</span><span class="cnt">${inYear.length}</span></div>`;
+    html+=`<div class="item pubPick${String(filt.book)==="pub:"+yKey?" active":""}" data-key="${esc(yKey)}" data-pubref="year:${esc(pubView.cat)}:${esc(pubView.year)}" data-pubreflabel="Cały rocznik ${esc(pubView.year)}"><span class="nm">Cały rocznik ${esc(pubView.year)}</span><span class="cnt">${inYear.length}</span></div>`;
     keys.forEach(k=>{
       const itn=String(k).split("|")[1];
       const lbl= itn ? issueLabel(itn) : pubKeyLabel(k);
       const act=String(filt.book)==="pub:"+k;
-      html+=`<div class="item pubPick pubMove${act?" active":""}" data-key="${esc(k)}" data-ord="${esc(k)}">${grip}<span class="nm">${esc(lbl)}</span><span class="cnt">${items[k]}</span></div>`;
+      html+=`<div class="item pubPick pubMove${act?" active":""}" data-key="${esc(k)}" data-ord="${esc(k)}" data-pubref="pub:${esc(k)}" data-pubreflabel="${esc(lbl)}">${grip}<span class="nm">${esc(lbl)}</span><span class="cnt">${items[k]}</span></div>`;
       if(act && typeof pubTabRowsHtml==="function") html+=pubTabRowsHtml(String(k).split("|")[0]);
     });
   }
@@ -9265,7 +9295,7 @@ function tagItem(key,name,cnt,user,color,inSection,secId){
             : (key==="all" ? `<span class="tgdot all"></span>` : `<span class="tgdot none"></span>`);
   /* Uchwyt tylko przy etykietach użytkownika — „Wszystkie" i „Bez etykiety" stoją
      na stałych miejscach. Przenoszeniem zajmuje się 34-chwytanie.js. */
-  const uchwyt = user ? '<span class="dragOrd" title="Przeciągnij, aby zmienić kolejność">'+IC_GRIP+'</span>' : "";
+  const uchwyt = user ? '<span class="dragOrd" title="Przeciągnij: zmień kolejność lub dodaj do Mojej zakładki">'+IC_GRIP+'</span>' : "";
   const atryb = user ? ` data-droppable="1" data-ord="${key}"` : "";
   return `<div class="item ${active?"active":""} ${cnt?"":"zero"}${inSection?" inSec":""}" data-k="${key}"${atryb}>
     ${uchwyt}${dot}<span class="nm" title="${esc(name)}">${esc(name)}</span>${user?'<span class="more" title="Opcje etykiety">'+IC_DOTS+'</span>':""}<span class="cnt">${cnt}</span></div>`;
@@ -12821,8 +12851,7 @@ function htmlToPlain(html){
 "use strict";
 /* ================= KOLOROWANIE ZAZNACZEŃ ================= */
 const hlBar = $("hlBar");
-hlBar.innerHTML = `<button class="tb hlOpen" type="button" title="Kolor i formatowanie" aria-label="Otwórz kolory i formatowanie">${ICO.paint}</button>`+
-  [1,2,3,4,5,6,7].map(i=>`<div class="sw" style="background:var(--hl${i})" data-hl="${i}" title="Podświetl"></div>`).join("") +
+hlBar.innerHTML = [1,2,3,4,5,6,7].map(i=>`<div class="sw" style="background:var(--hl${i})" data-hl="${i}" title="Podświetl"></div>`).join("") +
   `<button class="tb" data-hl="0" title="Usuń kolor">⌫</button>
    <span class="sep"></span>
    <button class="tb fmt" data-fmt="b" title="Pogrubienie"><b>B</b></button>
@@ -12831,18 +12860,14 @@ hlBar.innerHTML = `<button class="tb hlOpen" type="button" title="Kolor i format
    <span class="sep"></span>
    <button class="tb" data-hl="copy" title="Kopiuj zaznaczenie">${ICO.copy}</button>`;
 const touchUI = ()=> matchMedia("(hover: none)").matches || isIOS();
-let hlZakres=null;
-let hlRozwijanie=false;
-function showHlBar(wymusPelny, zakresZapisany){
+function showHlBar(){
   const sel=getSelection();
-  const zywyZakres=sel.rangeCount&&!sel.isCollapsed ? sel.getRangeAt(0) : null;
-  const range=zywyZakres || (wymusPelny && zakresZapisany) || null;
-  if(!range){
-    if(hlRozwijanie) return;
+  if(sel.isCollapsed||!sel.rangeCount){
     hlBar.style.display="none";
     document.body.classList.remove("ma-zaznaczenie");
     return;
   }
+  const range=sel.getRangeAt(0);
   const cac=range.commonAncestorContainer;
   const el=cac.nodeType===1?cac:cac.parentElement;
   const cont=el?el.closest(".ncard .ncontent"):null;
@@ -12850,11 +12875,6 @@ function showHlBar(wymusPelny, zakresZapisany){
   // podczas edycji (także pisania Apple Pencil) nie wyskakuj z paskiem kolorów —
   // formatowanie jest wtedy w pasku edycji, a Scribble musi mieć spokój
   if(cont.isContentEditable){ hlBar.style.display="none"; document.body.classList.remove("ma-zaznaczenie"); return; }
-  /* Zakres musi przeżyć zamknięcie menu Apple. Range.cloneRange() nadal
-     wskazuje te same węzły DOM, chociaż nie jest już niebieskim zaznaczeniem. */
-  if(zywyZakres){
-    try{ hlZakres=range.cloneRange(); }catch(_){ hlZakres=null; }
-  }
   /* Safari potrafi zwrócić pusty prostokąt dla zaznaczenia przez kilka wierszy.
      Bierzemy wtedy rzeczywisty, widoczny fragment zakresu, nie punkt 0×0. */
   const prostokaty = range.getClientRects ? [...range.getClientRects()].filter(x=>x.width||x.height) : [];
@@ -12865,7 +12885,6 @@ function showHlBar(wymusPelny, zakresZapisany){
     top:Math.min(a.top,x.top), bottom:Math.max(a.bottom,x.bottom)
   }),{left:pierwszy.left,right:pierwszy.right,top:pierwszy.top,bottom:pierwszy.bottom})
   : {left:pierwszy.left,right:pierwszy.right,top:pierwszy.top,bottom:pierwszy.bottom};
-  hlBar.classList.remove("zwarta");
   hlBar.style.display="flex";
   document.body.classList.add("ma-zaznaczenie");
   const w = Math.min(hlBar.offsetWidth || 380, innerWidth-16);
@@ -12879,35 +12898,16 @@ function showHlBar(wymusPelny, zakresZapisany){
   hlBar.style.bottom="auto";
   hlBar.classList.remove("pod-zazn","nad-zazn","obok-zazn");
   if(touchUI()){
-    /* iOS może położyć własne menu zarówno nad, jak i pod zaznaczeniem i nie
-       udostępnia stronie jego prostokąta. Dlatego podczas aktywnego zaznaczenia
-       NIGDY nie pokazujemy pełnej palety — dotyczy to czytnika i miniaturek. */
-    const odstep=12;
-    const prawa=ob.prawo-granice.right-odstep;
-    const lewa=granice.left-ob.lewo-odstep;
-    if(!wymusPelny){
-      /* Mały przycisk stoi z tej strony, po której jest więcej miejsca, i na
-         wysokości PIERWSZEGO wiersza. Przy wielowierszowym zaznaczeniu menu
-         Apple zwykle kotwiczy się przy ostatnim — nie nakładamy obu elementów. */
-      hlBar.classList.add("zwarta");
-      const bw=46, bh=46;
-      const poPrawej=prawa>=bw || prawa>=lewa;
-      const lewo=poPrawej ? Math.min(granice.right+odstep,ob.prawo-bw-8)
-                           : Math.max(ob.lewo+8,granice.left-odstep-bw);
-      hlBar.style.left=Math.min(lewo,ob.prawo-bw-8)+"px";
-      hlBar.style.top=Math.max(ob.gora+8,Math.min(pierwszy.top+(pierwszy.height-bh)/2,ob.dol-bh-8))+"px";
-    }else{
-      /* Zaznaczenie systemowe zostało już zdjęte, więc menu Apple jest
-         zamknięte. Pełna paleta może wykorzystać większą wolną przestrzeń. */
-      const pod=ob.dol-granice.bottom, nad=granice.top-ob.gora;
-      const naDole=pod>=h+12 || pod>=nad;
-      const punkt=naDole?ostatni:pierwszy;
-      hlBar.style.left=wLewo(punkt.left+punkt.width/2-w/2)+"px";
-      hlBar.style.top=(naDole
-        ? Math.min(ob.dol-h-8,granice.bottom+12)
-        : Math.max(ob.gora+8,granice.top-h-12))+"px";
-      hlBar.classList.add(naDole?"pod-zazn":"nad-zazn");
-    }
+    /* Menu systemowe jest wyłączone tylko wewnątrz treści notatki, dlatego
+       pełna paleta może — jak w JW Library — od razu stanąć przy uchwytach. */
+    const pod=ob.dol-granice.bottom, nad=granice.top-ob.gora;
+    const naDole=nad<h+10 && pod>=nad;
+    const punkt=naDole?ostatni:pierwszy;
+    hlBar.style.left=wLewo(punkt.left+punkt.width/2-w/2)+"px";
+    hlBar.style.top=(naDole
+      ? Math.min(ob.dol-h-8,granice.bottom+8)
+      : Math.max(ob.gora+8,granice.top-h-8))+"px";
+    hlBar.classList.add(naDole?"pod-zazn":"nad-zazn");
   } else {
     const lewo=wLewo(pierwszy.left+pierwszy.width/2-w/2);
     hlBar.style.left=lewo+"px";
@@ -12924,7 +12924,6 @@ document.addEventListener("mouseup", e=>{
 // iPad/iPhone: pasek kolorów pojawia się szybko po zaznaczeniu palcem lub rysikiem
 let selTimer=null;
 document.addEventListener("selectionchange", ()=>{
-  if(hlRozwijanie) return;
   clearTimeout(selTimer);
   selTimer=setTimeout(showHlBar, touchUI()?90:30);
 });
@@ -12954,29 +12953,12 @@ function saveContentEl(contEl, n){
   if(fsGuid){ fsListDirty=true; } else { renderNotes(); }
 }
 hlBar.addEventListener("pointerdown", e=>{
-  const otworz=e.target.closest(".hlOpen");
-  if(otworz){
-    e.preventDefault(); e.stopPropagation();
-    const zapis=hlZakres;
-    if(!zapis) return;
-    hlRozwijanie=true;
-    /* Zdjęcie niebieskiego zaznaczenia jest jedynym pewnym sposobem
-       zamknięcia natywnego menu iOS — jego położenia Safari nie raportuje. */
-    const sel=getSelection();
-    if(sel.rangeCount) sel.removeAllRanges();
-    hlBar.classList.remove("zwarta");
-    setTimeout(()=>{
-      showHlBar(true,zapis);
-      hlRozwijanie=false;
-    },110);
-    return;
-  }
   e.preventDefault();
   const t = e.target.closest("[data-hl],[data-fmt]");
   if(!t) return;
   const sel=getSelection();
-  const range=sel.rangeCount&&!sel.isCollapsed ? sel.getRangeAt(0) : hlZakres;
-  if(!range) return;
+  if(!sel.rangeCount||sel.isCollapsed) return;
+  const range=sel.getRangeAt(0);
   const base=range.commonAncestorContainer;
   const el=base.nodeType===1?base:base.parentElement;
   const contEl=el?el.closest(".ncard .ncontent"):null;
@@ -12986,15 +12968,14 @@ hlBar.addEventListener("pointerdown", e=>{
   const hl=t.dataset.hl, fmt=t.dataset.fmt;
   if(hl==="copy"){
     navigator.clipboard.writeText(range.toString()).then(()=>toast("Skopiowano zaznaczenie"));
-    if(sel.rangeCount) sel.removeAllRanges(); hlZakres=null; hlBar.style.display="none";
+    sel.removeAllRanges(); hlBar.style.display="none";
     document.body.classList.remove("ma-zaznaczenie");
     return;
   }
   if(fmt){ wrapTag(range, fmt); }
   else if(hl==="0") unwrapMarks(range,contEl);
-  else applyMark(range,+hl);
+  else { applyMark(range,+hl); lsSet(KP+"HlColor",String(hl)); }
   if(sel.rangeCount) sel.removeAllRanges();
-  hlZakres=null;
   hlBar.style.display="none";
   document.body.classList.remove("ma-zaznaczenie");
   saveContentEl(contEl, n);
@@ -13017,11 +12998,14 @@ function applyMark(range,color){
     b=Math.max(a,Math.min(b,node.nodeValue.length));
     if(b>a) odcinki.push([node,a,b]);
   }
+  const nowe=[];
   odcinki.reverse().forEach(([tekst,a,b])=>{
     const cz=document.createRange(); cz.setStart(tekst,a); cz.setEnd(tekst,b);
     const mark=document.createElement("mark"); mark.className="hl"+color;
     mark.appendChild(cz.extractContents()); cz.insertNode(mark);
+    nowe.push(mark);
   });
+  return nowe;
 }
 function wrapTag(range,tag){
   const el=document.createElement(tag);
@@ -15952,6 +15936,12 @@ async function loadPubTabs(){
   if(!Array.isArray(pubTabs)) pubTabs = [];
   // sito: rekord bez nazwy albo bez publikacji jest bezużyteczny
   pubTabs = pubTabs.filter(t=>t && typeof t==="object" && t.ks && typeof t.name==="string" && t.name.trim());
+  /* Zakładka ogólna może zawierać także całe pozycje z kolumny Publikacje.
+     Starsze rekordy nie mają refs — dostają pustą listę bez migracji danych. */
+  pubTabs.forEach(t=>{
+    if(!Array.isArray(t.refs)) t.refs=[];
+    t.refs=t.refs.filter(r=>r && typeof r.key==="string" && r.key && typeof r.label==="string");
+  });
 }
 function nextPubTabId(){ return nastepnyNumer(pubTabs); }
 
@@ -15961,7 +15951,37 @@ function pubTabsFor(ks){
   return pubTabs.filter(t=>t.ks===ks).sort((a,b)=>(a.ord||0)-(b.ord||0) || String(a.name).localeCompare(String(b.name),"pl"));
 }
 /** Ile notatek leży w zakładce (bez kosza). */
-function pubTabCount(id){ let c=0; for(const n of notes) if(!n.del && n.ptb===id) c++; return c; }
+function pubRefMatches(n, key){
+  if(!n || n.del || n.b) return false;
+  if(key.indexOf("tag:")===0) return (n.tg||[]).includes(+key.slice(4));
+  if(key.indexOf("cat:")===0) return pubCatOf(n).id===key.slice(4);
+  if(key.indexOf("year:")===0){
+    const p=key.split(":");
+    return pubCatOf(n).id===p[1] && (pubYearOf(n)||"—")===p.slice(2).join(":");
+  }
+  if(key.indexOf("pub:")===0) return pubKeyOf(n)===key.slice(4);
+  return false;
+}
+function pubTabHasNote(n,id){
+  if(n.ptb===id) return true;
+  const t=pubTabs.find(x=>x.id===id);
+  return !!(t && Array.isArray(t.refs) && t.refs.some(r=>pubRefMatches(n,r.key)));
+}
+function pubTabCount(id){ let c=0; for(const n of notes) if(!n.del && pubTabHasNote(n,id)) c++; return c; }
+
+function addPubRefToTab(id, key, label){
+  const t=pubTabs.find(x=>x.id===id && x.ks==="*"); if(!t || !key) return;
+  if(!Array.isArray(t.refs)) t.refs=[];
+  if(t.refs.some(r=>r.key===key)){ toast("Ta pozycja już jest w zakładce „"+t.name+"”"); return; }
+  t.refs.push({key, label:label||key});
+  savePubTabs(); renderAll();
+  toastOk("Dodano „"+(label||key)+"” do zakładki „"+t.name+"”");
+}
+function removePubRefFromTab(id,key){
+  const t=pubTabs.find(x=>x.id===id); if(!t || !Array.isArray(t.refs)) return;
+  t.refs=t.refs.filter(r=>r.key!==key);
+  savePubTabs(); renderAll(); toastOk("Usunięto pozycję z zakładki");
+}
 
 /* Podsumowanie publikacji policzone JEDNYM przebiegiem po notatkach:
    ile notatek ma każda zakładka i ile jest w niej różnych rozdziałów.
@@ -16017,7 +16037,7 @@ async function createPubTab(ks){
     placeholder:ogolna ? "np. Wykłady — wtorek" : "np. Rozdziały o modlitwie",
     okLabel:"Utwórz",
     hint:ogolna
-      ? "Możesz tu włożyć dowolną notatkę — z Biblii, publikacji albo własną."
+      ? "Możesz tu włożyć dowolną notatkę, etykietę, kategorię, rocznik albo całą publikację."
       : "Zakładka należy do publikacji „"+esc(pubFullName(ks)||ks)+"”. Notatki dodasz do niej z menu notatki."
   });
   if(!nazwa || !nazwa.trim()) return null;
@@ -16110,7 +16130,14 @@ function pubTabRowsHtml(ks){
          `<span class="dragOrd" title="Przeciągnij, aby zmienić kolejność">${IC_GRIP}</span>`+
          `<span class="nm">${esc(t.name)}</span>`+
          `<span class="more" data-ptmore="${t.id}" title="Opcje zakładki">${IC_DOTS}</span>`+
-         `<span class="cnt">${stat.wZakladce.get(t.id)||0}</span></div>`;
+         `<span class="cnt">${t.ks==="*" ? pubTabCount(t.id) : (stat.wZakladce.get(t.id)||0)}</span></div>`;
+    /* Pozycje wrzucone w całości są widoczne pod zakładką. To nie są kopie
+       danych — tylko odsyłacze, więc usunięcie ich nie usuwa żadnej notatki. */
+    if(t.ks==="*" && Array.isArray(t.refs)) t.refs.forEach(r=>{
+      h += `<div class="item ptbRef" data-ptref="${esc(r.key)}" data-ptowner="${t.id}" title="Otwórz zawartość zakładki">`+
+           `<span class="ptbMark">↳</span><span class="nm">${esc(r.label)}</span>`+
+           `<button type="button" class="ptbRefDel" data-ptrefdel="${esc(r.key)}" data-ptowner="${t.id}" title="Wyjmij z zakładki" aria-label="Wyjmij ${esc(r.label)} z zakładki">×</button></div>`;
+    });
   });
   h += `<div class="item ptbNew" data-ptadd="${esc(ks)}"><span class="ptbMark">＋</span>`+
        `<span class="nm">${ks==="*" ? "Nowa zakładka ogólna" : "Nowa zakładka"}</span></div>`;
@@ -16136,6 +16163,16 @@ function bindPubTabs(el){
       if(wiecej){ e.stopPropagation(); pubTabOptions(+wiecej.dataset.ptmore, wiecej); return; }
       const k = "ptb:"+it.dataset.ptb;
       filt.book = (String(filt.book)===k) ? "all" : k;
+      filt.ch=null; persistFilt(); renderAll();
+      if(innerWidth<=900) mobileShow("colNotes");
+    };
+  });
+  el.querySelectorAll(".ptbRef").forEach(it=>{
+    it.onclick=e=>{
+      const del=e.target.closest("[data-ptrefdel]");
+      if(del){ e.stopPropagation(); removePubRefFromTab(+del.dataset.ptowner,del.dataset.ptrefdel); return; }
+      const k="ptb:"+it.dataset.ptowner;
+      filt.book=(String(filt.book)===k)?"all":k;
       filt.ch=null; persistFilt(); renderAll();
       if(innerWidth<=900) mobileShow("colNotes");
     };
@@ -16773,6 +16810,15 @@ function celDlaNotatki(el){
   }
   return null;
 }
+/** Zakładka ogólna jest celem dla etykiety, kategorii, rocznika albo publikacji. */
+function celDlaPublikacji(el){
+  if(!el || !el.closest) return null;
+  const wiersz=el.closest("#pubList .ptbItem[data-ptb]");
+  if(!wiersz) return null;
+  const tab=pubTabs.find(x=>x.id===+wiersz.dataset.ptb && x.ks==="*");
+  if(!tab) return null;
+  return {el:wiersz, rodzaj:"ptbPub", id:tab.id, nazwa:tab.name};
+}
 function podswietlCel(cel){
   if(_celPrzenoszenia && _celPrzenoszenia.el!==((cel||{}).el))
     _celPrzenoszenia.el.classList.remove("dropTarget");
@@ -16980,7 +17026,8 @@ async function wyslijNotatke(guid){
 async function wyslijZakladkePub(idZakladki){
   const z = (typeof pubTabs!=="undefined") ? pubTabs.find(x=>x.id===idZakladki) : null;
   if(!z) return;
-  const notatki = notes.filter(n=>!n.del && n.ptb===z.id);
+  const notatki = notes.filter(n=>!n.del &&
+    (typeof pubTabHasNote==="function" ? pubTabHasNote(n,z.id) : n.ptb===z.id));
   await wyslijWycinek(zbudujWycinek(notatki, [], []), "zakladka", z.name);
 }
 
@@ -17018,8 +17065,8 @@ function rodzajPozycji(el){
   if(el.classList.contains("ptbItem")) return {rodzaj:"zakladkaPub", id:+el.dataset.ptb};
   /* Pozycje panelu publikacji: kategorie, roczniki i same publikacje. Ich
      kolejność to lista kluczy, a nie liczby porządkowe przy obiektach. */
-  if(el.classList.contains("pubMove") && el.dataset.ord!==undefined)
-    return {rodzaj:"publikacja", id:el.dataset.ord};
+  if(el.dataset.pubref)
+    return {rodzaj:"publikacja", id:el.dataset.ord||el.dataset.pubref};
   if(el.classList.contains("item") && el.dataset.k && !isNaN(+el.dataset.k))
     return {rodzaj:"etykieta", id:+el.dataset.k};
   return null;
@@ -17096,8 +17143,16 @@ function zakonczChwyt(zapisz){
   if(!zapisz) return;
   /* Notatka upuszczona na etykietę albo zakładkę — przypisanie, nie kolejność. */
   if(celObcy && rodzaj==="notatka" && typeof upusc==="function"){
-    upusc(notes.find(x=>x.g===id), celObcy);
-    return;
+    upusc(notes.find(x=>x.g===id), celObcy); return;
+  }
+  if(celObcy && rodzaj==="publikacja" && typeof addPubRefToTab==="function"){
+    const ref=el.dataset.pubref, label=el.dataset.pubreflabel ||
+      ((el.querySelector(".nm")||{}).textContent||"").trim();
+    addPubRefToTab(celObcy.id,ref,label); return;
+  }
+  if(celObcy && rodzaj==="etykieta" && typeof addPubRefToTab==="function"){
+    const tag=tags.find(x=>x.id===id); if(!tag) return;
+    addPubRefToTab(celObcy.id,"tag:"+tag.id,tag.name); return;
   }
   if(!cel) return;
   upuscPozycje(rodzaj, id, cel, przed, dane.sekcjaCel);
@@ -17353,10 +17408,12 @@ document.addEventListener("pointerdown", ev=>{
     przesunDuszka(_chwyt.duszek, x, y);
     document.querySelectorAll(".strefaPoczatku.gotowa").forEach(z=>z.classList.remove("gotowa"));
 
-    /* Notatka nad kolumną etykiet? Wtedy nie porządkujemy, tylko przypisujemy. */
-    if(notatka && typeof celDlaNotatki==="function"){
+    /* Notatka nad etykietą albo publikacja nad zakładką ogólną: przypisanie,
+       a nie zmiana kolejności na bieżącym poziomie. */
+    if((notatka && typeof celDlaNotatki==="function") ||
+       ((info.rodzaj==="publikacja"||info.rodzaj==="etykieta") && typeof celDlaPublikacji==="function")){
       const pod = document.elementFromPoint(x, y);
-      const obcy = celDlaNotatki(pod);
+      const obcy = notatka ? celDlaNotatki(pod) : celDlaPublikacji(pod);
       if(typeof podswietlCel==="function") podswietlCel(obcy);
       _chwyt.celObcy = obcy;
       if(obcy){ _chwyt.cel = null; _chwyt.wskaznik.style.display = "none"; return; }
@@ -19006,7 +19063,8 @@ function koniecRysika(){
   const bylo = _rysik.aktywne;
   _rysik = null;
   document.documentElement.classList.remove("rysikZaznacza");
-  /* Pasek kolorów pokazujemy od razu — po to zaznaczało się tekst. */
+  /* Jak w JW Library: zostają uchwyty zaznaczenia, a obok od razu pojawia
+     się pełna paleta. Kolor nakłada się dopiero po świadomym wyborze. */
   if(bylo && typeof showHlBar === "function") setTimeout(showHlBar, 10);
 }
 document.addEventListener("touchend", koniecRysika);

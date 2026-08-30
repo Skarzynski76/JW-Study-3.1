@@ -5,6 +5,15 @@ bez niej po miesiącu nie wiadomo, dlaczego coś wygląda tak, a nie inaczej.
 
 ---
 
+## v2.89 — belka jak w JW Library i uniwersalne zakładki
+
+- usunięto pośredni przycisk pędzla; po zaznaczeniu tekstu od razu pojawia się pełna, ciemna belka kolorów,
+- na urządzeniu dotykowym uchwyty zaznaczenia pozostają widoczne, a systemowy callout nie nakłada drugiego menu,
+- Apple Pencil zaznacza tekst od pierwszego ruchu, lecz kolor nakłada się dopiero po wybraniu go z belki,
+- zakładki ogólne przyjmują pojedyncze notatki, zwykłe etykiety, kategorie, roczniki oraz całe publikacje,
+- „Moje zakładki” są widoczne na każdym poziomie kolumny Publikacje, więc element można przeciągnąć bez cofania,
+- zawartość dodana w całości jest pokazana pod nazwą zakładki i można ją wyjąć bez usuwania notatek.
+
 ## v2.88 — podświetlanie bez konfliktu z menu Apple
 
 - na iPadzie i iPhonie pełna paleta kolorów nie otwiera się już automatycznie podczas zaznaczania,
