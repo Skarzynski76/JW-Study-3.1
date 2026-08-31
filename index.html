@@ -6631,15 +6631,17 @@ body.focus-mode #colNotes{
   height:100vh;
   height:100dvh;
   padding:0!important;
-  background:var(--bg);
+  background:var(--panel);
   isolation:isolate;
 }
 #modalFs .fsmodal{
+  position:absolute!important;
+  inset:0!important;
   width:100%!important;
   min-width:100%!important;
-  height:100%!important;
+  height:auto!important;
   min-height:100%!important;
-  max-height:100dvh!important;
+  max-height:100%!important;
   border-radius:0!important;
 }
 
@@ -6861,7 +6863,7 @@ body.fs-open #colorMenu{
   background:var(--panel);
   -webkit-backdrop-filter:none;
   backdrop-filter:none;
-  box-shadow:0 -7px 24px rgba(18,30,24,.09);
+  box-shadow:none;
 }
 
 /* W EDYCJI ten sam dok zostaje przypisany do dolnej krawędzi okna. Nie pływa
@@ -6904,12 +6906,16 @@ html:not(.kb-open) #fsWrap .ncard.editing .ncontent{ padding-bottom:88px; }
 /* Paleta zaznaczenia i dolny pasek są niezależne: paleta zostaje przy tekście,
    a działania notatki pozostają w ramce na dole. */
 html.kb-open #hlBar{ display:none!important; }
+/* W czytniku korzystamy z własnej palety. Reguła jest bez media query, bo
+   iPad z podłączonym gładzikiem zgłasza hover mimo zaznaczania palcem.
+   W edytorze jej nie stosujemy — tam systemowe kopiowanie i sprawdzanie nadal
+   pozostaje dostępne. */
+#modalFs #fsWrap .ncard:not(.editing) .ncontent{
+  -webkit-touch-callout:none!important;
+  -webkit-user-select:text!important;
+  user-select:text!important;
+}
 @media (hover:none){
-  /* Menu Apple pozostaje dostępne. Własna paleta wybiera przeciwną stronę
-     zaznaczenia, bo Safari nie udostępnia położenia systemowego menu. */
-  .ncard:not(.editing) .ncontent{
-    -webkit-touch-callout:default!important;
-  }
   #hlBar{
     background:rgba(255,255,255,.98);
     color:#2f3432;
@@ -7358,7 +7364,7 @@ details.powiazane[open] .powPanel{
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <h1 class="brand-name">JW Study <span class="ver">v2.98</span></h1>
+      <h1 class="brand-name">JW Study <span class="ver">v2.99</span></h1>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -13682,26 +13688,17 @@ function showHlBar(){
   hlBar.style.bottom="auto";
   hlBar.classList.remove("pod-zazn","nad-zazn","obok-zazn");
   if(touchUI()){
-    /* Safari nie udostępnia prostokąta menu Kopiuj/Sprawdź/Tłumacz. Da się
-       jednak przewidzieć jego stronę: gdy nad zaznaczeniem mieści się menu,
-       iOS stawia je nad tekstem. Nasza paleta idzie wtedy pod tekst; przy
-       zaznaczeniu wysoko pod nagłówkiem robi odwrotnie. Jeżeli po przeciwnej
-       stronie brakuje miejsca, zostawiamy dodatkowo wysokość menu systemowego,
-       zamiast układać oba paski jeden na drugim. */
+    /* Systemowy callout jest w czytniku wyłączony. Paleta trzyma się jednej,
+       przewidywalnej zasady: nad tekstem, a tylko przy górnej krawędzi pod nim. */
     const dok=document.querySelector("#fsWrap .ncard:not(.editing) .ntools");
     const dokRect=dok ? dok.getBoundingClientRect() : null;
     const dokTop=dokRect && dokRect.height>0 ? dokRect.top : ob.dol;
     const bezpiecznyDol=Math.min(ob.dol,dokTop)-8;
-    const odstep=12, systemH=58;
-    const appleNad=(granice.top-ob.gora)>=74;
+    const odstep=16;
     const pod=granice.bottom+odstep;
     const nad=granice.top-h-odstep;
-    let y;
-    if(appleNad){
-      y=(pod+h<=bezpiecznyDol) ? pod : granice.top-h-systemH-odstep;
-    }else{
-      y=(nad>=ob.gora+8) ? nad : granice.bottom+systemH+odstep;
-    }
+    let y=(nad>=ob.gora+8) ? nad : pod;
+    if(y+h>bezpiecznyDol) y=Math.max(ob.gora+8,granice.top-h-odstep);
     y=Math.max(ob.gora+8,Math.min(y,bezpiecznyDol-h));
     const cx=(granice.left+granice.right)/2;
     const lewo=wLewo(cx-w/2);
@@ -13730,6 +13727,12 @@ document.addEventListener("selectionchange", ()=>{
 // po puszczeniu palca/rysika pokaż pasek od razu (bez wyczuwalnego opóźnienia)
 document.addEventListener("touchend", ()=>{ setTimeout(showHlBar, 70); }, {passive:true});
 document.addEventListener("pointerup", e=>{ if(e.pointerType==="pen"||e.pointerType==="touch") setTimeout(showHlBar, 70); }, {passive:true});
+/* iOS potrafi pokazać menu systemowe niezależnie od media query, zwłaszcza
+   z gładzikiem. Blokujemy zdarzenie wyłącznie w nieedytowanym czytniku. */
+document.addEventListener("contextmenu", e=>{
+  const cont=e.target && e.target.closest ? e.target.closest("#modalFs #fsWrap .ncard:not(.editing) .ncontent") : null;
+  if(cont) e.preventDefault();
+}, true);
 // kliknięcie w pokolorowany fragment (poza edycją) → zaznacz go i pokaż paletę do zmiany koloru
 document.addEventListener("click", e=>{
   const m = e.target && e.target.closest ? e.target.closest(".ncard .ncontent mark") : null;

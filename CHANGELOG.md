@@ -5,6 +5,19 @@ bez niej po miesiącu nie wiadomo, dlaczego coś wygląda tak, a nie inaczej.
 
 ---
 
+## v2.99 — własna paleta bez menu Apple i prawdziwa dolna krawędź
+
+- w nieedytowanym czytniku systemowe menu iOS „Kopiuj / Sprawdź / Tłumacz”
+  jest wyłączone przez styl WebKit i blokadę zdarzenia kontekstowego; podczas
+  edycji nadal działa normalnie,
+- paleta kolorów jest ustawiana nad zaznaczeniem, a tylko przy górnej krawędzi
+  przechodzi pod tekst — nie musi już zgadywać położenia menu Apple,
+- całe okno czytnika, także obszar pod dolnym paskiem na iPadzie, ma tło
+  czytnika zamiast szarego tła aplikacji,
+- pasek edycji, przypięcia, ulubionych, etykiety, „Więcej” i ustawień tekstu
+  ma prostą linię graniczną bez cienia, dlatego wygląda jak dolny brzeg okna,
+  a nie jak pływająca belka.
+
 ## v2.98 — dolna rama działań i paleta przy zaznaczeniu
 
 - działania notatki — edycja, przypięcie, ulubione, etykieta, „Więcej” i
