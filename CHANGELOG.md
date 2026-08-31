@@ -5,6 +5,46 @@ bez niej po miesiącu nie wiadomo, dlaczego coś wygląda tak, a nie inaczej.
 
 ---
 
+## v2.96 — kolekcje i Czytelnia w Centrum studium
+
+- Centrum studium ma nowy, spokojniejszy układ: po lewej pokazuje „Moje
+  kolekcje”, a po prawej Czytelnię z notatką, do której warto wrócić,
+- kolekcje są tymi samymi zakładkami ogólnymi co w kolumnie Publikacje;
+  kliknięcie otwiera ich notatki, a „Nowa kolekcja” tworzy zakładkę bez
+  dublowania danych,
+- Czytelnia pokazuje fragment ostatnio studiowanej notatki i otwiera ją w tym
+  samym miejscu; obok znajdują się powtórki „Na dziś” i stabilna „Losowa myśl”,
+  zmieniana raz dziennie,
+- zapisane inteligentne wyszukiwania są dostępne bezpośrednio w Centrum;
+  gdy nie ma zapisanych pozycji, używane są ostatnie zapytania,
+- nowy układ składa się do jednej kolumny w wąskim panelu i na telefonie,
+  a kolekcje na najmniejszych ekranach przechodzą do jednego rzędu na kartę.
+
+## v2.95 — wyszukiwanie partiami
+
+- jedna partia wyszukiwania zatrzymuje się po 250 trafieniach albo po
+  sprawdzeniu 3000 notatek, dzięki czemu bardzo popularne słowo nie próbuje
+  naraz sortować tysięcy wyników,
+- pasek wyników podaje liczbę sprawdzonych notatek i oznacza wynik znakiem `+`,
+  gdy w bazie może znajdować się dalsza część,
+- przycisk „Szukaj dalej” zwiększa limit dopiero na żądanie użytkownika;
+  kolejne partie korzystają z pamięci wcześniej sprawdzonych notatek,
+- początkowo nadal renderowanych jest tylko 60 kart, a następne karty są
+  dokładane stopniowo.
+
+## v2.94 — wyszukiwanie bez zawieszania podczas pisania
+
+- jedna lub dwie zwykłe litery nie uruchamiają już przeglądania całej bazy;
+  aplikacja czeka na co najmniej trzy znaki,
+- filtrowanie zaczyna się dopiero po 320 ms przerwy w pisaniu, więc szybkie
+  wpisanie słowa powoduje jeden przebieg zamiast osobnego przebiegu dla każdej
+  litery; Enter nadal uruchamia gotowe zapytanie od razu,
+- indeks publikacji i wersetów używany przez podpowiedzi jest liczony raz i
+  wykorzystywany ponownie, zamiast dwukrotnie przechodzić po wszystkich
+  notatkach przy każdym znaku,
+- pole pokazuje jasny komunikat, dlaczego wyszukiwanie jeszcze nie ruszyło;
+  komendy oraz adresy wersetów zachowują wygodną krótką składnię.
+
 ## v2.93 — inteligentne wyszukiwanie
 
 - wyniki są domyślnie układane według trafności: tytuł, werset i etykieta mają

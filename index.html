@@ -7183,6 +7183,142 @@ details.powiazane[open] .powPanel{
 .searchReason{ color:var(--accent); background:var(--sel); border-radius:999px; padding:2px 7px; white-space:nowrap; }
 .searchSnippet{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .ncard.searchFocus{ outline:3px solid color-mix(in srgb,var(--accent) 45%,transparent); outline-offset:2px; }
+
+/* ══════════════ CENTRUM: KOLEKCJE + CZYTELNIA (v2.96) ══════════════ */
+#centrum{
+  background:color-mix(in srgb,var(--bg) 96%,var(--accent));
+}
+.cenBiblioteka{
+  display:grid; grid-template-columns:minmax(0,1.08fr) minmax(330px,.92fr);
+  gap:14px; max-width:1440px; margin:0 auto 14px;
+}
+.cenKolekcje,.cenCzytelnia{
+  min-width:0; border:1px solid color-mix(in srgb,var(--border) 82%,var(--accent));
+  border-radius:20px; background:var(--panel);
+  box-shadow:0 1px 2px rgba(22,36,29,.04),0 12px 32px rgba(22,36,29,.07);
+}
+.cenKolekcje{ padding:17px; }
+.cenKolekcje>header{
+  display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+  margin-bottom:14px;
+}
+.cenSekNad{
+  display:block; margin-bottom:3px; color:var(--accent); font-size:10.5px;
+  font-weight:750; text-transform:uppercase; letter-spacing:.08em;
+}
+.cenKolekcje h2,.cenCzytGl h2{
+  margin:0; padding:0; color:var(--text); text-transform:none; letter-spacing:-.025em;
+  font-size:calc(20px * var(--uiw,1)); line-height:1.2;
+}
+.cenLink{
+  flex:0 0 auto; border:1px solid var(--border); border-radius:10px;
+  padding:8px 10px; background:var(--panel); color:var(--accent); cursor:pointer;
+  font-size:12px; font-weight:700;
+}
+.cenLink:hover{ background:var(--sel); }
+.cenKolGrid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+.cenKol{
+  --kol:var(--accent); position:relative; overflow:hidden;
+  display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:10px;
+  min-height:76px; padding:11px 12px 11px 15px; text-align:left; cursor:pointer;
+  border:1px solid color-mix(in srgb,var(--kol) 22%,var(--border)); border-radius:14px;
+  background:color-mix(in srgb,var(--kol) 5%,var(--panel)); color:var(--text);
+  transition:transform .14s var(--ease),border-color .14s ease,box-shadow .14s ease;
+}
+.cenKolPas{ position:absolute; left:0; top:0; bottom:0; width:5px; background:var(--kol); }
+.cenKolIk{
+  display:grid; place-items:center; width:37px; height:42px; border-radius:5px 9px 9px 5px;
+  color:var(--kol); background:color-mix(in srgb,var(--kol) 14%,var(--panel));
+  box-shadow:inset -3px 0 color-mix(in srgb,var(--kol) 18%,transparent);
+}
+.cenKolIk .ic{ width:18px; height:18px; }
+.cenKolTxt{ display:flex; flex-direction:column; min-width:0; gap:3px; }
+.cenKolTxt b{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13.5px; }
+.cenKolTxt small{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted); font-size:10.5px; }
+.cenKolStrz{ display:flex; color:var(--muted); }
+.cenKolStrz .ic{ width:15px; height:15px; }
+.cenKolNowa{ --kol:var(--muted); border-style:dashed; background:transparent; }
+.cenKolPlus{
+  display:grid; place-items:center; width:37px; height:37px; border-radius:50%;
+  background:var(--sel); color:var(--accent); font-size:22px; font-weight:400;
+}
+.cenKolPomoc{ margin:12px 2px 0; color:var(--muted); font-size:12px; line-height:1.5; }
+@media (hover:hover){
+  .cenKol:hover{ transform:translateY(-2px); border-color:color-mix(in srgb,var(--kol) 52%,var(--border)); box-shadow:0 9px 22px rgba(22,36,29,.09); }
+}
+
+.cenCzytelnia{ overflow:hidden; }
+.cenCzytGl{
+  position:relative; padding:18px 19px 17px; cursor:pointer;
+  border-bottom:1px solid var(--border);
+  background:color-mix(in srgb,var(--accent) 5%,var(--panel));
+}
+.cenCzytGl::before{
+  content:""; position:absolute; left:0; top:0; bottom:0; width:5px; background:var(--accent);
+}
+.cenCzytEty{ display:flex; align-items:center; gap:6px; margin-bottom:9px; color:var(--accent); font-size:10.5px; font-weight:750; text-transform:uppercase; letter-spacing:.07em; }
+.cenCzytEty .ic{ width:14px; height:14px; }
+.cenCzytGl p{
+  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden;
+  margin:8px 0 0; color:var(--muted); font-size:12.5px; line-height:1.55;
+}
+.cenCzytBtn{
+  display:inline-flex; align-items:center; gap:8px; min-height:38px; margin-top:13px;
+  padding:8px 12px; border:0; border-radius:10px; background:var(--accent); color:#fff;
+  font-size:12px; font-weight:700; cursor:pointer;
+}
+.cenCzytBtn span{ display:flex; }
+.cenCzytBtn .ic{ width:14px; height:14px; }
+.cenCzytPusto{ display:flex; flex-direction:column; gap:5px; padding:19px; border-bottom:1px solid var(--border); }
+.cenCzytPusto span{ color:var(--muted); font-size:12px; }
+.cenCzytMini{ display:grid; grid-template-columns:1fr 1fr; }
+.cenCzytMini article{ min-width:0; padding:13px 14px; border-bottom:1px solid var(--border); }
+.cenCzytMini article+article{ border-left:1px solid var(--border); }
+.cenCzytMini h3,.cenZapisane h3{
+  display:flex; align-items:center; gap:6px; margin:0 0 8px; padding:0;
+  color:var(--text); font-size:11px; font-weight:750; text-transform:uppercase; letter-spacing:.045em;
+}
+.cenCzytMini h3 .ic{ width:14px; height:14px; color:var(--accent); }
+.cenCzytMini h3 b{ margin-left:auto; min-width:20px; padding:2px 6px; border-radius:999px; background:var(--sel); color:var(--accent); text-align:center; }
+.cenDzisLista{ display:flex; flex-direction:column; gap:3px; }
+.cenDzisLista button{
+  display:flex; align-items:center; justify-content:space-between; gap:7px; width:100%;
+  padding:5px 4px; border:0; border-radius:7px; background:transparent; color:var(--text); text-align:left; cursor:pointer;
+}
+.cenDzisLista button:hover{ background:var(--sel); }
+.cenDzisLista button span{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11.5px; }
+.cenDzisLista button small{ flex:0 0 auto; color:var(--muted); font-size:9.5px; }
+.cenMysl{ display:block; width:100%; padding:0; border:0; background:transparent; color:var(--text); text-align:left; cursor:pointer; }
+.cenMysl q{
+  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden;
+  font-size:11.5px; line-height:1.45;
+}
+.cenMysl small{ display:block; margin-top:5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted); font-size:9.5px; }
+.cenMiniPusto{ color:var(--muted); font-size:11px; line-height:1.45; }
+.cenZapisane{ padding:12px 14px 14px; }
+.cenZapisane>div{ display:flex; flex-wrap:wrap; gap:6px; }
+.cenZapisane button{
+  display:inline-flex; align-items:center; gap:5px; max-width:100%; padding:6px 9px;
+  border:1px solid var(--border); border-radius:999px; background:var(--panel); color:var(--text); cursor:pointer;
+  font-size:10.5px;
+}
+.cenZapisane button:hover{ background:var(--sel); border-color:color-mix(in srgb,var(--accent) 42%,var(--border)); }
+.cenZapisane button .ic{ width:12px; height:12px; color:var(--accent); flex:0 0 auto; }
+.cenZapisane button span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+@container notatki (max-width:820px){
+  .cenBiblioteka{ grid-template-columns:minmax(0,1fr); }
+}
+@container notatki (max-width:470px){
+  .cenKolekcje{ padding:13px; }
+  .cenKolekcje>header{ align-items:center; }
+  .cenKolekcje>header .cenLink{ width:40px; height:40px; padding:0; overflow:hidden; color:transparent; font-size:0; }
+  .cenKolekcje>header .cenLink::before{ content:"＋"; display:grid; place-items:center; width:100%; height:100%; color:var(--accent); font-size:20px; }
+  .cenKolGrid{ grid-template-columns:minmax(0,1fr); }
+  .cenKol{ min-height:68px; }
+  .cenCzytMini{ grid-template-columns:minmax(0,1fr); }
+  .cenCzytMini article+article{ border-left:0; }
+}
 @media (max-width:620px){
   .searchGrid{ grid-template-columns:1fr; }
   .search-modal{ width:100vw; height:100dvh; max-height:100dvh; border-radius:0; }
@@ -7198,7 +7334,7 @@ details.powiazane[open] .powPanel{
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <h1 class="brand-name">JW Study <span class="ver">v2.93</span></h1>
+      <h1 class="brand-name">JW Study <span class="ver">v2.96</span></h1>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -7584,6 +7720,7 @@ details.powiazane[open] .powPanel{
       <p><code>"dokładna fraza"</code> · <code>miłos*</code> · <code>tytuł:</code> · <code>etykieta:</code> · <code>werset:</code> · <code>treść:</code>.</p>
       <p><code>@ulubione</code> · <code>@przypięte</code> · <code>#nazwa-etykiety</code> · <code>biblia:</code> · <code>publikacja:</code> · <code>kolor:żółty</code>.</p>
       <p>Tryb inteligentny rozpoznaje literówki, polskie odmiany, podobne pojęcia oraz różne zapisy wersetów. Wyniki są oceniane według tytułu, wersetu, etykiety, frazy i treści.</p>
+      <p>Dla płynności jedna partia pokazuje najwyżej 250 trafień i sprawdza do 3000 notatek. Przycisk <b>Szukaj dalej</b> dołącza następną partię tylko wtedy, gdy jej potrzebujesz.</p>
     </details>
     <div class="actions"><button class="btn primary" data-zamknij="modalSearch">Gotowe</button></div>
   </div>
@@ -8893,6 +9030,13 @@ let searchOpts={scope:"current",group:"all",dateFrom:"",dateTo:"",highlight:"all
 try{ Object.assign(searchOpts,JSON.parse(lsGet(KP+"SearchOpts","{}"))); }catch(_){}
 let qAdvTerms=[],qAdvNeg=[],qAdvPhrases=[],qSpecial={};
 var searchScores=new Map(), searchDetails=new Map(), searchDuplicateSet=null;
+const SEARCH_RESULT_STEP=250, SEARCH_SCAN_STEP=3000;
+let searchMatchLimit=SEARCH_RESULT_STEP, searchScanLimit=SEARCH_SCAN_STEP;
+let searchWasLimited=false, searchScannedCount=0;
+function resetSearchWindow(){
+  searchMatchLimit=SEARCH_RESULT_STEP; searchScanLimit=SEARCH_SCAN_STEP;
+  searchWasLimited=false; searchScannedCount=0;
+}
 function normSzukStart(s){ return (s||"").toLowerCase().replace(/ł/g,"l").normalize("NFD").replace(/[\u0300-\u036f]/g,""); }
 const SZUK_STOP=new Set("notatka notatki notatek pokaz znajdz znajdź szukaj szukam chce chcę potrzebuje potrzebuję cos coś o na w we z ze do dla od i oraz albo czy co ktore które dotyczace dotyczące temat temacie".split(" ").map(normSzukStart));
 const SZUK_POJECIA=[
@@ -9030,7 +9174,9 @@ function ocenTrafnosc(n){
  * @param {string} q
  */
 function parseQuery(q){
-  query = q.trim();
+  const nextQuery=q.trim();
+  if(nextQuery!==query) resetSearchWindow();
+  query = nextQuery;
   resetQueryCache();          // inne zapytanie → stare wyniki są nieaktualne
   qComp = null; qHl = null; qFields = null;
   _qNorm = norm(query); _qSquash = squash(query);
@@ -9221,9 +9367,21 @@ function matchesQuick(n){
    i podajemy dalej zamiast przeglądać wszystkie notatki kilka razy z rzędu. */
 function baseNotes(){
   const globalne=(query||aktywneOpcjeSzukania())&&searchOpts.scope==="all";
-  return notes.filter(n=>!n.del &&
-    (globalne || (noteMatchesTag(n,filt.tag) && noteMatchesBook(n,filt.book) && noteMatchesCh(n))) &&
-    noteMatchesQuery(n));
+  const aktywne=!!query||aktywneOpcjeSzukania();
+  if(!aktywne) return notes.filter(n=>!n.del && noteMatchesTag(n,filt.tag) && noteMatchesBook(n,filt.book) && noteMatchesCh(n));
+  /* Jedna szeroka fraza potrafi pasować do tysięcy notatek. Nie przeglądamy
+     i nie sortujemy ich wszystkich w jednej klatce: jedna partia sprawdza
+     najwyżej 3000 rekordów i zatrzymuje się po 250 trafieniach. */
+  const wynik=[]; let i=0;
+  for(;i<notes.length && i<searchScanLimit && wynik.length<searchMatchLimit;i++){
+    const n=notes[i];
+    if(!n || n.del) continue;
+    if(!globalne && !(noteMatchesTag(n,filt.tag) && noteMatchesBook(n,filt.book) && noteMatchesCh(n))) continue;
+    if(noteMatchesQuery(n)) wynik.push(n);
+  }
+  searchScannedCount=i;
+  searchWasLimited=i<notes.length;
+  return wynik;
 }
 /**
  * Notatki widoczne na liście: baza plus szybki filtr (przypięte, ulubione, bez etykiety…).
@@ -11180,11 +11338,11 @@ function wypelnijPanelSzukania(){
 }
 function zapiszOpcjeZPanelu(){
   searchOpts={scope:$("sScope").value,group:$("sGroup").value,dateFrom:$("sDateFrom").value,dateTo:$("sDateTo").value,highlight:$("sHighlight").value,extra:$("sExtra").value};
-  lsSet(KP+"SearchOpts",JSON.stringify(searchOpts)); resetQueryCache(); renderAll();
+  lsSet(KP+"SearchOpts",JSON.stringify(searchOpts)); resetSearchWindow(); resetQueryCache(); renderAll();
 }
 $("btnSearchTools").onclick=()=>{ hideSearchSug(); wypelnijPanelSzukania(); openModal("modalSearch"); };
 document.querySelectorAll("[data-smode]").forEach(b=>b.onclick=()=>{
-  searchMode=b.dataset.smode; lsSet(KP+"SearchMode",searchMode); parseQuery($("search").value); wypelnijPanelSzukania(); renderAll();
+  searchMode=b.dataset.smode; lsSet(KP+"SearchMode",searchMode); resetSearchWindow(); parseQuery($("search").value); wypelnijPanelSzukania(); renderAll();
 });
 ["sScope","sGroup","sDateFrom","sDateTo","sHighlight","sExtra"].forEach(id=>$(id).addEventListener("change",zapiszOpcjeZPanelu));
 $("sClearQuery").onclick=()=>{
@@ -11195,7 +11353,7 @@ $("sClearQuery").onclick=()=>{
   }
   renderAll();
 };
-$("sClearFilters").onclick=()=>{ searchOpts={scope:"current",group:"all",dateFrom:"",dateTo:"",highlight:"all",extra:"all"}; lsSet(KP+"SearchOpts",JSON.stringify(searchOpts)); resetQueryCache(); wypelnijPanelSzukania(); renderAll(); };
+$("sClearFilters").onclick=()=>{ searchOpts={scope:"current",group:"all",dateFrom:"",dateTo:"",highlight:"all",extra:"all"}; lsSet(KP+"SearchOpts",JSON.stringify(searchOpts)); resetSearchWindow(); resetQueryCache(); wypelnijPanelSzukania(); renderAll(); };
 $("sSave").onclick=async()=>{
   const q=$("search").value.trim(); if(!q&&!aktywneOpcjeSzukania()){toast("Najpierw wpisz zapytanie albo wybierz filtr");return;}
   const name=await askText({title:"Nazwa inteligentnej zakładki",value:q||"Moje wyszukiwanie",okLabel:"Zapisz"}); if(!name)return;
@@ -11221,11 +11379,17 @@ function searchPrzejdz(dir){
 function renderSearchStatus(arr){
   const box=$("searchStatus"); const active=!!query||aktywneOpcjeSzukania(); box.hidden=!active; if(!active){box.innerHTML="";return;}
   const cnt={all:arr.length,bible:0,publication:0,own:0}; arr.forEach(n=>cnt[kategoriaNotatki(n)]++);
-  box.innerHTML=`<span class="ssInfo">${searchMode==="smart"?"Inteligentnie":"Dokładnie"} · ${arr.length} wyników</span>`+
+  const stanLimitu=searchWasLimited?` · sprawdzono ${searchScannedCount} z ${notes.length}`:"";
+  box.innerHTML=`<span class="ssInfo">${searchMode==="smart"?"Inteligentnie":"Dokładnie"} · ${arr.length}${searchWasLimited?"+":""} wyników${stanLimitu}</span>`+
     [["all","Wszystkie"],["bible","Biblia"],["publication","Publikacje"],["own","Własne"]].map(([k,l])=>`<button class="ssChip${searchOpts.group===k?" on":""}" data-ssgroup="${k}">${l} ${cnt[k]}</button>`).join("")+
+    (searchWasLimited?`<button class="ssNav" data-ssmore="1">Szukaj dalej</button>`:"")+
     `<button class="ssNav" data-ssnav="-1" title="Poprzedni wynik">↑</button><button class="ssNav" data-ssnav="1" title="Następny wynik">↓</button><button class="ssNav" data-sshelp="1">Instrukcja</button><button class="ssNav" data-ssclear="1">Wyczyść</button>`;
   box.onclick=e=>{
-    const g=e.target.closest("[data-ssgroup]"); if(g){searchOpts.group=g.dataset.ssgroup;lsSet(KP+"SearchOpts",JSON.stringify(searchOpts));resetQueryCache();renderAll();return;}
+    const g=e.target.closest("[data-ssgroup]"); if(g){searchOpts.group=g.dataset.ssgroup;lsSet(KP+"SearchOpts",JSON.stringify(searchOpts));resetSearchWindow();resetQueryCache();renderAll();return;}
+    if(e.target.closest("[data-ssmore]")){
+      searchMatchLimit+=SEARCH_RESULT_STEP; searchScanLimit+=SEARCH_SCAN_STEP;
+      resetQueryCache(); renderNotes(); return;
+    }
     const n=e.target.closest("[data-ssnav]"); if(n){searchPrzejdz(+n.dataset.ssnav);return;}
     if(e.target.closest("[data-sshelp]")){$("btnSearchTools").click();return;}
     if(e.target.closest("[data-ssclear]")){
@@ -15677,6 +15841,33 @@ document.querySelectorAll(".colResizer").forEach(rz=>{
   });
 });
 let searchTimer=null;
+const SEARCH_MIN=3, SEARCH_DELAY=320;
+function zapytanieGotowe(raw){
+  const s=(raw||"").trim();
+  if(!s) return false;
+  /* Sam znak @, # albo jedna litera nie może uruchamiać przebiegu po bazie. */
+  if(/^[@#-]/.test(s)) return norm(s).replace(/[^a-z0-9]/g,"").length>=2;
+  if(/^[1-3]?[\p{L}]{1,6}\s*\d/u.test(s)) return true;
+  return norm(s).replace(/[^a-z0-9]/g,"").length>=SEARCH_MIN;
+}
+function komunikatKrotkiegoSzukania(raw){
+  const box=$("searchStatus"); if(!box)return;
+  const s=(raw||"").trim();
+  if(!s){box.hidden=true;box.innerHTML="";return;}
+  box.hidden=false;
+  box.innerHTML='<span class="ssInfo">Wpisz co najmniej 3 znaki — pojedyncza litera nie przeszukuje całej bazy.</span>';
+}
+function uruchomWyszukiwanie(raw){
+  const bylo=!!query;
+  parseQuery(raw);
+  if(query && !bylo){ window._sortPrzedSzukaniem=sortMode; sortMode="relevance"; $("sortSel").value="relevance"; }
+  else if(!query && bylo && sortMode==="relevance"){
+    sortMode=window._sortPrzedSzukaniem||"new"; $("sortSel").value=sortMode;
+  }
+  if(typeof centrumOdswiez === "function") centrumOdswiez();
+  renderNotes();
+  showSearchSug(raw);
+}
 /* PISANIE W WYSZUKIWARCE ODŚWIEŻA TYLKO KOLUMNĘ NOTATEK.
    Było tu renderAll, czyli przerysowanie wszystkich trzech kolumn po każdej
    przerwie w pisaniu. Kolumny etykiet i publikacji nie zależą jednak od tego,
@@ -15690,16 +15881,24 @@ let searchTimer=null;
    że zasłonięte. Gdy Centrum jest schowane — czyli praktycznie zawsze
    w trakcie szukania — to dwa przypisania i koniec. */
 $("search").addEventListener("input",e=>{
-  const bylo=!!query;
-  parseQuery(e.target.value);
-  if(query && !bylo){ window._sortPrzedSzukaniem=sortMode; sortMode="relevance"; $("sortSel").value="relevance"; }
-  else if(!query && bylo && sortMode==="relevance"){
-    sortMode=window._sortPrzedSzukaniem||"new"; $("sortSel").value=sortMode;
-  }
-  if(typeof centrumOdswiez === "function") centrumOdswiez();
   clearTimeout(searchTimer);
-  searchTimer=setTimeout(renderNotes, 130);
-  showSearchSug(e.target.value);
+  const raw=e.target.value;
+  if(!zapytanieGotowe(raw)){
+    const bylo=!!query;
+    if(bylo){ parseQuery(""); if(sortMode==="relevance"){sortMode=window._sortPrzedSzukaniem||"new";$("sortSel").value=sortMode;} renderNotes(); }
+    if(typeof centrumOdswiez === "function") centrumOdswiez();
+    komunikatKrotkiegoSzukania(raw);
+    if((raw||"").trim().length<2) showSearchSug(raw); else hideSearchSug();
+    return;
+  }
+  const box=$("searchStatus"); if(box){box.hidden=false;box.innerHTML='<span class="ssInfo">Szukam po zakończeniu pisania…</span>';}
+  searchTimer=setTimeout(()=>uruchomWyszukiwanie(raw),SEARCH_DELAY);
+});
+$("search").addEventListener("keydown",e=>{
+  if(e.key!=="Enter" || !zapytanieGotowe(e.target.value)) return;
+  const podpowiedzi=$("searchSug");
+  if(podpowiedzi && podpowiedzi.style.display==="block" && typeof sugIdx!=="undefined" && sugIdx>=0) return;
+  clearTimeout(searchTimer); uruchomWyszukiwanie(e.target.value);
 });
 
 </script>
@@ -15719,6 +15918,22 @@ function pushRecent(q){
 }
 let sugIdx=-1;
 function hideSearchSug(){ const s=$("searchSug"); if(s){ s.style.display="none"; sugIdx=-1; } }
+/* Publikacje i wersety do podpowiedzi liczymy raz. Wcześniej każda kolejna
+   litera wykonywała dwa pełne przebiegi po wszystkich notatkach. */
+let _sugCatalog={len:-1,pubs:[],refs:[]};
+function searchSugCatalog(){
+  if(_sugCatalog.len===notes.length) return _sugCatalog;
+  const pub={}, refs={};
+  notes.forEach(n=>{
+    if(!n || n.del) return;
+    if(!n.b && n.ks){ const pelna=pubFullName(n.ks)||n.ks; pub[pelna]=(pub[pelna]||0)+1; }
+    if(n.b){ const ref=refLabel(n); refs[ref]=(refs[ref]||0)+1; }
+  });
+  _sugCatalog={len:notes.length,
+    pubs:Object.keys(pub).map(label=>({label,count:pub[label],normalized:norm(label)})).sort((a,b)=>b.count-a.count),
+    refs:Object.keys(refs).map(label=>({label,count:refs[label],normalized:norm(label)})).sort((a,b)=>b.count-a.count)};
+  return _sugCatalog;
+}
 function showSearchSug(val){
   const box=$("searchSug"); if(!box) return;
   const v=(val||"").trim(); const last=(v.split(/\s+/).pop()||"");
@@ -15732,20 +15947,14 @@ function showSearchSug(val){
     });
   }
   // 1b) publikacje pasujące do ostatniego słowa — szukanie obejmuje też źródło notatki
-  if(nl.length>=2){
-    const pub={};
-    notes.forEach(n=>{
-      if(n.del || n.b || !n.ks) return;
-      const pelna = pubFullName(n.ks) || n.ks;
-      if(norm(pelna).includes(nl) || norm(n.ks).includes(nl)) pub[pelna] = (pub[pelna]||0)+1;
+  if(nl.length>=3){
+    const katalog=searchSugCatalog();
+    katalog.pubs.filter(x=>x.normalized.includes(nl)).slice(0,4).forEach(x=>{
+      items.push({type:"pub", label:x.label, hint:x.count+" notatek",
+        apply:()=> v.replace(/\S+$/,"") + x.label + " "});
     });
-    Object.keys(pub).sort((a,b)=>pub[b]-pub[a]).slice(0,4).forEach(nazwa=>{
-      items.push({type:"pub", label:nazwa, hint:pub[nazwa]+" notatek",
-        apply:()=> v.replace(/\S+$/,"") + nazwa + " "});
-    });
-    const refs={};
-    notes.forEach(n=>{ if(n.del||!n.b) return; const ref=refLabel(n); if(norm(ref).includes(nl)) refs[ref]=(refs[ref]||0)+1; });
-    Object.keys(refs).sort((a,b)=>refs[b]-refs[a]).slice(0,4).forEach(ref=>items.push({type:"ref",label:ref,hint:"werset",apply:()=>v.replace(/\S+$/,'')+'werset:"'+ref+'" '}));
+    katalog.refs.filter(x=>x.normalized.includes(nl)).slice(0,4).forEach(x=>
+      items.push({type:"ref",label:x.label,hint:"werset",apply:()=>v.replace(/\S+$/,'')+'werset:"'+x.label+'" '}));
     const grupa=SZUK_POJECIA.find(g=>g.some(x=>x.includes(nl)||nl.includes(x)));
     if(grupa) grupa.filter(x=>!x.includes(nl)).slice(0,4).forEach(x=>items.push({type:"concept",label:x,hint:"powiązane pojęcie",apply:()=>v.replace(/\S+$/,'')+x+' '}));
   }
@@ -21775,6 +21984,91 @@ function centrSzukania(){
   return (typeof recentSearches === "function" ? recentSearches() : []).slice(0, CENTR_ILE);
 }
 
+/** Krótki, bezpieczny fragment treści do karty Czytelni. */
+function centrFragment(n, limit){
+  if(!n) return "";
+  let tekst = n.c || "";
+  if(!tekst && n.h){
+    try{ tekst = typeof htmlToPlain === "function" ? htmlToPlain(n.h) : String(n.h).replace(/<[^>]*>/g, " "); }
+    catch(_){ tekst = String(n.h).replace(/<[^>]*>/g, " "); }
+  }
+  tekst = String(tekst).replace(/\s+/g, " ").trim();
+  limit = limit || 240;
+  return tekst.slice(0, limit) + (tekst.length > limit ? "…" : "");
+}
+
+/** Jedna myśl na cały dzień — nie zmienia się przy każdym przerysowaniu. */
+function centrLosowaMysl(pomin){
+  let kandydaci = centrZywe().filter(n=>n.g !== pomin && (n.fav || n.pin));
+  if(!kandydaci.length) kandydaci = centrPoDacie("la").filter(n=>n.g !== pomin);
+  if(!kandydaci.length) kandydaci = centrPoDacie("cr").filter(n=>n.g !== pomin);
+  if(!kandydaci.length) return null;
+  const d = new Date();
+  const numer = Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
+  return kandydaci[Math.abs(numer) % kandydaci.length];
+}
+
+/**
+ * Nowa górna część Centrum: kolekcje są regałem, a Czytelnia miejscem pracy.
+ * Korzysta z istniejących zakładek ogólnych (`ks === "*"`), więc wszystko,
+ * co użytkownik przeniósł w kolumnie Publikacje, natychmiast widać także tu.
+ */
+function centrBiblioteka(kont, dzis){
+  const kolekcje = (typeof pubTabsFor === "function" ? pubTabsFor("*") : []).slice(0, 6);
+  const kolory = ["#4d8875", "#b78845", "#70799d", "#8d6f91", "#5e8392", "#9b705b"];
+  const kafle = kolekcje.map((t, i)=>{
+    const ile = typeof pubTabCount === "function" ? pubTabCount(t.id) : 0;
+    return '<button type="button" class="cenKol" style="--kol:' + kolory[i % kolory.length] + '" data-ckolekcja="' + esc(t.id) + '">'
+      + '<span class="cenKolPas"></span><span class="cenKolIk">' + CEN_IKO.pub + '</span>'
+      + '<span class="cenKolTxt"><b>' + esc(t.name) + '</b><small>' + ile + ' '
+      + esc(centrOdmiana(ile, "notatka", "notatki", "notatek")) + '</small></span>'
+      + '<span class="cenKolStrz">' + CEN_IKO.strz + '</span></button>';
+  }).join("");
+
+  const n = kont ? kont.n : (centrPoDacie("la")[0] || centrPoDacie("cr")[0] || null);
+  const mysl = centrLosowaMysl(n && n.g);
+  const zapisane = (typeof savedSearches === "function" ? savedSearches() : [])
+    .slice().sort((a,b)=>(b.pin?1:0)-(a.pin?1:0)).slice(0, 3);
+  const szukania = zapisane.length ? zapisane.map(x=>({q:x.q || x.name || "", name:x.name || x.q || ""}))
+                                   : centrSzukania().slice(0, 3).map(q=>({q,name:q}));
+
+  const czytelnia = n
+    ? '<div class="cenCzytGl" data-cnota="' + esc(n.g) + '">'
+      + '<span class="cenCzytEty">' + CEN_IKO.czyt + '<span>Czytelnia</span></span>'
+      + '<h2>' + esc(centrTytulNotatki(n)) + '</h2>'
+      + '<p>' + esc(centrFragment(n, 300) || "Otwórz notatkę i wróć do miejsca, w którym skończyłeś.") + '</p>'
+      + '<button type="button" class="cenCzytBtn" data-cnota="' + esc(n.g) + '">'
+      + (kont ? "Kontynuuj ostatnie studium" : "Otwórz notatkę") + '<span>' + CEN_IKO.strz + '</span></button></div>'
+    : '<div class="cenCzytPusto"><b>Czytelnia czeka na pierwszą notatkę.</b><span>Dodaj notatkę, a pojawi się tu miejsce do spokojnego powrotu.</span></div>';
+
+  const dzisHtml = dzis.length
+    ? dzis.slice(0, 3).map(x=>'<button type="button" data-cnota="' + esc(x.g) + '"><span>'
+        + esc(centrTytulNotatki(x)) + '</span><small>' + esc(x.pwt && x.pwt.d || "na dziś") + '</small></button>').join("")
+    : '<span class="cenMiniPusto">Nic nie zalega. Nowy powrót ustawisz w menu notatki.</span>';
+  const myslHtml = mysl
+    ? '<button type="button" class="cenMysl" data-cnota="' + esc(mysl.g) + '"><q>'
+      + esc(centrFragment(mysl, 150) || centrTytulNotatki(mysl)) + '</q><small>'
+      + esc(centrTytulNotatki(mysl)) + '</small></button>'
+    : '<span class="cenMiniPusto">Oznacz notatki jako ulubione, a Centrum będzie do nich wracać.</span>';
+  const szukHtml = szukania.length
+    ? szukania.map(x=>'<button type="button" data-cszuk="' + esc(x.q) + '">' + CEN_IKO.szuk + '<span>' + esc(x.name) + '</span></button>').join("")
+    : '<span class="cenMiniPusto">Zapisane wyszukiwania pojawią się tutaj.</span>';
+
+  return '<div class="cenBiblioteka">'
+    + '<section class="cenKolekcje"><header><div><span class="cenSekNad">Twoja biblioteka</span><h2>Moje kolekcje</h2></div>'
+    + '<button type="button" class="cenLink" data-cakcja="nowa-kolekcja">＋ Nowa kolekcja</button></header>'
+    + '<div class="cenKolGrid">' + kafle
+    + '<button type="button" class="cenKol cenKolNowa" data-cakcja="nowa-kolekcja"><span class="cenKolPlus">＋</span>'
+    + '<span class="cenKolTxt"><b>Utwórz kolekcję</b><small>Dowolne notatki i publikacje</small></span></button></div>'
+    + (!kolekcje.length ? '<p class="cenKolPomoc">Kolekcje pomagają zebrać w jednym miejscu np. wykłady, ulubione tematy albo materiały na zebranie.</p>' : '')
+    + '</section>'
+    + '<section class="cenCzytelnia">' + czytelnia
+    + '<div class="cenCzytMini"><article><h3>' + CEN_IKO.dzis + '<span>Na dziś</span><b>' + dzis.length + '</b></h3><div class="cenDzisLista">' + dzisHtml + '</div></article>'
+    + '<article><h3>' + CEN_IKO.zarow + '<span>Losowa myśl</span></h3>' + myslHtml + '</article></div>'
+    + '<div class="cenZapisane"><h3>Zapisane wyszukiwania</h3><div>' + szukHtml + '</div></div>'
+    + '</section></div>';
+}
+
 /* ——— RYSOWANIE ——— */
 
 function centrTytulNotatki(n){
@@ -22391,9 +22685,13 @@ function rysujCentrumWnetrze(el){
     + '<button type="button" class="btn" data-cakcja="lista">Pokaż wszystkie notatki</button>'
     + '</div>';
 
-  /* ——— DWIE DUŻE KARTY: na czym skończyłem, co mam dziś powtórzyć ——— */
-  const hero = centrHeroStudium(kont) + centrHeroPowtorki(dzis);
-  if(hero) html += '<div class="cenGora">' + hero + '</div>';
+  /* ——— KOLEKCJE + CZYTELNIA: główny punkt wejścia do własnego studium. ——— */
+  if(typeof pubTabsFor === "function") html += centrBiblioteka(kont, dzis);
+  else{
+    /* Awaryjny układ dla niepełnej, ręcznie sklejonej kopii index.html. */
+    const hero = centrHeroStudium(kont) + centrHeroPowtorki(dzis);
+    if(hero) html += '<div class="cenGora">' + hero + '</div>';
+  }
 
   /* ——— SZEŚĆ SKRÓTÓW ——— */
   html += centrSzybkie();
@@ -22530,6 +22828,9 @@ if($("centrum")){
     const akcja = ev.target.closest("[data-cakcja]");
     if(akcja){
       if(akcja.dataset.cakcja === "lista") centrumSchowaj();
+      if(akcja.dataset.cakcja === "nowa-kolekcja"){
+        if(typeof createPubTab === "function") createPubTab("*");
+      }
       /* „Rozpocznij powtórki" otwiera notatkę najdłużej zaległą. Panel zostaje
          pod spodem, więc po zamknięciu widać kolejną — to wystarcza za tryb
          powtarzania i nie wprowadza drugiego sposobu chodzenia po notatkach. */
@@ -22540,6 +22841,19 @@ if($("centrum")){
           openFs(pierwsza);
         }
       }
+      return;
+    }
+
+    const kolekcja = ev.target.closest("[data-ckolekcja]");
+    if(kolekcja){
+      const id = +kolekcja.dataset.ckolekcja;
+      const istnieje = typeof pubTabsFor === "function" && pubTabsFor("*").some(t=>t.id===id);
+      if(!istnieje){ toast("Tej kolekcji już nie ma"); rysujCentrum(); return; }
+      filt.tag = "all"; filt.book = "ptb:" + id; filt.ch = null;
+      if(typeof quickFilter !== "undefined") quickFilter = "all";
+      if(typeof persistFilt === "function") persistFilt();
+      renderAll();
+      if(innerWidth <= 900 && typeof mobileShow === "function") mobileShow("colNotes");
       return;
     }
 
