@@ -5,6 +5,34 @@ bez niej po miesiącu nie wiadomo, dlaczego coś wygląda tak, a nie inaczej.
 
 ---
 
+## v2.98 — dolna rama działań i paleta przy zaznaczeniu
+
+- działania notatki — edycja, przypięcie, ulubione, etykieta, „Więcej” i
+  ustawienia tekstu — są teraz stałą częścią dolnej ramki czytnika, dzięki
+  czemu nie zasłaniają treści podczas przewijania,
+- przycisk „Więcej” ma takie samo białe tło i obramowanie jak pozostałe
+  przyciski paska,
+- paleta zaznaczenia pokazuje od razu siedem kolorów, usuwanie koloru oraz
+  pogrubienie, kursywę i podkreślenie,
+- na iPhonie i iPadzie paleta przewiduje, czy menu systemowe pojawi się nad czy
+  pod zaznaczeniem, i wybiera przeciwną stronę; omija też dolną ramkę działań,
+- dolny pasek pozostaje dostępny w trakcie zaznaczania, a paleta znika podczas
+  pisania w edytorze, żeby nie kolidowała z klawiaturą i Apple Pencil.
+
+## v2.97 — wyszukiwanie bez blokowania przy polskich odmianach
+
+- słowa, ich unikalna lista i polskie rdzenie są liczone tylko raz dla danej
+  wersji notatki; wcześniej zapytania typu „pokora” → „pokorze” wykonywały tę
+  samą kosztowną pracę wielokrotnie,
+- warianty pojęć i synonimy mają wspólną pamięć podręczną zamiast powstawać od
+  nowa przy sprawdzaniu każdej notatki,
+- pojedyncza partia sprawdza najwyżej 1200 notatek zamiast 3000; kolejne porcje
+  uruchamia przycisk „Szukaj dalej”,
+- fragment wyniku normalizuje treść jeden raz niezależnie od liczby słów w
+  zapytaniu,
+- testy pilnują limitu skanowania oraz ponownego użycia słów i rdzeni długiej
+  notatki.
+
 ## v2.96 — kolekcje i Czytelnia w Centrum studium
 
 - Centrum studium ma nowy, spokojniejszy układ: po lewej pokazuje „Moje
