@@ -5,6 +5,35 @@ bez niej po miesiącu nie wiadomo, dlaczego coś wygląda tak, a nie inaczej.
 
 ---
 
+## v2.92 — spokojniejszy czytnik i bezpieczny zapis
+
+- nagłówek czytnika na iPhonie respektuje bezpieczny obszar, rezerwuje miejsce
+  na przyciski i ogranicza tytuł do dwóch wierszy,
+- mobilny pasek edycji pokazuje tylko najczęstsze działania; czcionka,
+  przekreślenie, listy, wstawianie i zdjęcia są dostępne przez „Więcej”,
+- edytor pokazuje cztery rzeczywiste stany: „Niezapisane”, „Zapisywanie…”,
+  „Zapisano” i „Błąd zapisu”; po błędzie nie zamyka tekstu do edycji,
+- dolny dok ma stałą rezerwę pod treścią, chowa się podczas przewijania i wraca
+  po pojedynczym dotknięciu, bez przechwytywania linków ani zaznaczenia,
+- strzałki poprzednia/następna są wyłączone podczas edycji,
+- powiązane notatki otwierają się jako przewijany panel od dołu, zamiast
+  wydłużać dokument i przesuwać pasek działań,
+- rozmiar tekstu notatek, list oraz skala przycisków i menu są trzema osobnymi
+  ustawieniami,
+- paleta podświetlania na telefonie pokazuje pięć ostatnio używanych kolorów;
+  przycisk „+” rozwija wszystkie kolory.
+
+## v2.91 — dolny dok czytnika i edycji
+
+- dolny pasek działań jest na stałe przypisany do krawędzi czytnika oraz okna
+  edycji; nie przesuwa się już w połowie tekstu po otwarciu klawiatury,
+- podczas widocznej klawiatury dok i paleta kolorów chowają się całkowicie, a po
+  jej zamknięciu wracają; zapis ma teraz podpisany przycisk „Zapisz”,
+- na urządzeniach dotykowych paleta zaznaczenia jest dokowana na dole czytnika,
+  zamiast śledzić zaznaczony tekst,
+- w trybie czytania ostateczna reguła CSS blokuje systemowy callout iOS; podczas
+  edycji pozostaje on dostępny, ponieważ jest częścią natywnego kursora i Scribble.
+
 ## v2.90 — belka zaznaczenia omija menu Apple
 
 - pasek kolorowania na iPadzie i iPhonie domyślnie pojawia się pod całym

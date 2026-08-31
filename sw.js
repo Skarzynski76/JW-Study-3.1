@@ -1,4 +1,4 @@
-const CACHE = 'jwstudy-v290';
+const CACHE = 'jwstudy-v292';
 /* Rdzeń: dokument + wszystkie arkusze i moduły — bez nich aplikacja nie ruszy offline.
 
    TA LISTA JEST WYPISYWANA PRZEZ NARZĘDZIE. Nie dopisuj do niej ręcznie.

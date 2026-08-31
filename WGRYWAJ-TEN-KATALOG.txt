@@ -1,10 +1,10 @@
 TAK, TEN KATALOG.
 
-index.html ma tu ~1212 kB — cała aplikacja w jednym pliku.
+index.html ma tu ponad 1200 kB — cała aplikacja w jednym pliku.
 Wgrywaj index.html ZAWSZE razem z sw.js.
 
-Jeśli widzisz gdzieś drugi index.html o rozmiarze ~42 kB,
-to wersja robocza — na GitHub się nie nadaje.
+Nie zmieniaj nazwy index.html i nie wgrywaj obok kopii takich jak
+„index 3.html” albo „index 5.html”.
 
 Żeby import .jwlibrary działał zawsze, wgraj do katalogu głównego także:
 jszip.min.js, sql-wasm.js i sql-wasm.wasm. Aplikacja potrafi użyć również

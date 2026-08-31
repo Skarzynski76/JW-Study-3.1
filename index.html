@@ -6861,6 +6861,59 @@ body.fs-open #colorMenu{
   backdrop-filter:blur(10px) saturate(1.05);
   box-shadow:0 7px 22px rgba(18,30,24,.15),0 1px 0 rgba(255,255,255,.45) inset;
 }
+
+/* W EDYCJI ten sam dok zostaje przypisany do dolnej krawędzi okna. Nie pływa
+   już w połowie tekstu po zmianie wysokości visualViewport. Gdy klawiatura jest
+   widoczna, znika całkowicie; po jej schowaniu wraca razem z „Zapisz”. */
+#fsWrap .ncard.editing .ntools{
+  position:fixed!important;
+  left:50%;
+  right:auto;
+  bottom:calc(14px + env(safe-area-inset-bottom,0px));
+  transform:translateX(-50%);
+  z-index:10020;
+  width:max-content;
+  max-width:calc(100vw - 24px);
+  margin:0!important;
+  padding:4px 7px!important;
+  border:1px solid var(--border);
+  border-radius:16px;
+  background:color-mix(in srgb,var(--panel) 98%,transparent);
+  -webkit-backdrop-filter:blur(10px) saturate(1.05);
+  backdrop-filter:blur(10px) saturate(1.05);
+  box-shadow:0 7px 22px rgba(18,30,24,.16),0 1px 0 rgba(255,255,255,.45) inset;
+}
+#fsWrap .ncard.editing .ntools .btnrow{ flex-wrap:nowrap; width:max-content; }
+#fsWrap .ncard.editing .ntools [data-act="edit"].saveon{
+  color:#fff;
+  background:var(--accent);
+  padding-left:10px;
+  padding-right:12px;
+  gap:5px;
+}
+#fsWrap .ncard.editing .ntools [data-act="edit"].saveon .sbtnTxt{
+  display:inline;
+  font-size:13px;
+  font-weight:650;
+}
+html.kb-open #fsWrap .ncard.editing .ntools{ display:none!important; }
+html:not(.kb-open) #fsWrap .ncard.editing .ncontent{ padding-bottom:88px; }
+
+/* Paleta zaznaczenia zastępuje dolny dok, zamiast pojawiać się przy tekście. */
+#hlBar.hl-dok{
+  transform:translateX(-50%);
+  z-index:10038;
+}
+html.kb-open #hlBar{ display:none!important; }
+@media (hover:none){
+  /* To jest ostateczna reguła w kaskadzie. Starsze `touch-callout:default`
+     nie może jej ponownie nadpisać. W czytniku zostają uchwyty zaznaczenia,
+     ale zbędne menu Kopiuj/Sprawdź/Tłumacz nie przykrywa treści. W edycji
+     celowo go nie blokujemy — jest częścią kursora i Scribble systemu iOS. */
+  .ncard:not(.editing) .ncontent{
+    -webkit-touch-callout:none!important;
+  }
+}
 #fsWrap .ncard:not(.editing) .ntools .btnrow{
   width:max-content;
   max-width:calc(100vw - 50px);
@@ -6997,6 +7050,100 @@ body.centrum-open #centrum{ padding-top:10px; }
   #modalMapa .mapaGdzie{ grid-row:2; white-space:normal; }
   #modalMapa .mapaSkrot{ grid-row:3; }
 }
+
+/* ══════════════ DOPRACOWANIE CZYTNIKA I EDYTORA (v2.92) ══════════════ */
+:root{ --readerDockH:58px; }
+
+/* Nagłówek telefonu respektuje wycięcie ekranu. Tytuł ma najwyżej dwa wiersze
+   i osobne miejsce na powrót oraz zamknięcie, więc ikony nigdy go nie przykrywają. */
+@media (max-width:620px){
+  #fsWrap .nhead{
+    min-height:54px;
+    padding-top:10px!important;
+    padding-left:42px!important; padding-right:44px!important;
+  }
+  #fsWrap .nhead:not(:has(.fsBackInline)){ padding-left:10px!important; }
+  #fsWrap .ntitle{
+    display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2;
+    overflow:hidden; line-height:1.25; max-height:2.5em;
+  }
+  #fsWrap .fsBackInline,#fsWrap .fsCloseInline{
+    top:10px!important;
+  }
+  #fsWrap .ncard.editing .ntitle{ -webkit-line-clamp:2; display:-webkit-box; }
+
+  /* Na telefonie widoczny jest tylko rdzeń edytora. Pozostałe polecenia są
+     dostępne w menu „Więcej", zamiast tworzyć długi pasek przewijany poziomo. */
+  #fsWrap .ncard.editing .editbar{ overflow:visible; justify-content:center; gap:2px; }
+  #fsWrap .ncard.editing .editbar .eb-mobile-extra{ display:none!important; }
+  #fsWrap .ncard.editing .editbar .eb-sep{ margin:0 1px; }
+  #fsWrap .ncard.editing .editbar button{ min-width:34px; width:auto; padding:0 7px; }
+  #fsWrap .ncard.editing .editbar .eb-block{ max-width:92px; }
+}
+
+#ebPop [data-mobile-act],#ebPop .ebMobileMenu[data-cmd]{
+  padding:10px 11px; border-radius:10px; font-size:13.5px; color:var(--text);
+  cursor:pointer; display:none; align-items:center; gap:10px;
+}
+#ebPop [data-mobile-act]:hover,#ebPop .ebMobileMenu[data-cmd]:hover{ background:var(--sel); }
+@media (max-width:620px){ #ebPop [data-mobile-act],#ebPop .ebMobileMenu[data-cmd]{ display:flex; } }
+
+/* Stan zapisu jest tekstem, nie tylko zmianą koloru ikony. */
+.editSaveState{
+  display:inline-flex; align-items:center; gap:5px; padding:0 5px;
+  color:var(--muted); font-size:12px; white-space:nowrap;
+}
+.editSaveState::before{ content:""; width:7px; height:7px; border-radius:50%; background:#8e8e93; }
+.editSaveState[data-state="dirty"]{ color:#9a6700; }
+.editSaveState[data-state="dirty"]::before{ background:#d99b22; }
+.editSaveState[data-state="saving"]::before{ background:var(--accent); animation:savePulse .8s infinite alternate; }
+.editSaveState[data-state="saved"]{ color:var(--accent); }
+.editSaveState[data-state="saved"]::before{ background:var(--accent); }
+.editSaveState[data-state="error"]{ color:#b42318; font-weight:650; }
+.editSaveState[data-state="error"]::before{ background:#d92d20; }
+@keyframes savePulse{ to{ opacity:.25; } }
+@media (max-width:420px){ .editSaveState{ max-width:78px; overflow:hidden; text-overflow:ellipsis; } }
+
+/* Dok ma zawsze własną rezerwę w dokumencie, również bez sekcji powiązań. */
+#fsWrap .ncard:not(.editing){ padding-bottom:calc(var(--readerDockH) + 34px + env(safe-area-inset-bottom,0px))!important; }
+#fsWrap .ncard.editing .ncontent{ padding-bottom:calc(var(--readerDockH) + 34px + env(safe-area-inset-bottom,0px))!important; }
+#fsWrap .ncard .ntools{ transition:opacity .18s ease,transform .2s ease; }
+#modalFs.dok-schowany #fsWrap .ncard:not(.editing) .ntools{
+  opacity:0; pointer-events:none;
+  transform:translate(-50%,calc(100% + 36px))!important;
+}
+
+/* Powiązane notatki otwierają się jako dolny panel. Nie wydłużają dokumentu
+   i nie przepychają doku; tło zamyka panel jednym dotknięciem. */
+#fsWrap .powiazane{ padding-bottom:0!important; margin-bottom:0; }
+.powPodklad,.powPanel{ display:none; }
+details.powiazane[open] .powPodklad{
+  display:block; position:fixed; inset:0; z-index:10039; border:0;
+  background:rgba(12,18,15,.28); width:100%; height:100%; padding:0;
+}
+details.powiazane[open] .powPanel{
+  display:flex; flex-direction:column; position:fixed; z-index:10040;
+  left:max(10px,env(safe-area-inset-left,0px)); right:max(10px,env(safe-area-inset-right,0px));
+  bottom:max(10px,env(safe-area-inset-bottom,0px)); max-height:min(64dvh,620px);
+  width:min(720px,calc(100vw - 20px)); margin:0 auto;
+  background:var(--panel); border:1px solid var(--border); border-radius:20px;
+  box-shadow:0 22px 70px rgba(0,0,0,.3); overflow:hidden;
+  animation:powPanelIn .2s ease-out;
+}
+.powPanelHead{ display:flex; align-items:center; gap:8px; padding:13px 14px 11px; border-bottom:1px solid var(--border); }
+.powPanelHead b{ flex:1; }
+.powPanelHead button{ width:34px; height:34px; border:0; border-radius:50%; background:var(--sel); color:var(--text); }
+.powPanel .powLista{ overflow:auto; margin:0; padding:10px; -webkit-overflow-scrolling:touch; }
+#modalFs.pow-open #fsWrap .ntools{ opacity:0; pointer-events:none; }
+@keyframes powPanelIn{ from{ opacity:0; transform:translateY(24px); } }
+
+/* Krótszy pasek podkreślania na telefonie. Plus rozwija pełną paletę. */
+@media (max-width:620px){
+  #hlBar.hl-dok{ max-width:calc(100vw - 16px); padding:5px 7px; gap:5px; overflow-x:auto; }
+  #hlBar .sw{ width:28px; height:28px; min-width:28px; }
+  #hlBar .tb{ min-width:30px; height:30px; padding:3px; }
+  #hlBar .hlMore{ font-size:21px; line-height:1; }
+}
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -7005,7 +7152,7 @@ body.centrum-open #centrum{ padding-top:10px; }
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <h1 class="brand-name">JW Study <span class="ver">v2.90</span></h1>
+      <h1 class="brand-name">JW Study <span class="ver">v2.92</span></h1>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -7786,7 +7933,11 @@ function saveNote(n){
      przechodzi każdy zapis; wyliczy się od nowa dopiero wtedy, gdy będzie
      potrzebny. */
   if(typeof unieaktualnijPowiazane==="function") unieaktualnijPowiazane();
-  if(idb) idbPut("notes", n).catch(e=>reportSaveError(e,"notatka"));
+  if(!idb) return Promise.resolve(true);
+  return idbPut("notes", n).then(()=>true).catch(e=>{
+    reportSaveError(e,"notatka");
+    return false;
+  });
 }
 /* sprawdzenie miejsca przed wstawieniem zdjęcia */
 async function checkSpaceForImage(bytes){
@@ -7806,6 +7957,14 @@ async function checkSpaceForImage(bytes){
   return true;
 }
 /* natychmiastowy zapis treści edytowanej notatki (np. po operacji na zdjęciu) */
+function ustawStanZapisu(ce, stan){
+  const card=ce && ce.closest ? ce.closest(".ncard") : null;
+  const el=card && card.querySelector(".editSaveState");
+  if(!el) return;
+  const etykiety={dirty:"Niezapisane",saving:"Zapisywanie…",saved:"Zapisano",error:"Błąd zapisu"};
+  el.dataset.state=stan;
+  el.textContent=etykiety[stan]||etykiety.dirty;
+}
 function commitLiveEdit(ce){
   if(!ce) return;
   const card = ce.closest && ce.closest(".ncard"); if(!card) return;
@@ -7817,8 +7976,13 @@ function commitLiveEdit(ce){
     const clean = sanitize(ce.innerHTML);
     n.h = clean; n.c = htmlToPlain(clean);
     n.ed = true; n.mo = new Date().toISOString();
-    saveNote(n); if(typeof bumpDirty==="function") bumpDirty();
-  }catch(e){}
+    ustawStanZapisu(ce,"saving");
+    const seq=String((+(ce.dataset.saveSeq||0))+1); ce.dataset.saveSeq=seq;
+    saveNote(n).then(ok=>{
+      if(ce.dataset.saveSeq===seq) ustawStanZapisu(ce,ok?"saved":"error");
+    });
+    if(typeof bumpDirty==="function") bumpDirty();
+  }catch(e){ ustawStanZapisu(ce,"error"); }
 }
 function saveTags(){ if(idb) idbBulk("tags", tags).catch(e=>reportSaveError(e,"etykiety"));
   if(typeof bumpTagsVer==="function") bumpTagsVer();   // chipy i lista wyboru na kartach muszą się odświeżyć
@@ -10321,6 +10485,7 @@ function openFs(n){
     fsSlad.length = 0;
   }
   fsGuid = n.g;
+  $("modalFs").classList.remove("dok-schowany","pow-open");
   document.body.classList.add("fs-open");
   renderFs(); openModal("modalFs");
   acquireWake(); updateFsNav();
@@ -10412,6 +10577,7 @@ function renderFs(){
     fbox.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); stepFsFind(cont, e.shiftKey?-1:1, fbox); } else if(e.key==="Escape"){ fbox.style.display="none"; clearFsFind(cont); } });
   }
   w.appendChild(card);
+  $("modalFs")?.classList.toggle("pow-open",!!card.querySelector("details.powiazane[open]"));
   updateFsProgress(); updateFsNav();
   restoreReadPos(n.g);
   zmierzNhead();
@@ -10616,6 +10782,7 @@ function closeFs(){
   /* Notatkę do wskazania trzeba wziąć PRZED skasowaniem śladu i fsGuid. */
   const wrocDo = fsSlad.length ? fsSlad[0] : fsGuid;
   fsSlad.length = 0; fsGuid = null;
+  $("modalFs").classList.remove("dok-schowany","pow-open");
   document.body.classList.remove("fs-open", "ma-zaznaczenie");
   const zazn = getSelection(); if(zazn && typeof zazn.removeAllRanges==="function") zazn.removeAllRanges();
   closeModal("modalFs"); releaseWake(); updateFsNav();
@@ -10637,7 +10804,8 @@ function fsGo(dir){
 }
 function updateFsNav(){
   const prev=$("fsPrev"), next=$("fsNext"); if(!prev||!next) return;
-  const on = !!fsGuid && $("modalFs").classList.contains("show");
+  const on = !!fsGuid && $("modalFs").classList.contains("show") &&
+             !document.querySelector("#fsWrap .ncard.editing");
   const i = on ? fsNavList.indexOf(fsGuid) : -1;
   prev.style.display = on ? "flex" : "none";
   next.style.display = on ? "flex" : "none";
@@ -10704,7 +10872,19 @@ $("fsNext").onclick = ()=>fsGo(1);
   fm.addEventListener("scroll", ()=>{
     if(!raf) raf=requestAnimationFrame(()=>{ raf=0; updateFsProgress(); });
     clearTimeout(posT); posT=setTimeout(saveReadPos, 400);   // zapamiętaj miejsce czytania
+    const modal=$("modalFs");
+    if(!document.querySelector("#fsWrap .ncard.editing") && !String(getSelection()).trim()) modal.classList.add("dok-schowany");
   }, {passive:true}); })();
+/* Po przewijaniu dok zostaje schowany. Pojedyncze dotknięcie pustego miejsca
+   lub tekstu przywraca go; dotknięcia linków, przycisków i zaznaczenia nie są
+   przechwytywane, więc czytanie i wybieranie tekstu pozostają naturalne. */
+$("modalFs").querySelector(".fsmodal")?.addEventListener("click", e=>{
+  const modal=$("modalFs");
+  if(!modal.classList.contains("dok-schowany")) return;
+  if(String(getSelection()).trim()) return;
+  if(e.target.closest("a,button,input,select,textarea,[contenteditable='true'],.powPanel")) return;
+  modal.classList.remove("dok-schowany");
+});
 // przesunięcie palcem (swipe) — zmiana notatki (tylko wyraźny poziomy gest, nigdy przy zaznaczaniu tekstu)
 (function(){
   const fm=$("modalFs").querySelector(".fsmodal"); if(!fm) return;
@@ -10845,19 +11025,18 @@ let noteFs = 14;
 /* Osobny rozmiar list jest niezależny od treści notatki. Starsze ustawienie
    „Font” pozostaje rozmiarem treści, aby nikomu nie zmienić wyglądu po aktualizacji. */
 let listFs = 13.5;
+let uiScale = 1;
 /* Zakres regulacji: od 6 px (bardzo dużo treści na ekranie) do 30 px (duży druk). */
 const FS_MIN = 6, FS_MAX = 30, FS_BAZA = 14;
 /**
- * Ustawia rozmiar pisma. Poza tekstem notatek i kolumn skaluje też CAŁY interfejs:
- * --ui to mnożnik względem rozmiaru podstawowego, z którego korzystają podpisy przycisków,
- * menu, okna i panele. Dzięki temu A− i A+ zmniejszają albo powiększają aplikację
- * w całości, a nie tylko treść notatki.
+ * Ustawia rozmiar pisma notatek i list. Interfejs ma własną skalę: duży tekst
+ * do czytania nie może jednocześnie rozpychać przycisków, menu i nagłówków.
  */
 function applyFs(){
   const r = document.documentElement.style;
   r.setProperty("--noteFs", noteFs+"px");
   r.setProperty("--colFs", listFs+"px");
-  const ui = Math.round((noteFs / FS_BAZA) * 1000) / 1000;
+  const ui = uiScale;
   r.setProperty("--ui", ui);
   r.setProperty("--uiFs", (13 * ui).toFixed(2)+"px");
   /* Nazwa musi być inna niż data-fs używane przez przyciski A−/A+ w panelu ustawień —
@@ -10867,6 +11046,7 @@ function applyFs(){
 }
 try{ noteFs = Math.min(FS_MAX, Math.max(FS_MIN, +(lsGet(KP+"Font", FS_BAZA)||FS_BAZA) )); }catch(e){}
 try{ listFs = Math.min(FS_MAX, Math.max(FS_MIN, +(lsGet(KP+"ListFont", noteFs-0.5)||noteFs-0.5) )); }catch(e){}
+try{ uiScale = Math.min(1.25,Math.max(.85,+(lsGet(KP+"UiScale","1")||1))); }catch(e){}
 applyFs();
 /* szerokość czytania (marginesy) w otwartej notatce: wąski / komfort / pełny */
 const FSW = ["620px","760px","100%"];
@@ -10901,6 +11081,10 @@ function ustawRozmiarTresci(roznica){
 function ustawRozmiarList(roznica){
   listFs = Math.min(FS_MAX, Math.max(FS_MIN, listFs + roznica));
   lsSetSoon(KP+"ListFont", listFs); applyFs();
+}
+function ustawSkaleInterfejsu(roznica){
+  uiScale=Math.min(1.25,Math.max(.85,Math.round((uiScale+roznica)*20)/20));
+  lsSetSoon(KP+"UiScale",uiScale); applyFs();
 }
 $("fMinus").onclick = ()=>{ ustawRozmiarTresci(-1); toast("Treść notatek: "+noteFs+" px"); };
 $("fPlus").onclick = ()=>{ ustawRozmiarTresci(1); toast("Treść notatek: "+noteFs+" px"); };
@@ -11340,19 +11524,19 @@ function buildEditbar(n){
     <button data-cmd="redo" title="Ponów">${ICO.redo}</button>
     <span class="eb-sep"></span>
     <button class="eb-block" data-pop="blok" title="Styl akapitu, interlinia i odstępy"><span class="eb-blockLbl">Treść</span>${IE_STRZ}</button>
-    <select class="eb-font" title="Czcionka tekstu notatki">${fontOpts}</select>
+    <select class="eb-font eb-mobile-extra" title="Czcionka tekstu notatki">${fontOpts}</select>
     <span class="eb-sep"></span>
     <button data-cmd="bold" data-st="bold" title="Pogrubienie"><b>B</b></button>
     <button data-cmd="italic" data-st="italic" title="Kursywa"><i>I</i></button>
     <button data-cmd="underline" data-st="underline" title="Podkreślenie"><u>U</u></button>
-    <button data-cmd="strikeThrough" data-st="strikeThrough" title="Przekreślenie"><s>S</s></button>
+    <button class="eb-mobile-extra" data-cmd="strikeThrough" data-st="strikeThrough" title="Przekreślenie"><s>S</s></button>
     <span class="eb-sep"></span>
-    <button data-cmd="insertUnorderedList" data-st="insertUnorderedList" title="Lista punktowana">${ICO.ul}</button>
-    <button data-cmd="insertOrderedList" data-st="insertOrderedList" title="Lista numerowana">${ICO.ol}</button>
+    <button class="eb-mobile-extra" data-cmd="insertUnorderedList" data-st="insertUnorderedList" title="Lista punktowana">${ICO.ul}</button>
+    <button class="eb-mobile-extra" data-cmd="insertOrderedList" data-st="insertOrderedList" title="Lista numerowana">${ICO.ol}</button>
     <span class="eb-sep"></span>
     <button class="eb-color" data-pop="color" title="Kolor / podświetlenie">${svgIc('<circle cx="12" cy="12" r="8.6"/><circle cx="9" cy="9.6" r="1" fill="currentColor" stroke="none"/><circle cx="14.6" cy="9.6" r="1" fill="currentColor" stroke="none"/><circle cx="9.6" cy="14.8" r="1" fill="currentColor" stroke="none"/>')}</button>
-    <button class="eb-ins" data-pop="ins" title="Wstaw: odnośnik do wersetu, cytat, listę zadań, link, linię">${ICO.plus}</button>
-    <label class="eb-img" title="Wstaw zdjęcie / ilustrację">${ICO.image}<input type="file" accept="image/*" multiple style="display:none"></label>
+    <button class="eb-ins eb-mobile-extra" data-pop="ins" title="Wstaw: odnośnik do wersetu, cytat, listę zadań, link, linię">${ICO.plus}</button>
+    <label class="eb-img eb-mobile-extra" title="Wstaw zdjęcie / ilustrację">${ICO.image}<input type="file" accept="image/*" multiple style="display:none"></label>
     <button class="eb-more" data-pop="more" title="Więcej: wcięcia, wyrównanie, indeks, wyczyść">${IC_DOTS}</button>`;
   bar.addEventListener("pointerdown", ev=>{
     if(ev.target.closest("select, label.eb-img")){ edSavedRange = captureRange(); return; }
@@ -11819,7 +12003,14 @@ function openEbPop(kind, btn, bar){
        <div data-ins="tpl">${IE_SZABLON}Szablon notatki…</div>`;
   } else {
     pop.innerHTML =
-      `<div data-cmd="outdent">${ICO.outdent}Zmniejsz wcięcie</div>
+      `<div class="ebMobileMenu" data-mobile-act="font">Aa Czcionka notatki…</div>
+       <div class="ebMobileMenu" data-cmd="strikeThrough">${svgIc('<path d="M4 12h16"/><path d="M8 8c0-2 2-3 4-3s4 1 4 3"/><path d="M8 16c1 3 7 3 8-1"/>')}Przekreślenie</div>
+       <div class="ebMobileMenu" data-cmd="insertUnorderedList">${ICO.ul}Lista punktowana</div>
+       <div class="ebMobileMenu" data-cmd="insertOrderedList">${ICO.ol}Lista numerowana</div>
+       <div class="ebMobileMenu" data-mobile-act="insert">${ICO.plus}Wstaw element…</div>
+       <div class="ebMobileMenu" data-mobile-act="image">${ICO.image}Wstaw zdjęcie…</div>
+       <div class="ebMobileMenu dd-sep"></div>
+       <div data-cmd="outdent">${ICO.outdent}Zmniejsz wcięcie</div>
        <div data-cmd="indent">${ICO.indent}Zwiększ wcięcie</div>
        <div class="dd-sep"></div>
        <div data-cmd="justifyLeft">${ICO.alignLeft}Do lewej</div>
@@ -11855,6 +12046,25 @@ function openEbPop(kind, btn, bar){
 $("ebPop").addEventListener("pointerdown", ev=>{
   ev.preventDefault();
   const pop=$("ebPop"); const ce=pop._ce;
+  const mobile=ev.target.closest("[data-mobile-act]");
+  if(mobile){
+    const bar=ce && ce.parentElement && ce.parentElement.querySelector(".editbar");
+    const act=mobile.dataset.mobileAct;
+    pop.style.display="none";
+    if(!bar) return;
+    if(act==="insert"){
+      const b=bar.querySelector(".eb-ins");
+      openEbPop("ins",b||bar.querySelector(".eb-more"),bar);
+    } else if(act==="image") bar.querySelector(".eb-img input")?.click();
+    else if(act==="font"){
+      const s=bar.querySelector(".eb-font");
+      if(s){
+        try{ if(s.showPicker) s.showPicker(); else { s.style.display="inline-block"; s.focus(); s.click(); } }
+        catch(_){ s.style.display="inline-block"; s.focus(); }
+      }
+    }
+    return;
+  }
   const sw=ev.target.closest("[data-hl]");
   if(sw){
     const range = edSavedRange;   // zapamiętane zaznaczenie z chwili otwarcia palety
@@ -12647,21 +12857,29 @@ function toggleEdit(card,n){
   contEl.setAttribute("contenteditable","true");
     try{ document.execCommand("styleWithCSS", false, false); }catch(e){}
     card.insertBefore(buildEditbar(n), contEl);
-    btn.innerHTML=ICO.save; btn.title="Zapisz zmiany";
+    btn.innerHTML=ICO.save+'<span class="sbtnTxt">Zapisz</span>';
+    btn.classList.add("saveon"); btn.title="Zapisz zmiany";
+    const stan=document.createElement("span");
+    stan.className="editSaveState"; stan.dataset.state="saved";
+    stan.setAttribute("role","status"); stan.setAttribute("aria-live","polite");
+    stan.textContent="Zapisano";
+    card.querySelector(".btnrow")?.insertBefore(stan,btn);
     contEl.style.display="block";
     contEl.focus();
     if(typeof histStart==="function") histStart(contEl);   // własna historia cofania
     // w pełnym ekranie belka tytułu przestaje być przyklejona — trzeba przeliczyć rezerwę
     if(typeof zmierzNhead==="function") zmierzNhead();
+    if(typeof updateFsNav==="function") updateFsNav();
   } else {
     card.classList.remove("editing");
     hideImgBar();
     card.querySelector(".editbar")?.remove();
     if(typeof zmierzNhead==="function") zmierzNhead();   // belka wraca na swoje miejsce
+    if(typeof updateFsNav==="function") updateFsNav();
     titleEl.contentEditable="false"; contEl.contentEditable="false";
   titleEl.setAttribute("contenteditable","false");
   contEl.setAttribute("contenteditable","false");
-    btn.innerHTML=ICO.edit; btn.title="Edytuj notatkę";
+    btn.innerHTML=ICO.edit; btn.classList.remove("saveon"); btn.title="Edytuj notatkę";
     saveVersion(n);   // zapisz poprzednią treść do historii wersji
     pushUndo({type:"note", label:"edycję notatki", before:cloneNote(n)});
     n.t = titleEl.textContent.trim();
@@ -12670,12 +12888,32 @@ function toggleEdit(card,n){
     if(typeof przPrzenumeruj==="function") przPrzenumeruj(contEl);
     const clean = sanitize(contEl.innerHTML);
     n.h = clean; n.c = htmlToPlain(clean);
-    markDirty(n); renderAll();
-    toastOk("Zapisano zmiany");
-    // krótkie mrugnięcie zapisanej karty — widać od razu, której notatki dotyczyła zmiana
-    flashOk(document.querySelector('#noteList .ncard[data-g="'+CSS.escape(n.g)+'"]'));
+    n.ed=true; n.mo=new Date().toISOString();
+    ustawStanZapisu(contEl,"saving"); bumpDirty();
+    saveNote(n).then(ok=>{
+      if(ok){
+        ustawStanZapisu(contEl,"saved"); renderAll(); toastOk("Zapisano zmiany");
+        // krótkie mrugnięcie zapisanej karty — widać od razu, której notatki dotyczyła zmiana
+        flashOk(document.querySelector('#noteList .ncard[data-g="'+CSS.escape(n.g)+'"]'));
+      }else{
+        /* Nie zamykamy edytora po nieudanym zapisie. Tekst nadal jest w DOM,
+           a czerwony stan mówi wprost, że trzeba spróbować ponownie lub zrobić kopię. */
+        card.classList.add("editing");
+        titleEl.contentEditable="true"; contEl.contentEditable="true";
+        titleEl.setAttribute("contenteditable","true"); contEl.setAttribute("contenteditable","true");
+        if(!card.querySelector(".editbar")) card.insertBefore(buildEditbar(n),contEl);
+        btn.innerHTML=ICO.save+'<span class="sbtnTxt">Zapisz</span>';
+        btn.classList.add("saveon"); btn.title="Ponów zapis";
+        ustawStanZapisu(contEl,"error"); contEl.focus();
+        if(typeof updateFsNav==="function") updateFsNav();
+      }
+    });
   }
 }
+document.addEventListener("input", e=>{
+  const pole=e.target && e.target.closest ? e.target.closest(".ncard.editing [contenteditable='true']") : null;
+  if(pole) ustawStanZapisu(pole,"dirty");
+}, true);
 /**
  * Czyści HTML wklejony lub wpisany w edytorze: zostawia dozwolone znaczniki i atrybuty,
  * usuwa skrypty, zdarzenia inline i style, które mogłyby rozjechać wygląd.
@@ -12851,38 +13089,30 @@ function htmlToPlain(html){
 "use strict";
 /* ================= KOLOROWANIE ZAZNACZEŃ ================= */
 const hlBar = $("hlBar");
-hlBar.innerHTML = [1,2,3,4,5,6,7].map(i=>`<div class="sw" style="background:var(--hl${i})" data-hl="${i}" title="Podświetl"></div>`).join("") +
-  `<button class="tb" data-hl="0" title="Usuń kolor">⌫</button>
-   <span class="sep"></span>
-   <button class="tb fmt" data-fmt="b" title="Pogrubienie"><b>B</b></button>
-   <button class="tb fmt" data-fmt="i" title="Kursywa"><i>I</i></button>
-   <button class="tb fmt" data-fmt="u" title="Podkreślenie"><u>U</u></button>
-   <span class="sep"></span>
-   <button class="tb" data-hl="copy" title="Kopiuj zaznaczenie">${ICO.copy}</button>`;
 const touchUI = ()=> matchMedia("(hover: none)").matches || isIOS();
-/* Natywne menu zaznaczenia iPadOS/iOS nie jest częścią DOM, więc nie da się
-   odczytać jego prostokąta. Możemy jednak przewidzieć jego regułę: Apple stawia
-   je nad zaznaczeniem, gdy ma tam około jednego wiersza miejsca, a w przeciwnym
-   razie pod nim. Rezerwujemy cały jego pas i własną paletę układamy po drugiej
-   stronie — przede wszystkim pod całym zaznaczonym fragmentem. */
-const APPLE_CALLOUT_REZERWA = 72;
-const HL_ODSTEP_OD_ZAZN = 14;
-/** Czyste obliczenie pionowej pozycji — dzięki temu trzy układy iOS dają się
-    sprawdzić bez prawdziwego menu systemowego, którego przeglądarka nie ujawnia. */
-function pozycjaHlDotyk(granice, h, ob, ios){
-  const miejsceNad = granice.top-ob.gora;
-  const appleNad = ios && miejsceNad >= APPLE_CALLOUT_REZERWA;
-  let naDole = true;
-  let y = granice.bottom + HL_ODSTEP_OD_ZAZN;
-  if(ios && !appleNad) y += APPLE_CALLOUT_REZERWA;
-  if(y+h > ob.dol-8){
-    const nadApple = granice.top - (appleNad ? APPLE_CALLOUT_REZERWA : 0)
-                     - h - HL_ODSTEP_OD_ZAZN;
-    if(nadApple >= ob.gora+8){ y=nadApple; naDole=false; }
-    else { y=Math.max(ob.gora+8, ob.dol-h-8); }
-  }
-  return {y:Math.max(ob.gora+8,Math.min(y,ob.dol-h-8)), naDole, appleNad};
+let hlPelna=false;
+function koloryOstatnie(){
+  let a=[]; try{ a=JSON.parse(lsGet(KP+"HlRecent","[1,2,3,4,5]")); }catch(_){}
+  a=(Array.isArray(a)?a:[]).map(Number).filter((x,i,v)=>x>=1&&x<=7&&v.indexOf(x)===i);
+  return [...a,1,2,3,4,5,6,7].filter((x,i,v)=>v.indexOf(x)===i).slice(0,5);
 }
+function zapamietajKolor(i){
+  const a=[+i,...koloryOstatnie().filter(x=>x!==+i)].slice(0,5);
+  lsSet(KP+"HlRecent",JSON.stringify(a));
+}
+function renderHlBar(){
+  const kolory=(!touchUI()||hlPelna)?[1,2,3,4,5,6,7]:koloryOstatnie();
+  hlBar.innerHTML = kolory.map(i=>`<div class="sw" style="background:var(--hl${i})" data-hl="${i}" title="Podświetl"></div>`).join("") +
+    (touchUI()&&!hlPelna?`<button class="tb hlMore" data-hl="more" title="Wszystkie kolory">＋</button>`:"")+
+    `<button class="tb" data-hl="0" title="Usuń kolor">⌫</button>
+     <span class="sep"></span>
+     <button class="tb fmt" data-fmt="b" title="Pogrubienie"><b>B</b></button>
+     <button class="tb fmt" data-fmt="i" title="Kursywa"><i>I</i></button>
+     <button class="tb fmt" data-fmt="u" title="Podkreślenie"><u>U</u></button>
+     <span class="sep"></span>
+     <button class="tb" data-hl="copy" title="Kopiuj zaznaczenie">${ICO.copy}</button>`;
+}
+renderHlBar();
 function showHlBar(){
   const sel=getSelection();
   if(sel.isCollapsed||!sel.rangeCount){
@@ -12919,17 +13149,15 @@ function showHlBar(){
            : {lewo:0, gora:0, prawo:innerWidth, dol:innerHeight};
   const wLewo = (x)=>Math.max(ob.lewo+8, Math.min(x, ob.prawo-w-8));
   hlBar.style.bottom="auto";
-  hlBar.classList.remove("pod-zazn","nad-zazn","obok-zazn");
+  hlBar.classList.remove("pod-zazn","nad-zazn","obok-zazn","hl-dok");
   if(touchUI()){
-    const ios = isIOS();
-    /* Jeśli Apple nie ma miejsca nad tekstem, jego menu przejdzie pod tekst;
-       funkcja doliczy wtedy drugi, osobny pas pod zaznaczeniem. */
-    const poz = pozycjaHlDotyk(granice, h, ob, ios);
-    const naDole=poz.naDole, y=poz.y;
-    const punkt=naDole?ostatni:pierwszy;
-    hlBar.style.left=wLewo(punkt.left+punkt.width/2-w/2)+"px";
-    hlBar.style.top=y+"px";
-    hlBar.classList.add(naDole?"pod-zazn":"nad-zazn");
+    /* Na iOS nie próbujemy już śledzić menu systemowego — jego położenia Safari
+       nie udostępnia i każda heurystyka prędzej czy później nakłada dwa paski.
+       Paleta ma jedno stałe, przewidywalne miejsce: dok na dole czytnika. */
+    hlBar.style.left="50%";
+    hlBar.style.top="auto";
+    hlBar.style.bottom="calc(14px + env(safe-area-inset-bottom,0px))";
+    hlBar.classList.add("hl-dok");
   } else {
     const lewo=wLewo(pierwszy.left+pierwszy.width/2-w/2);
     hlBar.style.left=lewo+"px";
@@ -12988,6 +13216,9 @@ hlBar.addEventListener("pointerdown", e=>{
   const card=contEl.closest(".ncard");
   const n=notes.find(x=>x.g===card.dataset.g);
   const hl=t.dataset.hl, fmt=t.dataset.fmt;
+  if(hl==="more"){
+    hlPelna=true; renderHlBar(); showHlBar(); return;
+  }
   if(hl==="copy"){
     navigator.clipboard.writeText(range.toString()).then(()=>toast("Skopiowano zaznaczenie"));
     sel.removeAllRanges(); hlBar.style.display="none";
@@ -12996,10 +13227,11 @@ hlBar.addEventListener("pointerdown", e=>{
   }
   if(fmt){ wrapTag(range, fmt); }
   else if(hl==="0") unwrapMarks(range,contEl);
-  else { applyMark(range,+hl); lsSet(KP+"HlColor",String(hl)); }
+  else { applyMark(range,+hl); lsSet(KP+"HlColor",String(hl)); zapamietajKolor(+hl); }
   if(sel.rangeCount) sel.removeAllRanges();
   hlBar.style.display="none";
   document.body.classList.remove("ma-zaznaczenie");
+  hlPelna=false; renderHlBar();
   saveContentEl(contEl, n);
 }, true);
 function applyMark(range,color){
@@ -15591,6 +15823,15 @@ function openSettings(){
        <div class="st-hint">Dotyczy list notatek oraz kolumn Biblia, Etykiety i Publikacje. Oba rozmiary można ustawić niezależnie.</div>
      </div>
      <div class="st-sec">
+       <div class="st-lbl">Skala przycisków i menu</div>
+       <div class="st-fs" data-font="ui">
+         <button class="st-opt" data-fs="-">−</button>
+         <span class="st-val" id="stUiVal">${Math.round(uiScale*100)}%</span>
+         <button class="st-opt" data-fs="+">＋</button>
+       </div>
+       <div class="st-hint">Zmienia tylko interfejs. Rozmiar tekstu notatek pozostaje bez zmian.</div>
+     </div>
+     <div class="st-sec">
        <div class="st-lbl">Gęstość interfejsu</div>
        ${optionGroup("dens", [["zwarta","Zwarta"],["normalna","Normalna"],["luzna","Luźna"]], density)}
        <div class="st-hint">Zwarta mieści więcej notatek na ekranie, luźna daje więcej powietrza.</div>
@@ -15771,7 +16012,10 @@ function openSettings(){
     const fs = e.target.closest(".st-fs [data-fs]");   // tylko przyciski A− / A+, nie dowolny przodek
     if(fs){
       const roznica = fs.dataset.fs === "+" ? 1 : -1;
-      if(fs.closest('[data-font="list"]')){
+      if(fs.closest('[data-font="ui"]')){
+        ustawSkaleInterfejsu(roznica*.05);
+        $("stUiVal").textContent = Math.round(uiScale*100) + "%";
+      }else if(fs.closest('[data-font="list"]')){
         ustawRozmiarList(roznica);
         $("stListFsVal").textContent = listFs + " px";
       }else{
@@ -16332,6 +16576,11 @@ function kbOdswiez(){
   _kbOstatnia = h;
   document.documentElement.style.setProperty("--kb", h + "px");
   document.documentElement.classList.toggle("kb-open", h > 0);
+  if(h > 0){
+    const hb=document.getElementById("hlBar");
+    if(hb) hb.style.display="none";
+    document.body.classList.remove("ma-zaznaczenie");
+  }
   if(h > 0) kbPokazKursor();
 }
 if(window.visualViewport){
@@ -19441,7 +19690,13 @@ function htmlPowiazanych(n){
         <span class="powStrzalka" aria-hidden="true">›</span>
         Powiązane notatki <span class="powIle">${lista.length}</span>
       </summary>
-      <div class="powLista">${lista.map(wiersz).join("")}</div>
+      <button type="button" class="powPodklad" data-pow-close aria-label="Zamknij powiązane notatki"></button>
+      <section class="powPanel" role="dialog" aria-label="Powiązane notatki">
+        <header class="powPanelHead"><b>Powiązane notatki</b><span class="powIle">${lista.length}</span>
+          <button type="button" data-pow-close aria-label="Zamknij">✕</button>
+        </header>
+        <div class="powLista">${lista.map(wiersz).join("")}</div>
+      </section>
     </details>`;
 }
 
@@ -19449,11 +19704,20 @@ function htmlPowiazanych(n){
    użytkownika, a nie ustawienie początkowe przy rysowaniu. */
 document.addEventListener("toggle", e=>{
   const el = e.target;
-  if(el && el.classList && el.classList.contains("powiazane")) zapamietajPowiazane(el.open);
+  if(el && el.classList && el.classList.contains("powiazane")){
+    zapamietajPowiazane(el.open);
+    $("modalFs")?.classList.toggle("pow-open",el.open);
+  }
 }, true);
 
 /* Otwarcie powiązanej notatki — w tym samym czytniku, bez zamykania okna. */
 document.addEventListener("click", e=>{
+  const zamknij=e.target && e.target.closest ? e.target.closest("[data-pow-close]") : null;
+  if(zamknij){
+    e.preventDefault(); e.stopPropagation();
+    const d=zamknij.closest("details.powiazane"); if(d) d.open=false;
+    return;
+  }
   const b = e.target && e.target.closest ? e.target.closest("[data-pow]") : null;
   if(!b) return;
   e.preventDefault(); e.stopPropagation();
