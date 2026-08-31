@@ -7144,6 +7144,52 @@ details.powiazane[open] .powPanel{
   #hlBar .tb{ min-width:30px; height:30px; padding:3px; }
   #hlBar .hlMore{ font-size:21px; line-height:1; }
 }
+
+/* ══════════════ INTELIGENTNE WYSZUKIWANIE (v2.93) ══════════════ */
+.searchwrap{ padding-right:36px; }
+#btnSearchTools{
+  position:absolute; right:4px; top:50%; transform:translateY(-50%);
+  width:30px; height:30px; border:0; border-radius:9px; background:transparent;
+  color:var(--muted); font-size:18px; cursor:pointer;
+}
+#btnSearchTools:hover,#btnSearchTools.on{ background:var(--sel); color:var(--accent); }
+.search-modal{ width:min(820px,calc(100vw - 24px)); max-height:min(90dvh,850px); overflow:auto; }
+.searchMode{ display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:5px; background:var(--bg); border-radius:13px; margin:8px 0 14px; }
+.searchMode button{ border:0; border-radius:10px; padding:10px; background:transparent; color:var(--muted); font-weight:650; }
+.searchMode button.on{ background:var(--panel); color:var(--accent); box-shadow:var(--cien-1); }
+.searchGrid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.searchGrid label{ display:flex; flex-direction:column; gap:5px; color:var(--muted); font-size:12px; font-weight:650; }
+.searchGrid select,.searchGrid input{ width:100%; min-height:40px; border:1px solid var(--border); border-radius:10px; background:var(--panel); color:var(--text); padding:7px 9px; }
+.searchActions{ display:flex; flex-wrap:wrap; gap:8px; margin:14px 0; }
+.searchSaved{ border-top:1px solid var(--border); padding-top:10px; }
+.searchSaved h4{ margin:4px 0 8px; }
+#sSavedList{ display:flex; flex-wrap:wrap; gap:7px; }
+.sSavedItem{ display:inline-flex; align-items:center; border:1px solid var(--border); border-radius:999px; overflow:hidden; background:var(--panel); }
+.sSavedItem button{ border:0; background:transparent; color:var(--text); padding:7px 9px; }
+.sSavedItem .sPin.on{ color:#d29b00; }
+.sSavedItem .sDel{ color:var(--muted); padding-left:4px; }
+.searchHelp{ margin-top:14px; border:1px solid var(--border); border-radius:12px; padding:10px 12px; }
+.searchHelp summary{ cursor:pointer; font-weight:700; color:var(--accent); }
+.searchHelp p{ margin:8px 0; line-height:1.5; font-size:13px; }
+#searchStatus{
+  display:flex; align-items:center; gap:7px; flex-wrap:wrap; width:100%;
+  padding:7px 10px; border-top:1px solid var(--border); background:color-mix(in srgb,var(--sel) 52%,transparent);
+}
+#searchStatus[hidden]{ display:none!important; }
+.ssInfo{ color:var(--muted); font-size:12px; margin-right:auto; }
+.ssChip,.ssNav{ border:1px solid var(--border); background:var(--panel); color:var(--text); border-radius:999px; padding:5px 9px; font-size:12px; cursor:pointer; }
+.ssChip.on{ color:#fff; background:var(--accent); border-color:var(--accent); }
+.searchMatch{ display:flex; align-items:center; gap:7px; margin:5px 12px 0; color:var(--muted); font-size:11.5px; }
+.searchReason{ color:var(--accent); background:var(--sel); border-radius:999px; padding:2px 7px; white-space:nowrap; }
+.searchSnippet{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ncard.searchFocus{ outline:3px solid color-mix(in srgb,var(--accent) 45%,transparent); outline-offset:2px; }
+@media (max-width:620px){
+  .searchGrid{ grid-template-columns:1fr; }
+  .search-modal{ width:100vw; height:100dvh; max-height:100dvh; border-radius:0; }
+  #searchStatus{ padding:6px; flex-wrap:nowrap; overflow-x:auto; }
+  .ssInfo{ min-width:max-content; }
+  .searchMatch{ margin-left:8px; margin-right:8px; }
+}
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -7152,7 +7198,7 @@ details.powiazane[open] .powPanel{
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <h1 class="brand-name">JW Study <span class="ver">v2.92</span></h1>
+      <h1 class="brand-name">JW Study <span class="ver">v2.93</span></h1>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -7160,6 +7206,7 @@ details.powiazane[open] .powPanel{
     <svg class="ic search-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
     <div id="searchSug"></div>
     <input id="search" type="search" autocomplete="off" aria-label="Szukaj w notatkach" placeholder='Szukaj w notatkach…' title='Wyszukiwanie rozszerzone:&#10;• bez ogonków też działa: milosc znajdzie miłość&#10;• kilka słów — wszystkie muszą wystąpić&#10;• gwiazdka: miłos* znajdzie miłość, miłosierdzie…&#10;• "w cudzysłowie" — dokładna fraza&#10;• (słowo|inne) — którekolwiek z nich&#10;• tytuł:pokora · etykieta:studium · werset:Jan'>
+    <button id="btnSearchTools" type="button" aria-label="Inteligentne wyszukiwanie i instrukcja" title="Inteligentne wyszukiwanie">⌄</button>
   </div>
   <button class="btn" id="btnWszystkie" hidden title="Wróć do wszystkich notatek — czyści szukanie, etykietę, księgę i szybki filtr (0)"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5L4 12l5 7"/><path d="M4 12h9a6 6 0 0 1 0 12"/></svg> <span class="bwTxt">Wszystkie notatki</span></button>
   <select id="sortSel" aria-label="Kolejność notatek na liście" title="Kolejność notatek na liście">
@@ -7173,6 +7220,7 @@ details.powiazane[open] .powPanel{
       <option value="createdOld">Najdawniej utworzone</option>
     </optgroup>
     <optgroup label="Inne">
+      <option value="relevance">Najtrafniejsze wyniki</option>
       <option value="pub">Kolejność w publikacji</option>
       <option value="bible">Kolejność biblijna</option>
       <option value="alpha">Alfabetycznie</option>
@@ -7276,6 +7324,7 @@ details.powiazane[open] .powPanel{
            tylko wtedy, gdy coś czeka — pusty uczyłby go pomijać wzrokiem. -->
       <button class="qf qf-pwt" data-qf="powtorka" data-lbl="Na dziś">Na dziś</button>
       </div>
+      <div id="searchStatus" hidden></div>
       <div id="counts"></div>
     </div>
     <!-- Centrum studium. Rodzeństwo listy, nie jej zawartość: lista ma własne
@@ -7507,6 +7556,39 @@ details.powiazane[open] .powPanel{
   </div>
 </div>
 
+<div class="overlay" id="modalSearch">
+  <div class="modal search-modal" role="dialog" aria-label="Inteligentne wyszukiwanie">
+    <div class="nn-head"><h3>Inteligentne wyszukiwanie</h3></div>
+    <div class="searchMode" role="group" aria-label="Tryb wyszukiwania">
+      <button type="button" data-smode="exact">Dokładnie</button>
+      <button type="button" data-smode="smart">Inteligentnie</button>
+    </div>
+    <div class="searchGrid">
+      <label>Zakres<select id="sScope"><option value="current">Obecny widok</option><option value="all">Wszystkie notatki</option></select></label>
+      <label>Grupa<select id="sGroup"><option value="all">Wszystkie</option><option value="bible">Biblia</option><option value="publication">Publikacje</option><option value="own">Własne notatki</option></select></label>
+      <label>Od daty<input id="sDateFrom" type="date"></label>
+      <label>Do daty<input id="sDateTo" type="date"></label>
+      <label>Podświetlenie<select id="sHighlight"><option value="all">Dowolne</option><option value="has">Ma podświetlenie</option><option value="1">Żółte</option><option value="2">Zielone</option><option value="3">Niebieskie</option><option value="4">Fioletowe</option><option value="5">Czerwone</option><option value="6">Pomarańczowe</option><option value="7">Turkusowe</option></select></label>
+      <label>Dodatkowy filtr<select id="sExtra"><option value="all">Brak</option><option value="fav">Ulubione</option><option value="pin">Przypięte</option><option value="img">Ze zdjęciem</option><option value="week">Ostatni tydzień</option><option value="edited">Zmienione przeze mnie</option></select></label>
+    </div>
+    <div class="searchActions">
+      <button class="btn" id="sClearQuery" type="button">Wyczyść tekst</button>
+      <button class="btn" id="sClearFilters" type="button">Wyczyść filtry</button>
+      <button class="btn" id="sSimilar" type="button">Podobne do ostatniej notatki</button>
+      <button class="btn" id="sDuplicates" type="button">Wykryj duplikaty</button>
+      <button class="btn primary" id="sSave" type="button">＋ Zapisz jako inteligentną zakładkę</button>
+    </div>
+    <div class="searchSaved"><h4>Zapisane wyszukiwania</h4><div id="sSavedList"></div></div>
+    <details class="searchHelp" open><summary>Jak szukać</summary>
+      <p><code>pokora miłość</code> — oba pojęcia · <code>pokora OR skromność</code> — jedno z nich · <code>-małżeństwo</code> lub <code>NOT małżeństwo</code> — wykluczenie.</p>
+      <p><code>"dokładna fraza"</code> · <code>miłos*</code> · <code>tytuł:</code> · <code>etykieta:</code> · <code>werset:</code> · <code>treść:</code>.</p>
+      <p><code>@ulubione</code> · <code>@przypięte</code> · <code>#nazwa-etykiety</code> · <code>biblia:</code> · <code>publikacja:</code> · <code>kolor:żółty</code>.</p>
+      <p>Tryb inteligentny rozpoznaje literówki, polskie odmiany, podobne pojęcia oraz różne zapisy wersetów. Wyniki są oceniane według tytułu, wersetu, etykiety, frazy i treści.</p>
+    </details>
+    <div class="actions"><button class="btn primary" data-zamknij="modalSearch">Gotowe</button></div>
+  </div>
+</div>
+
 <div class="overlay" id="modalHelp">
   <div class="modal help-modal">
     <div class="nn-head"><span class="nn-ic">👋</span><h3>Witaj w JW Study</h3></div>
@@ -7515,13 +7597,13 @@ details.powiazane[open] .powPanel{
       <div class="help-row"><span class="help-ic">📴</span><div><b>Praca offline (iPhone/iPad)</b> — otwórz aplikację w Safari <u>z internetem</u>, potem <b>Udostępnij → Dodaj do ekranu głównego</b>. Uruchom ją raz z ikony (wciąż z internetem) — pojawi się „✓ gotowa do pracy offline". Od tej pory działa bez sieci. Stan sprawdzisz w <b>⚙️ Plik</b> (🟢 na dole).</div></div>
       <div class="help-row"><span class="help-ic">📚</span><div><b>Cztery kolumny</b> — Biblia, Etykiety, Publikacje, Notatki. Klikasz pozycję, żeby zawęzić listę notatek.</div></div>
       <div class="help-row"><span class="help-ic">🔍</span><div><b>Szukaj</b> u góry:<br>
-        • <code>milosc</code> — <b>bez ogonków też działa</b> (znajdzie „miłość")<br>
-        • <code>miłos*</code> — gwiazdka łapie odmiany<br>
-        • <code>"cała fraza"</code> — dokładnie w tej kolejności<br>
-        • <code>(kot|pies)</code> — którekolwiek ze słów<br>
-        • <code>tytuł:pokora</code> · <code>etykieta:studium</code> · <code>werset:Jan</code> — zawężanie do pola<br>
-        • szuka też w <b>odnośniku</b> — wpisz np. <code>Lekcja 1 (a)</code> albo <code>pt14</code>, a znajdziesz wszystkie notatki z tej lekcji/publikacji<br>
-        • pod polem podpowiadają się <b>etykiety i ostatnie wyszukiwania</b></div></div>
+        • wybierz <b>Dokładnie</b> albo <b>Inteligentnie</b> przyciskiem ze strzałką w polu wyszukiwania. Tryb inteligentny rozpoznaje polskie odmiany, literówki, synonimy i różne zapisy wersetów;<br>
+        • <code>milosc pokora</code> — oba pojęcia · <code>pokora OR skromność</code> — jedno · <code>-małżeństwo</code> lub <code>NOT małżeństwo</code> — wykluczenie;<br>
+        • <code>miłos*</code> — dowolna końcówka · <code>"cała fraza"</code> — dokładna kolejność;<br>
+        • <code>tytuł:pokora</code> · <code>etykieta:studium</code> · <code>werset:Jan</code> · <code>treść:modlitwa</code> — zawężanie do pola;<br>
+        • <code>@ulubione</code> · <code>@przypięte</code> · <code>#etykieta</code> · <code>biblia:</code> · <code>publikacja:</code> · <code>kolor:żółty</code> · <code>@duplikaty</code> — komendy specjalne;<br>
+        • panel pozwala wybrać daty, podświetlenie, rodzaj notatki i zakres, zapisać zapytanie jako <b>inteligentną zakładkę</b>, przypiąć historię oraz znaleźć notatki podobne i duplikaty;<br>
+        • wyniki są domyślnie sortowane według trafności. Nad listą można przełączyć grupę oraz przechodzić strzałkami między wynikami. Nadal dostępne są kolejność biblijna, publikacja i data.</div></div>
       <div class="help-row"><span class="help-ic">✚</span><div><b>Nowa notatka</b> — dodaj notatkę i (opcjonalnie) przypnij do konkretnego wersetu.</div></div>
       <div class="help-row"><span class="help-ic">📌</span><div><b>Przypnij</b> ważne notatki — zawsze będą na górze listy.</div></div>
       <div class="help-row"><span class="help-ic">🗺️</span><div><b>Mapa tematów</b> — przycisk w pasku górnym albo klawisz <kbd>M</kbd>.<br>
@@ -8803,6 +8885,138 @@ const QFIELD_MAP = {
   werset:"ref", wersety:"ref", ref:"ref", ksiega:"ref", księga:"ref", w:"ref",
   tresc:"body", treść:"body", body:"body"
 };
+
+/* Warstwa inteligentna nie wysyła treści poza urządzenie. Opiera się na
+   lekkim rdzeniu polskich wyrazów, słowniku pojęć i tolerancji literówek. */
+let searchMode=lsGet(KP+"SearchMode","smart")==="exact"?"exact":"smart";
+let searchOpts={scope:"current",group:"all",dateFrom:"",dateTo:"",highlight:"all",extra:"all"};
+try{ Object.assign(searchOpts,JSON.parse(lsGet(KP+"SearchOpts","{}"))); }catch(_){}
+let qAdvTerms=[],qAdvNeg=[],qAdvPhrases=[],qSpecial={};
+var searchScores=new Map(), searchDetails=new Map(), searchDuplicateSet=null;
+function normSzukStart(s){ return (s||"").toLowerCase().replace(/ł/g,"l").normalize("NFD").replace(/[\u0300-\u036f]/g,""); }
+const SZUK_STOP=new Set("notatka notatki notatek pokaz znajdz znajdź szukaj szukam chce chcę potrzebuje potrzebuję cos coś o na w we z ze do dla od i oraz albo czy co ktore które dotyczace dotyczące temat temacie".split(" ").map(normSzukStart));
+const SZUK_POJECIA=[
+  ["modlitwa","prosba","prośba","blaganie","błaganie","dziekczynienie","dziękczynienie"],
+  ["pokora","pokorny","pokornie","skromnosc","skromność","unizenie","uniżenie"],
+  ["milosc","miłość","kochac","kochać","serdecznosc","serdeczność"],
+  ["przebaczenie","przebaczac","przebaczać","wybaczenie","wybaczac","wybaczać"],
+  ["wiara","wierzyc","wierzyć","ufnosc","ufność","zaufanie"],
+  ["nadzieja","oczekiwanie","przyszlosc","przyszłość"],
+  ["sluzba","służba","gloszenie","głoszenie","ewangelizacja"],
+  ["zmartwychwstanie","wskrzeszenie","powstanie z martwych"],
+  ["jehowa","bog","bóg","ojciec"],
+  ["jezus","chrystus","mesjasz","syn bozy","syn boży"]
+].map(g=>g.map(normSzukStart));
+const SZUK_KSIEGI={mt:"mateusza",mk:"marka",lk:"lukasza",jn:"jana",dz:"dzieje apostolskie",rz:"rzymian","1kor":"1 koryntian","2kor":"2 koryntian",gal:"galatow",ef:"efezjan",flp:"filipian",kol:"kolosan","1tes":"1 tesaloniczan","2tes":"2 tesaloniczan","1tm":"1 tymoteusza","2tm":"2 tymoteusza",tyt:"tytusa",flm:"filemona",hbr:"hebrajczykow",jak:"jakuba","1pt":"1 piotra","2pt":"2 piotra","1jn":"1 jana","2jn":"2 jana","3jn":"3 jana",jud:"judy",obj:"objawienie",rdz:"rodzaju",wj:"wyjscia",kpl:"kaplanska",pwt:"powtorzonego prawa",jz:"jozuego",sedz:"sedziow",ps:"psalmy",prz:"przyslow",iz:"izajasza",jer:"jeremiasza",ez:"ezechiela",dn:"daniela"};
+function rdzenPl(s){
+  s=norm(s).replace(/[^a-z0-9]/g,"");
+  if(s.length<5) return s;
+  const kon=["owaniami","eniami","owanie","owania","owego","owemu","ami","ach","owie","owego","owych","owej","osc","osci","anie","enie","owy","owa","owe","ego","emu","ym","im","ych","ich","nie","nia","ciu","ie","ze","ac","ać","ic","ić","y","a","e","u","i"];
+  for(const k of kon) if(s.length-k.length>=4 && s.endsWith(norm(k))) return s.slice(0,-norm(k).length);
+  return s;
+}
+function odleglosc1(a,b,max){
+  a=norm(a); b=norm(b); if(Math.abs(a.length-b.length)>max) return max+1;
+  let prev=Array.from({length:b.length+1},(_,i)=>i);
+  for(let i=1;i<=a.length;i++){
+    const cur=[i]; let min=i;
+    for(let j=1;j<=b.length;j++){ cur[j]=Math.min(cur[j-1]+1,prev[j]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1)); min=Math.min(min,cur[j]); }
+    if(min>max) return max+1; prev=cur;
+  }
+  return prev[b.length];
+}
+function wariantyPojecia(s){
+  const n=norm(s), r=rdzenPl(n); const out=new Set([n,r]);
+  if(SZUK_KSIEGI[n]) out.add(SZUK_KSIEGI[n]);
+  SZUK_POJECIA.forEach(g=>{ if(g.some(x=>rdzenPl(x)===r||x===n)) g.forEach(x=>{out.add(x);out.add(rdzenPl(x));}); });
+  return [...out].filter(Boolean);
+}
+function parseAdvancedQuery(raw){
+  qAdvTerms=[]; qAdvNeg=[]; qAdvPhrases=[]; qSpecial={};
+  /* Mt5:3, Mt 5,3 i Mt 5.3 sprowadzamy do jednego zapisu przed podziałem
+     na warunki. Dzięki temu skrót księgi i adres działają także bez spacji. */
+  const nraw=norm(raw).replace(/\b([1-3]?[a-z]{1,6})\s*(\d{1,3})\s*[:,.]\s*(\d{1,3})\b/g,"$1 $2:$3");
+  qAdvPhrases=[...nraw.matchAll(/"([^"]+)"/g)].map(m=>m[1]);
+  if(/@ulubione/.test(nraw)) qSpecial.fav=true;
+  if(/@przypiete|@przypięte/.test(nraw)) qSpecial.pin=true;
+  if(/@duplikaty/.test(nraw)) qSpecial.duplicates=true;
+  const hash=nraw.match(/(?:^|\s)#([\p{L}\p{N}_-]+)/u); if(hash) qSpecial.tag=hash[1].replace(/-/g," ");
+  if(/(?:^|\s)biblia:(?:\s|$)/.test(nraw)) qSpecial.group="bible";
+  if(/(?:^|\s)publikacja:(?:\s|$)/.test(nraw)) qSpecial.group="publication";
+  const kolor=nraw.match(/kolor:(zolty|żółty|zielony|niebieski|fioletowy|czerwony|pomaranczowy|pomarańczowy|turkusowy)/);
+  if(kolor) qSpecial.highlight=({zolty:1,"żółty":1,zielony:2,niebieski:3,fioletowy:4,czerwony:5,pomaranczowy:6,"pomarańczowy":6,turkusowy:7})[kolor[1]];
+  let clean=nraw.replace(/"[^"]+"/g," ").replace(/(?:tytul|tytuł|title|t|etykieta|etykiety|tag|e|werset|wersety|ref|ksiega|księga|w|tresc|treść|body):(?:"[^"]+"|\S+)/g," ")
+    .replace(/@\S+|#\S+|(?:biblia|publikacja):|kolor:\S+/g," ");
+  const tok=clean.split(/\s+/).filter(Boolean); let neg=false, orPending=false;
+  for(let t of tok){
+    if(t==="not"){neg=true;continue;} if(t==="and") continue; if(t==="or"){orPending=true;continue;}
+    if(t[0]==="-"){neg=true;t=t.slice(1);} t=t.replace(/^\(|\)$/g,"");
+    if(!t||SZUK_STOP.has(t)) {neg=false;orPending=false;continue;}
+    const parts=t.split("|").filter(Boolean);
+    const cel=neg?qAdvNeg:qAdvTerms;
+    if(orPending && cel.length) cel[cel.length-1].push(...parts);
+    else cel.push(parts);
+    neg=false; orPending=false;
+  }
+}
+function tokenySzukania(c){ return (c.norm.match(/[a-z0-9]+/g)||[]); }
+function smartTermMatch(c,alts){
+  const toks=tokenySzukania(c); const vars=alts.flatMap(wariantyPojecia);
+  for(const v of vars){
+    if(v.includes("*")){ const p=v.replace(/\*/g,""); if(p && toks.some(t=>t.startsWith(p))) return true; continue; }
+    if(v.length>2 && c.norm.includes(v)) return true;
+    const rv=rdzenPl(v);
+    if(toks.some(t=>rdzenPl(t)===rv)) return true;
+    const max=v.length>=9?2:(v.length>=5?1:0);
+    if(max && toks.some(t=>Math.abs(t.length-v.length)<=max && t[0]===v[0] && odleglosc1(t,v,max)<=max)) return true;
+  }
+  return false;
+}
+function kategoriaNotatki(n){ return n.b?"bible":((n.ks||n.doc||n.pub)?"publication":"own"); }
+function aktywneOpcjeSzukania(){
+  return searchOpts.group!=="all"||!!searchOpts.dateFrom||!!searchOpts.dateTo||searchOpts.highlight!=="all"||searchOpts.extra!=="all";
+}
+function przechodziOpcjeSzukania(n){
+  const grp=qSpecial.group||searchOpts.group;
+  if(grp!=="all" && kategoriaNotatki(n)!==grp) return false;
+  const data=(n.mo||n.cr||"").slice(0,10);
+  if(searchOpts.dateFrom && data<searchOpts.dateFrom) return false;
+  if(searchOpts.dateTo && data>searchOpts.dateTo) return false;
+  const hi=String(qSpecial.highlight||searchOpts.highlight);
+  if(hi==="has" && !/<mark\b/i.test(n.h||"")) return false;
+  if(/^[1-7]$/.test(hi) && !(new RegExp("class=[\"'][^\"']*hl"+hi)).test(n.h||"")) return false;
+  if((qSpecial.fav||searchOpts.extra==="fav")&&!n.fav) return false;
+  if((qSpecial.pin||searchOpts.extra==="pin")&&!n.pin) return false;
+  if(searchOpts.extra==="img"&&!/<img\b/i.test(n.h||"")) return false;
+  if(searchOpts.extra==="edited"&&!n.ed) return false;
+  if(searchOpts.extra==="week"){
+    const czas=Date.parse(n.mo||n.cr||"");
+    if(!Number.isFinite(czas) || Date.now()-czas>7*86400000) return false;
+  }
+  if(qSpecial.tag){ const nazwy=(n.tg||[]).map(id=>(tags.find(t=>t.id===id)||{}).name||"").join(" "); if(!norm(nazwy).includes(qSpecial.tag)) return false; }
+  if(qSpecial.duplicates){
+    if(!searchDuplicateSet){
+      const seen=new Map(), dup=new Set();
+      notes.forEach(x=>{ if(x.del)return; const k=squash((x.t||"")+" "+(x.c||"")).slice(0,800); if(k.length<35)return; if(seen.has(k)){dup.add(x.g);dup.add(seen.get(k));}else seen.set(k,x.g); });
+      searchDuplicateSet=dup;
+    }
+    if(!searchDuplicateSet.has(n.g)) return false;
+  }
+  return true;
+}
+function ocenTrafnosc(n){
+  if(!query) return {score:0,reason:"",snippet:""};
+  const title=norm(n.t||""), body=norm(n.c||""), ref=norm(refLabel(n)||""), tag=norm((n.tg||[]).map(id=>(tags.find(t=>t.id===id)||{}).name||"").join(" "));
+  let score=0,reason="treść";
+  qAdvPhrases.forEach(p=>{ if(title.includes(p)){score+=130;reason="dokładny tytuł";} else if(ref.includes(p)){score+=115;reason="werset";} else if(tag.includes(p)){score+=95;reason="etykieta";} else if(body.includes(p)) score+=65; });
+  qAdvTerms.flat().forEach(t=>{ const nt=norm(t); if(title===nt){score+=150;reason="dokładny tytuł";} else if(title.includes(nt)){score+=90;reason="tytuł";} if(ref.includes(nt)){score+=100;reason="werset";} if(tag.includes(nt)){score+=75;reason="etykieta";} if(body.includes(nt)) score+=25; });
+  if(searchMode==="smart") qAdvTerms.forEach(g=>{ if(smartTermMatch(searchTextOf(n),g)) score+=12; });
+  if(n.pin) score+=3; if(n.fav) score+=2;
+  const plain=(n.c||n.t||"").replace(/\s+/g," "); let at=-1;
+  for(const t of qAdvTerms.flat()){ at=norm(plain).indexOf(norm(t)); if(at>=0) break; }
+  if(at<0) at=0; const snippet=plain.slice(Math.max(0,at-45),Math.min(plain.length,at+115));
+  return {score,reason,snippet:(at>0?"…":"")+snippet+(at+115<plain.length?"…":"")};
+}
 /**
  * Rozkłada wpisane zapytanie na gotowe do użycia wyrażenia regularne.
  * Obsługiwana składnia:
@@ -8820,6 +9034,7 @@ function parseQuery(q){
   resetQueryCache();          // inne zapytanie → stare wyniki są nieaktualne
   qComp = null; qHl = null; qFields = null;
   _qNorm = norm(query); _qSquash = squash(query);
+  parseAdvancedQuery(query);
   if(!query) return;
   try{
     const groups=[]; const fields=[]; let orFlag=false;
@@ -8838,6 +9053,7 @@ function parseQuery(q){
       else{
         const w=m[7];
         if(w===undefined) continue;
+        if(w[0]==="-" || /^not$/i.test(w) || w[0]==="@" || w[0]==="#" || /^(biblia|publikacja|kolor):/i.test(w)) continue;
         if(w==="|" || /^or$/i.test(w)){ orFlag=true; continue; }
         if(w.includes("|")) alts=w.split("|").map(s=>s.trim()).filter(Boolean);
         else alts=[w];
@@ -8885,11 +9101,16 @@ function squash(s){ return norm(s).replace(/[^\p{L}\p{N}]+/gu,""); }
    i raz dla panelu publikacji. Przy kilkunastu tysiącach notatek to cztery
    pełne przebiegi zamiast jednego. Podręczna mapa żyje tylko do najbliższego
    renderAll(), które ją czyści — patrz resetQueryCache(). */
-let _qCache = null;
+var _qCache = null;
 /** Czyści podręczne wyniki wyszukiwania. Wywoływane na starcie renderAll(). */
-function resetQueryCache(){ _qCache = null; }
+function resetQueryCache(){
+  _qCache = null;
+  if(searchScores) searchScores.clear();
+  if(searchDetails) searchDetails.clear();
+  searchDuplicateSet=null;
+}
 function noteMatchesQuery(n){
-  if(!query) return true;
+  if(!query && !aktywneOpcjeSzukania()) return true;
   if(!n || !n.g) return dopasujZapytanie(n);
   if(!_qCache) _qCache = new Map();
   const zapamietane = _qCache.get(n.g);
@@ -8900,13 +9121,25 @@ function noteMatchesQuery(n){
 }
 /** Właściwe dopasowanie notatki do zapytania. */
 function dopasujZapytanie(n){
+  if(!przechodziOpcjeSzukania(n)) return false;
   if(!query) return true;
   if(qFields && !qFields.every(({f,v})=>norm(noteFieldText(n,f)).includes(v))) return false;
   const c = searchTextOf(n);                 // gotowe, znormalizowane teksty notatki
-  if(!qComp) return qFields ? true : c.norm.includes(_qNorm);
-  if(qComp.every(rx=>rx.test(c.norm))) return true;
-  // zapasowo: dopasowanie bez spacji i znaków przestankowych
-  return _qSquash.length>=3 && c.squashed.includes(_qSquash);
+  if(qAdvNeg.some(g=>searchMode==="smart"?smartTermMatch(c,g):g.some(t=>c.norm.includes(norm(t))))) return false;
+  let ok;
+  if(searchMode==="smart"){
+    const frazyOk=qAdvPhrases.every(p=>c.norm.includes(p)||c.squashed.includes(squash(p)));
+    const slowaOk=qAdvTerms.every(g=>smartTermMatch(c,g));
+    ok=frazyOk&&slowaOk;
+    if(!qAdvPhrases.length&&!qAdvTerms.length) ok=!!(qFields||Object.keys(qSpecial).length);
+    if(!ok && _qSquash.length>=3) ok=c.squashed.includes(_qSquash);
+  }else{
+    ok=!qComp ? (qFields||Object.keys(qSpecial).length ? true : c.norm.includes(_qNorm))
+              : qComp.every(rx=>rx.test(c.norm));
+    if(!ok) ok=_qSquash.length>=3 && c.squashed.includes(_qSquash);
+  }
+  if(ok && n && n.g){ const d=ocenTrafnosc(n); searchScores.set(n.g,d.score); searchDetails.set(n.g,d); }
+  return !!ok;
 }
 
 </script>
@@ -8987,7 +9220,10 @@ function matchesQuick(n){
    Liczą jej potrzebują zarówno lista, jak i liczniki nad listą, więc obliczamy ją raz
    i podajemy dalej zamiast przeglądać wszystkie notatki kilka razy z rzędu. */
 function baseNotes(){
-  return notes.filter(n=>!n.del && noteMatchesTag(n,filt.tag) && noteMatchesBook(n,filt.book) && noteMatchesCh(n) && noteMatchesQuery(n));
+  const globalne=(query||aktywneOpcjeSzukania())&&searchOpts.scope==="all";
+  return notes.filter(n=>!n.del &&
+    (globalne || (noteMatchesTag(n,filt.tag) && noteMatchesBook(n,filt.book) && noteMatchesCh(n))) &&
+    noteMatchesQuery(n));
 }
 /**
  * Notatki widoczne na liście: baza plus szybki filtr (przypięte, ulubione, bez etykiety…).
@@ -9704,6 +9940,7 @@ const moOf = n => n.mo || n.cr || "";     // data ostatniej zmiany
 /* Zestaw porównywarek powstaje raz przy starcie. Wcześniej cały obiekt z ośmioma
    funkcjami budował się od nowa przy każdym sortowaniu listy. */
 const SORTERS = {
+    relevance:(a,b)=>(searchScores.get(b.g)||0)-(searchScores.get(a.g)||0)||moOf(b).localeCompare(moOf(a)),
     new:(a,b)=>moOf(b).localeCompare(moOf(a)),                    // ostatnia zmiana — najnowsze
     old:(a,b)=>moOf(a).localeCompare(moOf(b)),                    // ostatnia zmiana — najstarsze
     createdNew:(a,b)=>crOf(b).localeCompare(crOf(a)),             // utworzone — najnowsze
@@ -9892,13 +10129,20 @@ function emptyStateEl(){
   const q=(query||"").trim();
   const wrap=document.createElement("div"); wrap.className="emptyState";
   let icon=ICO.notes, title="Brak notatek", sub="Dodaj pierwszą notatkę albo zaimportuj backup z JW Library.", btn=true;
-  if(q){ icon=ICO.search; title="Brak wyników"; sub="Nic nie pasuje do „"+esc(q)+"”. Spróbuj innego słowa albo gwiazdki (miłos*)."; btn=false; }
+  if(q){ icon=ICO.search; title="Brak dokładnych wyników"; sub="Nic nie pasuje do „"+esc(q)+"”. Tryb inteligentny może uwzględnić odmiany, podobne pojęcia i literówki."; btn=false; }
   else if(sortMode==="recent"){ title="Brak ostatnio otwieranych"; sub="Otwórz notatkę, a pojawi się tutaj."; btn=false; }
   else if(filt.tag==="none"){ title="Wszystkie notatki mają etykiety"; sub="Notatki bez etykiety pojawią się tutaj."; btn=false; }
   else if(filt.tag && filt.tag!=="all"){ title="Pusta etykieta"; sub="Dodaj notatkę albo przeciągnij tu istniejącą."; }
   wrap.innerHTML = `<div class="es-ic">${icon}</div><div class="es-title">${title}</div><div class="es-sub">${sub}</div>`+
-    (btn?`<button class="btn primary es-btn">${ICO.plus} Nowa notatka</button>`:"");
+    (btn?`<button class="btn primary es-btn">${ICO.plus} Nowa notatka</button>`:q?`<button class="btn primary es-similar">Pokaż podobne</button>`:"");
   const b=wrap.querySelector(".es-btn"); if(b) b.onclick=()=>$("btnNew").click();
+  const s=wrap.querySelector(".es-similar"); if(s) s.onclick=()=>{
+    searchMode="smart";searchOpts.scope="all";searchOpts.group="all";searchOpts.dateFrom="";searchOpts.dateTo="";searchOpts.highlight="all";searchOpts.extra="all";
+    /* Gdy kilka słów było wymaganych naraz, „podobne” rozluźnia warunek do
+       dowolnego z nich. Przy jednym słowie nadal pomaga tryb inteligentny. */
+    const luz=qAdvTerms.flat().filter(Boolean); const nowe=luz.length>1?luz.join(" OR "):query;
+    $("search").value=nowe; lsSet(KP+"SearchMode",searchMode);parseQuery(nowe);renderAll();
+  };
   return wrap;
 }
 /* ——— odświeżanie listy notatek ———
@@ -9911,12 +10155,10 @@ let _tagsVer = 0;                   // rośnie przy zmianie etykiet (wpływa na 
 function bumpTagsVer(){ _tagsVer++; }
 
 /* wszystko, co widać na karcie — gdy to samo, karta może zostać bez zmian */
-/* W ODCISKU KARTY NIE MA WPISANEGO SZUKANIA.
-   Było — bo podświetlenie trafień jest częścią tego, co karta pokazuje. Skutek:
-   KAŻDA LITERA WPISANA W WYSZUKIWARKĘ BUDOWAŁA OD NOWA WSZYSTKIE WIDOCZNE
-   KARTY, ze zdjęciami, przyciskami i powiązanymi notatkami — po to, żeby
-   zmienić kolor kilku słów. Podświetlenie nakładamy więc na karty, które już
-   stoją na ekranie (odswiezPodswietlenie), a odcisk pilnuje tylko treści.
+/* Odcisk uwzględnia zapytanie wyłącznie wtedy, gdy wyszukiwanie jest aktywne.
+   Jest to konieczne, bo karta pokazuje teraz także powód trafienia i fragment
+   tekstu. Samo kolorowanie pozostaje nakładane na istniejące karty przez
+   odswiezPodswietlenie, bez zbędnego przebudowywania całej listy.
 
    KARTA ZALEŻY OD SPOSOBU SORTOWANIA TYLKO W JEDNYM: pokazuje datę utworzenia
    albo datę zmiany. Przez długi czas w odcisku karty siedział cały sortMode,
@@ -9930,7 +10172,7 @@ function noteCardSig(n){
   return [n.g, n.mo, n.t, (n.h||n.c||"").length, n.pin?1:0, n.fav?1:0, n.ord||0, n.ptb||0, n.tg.join(","), n.b, n.ch, n.v,
           n.ks, n.itn, n.par, n.ff, n.lh, n.pm, n.la, n.stb, n.cr, n.wys, n.bg,
           (n.pwt ? n.pwt.d+"/"+n.pwt.o : ""),
-          sortujePoUtworzeniu(), _tagsVer].join("\u0001");
+          sortujePoUtworzeniu(), _tagsVer, query?query+":"+(searchScores.get(n.g)||0):""].join("\u0001");
 }
 /**
  * Zwraca kartę notatki: gotową z pamięci podręcznej albo nowo zbudowaną.
@@ -9995,6 +10237,7 @@ function renderNotes(){
   renderQuickFilters(_base);
   if(typeof odswiezPrzyciskWszystkie==="function") odswiezPrzyciskWszystkie();
   setText($("counts"), countsTxt);
+  if(typeof renderSearchStatus==="function") renderSearchStatus(arr);
   let _alive=0; for(let i=0;i<notes.length;i++) if(!notes[i].del) _alive++;
   setText($("hCount"), _alive + " notatek · " + tags.length + " etykiet");
   const el = $("noteList");
@@ -10280,7 +10523,9 @@ function noteCard(n){
   if(n.lh) d.style.setProperty("--nLh", n.lh);        // własna interlinia notatki
   if(n.pm) d.style.setProperty("--nPm", n.pm);        // własny odstęp akapitów
   const link = finderUrl(n);        // gotowy adres do JW Library — używany też przez menu „Więcej"
-  d.innerHTML = noteCardHead(n) + noteCardMeta(n) + noteCardChips(n) +
+  const sd=query?searchDetails.get(n.g):null;
+  const match=sd?`<div class="searchMatch"><span class="searchReason">${esc(sd.reason||"dopasowanie")}</span><span class="searchSnippet">${esc(sd.snippet||"")}</span></div>`:"";
+  d.innerHTML = noteCardHead(n) + noteCardMeta(n) + noteCardChips(n) + match +
                 (typeof htmlPaskaPowtorki==="function" ? htmlPaskaPowtorki(n) : "") +
                 `<div class="ncontent">${contentHtml(n)}</div>` +
                 `<div class="wysUchwyt" title="Przeciągnij, aby zmienić wysokość notatki (dwuklik = jak w widoku)"></div>` +
@@ -10905,6 +11150,91 @@ $("modalFs").querySelector(".fsmodal")?.addEventListener("click", e=>{
     if(Math.abs(dx)>90 && Math.abs(dy)<35 && Math.abs(dx)>Math.abs(dy)*2){ fsGo(dx<0 ? 1 : -1); }
   }, {passive:true});
 })();
+
+/* ===== PANEL, HISTORIA I INTELIGENTNE ZAKŁADKI WYSZUKIWANIA ===== */
+const SEARCH_SAVED_KEY=KP+"SearchSaved";
+function savedSearches(){ try{ const x=JSON.parse(lsGet(SEARCH_SAVED_KEY,"[]")); return Array.isArray(x)?x:[]; }catch(_){return [];} }
+function storeSavedSearches(a){ lsSet(SEARCH_SAVED_KEY,JSON.stringify(a.slice(0,30))); }
+function zastosujStanSzukania(x){
+  const inp=$("search"); inp.value=x.q||"";
+  searchMode=x.mode==="exact"?"exact":"smart";
+  searchOpts=Object.assign({scope:"current",group:"all",dateFrom:"",dateTo:"",highlight:"all",extra:"all"},x.opts||{});
+  lsSet(KP+"SearchMode",searchMode); lsSet(KP+"SearchOpts",JSON.stringify(searchOpts));
+  parseQuery(inp.value); sortMode=query?"relevance":sortMode; if(query) $("sortSel").value="relevance";
+  renderAll();
+}
+function renderSavedSearches(){
+  const box=$("sSavedList"); if(!box)return;
+  const zapisane=savedSearches(); const hist=recentSearches().filter(q=>!zapisane.some(x=>x.q===q)).slice(0,6);
+  const one=(x,historia)=>`<span class="sSavedItem"><button type="button" data-sload="${esc(x.id||x.q)}" title="Uruchom">${x.pin?"★ ":historia?"🕘 ":""}${esc(x.name||x.q)}</button>`+
+    `<button type="button" class="sPin${x.pin?" on":""}" data-spin="${esc(x.id||x.q)}" title="${historia?"Przypnij i zapisz":"Przypnij"}">★</button>`+
+    (!historia?`<button type="button" class="sDel" data-sdel="${esc(x.id)}" title="Usuń">×</button>`:"")+`</span>`;
+  box.innerHTML=zapisane.sort((a,b)=>(b.pin?1:0)-(a.pin?1:0)).map(x=>one(x,false)).join("")+hist.map(q=>one({q,name:q},true)).join("")||'<span class="muted">Jeszcze nic nie zapisano.</span>';
+}
+function wypelnijPanelSzukania(){
+  document.querySelectorAll("[data-smode]").forEach(b=>b.classList.toggle("on",b.dataset.smode===searchMode));
+  $("sScope").value=searchOpts.scope; $("sGroup").value=searchOpts.group;
+  $("sDateFrom").value=searchOpts.dateFrom; $("sDateTo").value=searchOpts.dateTo;
+  $("sHighlight").value=String(searchOpts.highlight); $("sExtra").value=searchOpts.extra;
+  renderSavedSearches();
+}
+function zapiszOpcjeZPanelu(){
+  searchOpts={scope:$("sScope").value,group:$("sGroup").value,dateFrom:$("sDateFrom").value,dateTo:$("sDateTo").value,highlight:$("sHighlight").value,extra:$("sExtra").value};
+  lsSet(KP+"SearchOpts",JSON.stringify(searchOpts)); resetQueryCache(); renderAll();
+}
+$("btnSearchTools").onclick=()=>{ hideSearchSug(); wypelnijPanelSzukania(); openModal("modalSearch"); };
+document.querySelectorAll("[data-smode]").forEach(b=>b.onclick=()=>{
+  searchMode=b.dataset.smode; lsSet(KP+"SearchMode",searchMode); parseQuery($("search").value); wypelnijPanelSzukania(); renderAll();
+});
+["sScope","sGroup","sDateFrom","sDateTo","sHighlight","sExtra"].forEach(id=>$(id).addEventListener("change",zapiszOpcjeZPanelu));
+$("sClearQuery").onclick=()=>{
+  $("search").value=""; parseQuery("");
+  if(sortMode==="relevance"){
+    sortMode=window._sortPrzedSzukaniem||"new";
+    $("sortSel").value=sortMode;
+  }
+  renderAll();
+};
+$("sClearFilters").onclick=()=>{ searchOpts={scope:"current",group:"all",dateFrom:"",dateTo:"",highlight:"all",extra:"all"}; lsSet(KP+"SearchOpts",JSON.stringify(searchOpts)); resetQueryCache(); wypelnijPanelSzukania(); renderAll(); };
+$("sSave").onclick=async()=>{
+  const q=$("search").value.trim(); if(!q&&!aktywneOpcjeSzukania()){toast("Najpierw wpisz zapytanie albo wybierz filtr");return;}
+  const name=await askText({title:"Nazwa inteligentnej zakładki",value:q||"Moje wyszukiwanie",okLabel:"Zapisz"}); if(!name)return;
+  const a=savedSearches(); a.unshift({id:"s"+Date.now(),name:name.trim(),q,mode:searchMode,opts:Object.assign({},searchOpts),pin:false}); storeSavedSearches(a); renderSavedSearches(); toastOk("Zapisano inteligentną zakładkę");
+};
+$("sSavedList").onclick=e=>{
+  const load=e.target.closest("[data-sload]"),pin=e.target.closest("[data-spin]"),del=e.target.closest("[data-sdel]"); let a=savedSearches();
+  if(del){storeSavedSearches(a.filter(x=>x.id!==del.dataset.sdel));renderSavedSearches();return;}
+  if(pin){ const x=a.find(y=>y.id===pin.dataset.spin); if(x)x.pin=!x.pin; else{const q=pin.dataset.spin;a.unshift({id:"s"+Date.now(),name:q,q,mode:searchMode,opts:Object.assign({},searchOpts),pin:true});} storeSavedSearches(a);renderSavedSearches();return; }
+  if(load){ const x=a.find(y=>y.id===load.dataset.sload)||{q:load.dataset.sload,mode:searchMode,opts:searchOpts}; zastosujStanSzukania(x); closeModal("modalSearch"); }
+};
+$("sDuplicates").onclick=()=>{ $("search").value="@duplikaty"; zastosujStanSzukania({q:"@duplikaty",mode:"smart",opts:Object.assign({},searchOpts,{scope:"all"})}); closeModal("modalSearch"); };
+$("sSimilar").onclick=()=>{
+  const n=notes.filter(x=>!x.del).sort((a,b)=>(b.la||"").localeCompare(a.la||""))[0]; if(!n){toast("Najpierw otwórz notatkę");return;}
+  const slowa=(norm((n.t||"")+" "+(n.c||"")).match(/[a-z]{5,}/g)||[]).filter(x=>!SZUK_STOP.has(x));
+  const q=[...new Set(slowa)].slice(0,4).join(" "); zastosujStanSzukania({q,mode:"smart",opts:Object.assign({},searchOpts,{scope:"all"})}); closeModal("modalSearch");
+};
+let searchFocusIndex=-1;
+function searchPrzejdz(dir){
+  const cards=[...document.querySelectorAll("#noteList .ncard")]; if(!cards.length)return;
+  searchFocusIndex=(searchFocusIndex+dir+cards.length)%cards.length; cards.forEach((c,i)=>c.classList.toggle("searchFocus",i===searchFocusIndex)); cards[searchFocusIndex].scrollIntoView({behavior:"smooth",block:"center"});
+}
+function renderSearchStatus(arr){
+  const box=$("searchStatus"); const active=!!query||aktywneOpcjeSzukania(); box.hidden=!active; if(!active){box.innerHTML="";return;}
+  const cnt={all:arr.length,bible:0,publication:0,own:0}; arr.forEach(n=>cnt[kategoriaNotatki(n)]++);
+  box.innerHTML=`<span class="ssInfo">${searchMode==="smart"?"Inteligentnie":"Dokładnie"} · ${arr.length} wyników</span>`+
+    [["all","Wszystkie"],["bible","Biblia"],["publication","Publikacje"],["own","Własne"]].map(([k,l])=>`<button class="ssChip${searchOpts.group===k?" on":""}" data-ssgroup="${k}">${l} ${cnt[k]}</button>`).join("")+
+    `<button class="ssNav" data-ssnav="-1" title="Poprzedni wynik">↑</button><button class="ssNav" data-ssnav="1" title="Następny wynik">↓</button><button class="ssNav" data-sshelp="1">Instrukcja</button><button class="ssNav" data-ssclear="1">Wyczyść</button>`;
+  box.onclick=e=>{
+    const g=e.target.closest("[data-ssgroup]"); if(g){searchOpts.group=g.dataset.ssgroup;lsSet(KP+"SearchOpts",JSON.stringify(searchOpts));resetQueryCache();renderAll();return;}
+    const n=e.target.closest("[data-ssnav]"); if(n){searchPrzejdz(+n.dataset.ssnav);return;}
+    if(e.target.closest("[data-sshelp]")){$("btnSearchTools").click();return;}
+    if(e.target.closest("[data-ssclear]")){
+      $("search").value="";parseQuery("");searchOpts={scope:"current",group:"all",dateFrom:"",dateTo:"",highlight:"all",extra:"all"};lsSet(KP+"SearchOpts",JSON.stringify(searchOpts));
+      if(sortMode==="relevance"){sortMode=window._sortPrzedSzukaniem||"new";$("sortSel").value=sortMode;}
+      renderAll();
+    }
+  };
+}
 
 </script>
 <script>
@@ -14482,7 +14812,34 @@ function daneKopii(){
           secTabs: (typeof secTabs!=="undefined" ? secTabs : []),
           /* Szablony też są dorobkiem użytkownika: powstają z jego notatek
              i mają jechać razem z nimi na drugie urządzenie. */
-          szablony: (typeof szablony!=="undefined" ? szablony : [])};
+          szablony: (typeof szablony!=="undefined" ? szablony : []),
+          /* Inteligentne zakładki i ustawienia wyszukiwania są częścią
+             warsztatu użytkownika, więc kopia przenosi je na inne urządzenie. */
+          searchSaved: (typeof savedSearches==="function" ? savedSearches() : []),
+          searchMode: (typeof searchMode!=="undefined" ? searchMode : "smart"),
+          searchOpts: (typeof searchOpts!=="undefined" ? searchOpts : null)};
+}
+
+function bezpieczneWyszukiwania(data){
+  const zapisane=(Array.isArray(data&&data.searchSaved)?data.searchSaved:[]).slice(0,30).map((x,i)=>{
+    if(!x || typeof x!=="object" || typeof x.q!=="string") return null;
+    const q=x.q.trim().slice(0,300); if(!q && !x.opts) return null;
+    return {id:(typeof x.id==="string"?x.id:"s-import-"+i+"-"+Date.now()).slice(0,80),
+      name:(typeof x.name==="string"?x.name:q||"Wyszukiwanie").trim().slice(0,80), q,
+      mode:x.mode==="exact"?"exact":"smart", opts:bezpieczneOpcjeSzukania(x.opts), pin:!!x.pin};
+  }).filter(Boolean);
+  return zapisane;
+}
+function bezpieczneOpcjeSzukania(x){
+  x=(x&&typeof x==="object")?x:{};
+  return {
+    scope:["current","all"].includes(x.scope)?x.scope:"current",
+    group:["all","bible","publication","own"].includes(x.group)?x.group:"all",
+    dateFrom:/^\d{4}-\d{2}-\d{2}$/.test(x.dateFrom||"")?x.dateFrom:"",
+    dateTo:/^\d{4}-\d{2}-\d{2}$/.test(x.dateTo||"")?x.dateTo:"",
+    highlight:["all","has","1","2","3","4","5","6","7"].includes(String(x.highlight))?String(x.highlight):"all",
+    extra:["all","fav","pin","img","edited","week"].includes(x.extra)?x.extra:"all"
+  };
 }
 
 /**
@@ -14633,6 +14990,19 @@ function mergeBackup(data, takeLayout, nadpisuj){
     if(doszlo){ saveSzablony(); st.szablonyAdded = doszlo; }
   }
 
+  /* Zapisane wyszukiwania dokładamy po nazwie i zapytaniu. Ustawień bieżącego
+     widoku nie narzucamy przy zwykłym scalaniu; przechodzą tylko wraz z układem. */
+  if(typeof savedSearches==="function"){
+    const moje=savedSearches(), przychodzace=bezpieczneWyszukiwania(data), klucze=new Set(moje.map(x=>norm((x.name||"")+"\n"+(x.q||""))));
+    przychodzace.forEach(x=>{ const k=norm((x.name||"")+"\n"+(x.q||"")); if(!klucze.has(k)){moje.push(x);klucze.add(k);st.searchAdded=(st.searchAdded||0)+1;} });
+    storeSavedSearches(moje);
+    if(takeLayout){
+      searchMode=data.searchMode==="exact"?"exact":"smart";
+      searchOpts=bezpieczneOpcjeSzukania(data.searchOpts);
+      lsSet(KP+"SearchMode",searchMode); lsSet(KP+"SearchOpts",JSON.stringify(searchOpts));
+    }
+  }
+
   // 4) notatki — po identyfikatorze; przy konflikcie wygrywa NOWSZA data zmiany
   const byG={}; notes.forEach(n=>byG[n.g]=n);
   const changed=[];
@@ -14720,6 +15090,9 @@ async function wczytajKopieZTekstu(tekstPliku){
       if(z.color!=null && !kolorBezpieczny(z.color)) delete z.color;
       return true;
     });
+    data.searchSaved = bezpieczneWyszukiwania(data);
+    data.searchOpts = bezpieczneOpcjeSzukania(data.searchOpts);
+    data.searchMode = data.searchMode==="exact" ? "exact" : "smart";
     /* Szablony przesiewamy TUTAJ, w jednym miejscu z resztą — a nie dopiero
        przy scalaniu. Droga „Zastąp wszystko" scalania nie wykonuje, więc
        wcześniej szablony z pliku nie były sprawdzane przez nikogo. */
@@ -14852,6 +15225,12 @@ async function wczytajKopieZTekstu(tekstPliku){
     if(typeof secTabs!=="undefined")  secTabs  = noweZakladkiSekcji;
     if(typeof szablony!=="undefined"){ szablony = noweSzablony;
       if(typeof rysujSzablony==="function") rysujSzablony(); }
+    if(typeof storeSavedSearches==="function"){
+      storeSavedSearches(Array.isArray(data.searchSaved)?data.searchSaved:[]);
+      searchMode=data.searchMode==="exact"?"exact":"smart";
+      searchOpts=bezpieczneOpcjeSzukania(data.searchOpts);
+      lsSet(KP+"SearchMode",searchMode); lsSet(KP+"SearchOpts",JSON.stringify(searchOpts));
+    }
     renderAll();
     /* Do tablicy trafiło naraz dużo notatek — pamięć podręczna szukania
        buduje się od nowa w bezczynności, a nie przy pierwszym klawiszu. */
@@ -15311,7 +15690,12 @@ let searchTimer=null;
    że zasłonięte. Gdy Centrum jest schowane — czyli praktycznie zawsze
    w trakcie szukania — to dwa przypisania i koniec. */
 $("search").addEventListener("input",e=>{
+  const bylo=!!query;
   parseQuery(e.target.value);
+  if(query && !bylo){ window._sortPrzedSzukaniem=sortMode; sortMode="relevance"; $("sortSel").value="relevance"; }
+  else if(!query && bylo && sortMode==="relevance"){
+    sortMode=window._sortPrzedSzukaniem||"new"; $("sortSel").value=sortMode;
+  }
   if(typeof centrumOdswiez === "function") centrumOdswiez();
   clearTimeout(searchTimer);
   searchTimer=setTimeout(renderNotes, 130);
@@ -15359,6 +15743,11 @@ function showSearchSug(val){
       items.push({type:"pub", label:nazwa, hint:pub[nazwa]+" notatek",
         apply:()=> v.replace(/\S+$/,"") + nazwa + " "});
     });
+    const refs={};
+    notes.forEach(n=>{ if(n.del||!n.b) return; const ref=refLabel(n); if(norm(ref).includes(nl)) refs[ref]=(refs[ref]||0)+1; });
+    Object.keys(refs).sort((a,b)=>refs[b]-refs[a]).slice(0,4).forEach(ref=>items.push({type:"ref",label:ref,hint:"werset",apply:()=>v.replace(/\S+$/,'')+'werset:"'+ref+'" '}));
+    const grupa=SZUK_POJECIA.find(g=>g.some(x=>x.includes(nl)||nl.includes(x)));
+    if(grupa) grupa.filter(x=>!x.includes(nl)).slice(0,4).forEach(x=>items.push({type:"concept",label:x,hint:"powiązane pojęcie",apply:()=>v.replace(/\S+$/,'')+x+' '}));
   }
   // 2) pola (gdy użytkownik zaczyna pisać nazwę pola)
   if(nl.length>=1){
@@ -15376,12 +15765,12 @@ function showSearchSug(val){
   items.forEach((it,i)=>{
     if(it.type!==lastType){
       const l=document.createElement("div"); l.className="sug-lbl";
-      l.textContent = it.type==="tag"?"Etykiety":it.type==="pub"?"Publikacje":it.type==="field"?"Zawężanie":"Ostatnie wyszukiwania";
+      l.textContent = it.type==="tag"?"Etykiety":it.type==="pub"?"Publikacje":it.type==="ref"?"Wersety":it.type==="concept"?"Powiązane pojęcia":it.type==="field"?"Zawężanie":"Ostatnie wyszukiwania";
       box.appendChild(l); lastType=it.type;
     }
     const d=document.createElement("div"); d.className="sug"; d.dataset.i=i;
     const ic = it.type==="tag" ? `<span class="sdot" style="background:${it.color||"var(--muted)"}"></span>`
-             : it.type==="field" ? ICO.search : ICO.undo;
+             : it.type==="field"||it.type==="ref"||it.type==="concept" ? ICO.search : ICO.undo;
     d.innerHTML = ic + `<span>${esc(it.label)}</span><span class="shint">${esc(it.hint)}</span>`;
     d.onmousedown = ev=>{ ev.preventDefault(); applySug(it); };
     box.appendChild(d);

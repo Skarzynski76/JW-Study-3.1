@@ -5,6 +5,28 @@ bez niej po miesiącu nie wiadomo, dlaczego coś wygląda tak, a nie inaczej.
 
 ---
 
+## v2.93 — inteligentne wyszukiwanie
+
+- wyniki są domyślnie układane według trafności: tytuł, werset i etykieta mają
+  większą wagę niż zwykłe wystąpienie w treści; karta pokazuje powód trafienia
+  oraz pasujący fragment,
+- tryb inteligentny rozpoznaje polskie odmiany, częste pojęcia bliskoznaczne,
+  skróty ksiąg i drobne literówki; jednym przełącznikiem można wrócić do
+  wyszukiwania ścisłego,
+- dodano frazy w cudzysłowie, `AND`, `OR`, `NOT`, znak `-` do wykluczania,
+  wieloznacznik `*` oraz pola `tytuł:`, `etykieta:`, `werset:` i `treść:`,
+- panel wyszukiwania pozwala wybrać bieżący widok lub wszystkie notatki,
+  grupę, zakres dat, kolor podkreślenia, zdjęcia, ulubione, przypięte,
+  zmienione i ostatni tydzień,
+- działają szybkie polecenia `@ulubione`, `@przypiete`, `@duplikaty`, `#etykieta`,
+  `biblia:`, `publikacja:` i `kolor:żółty`,
+- można zapisywać i przypinać inteligentne zakładki wyszukiwania; ich lista,
+  tryb i filtry trafiają również do kopii zapasowej,
+- brak wyników proponuje szukanie podobnych, a pasek wyników umożliwia
+  grupowanie i przechodzenie do poprzedniej lub następnej karty,
+- kompletna instrukcja znajduje się bezpośrednio w panelu wyszukiwania oraz
+  w głównym oknie pomocy.
+
 ## v2.92 — spokojniejszy czytnik i bezpieczny zapis
 
 - nagłówek czytnika na iPhonie respektuje bezpieczny obszar, rezerwuje miejsce
