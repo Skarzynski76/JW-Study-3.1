@@ -5,6 +5,22 @@ bez niej po miesiącu nie wiadomo, dlaczego coś wygląda tak, a nie inaczej.
 
 ---
 
+## v3.00 — bezpieczny import JW Library i kontrola dużych kopii
+
+- import `.jwlibrary` zapisuje notatki, etykiety, oryginalną kopię oraz
+  metadane w jednej transakcji; pamięć aplikacji zmienia się dopiero po
+  zakończeniu zapisu i ponownym sprawdzeniu liczby rekordów,
+- rozwiązywanie konfliktów z JW Library także czeka na potwierdzony zapis —
+  brak miejsca nie może już pokazać zmiany, której nie ma w bazie urządzenia,
+- duży import ma czytelny postęp etapów i możliwość anulowania do chwili
+  rozpoczęcia atomowego zapisu,
+- iPhone i iPad używają ostrożniejszych limitów archiwum i rozpakowanej bazy;
+  przed pracą aplikacja sprawdza też szacowane wolne miejsce urządzenia,
+- komunikat sukcesu pojawia się dopiero po zapisie i kontroli danych, a testy
+  obejmują teraz pełną ścieżkę importu, limity mobilne i stan po błędzie,
+- uporządkowano nieaktualne testy interfejsu, tak aby sprawdzały obecne siedem
+  filtrów, nowe menu wyglądu, układ tablicy i dolny pasek czytnika.
+
 ## v2.99 — własna paleta bez menu Apple i prawdziwa dolna krawędź
 
 - w nieedytowanym czytniku systemowe menu iOS „Kopiuj / Sprawdź / Tłumacz”

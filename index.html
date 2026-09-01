@@ -472,6 +472,14 @@ html[data-theme="dark"] .pill.par{background:#3a3a45;color:var(--accent2)}
 #msgModal .msgOk.danger{background:#c0392b}
 #msgModal .askBtns{flex-wrap:wrap}
 #msgModal .msgExtra{border:none;border-radius:11px;padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer}
+#modalImportu .import-box{background:var(--panel);border:1px solid var(--border);border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.35);padding:22px;width:min(440px,92vw);max-height:min(88vh,700px);overflow-y:auto}
+#modalImportu .import-title{font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px}
+#modalImportu .import-stage{font-size:14px;color:var(--muted);line-height:1.45;min-height:21px}
+#modalImportu .import-progress{width:100%;height:9px;margin:16px 0 8px;display:block;accent-color:var(--accent)}
+#modalImportu .import-percent{font-size:12px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+#modalImportu .import-actions{display:flex;justify-content:flex-end;margin-top:16px}
+#modalImportu .import-cancel{min-height:42px}
+#modalImportu[data-cancelled="1"] .import-cancel{opacity:.55;pointer-events:none}
 /* okno eksportu do JW Library — kroki i ostrzeżenie */
 .exp-steps{display:flex;flex-direction:column;gap:10px;margin:4px 0 14px}
 .exp-step{display:flex;gap:11px;align-items:flex-start;font-size:13.5px;line-height:1.5;color:var(--text)}
@@ -7364,7 +7372,7 @@ details.powiazane[open] .powPanel{
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <h1 class="brand-name">JW Study <span class="ver">v2.99</span></h1>
+      <h1 class="brand-name">JW Study <span class="ver">v3.00</span></h1>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -7537,6 +7545,15 @@ details.powiazane[open] .powPanel{
     <div class="askTitle"></div>
     <div class="msgBody"></div>
     <div class="askBtns"><button class="msgCancel" type="button">Anuluj</button><button class="msgOk" type="button">OK</button></div>
+  </div>
+</div>
+<div class="overlay" id="modalImportu" data-lock-close="1" aria-hidden="true">
+  <div class="import-box" role="dialog" aria-modal="true" aria-labelledby="importTitle">
+    <div class="import-title" id="importTitle">Import z JW Library</div>
+    <div class="import-stage" id="importStage" role="status" aria-live="polite">Przygotowanie…</div>
+    <progress class="import-progress" id="importProgress" max="100" value="0"></progress>
+    <div class="import-percent" id="importPercent">0%</div>
+    <div class="import-actions"><button class="btn import-cancel" id="importCancel" type="button">Anuluj</button></div>
   </div>
 </div>
 <button id="readExit"><svg class="ic mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 19.5h3.6L19 8.6a1.9 1.9 0 0 0-2.7-2.7L5.2 17z"/><path d="M14.8 7.4l2.7 2.7"/></svg> Pokaż narzędzia</button>
@@ -8070,6 +8087,76 @@ async function idbBulkChunked(store,items){
   for(let i=0;i<items.length;i+=400){
     await idbBulk(store, items.slice(i,i+400));
   }
+}
+/**
+ * Zapis jednego importu z JW Library w jednej transakcji.
+ *
+ * Notatki, etykiety i plik bazowy do późniejszego eksportu muszą wejść razem.
+ * Jeżeli zabraknie miejsca albo karta zostanie zamknięta, IndexedDB wycofa
+ * całą transakcję — na urządzeniu nie zostaje połowa importu ani kopia bazowa
+ * niepasująca do widocznych notatek.
+ */
+function idbZapiszImport(zmienione, noweTagi, buforKopii, nazwaKopii, dataKopii, ileNotatek, onProgress){
+  return new Promise((res,rej)=>{
+    if(!idb) return rej(new Error("Pamięć aplikacji nie jest dostępna na tym urządzeniu"));
+    let tx;
+    try{ tx=idb.transaction(["notes","tags","files","meta"],"readwrite"); }
+    catch(e){ return rej(e); }
+    tx.oncomplete=()=>res(true);
+    tx.onerror=()=>rej(tx.error||new Error("zapis importu się nie powiódł"));
+    tx.onabort=()=>rej(tx.error||new Error("zapis importu został przerwany"));
+    try{
+      const sn=tx.objectStore("notes"), st=tx.objectStore("tags");
+      const listaN=zmienione||[], listaT=noweTagi||[];
+      const razem=Math.max(1,listaN.length+listaT.length), PORCJA=400;
+      let gotowe=0;
+      const podajPostep=()=>{ if(typeof onProgress==="function") onProgress(gotowe/razem); };
+      const zapiszPorcjami=(lista,sklep,koniec)=>{
+        let i=0;
+        const nastepna=()=>{
+          const poczatek=i, doKad=Math.min(lista.length,i+PORCJA); let ostatnie=null;
+          try{
+            for(;i<doKad;i++) ostatnie=sklep.put(lista[i]);
+          }catch(e){ try{tx.abort();}catch(_){} return; }
+          gotowe+=doKad-poczatek;
+          podajPostep();
+          if(i<lista.length && ostatnie){ ostatnie.onsuccess=nastepna; return; }
+          koniec();
+        };
+        nastepna();
+      };
+      zapiszPorcjami(listaN,sn,()=>zapiszPorcjami(listaT,st,()=>{
+        tx.objectStore("files").put(buforKopii,"lastBackup");
+        const sm=tx.objectStore("meta");
+        sm.put(nazwaKopii,"lastBackupName");
+        sm.put(dataKopii,"lastBackupDate");
+        /* Odczyt kontrolny jest częścią tej samej transakcji. Jeżeli liczby nie
+           pasują, abort wycofuje również wcześniejsze put() i plik bazowy. */
+        const cn=sn.count(), ct=st.count();
+        let nGot=false,tGot=false,nVal=0,tVal=0;
+        const zweryfikuj=()=>{
+          if(!nGot||!tGot) return;
+          if(nVal!==ileNotatek || tVal!==listaT.length){ try{tx.abort();}catch(_){} }
+        };
+        cn.onsuccess=()=>{nGot=true;nVal=cn.result;zweryfikuj();};
+        ct.onsuccess=()=>{tGot=true;tVal=ct.result;zweryfikuj();};
+        cn.onerror=ct.onerror=()=>{try{tx.abort();}catch(_){}};
+      }));
+    }catch(e){ try{tx.abort();}catch(_){} }
+  });
+}
+/** Kontrolny odczyt po imporcie — komunikat sukcesu wolno pokazać dopiero po nim. */
+async function sprawdzImport(ileNotatek, ileEtykiet, nazwaKopii, dataKopii){
+  if(!idb) return {zgadza:false};
+  try{
+    const [notatki,etykiety,nazwa,data]=await Promise.all([
+      idbCount("notes"), idbCount("tags"),
+      idbGet("meta","lastBackupName"), idbGet("meta","lastBackupDate")
+    ]);
+    return {notatki,etykiety,nazwa,data,
+      zgadza:notatki===ileNotatek && etykiety===ileEtykiet &&
+              nazwa===nazwaKopii && data===dataKopii};
+  }catch(e){ return {zgadza:false,blad:e}; }
 }
 /**
  * Wymiana CAŁEJ zawartości bazy w jednej transakcji.
@@ -14142,9 +14229,78 @@ $("mfInput").addEventListener("change", e=>{
    plik („bomba zip"). Baza SQLite wczytywana jest w całości do pamięci, więc
    dla przeglądarki na telefonie kończyłoby się to zawieszeniem karty.
    Dlatego sprawdzamy rozmiar PRZED rozpakowaniem i po nim. */
-const MAX_ARCHIWUM   = 300 * 1024 * 1024;   // sam plik .jwlibrary
-const MAX_BAZA       = 400 * 1024 * 1024;   // userData.db po rozpakowaniu
+const MAX_ARCHIWUM   = 300 * 1024 * 1024;   // komputer: sam plik .jwlibrary
+const MAX_BAZA       = 400 * 1024 * 1024;   // komputer: userData.db po rozpakowaniu
+const MAX_MOBILE_ARCHIWUM = 80 * 1024 * 1024;
+const MAX_MOBILE_BAZA     = 120 * 1024 * 1024;
 const MAX_WPISOW_ZIP = 5000;                // rozsądna kopia ma ich kilkanaście
+
+function importNaUrzadzeniuMobilnym(){
+  const dotyk = typeof navigator!=="undefined" && (navigator.maxTouchPoints||0)>1;
+  return dotyk && Math.min(screen.width||innerWidth, screen.height||innerHeight) < 1100;
+}
+function limityImportu(){
+  return importNaUrzadzeniuMobilnym()
+    ? {archiwum:MAX_MOBILE_ARCHIWUM,baza:MAX_MOBILE_BAZA,mobilne:true}
+    : {archiwum:MAX_ARCHIWUM,baza:MAX_BAZA,mobilne:false};
+}
+
+class ImportAnulowany extends Error{
+  constructor(){ super("Import został anulowany — niczego nie zapisano."); this.name="ImportAnulowany"; }
+}
+let _stanImportu=null;
+function pokazPostepImportu(){
+  _stanImportu={anulowany:false,zapisRozpoczety:false};
+  const m=$("modalImportu"); m.dataset.cancelled="0";
+  $("importCancel").disabled=false;
+  $("importCancel").textContent="Anuluj";
+  $("importCancel").onclick=()=>{
+    if(!_stanImportu || _stanImportu.zapisRozpoczety) return;
+    _stanImportu.anulowany=true; m.dataset.cancelled="1";
+    $("importStage").textContent="Kończę bez zapisywania…";
+    $("importCancel").textContent="Anulowanie…";
+  };
+  ustawPostepImportu(0,"Przygotowanie importu…");
+  openModal("modalImportu");
+}
+function ustawPostepImportu(procent, etap){
+  const p=Math.max(0,Math.min(100,Math.round(procent||0)));
+  $("importProgress").value=p; $("importPercent").textContent=p+"%";
+  if(etap) $("importStage").textContent=etap;
+}
+function sprawdzAnulowanieImportu(){
+  if(_stanImportu && _stanImportu.anulowany) throw new ImportAnulowany();
+}
+function rozpocznijZapisImportu(){
+  sprawdzAnulowanieImportu();
+  if(_stanImportu) _stanImportu.zapisRozpoczety=true;
+  $("importCancel").disabled=true;
+  $("importCancel").textContent="Zapisywanie…";
+}
+function schowajPostepImportu(){
+  $("importCancel").onclick=null; closeModal("modalImportu"); _stanImportu=null;
+}
+function oddechImportu(){ return new Promise(res=>setTimeout(res,0)); }
+
+async function sprawdzMiejsceDlaImportu(archiwum, baza){
+  if(!(navigator.storage && navigator.storage.estimate)) return true;
+  try{
+    const {usage=0,quota=0}=await navigator.storage.estimate();
+    if(!quota) return true;
+    const wolne=quota-usage;
+    /* W pamięci urządzenia zostaje archiwum bazowe oraz tekst notatek wyjęty
+       z SQLite. Zapas chroni przed sytuacją, gdy import zajmie ostatnie bajty
+       i zablokuje zapis pierwszej późniejszej notatki. */
+    const potrzeba=archiwum + Math.min(baza,200*1024*1024)*.75 + 20*1024*1024;
+    if(wolne < potrzeba)
+      throw new Error("Za mało wolnego miejsca na bezpieczny import. Potrzeba około "+
+        ludzkiRozmiar(potrzeba)+", a dostępne jest "+ludzkiRozmiar(Math.max(0,wolne))+". "+
+        "Zrób kopię danych, usuń zbędne zdjęcia lub wykonaj import na urządzeniu z większą ilością miejsca.");
+  }catch(e){
+    if(/Za mało wolnego miejsca/.test(e&&e.message||"")) throw e;
+  }
+  return true;
+}
 
 /** Czytelny rozmiar do komunikatów. */
 function ludzkiRozmiar(b){
@@ -14154,22 +14310,33 @@ function ludzkiRozmiar(b){
 async function handleImportFile(e){
   const file=e.target.files[0]; e.target.value="";
   if(!file) return;
+  const limity=limityImportu();
   try{
-    if(file.size > MAX_ARCHIWUM)
+    if(file.size > limity.archiwum)
       throw new Error("Plik ma "+ludzkiRozmiar(file.size)+", a dopuszczalne jest do "+
-                      ludzkiRozmiar(MAX_ARCHIWUM)+". To nie wygląda na kopię z JW Library.");
+                      ludzkiRozmiar(limity.archiwum)+". "+
+                      (limity.mobilne
+                        ? "Na iPhonie i iPadzie większa kopia może zamknąć aplikację z braku pamięci. Otwórz ją na komputerze."
+                        : "To nie wygląda na bezpieczną kopię z JW Library."));
     if(file.size === 0) throw new Error("Plik jest pusty.");
   }catch(err){ showInfo("Nie wczytano kopii", esc(err.message)); return; }
 
-  toast("Wczytywanie backupu…");
+  pokazPostepImportu();
   let db = null;
+  let zapisano=false;
   try{
+    ustawPostepImportu(4,"Wczytuję bezpieczne biblioteki…");
     await getLibs();
+    sprawdzAnulowanieImportu();
+    ustawPostepImportu(12,"Odczytuję archiwum…");
     const buf=await file.arrayBuffer();
+    sprawdzAnulowanieImportu();
 
     let zip;
     try{ zip = await JSZip.loadAsync(buf); }
     catch(err){ throw new Error("Pliku nie da się otworzyć jako archiwum — jest uszkodzony albo to nie jest kopia z JW Library."); }
+    sprawdzAnulowanieImportu();
+    ustawPostepImportu(25,"Sprawdzam zawartość kopii…");
 
     const wpisy = Object.keys(zip.files);
     if(wpisy.length > MAX_WPISOW_ZIP)
@@ -14181,16 +14348,26 @@ async function handleImportFile(e){
     /* Rozmiar po rozpakowaniu znamy z nagłówka archiwum — sprawdzamy go, ZANIM
        zaczniemy rozpakowywać, więc bomba zip nie zdąży zająć pamięci. */
     const zapowiadany = dbFile._data && dbFile._data.uncompressedSize;
-    if(zapowiadany && zapowiadany > MAX_BAZA)
+    if(zapowiadany && zapowiadany > limity.baza)
       throw new Error("Baza w archiwum ma "+ludzkiRozmiar(zapowiadany)+" po rozpakowaniu, "+
-                      "a dopuszczalne jest do "+ludzkiRozmiar(MAX_BAZA)+".");
+                      "a dopuszczalne jest do "+ludzkiRozmiar(limity.baza)+
+                      (limity.mobilne ? " na tym urządzeniu mobilnym." : "."));
 
     let dbBytes;
-    try{ dbBytes = await dbFile.async("uint8array"); }
-    catch(err){ throw new Error("Nie udało się rozpakować bazy z archiwum — plik jest uszkodzony."); }
+    try{
+      dbBytes = await dbFile.async("uint8array", meta=>{
+        ustawPostepImportu(28+(meta.percent||0)*.27,"Rozpakowuję bazę JW Library…");
+        sprawdzAnulowanieImportu();
+      });
+    }
+    catch(err){
+      if(err && err.name==="ImportAnulowany") throw err;
+      throw new Error("Nie udało się rozpakować bazy z archiwum — plik jest uszkodzony.");
+    }
 
-    if(dbBytes.length > MAX_BAZA)
-      throw new Error("Rozpakowana baza ma "+ludzkiRozmiar(dbBytes.length)+", a dopuszczalne jest do "+ludzkiRozmiar(MAX_BAZA)+".");
+    sprawdzAnulowanieImportu();
+    if(dbBytes.length > limity.baza)
+      throw new Error("Rozpakowana baza ma "+ludzkiRozmiar(dbBytes.length)+", a dopuszczalne jest do "+ludzkiRozmiar(limity.baza)+".");
     if(dbBytes.length < 100) throw new Error("Baza w archiwum jest pusta lub uszkodzona.");
     /* Każdy plik SQLite zaczyna się od tego napisu. Sprawdzenie kosztuje nic,
        a oszczędza wywrotki wewnątrz sql.js na przypadkowym pliku. */
@@ -14201,12 +14378,36 @@ async function handleImportFile(e){
     try{ db = new SQL.Database(dbBytes); }
     catch(err){ throw new Error("Bazy z archiwum nie da się otworzyć — jest uszkodzona."); }
 
+    ustawPostepImportu(58,"Porównuję notatki i etykiety…");
+    await oddechImportu();
+    const noweNotes=notes.map(n=>Object.assign({},n,{tg:Array.isArray(n.tg)?n.tg.slice():n.tg}));
+    const noweTags=tags.map(t=>Object.assign({},t));
     let res;
-    try{ res = importFromDb(db); }
+    try{ res = importFromDb(db,{notes:noweNotes,tags:noweTags}); }
     catch(err){ throw new Error("Baza otworzyła się, ale nie ma w niej spodziewanych tabel notatek. "+
                                 "To może być kopia z innej wersji JW Library."); }
-    if(idb){ await idbPut("files",buf,"lastBackup"); await idbPut("meta",file.name,"lastBackupName"); await idbPut("meta",new Date().toISOString(),"lastBackupDate"); }
+    sprawdzAnulowanieImportu();
+    ustawPostepImportu(70,"Sprawdzam wolne miejsce…");
+    await sprawdzMiejsceDlaImportu(buf.byteLength,dbBytes.length);
+    sprawdzAnulowanieImportu();
+
+    const dataKopii=new Date().toISOString();
+    rozpocznijZapisImportu();
+    ustawPostepImportu(78,"Zapisuję wszystko jako jedną bezpieczną operację…");
+    await idbZapiszImport(res.changed,noweTags,buf,file.name,dataKopii,noweNotes.length,
+      czesc=>ustawPostepImportu(78+czesc*12,"Zapisuję dane porcjami…"));
+    zapisano=true;
+    ustawPostepImportu(91,"Kontroluję zapis w pamięci urządzenia…");
+    const kontrola=await sprawdzImport(noweNotes.length,noweTags.length,file.name,dataKopii);
+    if(!kontrola.zgadza)
+      throw new Error("Import został zapisany, ale kontrolny odczyt nie potwierdził kompletu danych. Zamknij i otwórz aplikację przed dalszą pracą.");
+
+    notes=noweNotes; tags=noweTags;
+    if(res.bibleKs){ bibleKs=res.bibleKs; try{localStorage.setItem(KP+"BibleKs",bibleKs);}catch(e){} }
+    if(typeof bumpTagsVer==="function") bumpTagsVer();
+    ustawPostepImportu(100,"Import zapisany i sprawdzony");
     renderAll();
+    schowajPostepImportu();
     /* Do tablicy trafiło naraz dużo notatek — pamięć podręczna szukania
        buduje się od nowa w bezczynności, a nie przy pierwszym klawiszu. */
     if(typeof rozgrzejCacheSzukania === "function") setTimeout(rozgrzejCacheSzukania, 300);
@@ -14218,7 +14419,7 @@ async function handleImportFile(e){
     if(res.roznice && res.roznice.length && typeof pokazRoznice==="function"){
       zastapione = await pokazRoznice(res.roznice);
     }
-    showInfo("Import zakończony", `Kopia z JW Library została <b>dołączona</b> (bez kasowania Twoich danych).<br><br>`+
+    showInfo("Import zakończony", `Kopia z JW Library została <b>dołączona, zapisana i sprawdzona</b> (bez kasowania Twoich danych).<br><br>`+
       `• Nowych notatek: <b>${res.added}</b><br>`+
       `• Zaktualizowanych: <b>${res.updated + zastapione}</b><br>`+
       (res.roznice && res.roznice.length
@@ -14231,9 +14432,13 @@ async function handleImportFile(e){
                        `to naprawia sortowanie „Kolejność w publikacji”.` : ""));
   }catch(err){
     console.warn("Import z JW Library nie powiódł się", err);
-    showInfo("Nie wczytano kopii",
+    schowajPostepImportu();
+    const anulowany=err && err.name==="ImportAnulowany";
+    showInfo(anulowany ? "Import anulowany" : "Nie wczytano kopii",
       esc(err && err.message ? err.message : String(err))+
-      "<br><br><b>Twoje notatki pozostały nietknięte</b> — import dokłada dane dopiero po pomyślnym odczytaniu całego archiwum.");
+      (zapisano
+        ? "<br><br><b>Nie pokazuję fałszywego komunikatu sukcesu.</b> Zapis atomowy się zakończył, ale jego kontrola nie dała pewnego wyniku. Zamknij i ponownie otwórz aplikację."
+        : "<br><br><b>Twoje notatki pozostały nietknięte</b> — import zmienia dane dopiero po pomyślnym odczytaniu i zapisaniu całej kopii."));
   }finally{
     if(db){ try{ db.close(); }catch(e){} }   // pamięć bazy zwalniamy także po błędzie
   }
@@ -14269,18 +14474,20 @@ function opiszRoznice(moja, zBiblioteki, powod){
     biblioteka: {t: zBiblioteki.t||"", c: zBiblioteki.c||"", mo: zBiblioteki.mo||""}
   };
 }
-function importFromDb(db){
+function importFromDb(db, opcje){
+  opcje=opcje||{};
+  const docNotes=opcje.notes||notes, docTags=opcje.tags||tags;
   const tagRows=db.exec("SELECT TagId, Name FROM Tag WHERE Type=1");
   const tagIdMap={};
   if(tagRows.length){
     tagRows[0].values.forEach(([tid,name])=>{
       name=(name||"").trim();
       if(deletedTagNames.includes(name)){ return; }
-      let t=tags.find(x=>x.name===name || x.orig===name);
-      if(!t){ t={id:Math.max(0,...tags.map(x=>x.id),tid)+1,name,nw:true}; tags.push(t); }
+      let t=docTags.find(x=>x.name===name || x.orig===name);
+      if(!t){ t={id:Math.max(0,...docTags.map(x=>x.id),tid)+1,name,nw:true}; docTags.push(t); }
       tagIdMap[tid]=t.id;
     });
-    sortTags(); saveTags();
+    docTags.sort(cmpTags);
   }
   const ntags={};
   const tmRows=db.exec("SELECT NoteId, TagId FROM TagMap WHERE NoteId IS NOT NULL");
@@ -14291,7 +14498,7 @@ function importFromDb(db){
   const rows=db.exec(q);
   let added=0,updated=0,skipped=0,polozenia=0,wlasne=0;
   const roznice=[];
-  const byG={}; notes.forEach(n=>byG[n.g]=n);
+  const byG={}; docNotes.forEach(n=>byG[n.g]=n);
   const changed=[];
   if(rows.length) rows[0].values.forEach(r=>{
     const [nid,g,title,content,created,mo,btype,bid,book,ch,locTitle,keySym,docId,itn,col]=r;
@@ -14302,7 +14509,7 @@ function importFromDb(db){
       par:(!book && bid) ? bid : 0,
       col:col||0, cr:created, mo:mo, tg:(ntags[nid]||[]).sort() };
     const ex=byG[g];
-    if(!ex){ notes.push(inc); changed.push(inc); added++; }
+    if(!ex){ docNotes.push(inc); changed.push(inc); added++; }
     else if(ex.del){ skipped++; }
     else {
       /* POŁOŻENIE ODŚWIEŻAMY ZAWSZE.
@@ -14359,13 +14566,13 @@ function importFromDb(db){
       } else { if(ruszone) changed.push(ex); skipped++; }
     }
   });
-  if(idb&&changed.length) idbBulk("notes",changed).catch(e=>reportSaveError(e,"import"));
   // wykryj symbol Biblii używany na tym urządzeniu (nwt / nwtsty / inne), do budowania linków do wersetów
+  let wykrytyBibleKs="";
   try{
     const bk=db.exec("SELECT KeySymbol, COUNT(*) c FROM Location WHERE BookNumber IS NOT NULL AND KeySymbol IS NOT NULL GROUP BY KeySymbol ORDER BY c DESC LIMIT 1");
-    if(bk.length && bk[0].values[0][0]){ bibleKs = bk[0].values[0][0]; try{ localStorage.setItem(KP+"BibleKs", bibleKs); }catch(e){} }
+    if(bk.length && bk[0].values[0][0]) wykrytyBibleKs=bk[0].values[0][0];
   }catch(e){}
-  return {added,updated,skipped,polozenia,wlasne,roznice};
+  return {added,updated,skipped,polozenia,wlasne,roznice,changed,bibleKs:wykrytyBibleKs};
 }
 /* ===== podkreślenia: kolory, etykieta, link ===== */
 function openUrlJWL(url){
@@ -20602,37 +20809,50 @@ function pokazRoznice(lista){
       _roznice.forEach(r=>{ _wybory[r.g]="biblioteka"; }); rysujRoznice(); };
     $("rozAnuluj").onclick = ()=>{
       posprzataj(); closeModal("modalRoznice"); zakoncz(0); };
-    $("rozZastosuj").onclick = ()=>{
-      const ile = zastosujWybory();
-      posprzataj(); closeModal("modalRoznice"); zakoncz(ile); };
+    $("rozZastosuj").onclick = async ()=>{
+      const przycisk = $("rozZastosuj");
+      przycisk.disabled = true;
+      try{
+        const ile = await zastosujWybory();
+        posprzataj(); closeModal("modalRoznice"); zakoncz(ile);
+      }catch(e){
+        przycisk.disabled = false;
+        reportSaveError(e, "różnice z JW Library");
+      }
+    };
   });
 }
 
 /** Wprowadza wybory w życie. Zwraca liczbę zastąpionych notatek. */
-function zastosujWybory(){
-  const zmienione = [];
+async function zastosujWybory(){
+  const operacje = [];
   _roznice.forEach(r=>{
     if((_wybory[r.g]||"moja") !== "biblioteka") return;
     const n = notes.find(x=>x.g===r.g);
     if(!n) return;
-    /* Wersję sprzed zastąpienia odkładamy do historii notatki. To jedyna
-       nieodwracalna operacja w całym wczytywaniu — a odwracalna kosztuje tu
-       tyle, co jedno wywołanie. */
-    if(typeof saveVersion==="function") saveVersion(n);
-    if(typeof pushUndo==="function" && typeof cloneNote==="function")
-      pushUndo({type:"note", label:"zastąpienie notatki wersją z JW Library", before:cloneNote(n)});
-    n.t = r.biblioteka.t;
-    n.c = r.biblioteka.c;
-    n.h = null;                 // JW Library nie ma formatowania — nie ma czego wstawić
-    n.mo = r.biblioteka.mo || n.mo;
-    n.ed = false;               // od tej chwili zgadza się z biblioteką
-    zmienione.push(n);
+    const nowa = Object.assign({}, n, {
+      t: r.biblioteka.t,
+      c: r.biblioteka.c,
+      h: null,                  // JW Library nie ma formatowania — nie ma czego wstawić
+      mo: r.biblioteka.mo || n.mo,
+      ed: false                 // od tej chwili zgadza się z biblioteką
+    });
+    operacje.push({stara:n, nowa});
   });
-  if(zmienione.length){
-    if(idb) idbBulk("notes", zmienione).catch(e=>reportSaveError(e,"różnice"));
+  if(operacje.length){
+    /* Najpierw zapisujemy wszystkie wybrane wersje, a dopiero po potwierdzeniu
+       transakcji zmieniamy obiekty widoczne w aplikacji. Błąd miejsca lub
+       przerwanie zapisu nie może zostawić ekranu w stanie innym niż baza. */
+    if(idb) await idbBulkChunked("notes", operacje.map(x=>x.nowa));
+    operacje.forEach(({stara, nowa})=>{
+      if(typeof saveVersion==="function") saveVersion(stara);
+      if(typeof pushUndo==="function" && typeof cloneNote==="function")
+        pushUndo({type:"note", label:"zastąpienie notatki wersją z JW Library", before:cloneNote(stara)});
+      Object.assign(stara, nowa);
+    });
     renderAll();
   }
-  return zmienione.length;
+  return operacje.length;
 }
 
 </script>
@@ -25634,7 +25854,7 @@ document.addEventListener("keydown", e=>{
   const t=e.target, typing = t && (t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.isContentEditable);
   if(e.key==="Escape"){
     if(fsGuid){ closeFs(); return; }
-    const ov=[...document.querySelectorAll(".overlay.show")]; if(ov.length){ ov.forEach(o=>o.classList.remove("show")); return; }
+    const ov=[...document.querySelectorAll(".overlay.show:not([data-lock-close=\"1\"])")]; if(ov.length){ ov.forEach(o=>o.classList.remove("show")); return; }
     const cm=$("colorMenu"); if(cm && cm.style.display==="block"){ cm.style.display="none"; return; }
     if($("dropdown").style.display==="block"){ $("dropdown").style.display="none"; return; }
     if(document.activeElement===$("search")){ $("search").blur(); }
@@ -25733,7 +25953,9 @@ document.addEventListener("keydown", e=>{
     return;
   }
 });
-document.querySelectorAll(".overlay").forEach(o=>o.addEventListener("click",e=>{if(e.target===o)o.classList.remove("show");}));
+document.querySelectorAll(".overlay").forEach(o=>o.addEventListener("click",e=>{
+  if(e.target===o && o.dataset.lockClose!=="1") o.classList.remove("show");
+}));
 
 updateBackupBadge();   // stan przycisku kopii zapasowej (moduł akcji jest już wczytany)
 initViewBar();   // przełącznik układu działa niezależnie od wczytania danych
