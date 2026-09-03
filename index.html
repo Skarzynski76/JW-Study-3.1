@@ -7134,6 +7134,8 @@ body.centrum-open #centrum{ padding-top:10px; }
 .editSaveState[data-state="dirty"]{ color:#9a6700; }
 .editSaveState[data-state="dirty"]::before{ background:#d99b22; }
 .editSaveState[data-state="saving"]::before{ background:var(--accent); animation:savePulse .8s infinite alternate; }
+.editSaveState[data-state="draft"]{ color:var(--accent); }
+.editSaveState[data-state="draft"]::before{ background:var(--accent); }
 .editSaveState[data-state="saved"]{ color:var(--accent); }
 .editSaveState[data-state="saved"]::before{ background:var(--accent); }
 .editSaveState[data-state="error"]{ color:#b42318; font-weight:650; }
@@ -7192,6 +7194,27 @@ details.powiazane[open] .powPanel{
 }
 #btnSearchTools:hover,#btnSearchTools.on{ background:var(--sel); color:var(--accent); }
 .search-modal{ width:min(820px,calc(100vw - 24px)); max-height:min(90dvh,850px); overflow:auto; }
+
+/* Centrum bezpieczeństwa danych */
+.bezp-modal{width:min(820px,calc(100vw - 24px));max-height:min(90dvh,860px);overflow:auto}
+.bezp-head{display:flex;align-items:flex-start;gap:13px;margin-bottom:18px}
+.bezp-head-ic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 12%,var(--panel));color:var(--accent);flex:0 0 auto}
+.bezp-head-ic .ic{width:24px;height:24px}.bezp-head h3{margin:1px 0 3px}.bezp-sub{color:var(--muted);font-size:13px;line-height:1.45}
+.bezp-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px}
+.bezp-card{border:1px solid var(--border);border-radius:14px;padding:13px;background:color-mix(in srgb,var(--panel) 94%,var(--accent) 6%);min-width:0}
+.bezp-card-lbl{font-size:11px;text-transform:uppercase;letter-spacing:.055em;color:var(--muted);font-weight:700;margin-bottom:7px}
+.bezp-card-val{font-size:21px;line-height:1.15;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bezp-card-sub{font-size:11.5px;color:var(--muted);margin-top:5px;line-height:1.35}
+.bezp-wide{border:1px solid var(--border);border-radius:15px;padding:15px;margin-top:10px;background:var(--panel)}
+.bezp-row{display:flex;justify-content:space-between;gap:14px;align-items:center}.bezp-row b{font-size:14px}.bezp-stan{font-size:12px;font-weight:700;border-radius:999px;padding:5px 9px;background:var(--sel);white-space:nowrap}
+.bezp-stan.ok{color:#176b4c;background:#e5f4ed}.bezp-stan.warn{color:#7a5311;background:#fff1cc}.bezp-stan.err{color:#9d2f35;background:#fde8e9}
+html[data-theme="dark"] .bezp-stan.ok{color:#9ce0c4;background:#183d31}html[data-theme="dark"] .bezp-stan.warn{color:#f2d28b;background:#493b1b}html[data-theme="dark"] .bezp-stan.err{color:#ffb2b6;background:#4a2528}
+.bezp-detail{font-size:12.5px;color:var(--muted);line-height:1.55;margin-top:9px}.bezp-detail strong{color:var(--text)}
+.bezp-meter{height:8px;border-radius:999px;background:var(--sel);overflow:hidden;margin-top:11px}.bezp-meter>span{display:block;height:100%;width:0;background:var(--accent);border-radius:inherit;transition:width .25s ease}.bezp-meter.warn>span{background:#d59723}.bezp-meter.err>span{background:#c84b52}
+.bezp-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}.bezp-actions .btn{min-height:42px}.bezp-actions .primary{flex:1 1 190px}
+.bezp-result{display:none;margin-top:12px;border-radius:13px;padding:12px 14px;font-size:12.5px;line-height:1.55}.bezp-result.show{display:block}.bezp-result.ok{background:#e8f5ee;color:#185c43}.bezp-result.warn{background:#fff2d5;color:#714f14}.bezp-result.err{background:#fde9ea;color:#8f3035}
+html[data-theme="dark"] .bezp-result.ok{background:#173b2f;color:#a8dec8}html[data-theme="dark"] .bezp-result.warn{background:#493a1c;color:#efd494}html[data-theme="dark"] .bezp-result.err{background:#482427;color:#ffb8bb}
+@media(max-width:700px){.bezp-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.bezp-modal{width:100vw;height:100dvh;max-height:100dvh;border-radius:0}.bezp-actions{position:sticky;bottom:-18px;background:var(--panel);padding:10px 0 calc(8px + env(safe-area-inset-bottom,0px));z-index:2}}
 .searchMode{ display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:5px; background:var(--bg); border-radius:13px; margin:8px 0 14px; }
 .searchMode button{ border:0; border-radius:10px; padding:10px; background:transparent; color:var(--muted); font-weight:650; }
 .searchMode button.on{ background:var(--panel); color:var(--accent); box-shadow:var(--cien-1); }
@@ -7372,7 +7395,7 @@ details.powiazane[open] .powPanel{
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <h1 class="brand-name">JW Study <span class="ver">v3.00</span></h1>
+      <h1 class="brand-name">JW Study <span class="ver">v3.04</span></h1>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -7729,6 +7752,38 @@ details.powiazane[open] .powPanel{
   </div>
 </div>
 
+<div class="overlay" id="modalBezpieczenstwo" aria-hidden="true">
+  <div class="modal bezp-modal" role="dialog" aria-modal="true" aria-labelledby="bezpTytul">
+    <div class="bezp-head">
+      <span class="bezp-head-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.7-2.8 8.1-7 10-4.2-1.9-7-5.3-7-10V6z"/><path d="M8.7 12.1l2.1 2.1 4.6-4.7"/></svg></span>
+      <div><h3 id="bezpTytul">Centrum bezpieczeństwa danych</h3><div class="bezp-sub">Kopia, pamięć urządzenia i kontrola bazy — bez wysyłania danych do internetu.</div></div>
+    </div>
+    <div class="bezp-grid" aria-live="polite">
+      <div class="bezp-card"><div class="bezp-card-lbl">Notatki</div><div class="bezp-card-val" id="bezpNotes">—</div><div class="bezp-card-sub" id="bezpNotesSub">liczę…</div></div>
+      <div class="bezp-card"><div class="bezp-card-lbl">Etykiety</div><div class="bezp-card-val" id="bezpTags">—</div><div class="bezp-card-sub">w Twojej bazie</div></div>
+      <div class="bezp-card"><div class="bezp-card-lbl">Zdjęcia</div><div class="bezp-card-val" id="bezpImages">—</div><div class="bezp-card-sub">osadzone w notatkach</div></div>
+      <div class="bezp-card"><div class="bezp-card-lbl">Ostatnia kopia</div><div class="bezp-card-val" id="bezpBackup">—</div><div class="bezp-card-sub" id="bezpBackupSub">sprawdzam…</div></div>
+    </div>
+    <section class="bezp-wide" aria-labelledby="bezpPamTyt">
+      <div class="bezp-row"><b id="bezpPamTyt">Pamięć urządzenia</b><span class="bezp-stan" id="bezpStorageState">Sprawdzam…</span></div>
+      <div class="bezp-detail" id="bezpStorageDetail">Odczytuję zajęte i dostępne miejsce.</div>
+      <div class="bezp-meter" id="bezpStorageMeter" aria-hidden="true"><span></span></div>
+    </section>
+    <section class="bezp-wide" aria-labelledby="bezpBazaTyt">
+      <div class="bezp-row"><b id="bezpBazaTyt">Poprawność bazy</b><span class="bezp-stan" id="bezpDbState">Jeszcze niesprawdzona</span></div>
+      <div class="bezp-detail" id="bezpDbDetail">Kontrola porówna dane na ekranie z trwałą pamięcią urządzenia.</div>
+      <button class="btn" id="bezpCheckDb" type="button" style="margin-top:10px">Sprawdź bazę ponownie</button>
+    </section>
+    <div class="bezp-result" id="bezpFileResult" role="status" aria-live="polite"></div>
+    <div class="bezp-actions">
+      <button class="btn primary" id="bezpMakeBackup" type="button">Zrób kopię</button>
+      <button class="btn" id="bezpCheckBackup" type="button">Sprawdź kopię</button>
+      <button class="btn" type="button" data-zamknij="modalBezpieczenstwo">Zamknij</button>
+    </div>
+    <input type="file" id="bezpBackupInput" accept="application/json,.json" hidden>
+  </div>
+</div>
+
 <div class="overlay" id="modalInfo">
   <div class="modal">
     <h3>Gdzie zapisują się moje dane?</h3>
@@ -7880,7 +7935,9 @@ const KP = "jws";               // prefiks ustawień
 let notes = [], tags = [];
 let filt = {tag:"all", book:"all", ch:null};
 let query = "", sortMode = "new";
-let visibleCount = 60;
+/* Pierwsza porcja mieści kilka ekranów, ale nie tworzy od razu sześćdziesięciu
+   rozbudowanych kart. Pozostałe dochodzą automatycznie przy przewijaniu. */
+let visibleCount = 36;
 let expandedBook = null;
 let idb = null;
 /**
@@ -8269,6 +8326,7 @@ function saveNote(n){
      przechodzi każdy zapis; wyliczy się od nowa dopiero wtedy, gdy będzie
      potrzebny. */
   if(typeof unieaktualnijPowiazane==="function") unieaktualnijPowiazane();
+  if(typeof workerAktualizujNotatke==="function") workerAktualizujNotatke(n);
   if(!idb) return Promise.resolve(true);
   return idbPut("notes", n).then(()=>true).catch(e=>{
     reportSaveError(e,"notatka");
@@ -8297,10 +8355,87 @@ function ustawStanZapisu(ce, stan){
   const card=ce && ce.closest ? ce.closest(".ncard") : null;
   const el=card && card.querySelector(".editSaveState");
   if(!el) return;
-  const etykiety={dirty:"Niezapisane",saving:"Zapisywanie…",saved:"Zapisano",error:"Błąd zapisu"};
+  const etykiety={dirty:"Niezapisane",saving:"Zapisywanie…",draft:"Szkic zapisany",saved:"Zapisano",error:"Błąd zapisu"};
   el.dataset.state=stan;
   el.textContent=etykiety[stan]||etykiety.dirty;
+  el.title=stan==="draft" ? "Szkic awaryjny zapisano na tym urządzeniu" : el.textContent;
 }
+
+/* ===== SZKICE AWARYJNE EDYTORA =====
+   Szkic leży w magazynie meta, a nie w notes: jest więc fizycznie oddzielony
+   od właściwej notatki i nie może pojawić się na liście ani w eksporcie jako
+   zatwierdzona treść. Klucz zawiera guid notatki. */
+const SZKIC_ZWLOKA = 1800;
+const _szkicTimery = new Map();
+function szkicKlucz(g){ return "draft:"+g; }
+function szkicDane(card,n){
+  const t=card && card.querySelector(".ntitle"), c=card && card.querySelector(".ncontent");
+  if(!t||!c||!n) return null;
+  return {g:n.g,t:t.textContent.trim(),h:c.innerHTML,ts:new Date().toISOString(),baseMo:n.mo||""};
+}
+function szkicAnuluj(g){
+  const timer=_szkicTimery.get(g); if(timer) clearTimeout(timer);
+  _szkicTimery.delete(g);
+}
+function szkicZapisz(card,n,cichy){
+  const dane=szkicDane(card,n);
+  if(!dane || !idb) return Promise.resolve(false);
+  if(!cichy) ustawStanZapisu(card.querySelector(".ncontent"),"saving");
+  return idbPut("meta",dane,szkicKlucz(n.g)).then(()=>{
+    if(!cichy && card.isConnected && card.classList.contains("editing"))
+      ustawStanZapisu(card.querySelector(".ncontent"),"draft");
+    return true;
+  }).catch(e=>{
+    console.warn("Nie udało się zapisać szkicu",e);
+    if(!cichy && card.isConnected) ustawStanZapisu(card.querySelector(".ncontent"),"error");
+    return false;
+  });
+}
+function szkicZaplanuj(pole){
+  const card=pole && pole.closest ? pole.closest(".ncard.editing") : null;
+  const n=card && notes.find(x=>x.g===card.dataset.g); if(!card||!n) return;
+  ustawStanZapisu(pole,"dirty");
+  szkicAnuluj(n.g);
+  _szkicTimery.set(n.g,setTimeout(()=>{
+    _szkicTimery.delete(n.g);
+    if(card.isConnected && card.classList.contains("editing")) szkicZapisz(card,n,false);
+  },SZKIC_ZWLOKA));
+}
+function szkicUsun(g){
+  szkicAnuluj(g);
+  if(!idb) return Promise.resolve(true);
+  return idbDelKey("meta",szkicKlucz(g)).then(()=>true).catch(e=>{
+    console.warn("Nie udało się usunąć starego szkicu",e); return false;
+  });
+}
+async function szkicOdzyskaj(card,n){
+  if(!idb||!card||!n) return false;
+  let s; try{s=await idbGet("meta",szkicKlucz(n.g));}catch(e){return false;}
+  if(!s||s.g!==n.g) return false;
+  const zapisanyH=sanitize(s.h||"");
+  const takiSam=(s.t||"").trim()===(n.t||"").trim() && htmlToPlain(zapisanyH)===htmlToPlain(contentHtml(n));
+  const czasSzkicu=Date.parse(s.ts||"")||0, czasNotatki=Date.parse(n.mo||"")||0;
+  if(takiSam || (czasNotatki && czasSzkicu<=czasNotatki)){ szkicUsun(n.g); return false; }
+  const tak=await askConfirm("Odzyskać niezapisany szkic?",
+    "Znaleziono tekst zachowany automatycznie <b>"+esc(new Date(czasSzkicu||Date.now()).toLocaleString("pl-PL"))+"</b>. "+
+    "Powstał po ostatnim pełnym zapisie tej notatki.<br><br>Przywrócić go do edytora?",
+    {okLabel:"Odzyskaj szkic"});
+  if(!card.isConnected||!card.classList.contains("editing")) return false;
+  if(!tak){ await szkicUsun(n.g); ustawStanZapisu(card.querySelector(".ncontent"),"saved"); return false; }
+  const titleEl=card.querySelector(".ntitle"), contEl=card.querySelector(".ncontent");
+  titleEl.textContent=s.t||""; contEl.innerHTML=zapisanyH;
+  if(typeof histStart==="function") histStart(contEl);
+  ustawStanZapisu(contEl,"draft");
+  toastOk("Odzyskano niezapisany szkic");
+  return true;
+}
+function szkicFlushKarty(){
+  document.querySelectorAll(".ncard.editing[data-g]").forEach(card=>{
+    const n=notes.find(x=>x.g===card.dataset.g); if(n){ szkicAnuluj(n.g); szkicZapisz(card,n,true); }
+  });
+}
+addEventListener("pagehide",szkicFlushKarty);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden") szkicFlushKarty();});
 function commitLiveEdit(ce){
   if(!ce) return;
   const card = ce.closest && ce.closest(".ncard"); if(!card) return;
@@ -8555,7 +8690,8 @@ async function boot(){
      dla WSZYSTKICH notatek — przy ośmiu tysiącach to trzy czwarte sekundy
      zamrożonego okna. Robimy tę pracę teraz, w przerwach między klatkami, gdy
      użytkownik dopiero patrzy na świeżo narysowaną listę. */
-  if(typeof rozgrzejCacheSzukania === "function") setTimeout(rozgrzejCacheSzukania, 60);
+  if(!(typeof uruchomIndeksWorkerSzukania==="function" && uruchomIndeksWorkerSzukania()) && typeof rozgrzejCacheSzukania === "function")
+    setTimeout(rozgrzejCacheSzukania, 60);
   /* Zamiast znikającego dymka z instrukcją szukania przycisku — pasek, który
      zostaje i sam robi kopię. Z opóźnieniem, żeby nie wyskakiwał w tej samej
      chwili, w której pojawiają się notatki. */
@@ -9161,6 +9297,7 @@ let searchWasLimited=false, searchScannedCount=0;
 function resetSearchWindow(){
   searchMatchLimit=SEARCH_RESULT_STEP; searchScanLimit=SEARCH_SCAN_STEP;
   searchWasLimited=false; searchScannedCount=0;
+  if(typeof anulujWorkerSzukania==="function") anulujWorkerSzukania();
 }
 function normSzukStart(s){ return (s||"").toLowerCase().replace(/ł/g,"l").normalize("NFD").replace(/[\u0300-\u036f]/g,""); }
 const SZUK_STOP=new Set("notatka notatki notatek pokaz znajdz znajdź szukaj szukam chce chcę potrzebuje potrzebuję cos coś o na w we z ze do dla od i oraz albo czy co ktore które dotyczace dotyczące temat temacie".split(" ").map(normSzukStart));
@@ -9426,6 +9563,113 @@ function dopasujZapytanie(n){
   return !!ok;
 }
 
+/* ——— WYSZUKIWANIE W OSOBNYM WĄTKU ———
+   Worker skanuje uproszczony indeks i zwraca wyłącznie identyfikatory
+   kandydatów. Główny wątek sprawdza potem najwyżej małą partię wyniku przez
+   dopasujZapytanie(), więc zachowujemy całą inteligentną składnię bez
+   blokowania dotyku i przewijania. */
+let _swSzuk=null, _swGotowy=false, _swBuduje=false, _swOczekuje=false;
+let _swSeq=0, _swQuery="", _swIds=[], _swScanned=0, _swLimited=false;
+let _swRenderTimer=0, _swMapa=null, _swMapaRef=null, _swMapaLen=-1;
+let _swOdbudowaTimer=0, _swAktualizacje=new Map();
+
+function rekordDlaWorkerSzukania(n, mapaTagow){
+  const tag=(n.tg||[]).map(id=>mapaTagow.get(id)||"").filter(Boolean).join(" ");
+  return {g:n.g,plain:plainOf(n)+" "+tag,title:n.t||"",body:n.c||"",tag,ref:refLabel(n)||""};
+}
+function uruchomIndeksWorkerSzukania(){
+  if(typeof Worker!=="function" || !location || location.protocol==="file:") return false;
+  try{
+    if(_swSzuk) _swSzuk.terminate();
+    _swSzuk=new Worker("./search-worker.js");
+  }catch(e){ _swSzuk=null; return false; }
+  _swGotowy=false; _swBuduje=true; _swOczekuje=false; _swSeq++;
+  _swQuery=""; _swIds=[];
+  _swSzuk.onerror=e=>{
+    console.warn("Wątek wyszukiwania niedostępny — używam trybu zgodności",e);
+    try{_swSzuk.terminate();}catch(_){} _swSzuk=null; _swGotowy=false; _swBuduje=false;
+  };
+  _swSzuk.onmessage=e=>{
+    const m=e.data||{};
+    if(m.type==="ready"){
+      _swGotowy=true; _swBuduje=false;
+      if(_swOczekuje){ _swOczekuje=false; uruchomWorkerSzukania(); }
+      return;
+    }
+    if(m.type!=="results" || m.seq!==_swSeq || _swQuery!==query) return;
+    _swIds=Array.isArray(m.ids)?m.ids:[]; _swScanned=+m.scanned||0; _swLimited=!!m.limited;
+    /* Kilka małych partii może dojść w jednej klatce. Rysujemy najwyżej raz
+       na 90 ms, żeby stopniowe wyniki same nie stały się źródłem zacięć. */
+    clearTimeout(_swRenderTimer);
+    _swRenderTimer=setTimeout(()=>{ resetQueryCache(); renderNotes(); },90);
+  };
+  const zywe=notes.filter(n=>n && !n.del);
+  _swSzuk.postMessage({type:"reset",total:zywe.length});
+  const tagMapa=new Map(tags.map(t=>[t.id,t.name||""])); let i=0;
+  const wyslij=()=>{
+    if(!_swSzuk) return;
+    const koniec=Math.min(zywe.length,i+180), rows=[];
+    for(;i<koniec;i++) rows.push(rekordDlaWorkerSzukania(zywe[i],tagMapa));
+    if(rows.length) _swSzuk.postMessage({type:"add",rows});
+    if(i<zywe.length) setTimeout(wyslij,0);
+    else _swSzuk.postMessage({type:"done"});
+  };
+  setTimeout(wyslij,0);
+  return true;
+}
+function workerPlanSzukania(){
+  const rozwin=g=>searchMode==="smart"?[...new Set(g.flatMap(wariantyPojecia))]:g.slice();
+  let allowed=null;
+  if(searchOpts.scope!=="all") allowed=notes.filter(n=>n&&!n.del&&noteMatchesTag(n,filt.tag)&&noteMatchesBook(n,filt.book)&&noteMatchesCh(n)).map(n=>n.g);
+  return {type:"search",seq:_swSeq,mode:searchMode,
+    groups:qAdvTerms.map(rozwin),neg:qAdvNeg.map(rozwin),phrases:qAdvPhrases.slice(),
+    fields:qFields?qFields.map(x=>({f:x.f,v:x.v})):[],squash:_qSquash,allowed,
+    matchLimit:searchMatchLimit,scanLimit:searchScanLimit};
+}
+function uruchomWorkerSzukania(){
+  /* Zapytania złożone wyłącznie z filtrów (@ulubione, @duplikaty itp.) są
+     szybkim filtrem metadanych i zostają na głównym wątku. */
+  if(!_swSzuk || !query || (!qAdvTerms.length&&!qAdvPhrases.length&&!qFields)) return false;
+  _swQuery=query; _swIds=[]; _swScanned=0; _swLimited=true;
+  if(!_swGotowy){
+    _swOczekuje=true;
+    const box=$("searchStatus"); if(box){box.hidden=false;box.innerHTML='<span class="ssInfo">Przygotowuję szybki indeks wyszukiwania…</span>';}
+    return true;
+  }
+  _swSeq++;
+  const plan=workerPlanSzukania(); plan.seq=_swSeq;
+  _swSzuk.postMessage(plan);
+  const box=$("searchStatus"); if(box){box.hidden=false;box.innerHTML='<span class="ssInfo">Szukam w tle — możesz nadal przewijać i dotykać ekranu…</span>';}
+  return true;
+}
+function anulujWorkerSzukania(){
+  _swSeq++; _swQuery=""; _swIds=[]; _swScanned=0; _swLimited=false; _swOczekuje=false;
+  clearTimeout(_swRenderTimer);
+}
+function workerWynikiBiezace(){
+  if(!_swQuery || _swQuery!==query) return null;
+  if(_swMapaRef!==notes || _swMapaLen!==notes.length){
+    _swMapa=new Map(notes.map(n=>[n.g,n])); _swMapaRef=notes; _swMapaLen=notes.length;
+  }
+  return {notes:_swIds.map(g=>_swMapa.get(g)).filter(Boolean),scanned:_swScanned,limited:_swLimited};
+}
+function workerAktualizujNotatke(n){
+  if(!_swSzuk || !_swGotowy || !n || !n.g) return;
+  clearTimeout(_swAktualizacje.get(n.g));
+  _swAktualizacje.set(n.g,setTimeout(()=>{
+    _swAktualizacje.delete(n.g);
+    if(!_swSzuk) return;
+    if(n.del) _swSzuk.postMessage({type:"remove",g:n.g});
+    else _swSzuk.postMessage({type:"upsert",row:rekordDlaWorkerSzukania(n,new Map(tags.map(t=>[t.id,t.name||""])))});
+    if(query && _swQuery===query) uruchomWorkerSzukania();
+  },220));
+}
+function workerUsunNotatke(g){ if(_swSzuk&&g) _swSzuk.postMessage({type:"remove",g}); }
+function workerOznaczIndeksDoOdbudowy(){
+  clearTimeout(_swOdbudowaTimer);
+  _swOdbudowaTimer=setTimeout(()=>{ if(_swSzuk) uruchomIndeksWorkerSzukania(); },450);
+}
+
 </script>
 <script>
 /* ==========================================================================
@@ -9507,6 +9751,19 @@ function baseNotes(){
   const globalne=(query||aktywneOpcjeSzukania())&&searchOpts.scope==="all";
   const aktywne=!!query||aktywneOpcjeSzukania();
   if(!aktywne) return notes.filter(n=>!n.del && noteMatchesTag(n,filt.tag) && noteMatchesBook(n,filt.book) && noteMatchesCh(n));
+  const zWorkera=typeof workerWynikiBiezace==="function"?workerWynikiBiezace():null;
+  if(zWorkera){
+    const wynik=[];
+    for(const n of zWorkera.notes){
+      if(!n || n.del) continue;
+      if(!globalne && !(noteMatchesTag(n,filt.tag) && noteMatchesBook(n,filt.book) && noteMatchesCh(n))) continue;
+      /* Worker daje szeroką listę kandydatów. Pełne reguły, punktacja i filtry
+         specjalne są sprawdzane już tylko na tej małej partii. */
+      if(noteMatchesQuery(n)) wynik.push(n);
+    }
+    searchScannedCount=zWorkera.scanned; searchWasLimited=zWorkera.limited;
+    return wynik;
+  }
   /* Jedna szeroka fraza potrafi pasować do tysięcy notatek. Nie przeglądamy
      i nie sortujemy ich wszystkich w jednej klatce: jedna partia sprawdza
      najwyżej 1200 rekordów i zatrzymuje się po 250 trafieniach. */
@@ -10448,7 +10705,11 @@ function emptyStateEl(){
    a nie budowana od zera. Przy zmianie jednej notatki powstaje jedna nowa karta zamiast stu. */
 const _cardCache = new Map();       // guid → { node, sig }
 let _tagsVer = 0;                   // rośnie przy zmianie etykiet (wpływa na chipy i listę wyboru)
-function bumpTagsVer(){ _tagsVer++; }
+function bumpTagsVer(){
+  _tagsVer++;
+  if(typeof workerOznaczIndeksDoOdbudowy==="function") workerOznaczIndeksDoOdbudowy();
+  if(typeof bezpUniewaznijKontrole==="function") bezpUniewaznijKontrole();
+}
 
 /* wszystko, co widać na karcie — gdy to samo, karta może zostać bez zmian */
 /* Odcisk uwzględnia zapytanie wyłącznie wtedy, gdy wyszukiwanie jest aktywne.
@@ -10562,10 +10823,10 @@ function renderNotes(){
     const more = document.createElement("div");
     more.style.cssText = "text-align:center;padding:14px";
     more.innerHTML = `<button class="btn">Pokaż więcej (${arr.length-visibleCount})</button>`;
-    more.querySelector("button").onclick = ()=>{ visibleCount+=120; renderNotes(); };
+    more.querySelector("button").onclick = ()=>{ visibleCount+=60; renderNotes(); };
     wanted.push(more);
     _moreObserver = new IntersectionObserver(es=>{
-      if(es[0].isIntersecting){ _moreObserver.disconnect(); _moreObserver=null; visibleCount+=120; renderNotes(); }
+      if(es[0].isIntersecting){ _moreObserver.disconnect(); _moreObserver=null; visibleCount+=60; renderNotes(); }
     });
     _moreObserver.observe(more);
   }
@@ -10846,8 +11107,12 @@ function noteCard(n){
     if(e.target.dataset.untag){ untag(n, +e.target.dataset.untag); return; }
     if(e.target.closest(".ntitle") && !e.target.isContentEditable){ touchAccess(n); if(!fsGuid) openFs(n); return; }
     if(e.target.closest(".ncontent") && !e.target.isContentEditable) touchAccess(n);
-    const act = e.target.dataset.act;
-    if(["fs","edit","copy","link","openref"].includes(act) || e.target.closest("a.sbtn")) touchAccess(n);
+    /* Dotknięcie zwykle trafia w <svg>, <path> albo napis wewnątrz przycisku.
+       Odczyt data-act bezpośrednio z e.target działał tylko na pustym fragmencie
+       przycisku — dlatego „Zapisz” na iPadzie wymagało kilku prób. */
+    const actionEl = e.target.closest && e.target.closest("[data-act]");
+    const act = actionEl ? actionEl.dataset.act : "";
+    if(["fs","edit","copy","link","openref"].includes(act) || (actionEl && actionEl.matches("a.sbtn"))) touchAccess(n);
     if(!act) return;
     if(act==="fs"){ openFs(n); return; }
     if(act==="more" || act==="exp"){
@@ -10916,7 +11181,7 @@ function noteCard(n){
     else if(act==="fav") toggleFav(n);
     // openref to teraz prawdziwy odnośnik (<a>) — otwiera się natywnie, iOS przekieruje do JW Library
     else if(act==="assignref") assignVerse(n);
-    else if(act==="tagpanel"){ d.classList.toggle("showtags"); const b=e.target.closest('[data-act="tagpanel"]'); if(b) b.classList.toggle("tagon", d.classList.contains("showtags")); }
+    else if(act==="tagpanel"){ d.classList.toggle("showtags"); if(actionEl) actionEl.classList.toggle("tagon", d.classList.contains("showtags")); }
     else if(act==="read") toggleReading(d);
     else if(act==="edit") toggleEdit(d, n);
     else if(act==="del") delNote(n);
@@ -10952,7 +11217,7 @@ function noteCard(n){
 function renderAll(){
   resetQueryCache();        // wyniki wyszukiwania liczymy raz na przerysowanie, nie cztery razy
   if(typeof resetLicznikowZakladek==="function") resetLicznikowZakladek();
-  visibleCount=60;
+  visibleCount=36;
   renderTags(); renderBooks(); renderNotes();
   /* Centrum studium albo lista — nigdy oba i nigdy żadne. Decyzja zapada TU,
      po każdej zmianie filtrów, bo tylko wtedy jest pewne, że stan filtrów
@@ -11319,6 +11584,9 @@ function wskazNaLiscie(g){
   _wskazTimer = setTimeout(zdejmijWskazanie, 1200);
 }
 function closeFs(){
+  /* Zamknięcie czytnika w trakcie edycji jest traktowane jak przerwana sesja:
+     nie zatwierdzamy notatki, ale zachowujemy jej bieżący szkic awaryjny. */
+  if(typeof szkicFlushKarty==="function") szkicFlushKarty();
   saveReadPos();
   /* Notatkę do wskazania trzeba wziąć PRZED skasowaniem śladu i fsGuid. */
   const wrocDo = fsSlad.length ? fsSlad[0] : fsGuid;
@@ -11526,7 +11794,9 @@ function renderSearchStatus(arr){
     const g=e.target.closest("[data-ssgroup]"); if(g){searchOpts.group=g.dataset.ssgroup;lsSet(KP+"SearchOpts",JSON.stringify(searchOpts));resetSearchWindow();resetQueryCache();renderAll();return;}
     if(e.target.closest("[data-ssmore]")){
       searchMatchLimit+=SEARCH_RESULT_STEP; searchScanLimit+=SEARCH_SCAN_STEP;
-      resetQueryCache(); renderNotes(); return;
+      resetQueryCache();
+      if(!(typeof uruchomWorkerSzukania==="function" && uruchomWorkerSzukania())) renderNotes();
+      return;
     }
     const n=e.target.closest("[data-ssnav]"); if(n){searchPrzejdz(+n.dataset.ssnav);return;}
     if(e.target.closest("[data-sshelp]")){$("btnSearchTools").click();return;}
@@ -11745,12 +12015,13 @@ function persistFilt(){ lsSetSoon(KP+"Filt", JSON.stringify(filt), 300); }
 /* ================= AKCJE ================= */
 /* licznik niezapisanych zmian: czytamy z pamięci podręcznej, zapis sklejamy */
 function bumpDirty(){ lsSetSoon(KP+"Dirty", String((+(lsGet(KP+"Dirty",0)||0))+1), 500); updateBackupBadge();
+  if(typeof bezpUniewaznijKontrole==="function") bezpUniewaznijKontrole();
   if(typeof sprawdzKopie==="function") sprawdzKopie();
   /* Każda zmiana odkłada zapis pliku uzgadniania — patrz 53-sync.js. Wpięte tutaj,
      w JEDNYM miejscu, przez które przechodzi każda zmiana danych; rozsypane po
      kilkunastu akcjach zawsze którąś by pominęło. */
   if(typeof syncPoZmianie==="function") syncPoZmianie(); }
-function clearDirty(){ lsSet(KP+"Dirty","0"); lsSet(KP+"LastBk", new Date().toISOString().substring(0,10)); updateBackupBadge();
+function clearDirty(){ const teraz=new Date().toISOString(); lsSet(KP+"Dirty","0"); lsSet(KP+"LastBk", teraz.substring(0,10)); lsSet(KP+"LastBkIso",teraz); updateBackupBadge();
   if(typeof zapomnijOdlozenie==="function") zapomnijOdlozenie();
   if(typeof schowajPasekKopii==="function") schowajPasekKopii(); }
 function backupDaysAgo(){ const lb=lsGet(KP+"LastBk", null); if(!lb) return null; const d=Math.floor((Date.now()-Date.parse(lb))/86400000); return isFinite(d)?d:null; }
@@ -11801,7 +12072,7 @@ function updateBackupBadge(){
   b.classList.toggle("badge-warn", backupStale());
   b.title = (lb ? ("Ostatnia kopia: "+lb+(days!=null?" ("+days+" dni temu)":"")) : "Nie zrobiono jeszcze kopii")
     + (dirty>0 ? (" · zmian od kopii: "+dirty) : " · brak nowych zmian")
-    + " — kliknij, aby zapisać kopię danych";
+    + " — kliknij, aby otworzyć Centrum bezpieczeństwa danych";
 }
 /* PRZY ZAMYKANIU JUŻ NIE PYTAMY.
 
@@ -11941,6 +12212,7 @@ const TRASH_DAYS = 30;
 function zapomnijNotatke(g){
   if(!g) return;
   if(idb) idbDelKey("notes", g).catch(()=>{});
+  if(typeof workerUsunNotatke==="function") workerUsunNotatke(g);
   if(typeof wersjeUsun === "function") wersjeUsun(g);
 }
 function trashList(){ return notes.filter(n=>n.del); }
@@ -13453,6 +13725,9 @@ async function compressImage(file){
  * @param {Note} n
  */
 function toggleEdit(card,n){
+  /* Zapis już trwa: drugie szybkie dotknięcie nie może ponownie otworzyć
+     edytora ani uruchomić drugiego zapisu tej samej notatki. */
+  if(card && card.dataset.saving==="1") return;
   /* NA TABLICY NIE EDYTUJEMY W MINIATURZE.
      Karteczka reaguje na dotknięcia (podnosi się, odkłada, przewija treść),
      więc pisanie w niej to walka gestów: próba przesunięcia kursora zwijała
@@ -13499,10 +13774,22 @@ function toggleEdit(card,n){
     contEl.style.display="block";
     contEl.focus();
     if(typeof histStart==="function") histStart(contEl);   // własna historia cofania
+    /* Odczyt jest asynchroniczny i nie blokuje otwarcia edytora. Jeśli poprzednia
+       sesja urwała się przed „Zapisz”, użytkownik sam decyduje o przywróceniu. */
+    if(typeof szkicOdzyskaj==="function") szkicOdzyskaj(card,n);
     // w pełnym ekranie belka tytułu przestaje być przyklejona — trzeba przeliczyć rezerwę
     if(typeof zmierzNhead==="function") zmierzNhead();
     if(typeof updateFsNav==="function") updateFsNav();
   } else {
+    szkicAnuluj(n.g);
+    /* Najpierw utrwalamy dokładny stan DOM jako szkic ratunkowy. Czytnik może
+       pokazać się od razu, ale do czasu zakończenia właściwego zapisu istnieje
+       druga kopia tekstu. */
+    const szkicPrzedZapisem=szkicZapisz(card,n,true);
+    card.dataset.saving="1";
+    btn.disabled=true;
+    btn.innerHTML=ICO.save+'<span class="sbtnTxt">Zapisywanie…</span>';
+    btn.classList.add("saveon"); btn.title="Trwa zapisywanie zmian";
     card.classList.remove("editing");
     hideImgBar();
     card.querySelector(".editbar")?.remove();
@@ -13511,7 +13798,6 @@ function toggleEdit(card,n){
     titleEl.contentEditable="false"; contEl.contentEditable="false";
   titleEl.setAttribute("contenteditable","false");
   contEl.setAttribute("contenteditable","false");
-    btn.innerHTML=ICO.edit; btn.classList.remove("saveon"); btn.title="Edytuj notatkę";
     saveVersion(n);   // zapisz poprzednią treść do historii wersji
     pushUndo({type:"note", label:"edycję notatki", before:cloneNote(n)});
     n.t = titleEl.textContent.trim();
@@ -13522,14 +13808,20 @@ function toggleEdit(card,n){
     n.h = clean; n.c = htmlToPlain(clean);
     n.ed=true; n.mo=new Date().toISOString();
     ustawStanZapisu(contEl,"saving"); bumpDirty();
-    saveNote(n).then(ok=>{
+    Promise.resolve(szkicPrzedZapisem).then(()=>saveNote(n)).then(ok=>{
       if(ok){
+        szkicUsun(n.g);
+        delete card.dataset.saving;
+        btn.disabled=false;
+        btn.innerHTML=ICO.edit; btn.classList.remove("saveon"); btn.title="Edytuj notatkę";
         ustawStanZapisu(contEl,"saved"); renderAll(); toastOk("Zapisano zmiany");
         // krótkie mrugnięcie zapisanej karty — widać od razu, której notatki dotyczyła zmiana
         flashOk(document.querySelector('#noteList .ncard[data-g="'+CSS.escape(n.g)+'"]'));
       }else{
         /* Nie zamykamy edytora po nieudanym zapisie. Tekst nadal jest w DOM,
            a czerwony stan mówi wprost, że trzeba spróbować ponownie lub zrobić kopię. */
+        delete card.dataset.saving;
+        btn.disabled=false;
         card.classList.add("editing");
         titleEl.contentEditable="true"; contEl.contentEditable="true";
         titleEl.setAttribute("contenteditable","true"); contEl.setAttribute("contenteditable","true");
@@ -13544,7 +13836,7 @@ function toggleEdit(card,n){
 }
 document.addEventListener("input", e=>{
   const pole=e.target && e.target.closest ? e.target.closest(".ncard.editing [contenteditable='true']") : null;
-  if(pole) ustawStanZapisu(pole,"dirty");
+  if(pole) szkicZaplanuj(pole);
 }, true);
 /**
  * Czyści HTML wklejony lub wpisany w edytorze: zostawia dozwolone znaczniki i atrybuty,
@@ -14075,6 +14367,7 @@ $("btnMenu").onclick = e=>{
     <div data-m="sync">${ic.sync}Uzgodnij z iPhonem, iPadem, Makiem…</div>
     <div class="dd-sep"></div>
     <div class="dd-lbl">Kopia zapasowa</div>
+    <div data-m="security">${ic.info}<b>Centrum bezpieczeństwa danych</b></div>
     <div data-m="json">${ICO.save}Zapisz kopię danych <span class="dd-hint">JSON</span></div>
     <div data-m="cloud">${ic.cloud}Zapisz kopię w chmurze <span class="dd-hint">iCloud, Drive…</span></div>
     <div data-m="loadjson">${ic.folder}Wczytaj kopię danych…</div>
@@ -14103,6 +14396,7 @@ $("btnMenu").onclick = e=>{
     const m=ev.target.dataset.m;
     dd.style.display="none";
     if(m==="sync"){ if(typeof syncUzgodnijTeraz==="function") syncUzgodnijTeraz(); }
+    else if(m==="security"){ if(typeof otworzCentrumBezpieczenstwa==="function") otworzCentrumBezpieczenstwa(); }
     else if(m==="import")openFilePicker("jwl");
     else if(m==="export")startExport();
     else if(m==="json")exportJson();
@@ -14410,7 +14704,9 @@ async function handleImportFile(e){
     schowajPostepImportu();
     /* Do tablicy trafiło naraz dużo notatek — pamięć podręczna szukania
        buduje się od nowa w bezczynności, a nie przy pierwszym klawiszu. */
-    if(typeof rozgrzejCacheSzukania === "function") setTimeout(rozgrzejCacheSzukania, 300);
+    setTimeout(()=>{
+      if(!(typeof uruchomIndeksWorkerSzukania==="function" && uruchomIndeksWorkerSzukania()) && typeof rozgrzejCacheSzukania==="function") rozgrzejCacheSzukania();
+    },300);
     /* NAJPIERW RÓŻNICE, POTEM PODSUMOWANIE.
        Odwrotna kolejność kazałaby zamknąć okno z liczbami, żeby dopiero zobaczyć,
        że coś czeka na decyzję — a podsumowanie bez rozstrzygniętych różnic i tak
@@ -15292,6 +15588,143 @@ async function exportJson(){
   clearDirty();
   toast("Zapisano kopię danych");
 }
+
+/* ================= CENTRUM BEZPIECZEŃSTWA DANYCH ================= */
+let _bezpKontrolaCache=null;
+function bezpUniewaznijKontrole(){ _bezpKontrolaCache=null; }
+function bezpBajty(n){
+  n=Number(n)||0;
+  if(n>=1073741824) return (n/1073741824).toFixed(n>=10737418240?1:2)+" GB";
+  if(n>=1048576) return (n/1048576).toFixed(n>=104857600?0:1)+" MB";
+  if(n>=1024) return (n/1024).toFixed(1)+" KB";
+  return n+" B";
+}
+function bezpStan(id,typ,tekst){
+  const el=$(id); if(!el)return;
+  el.className="bezp-stan"+(typ?" "+typ:""); el.textContent=tekst;
+}
+function bezpWynik(typ,html){
+  const el=$("bezpFileResult"); if(!el)return;
+  el.className="bezp-result show "+typ; el.innerHTML=html;
+}
+function bezpLadnaData(iso){
+  if(!iso)return "";
+  try{return new Date(iso).toLocaleString("pl-PL",{day:"numeric",month:"long",year:"numeric",hour:"2-digit",minute:"2-digit"});}catch(_){return iso;}
+}
+function bezpOddajKlatke(){ return new Promise(r=>setTimeout(r,0)); }
+async function bezpPoliczZdjecia(lista){
+  let ile=0;
+  for(let i=0;i<lista.length;i++){
+    ile+=((lista[i]&&lista[i].h||"").match(/<img\b/gi)||[]).length;
+    if(i&&i%500===0) await bezpOddajKlatke();
+  }
+  return ile;
+}
+async function bezpPokazPamiec(){
+  const det=$("bezpStorageDetail"), meter=$("bezpStorageMeter"), pasek=meter&&meter.querySelector("span");
+  try{
+    if(!(navigator.storage&&navigator.storage.estimate)) throw new Error("brak estimate");
+    const e=await navigator.storage.estimate(), usage=+e.usage||0, quota=+e.quota||0;
+    const wolne=Math.max(0,quota-usage), pct=quota?Math.min(100,Math.round(usage/quota*100)):0;
+    det.innerHTML=`Zajęte: <strong>${bezpBajty(usage)}</strong>${quota?` · Wolne: <strong>${bezpBajty(wolne)}</strong> · Limit: ${bezpBajty(quota)}`:""}`;
+    if(pasek)pasek.style.width=pct+"%";
+    if(meter)meter.className="bezp-meter"+(pct>=90?" err":pct>=75?" warn":"");
+    bezpStan("bezpStorageState",pct>=90?"err":pct>=75?"warn":"ok",quota?pct+"% zajęte":"Odczytano");
+  }catch(e){
+    det.textContent="Ta przeglądarka nie udostępnia dokładnych danych o zajętym i wolnym miejscu.";
+    if(meter)meter.style.display="none";
+    bezpStan("bezpStorageState","warn","Brak danych");
+  }
+}
+async function odswiezCentrumBezpieczenstwa(){
+  const zywe=notes.filter(n=>!n.del).length, kosz=notes.length-zywe;
+  $("bezpNotes").textContent=zywe.toLocaleString("pl-PL");
+  $("bezpNotesSub").textContent=kosz?kosz+" w koszu":"kosz jest pusty";
+  $("bezpTags").textContent=tags.length.toLocaleString("pl-PL");
+  $("bezpImages").textContent="…";
+  bezpPoliczZdjecia(notes).then(n=>{if($("modalBezpieczenstwo").classList.contains("show")) $("bezpImages").textContent=n.toLocaleString("pl-PL");});
+  const iso=lsGet(KP+"LastBkIso",null)||lsGet(KP+"LastBk",null), dni=backupDaysAgo(), dirty=+(lsGet(KP+"Dirty",0)||0);
+  $("bezpBackup").textContent=!iso?"Brak":dni===0?"Dzisiaj":dni===1?"Wczoraj":dni+" dni temu";
+  $("bezpBackupSub").textContent=!iso?"zrób pierwszą kopię":(bezpLadnaData(iso)+(dirty?" · "+dirty+" zmian poza kopią":" · aktualna"));
+  bezpPokazPamiec();
+}
+function bezpPokazKontrole(w){
+  if(!w)return;
+  bezpStan("bezpDbState",w.typ,w.tytul);
+  $("bezpDbDetail").innerHTML=w.html;
+}
+async function sprawdzBazeDanych(wymus){
+  if(_bezpKontrolaCache&&!wymus){bezpPokazKontrole(_bezpKontrolaCache);return _bezpKontrolaCache;}
+  const btn=$("bezpCheckDb"); if(btn)btn.disabled=true;
+  bezpStan("bezpDbState","","Sprawdzam…");
+  $("bezpDbDetail").textContent="Odczytuję rekordy i sprawdzam ich powiązania.";
+  try{
+    if(!idb) throw new Error("Trwała pamięć IndexedDB nie jest dostępna");
+    const [dbNotes,dbTags,ileWersji]=await Promise.all([
+      idbAll("notes"),idbAll("tags"),idb.objectStoreNames.contains("wersje")?idbCount("wersje"):Promise.resolve(0)
+    ]);
+    const tagIds=new Set(), guidy=new Set(); let bledneTagi=0,bledneNotatki=0,brakTagu=0,duplikaty=0;
+    for(const t of dbTags){
+      if(!t||!Number.isFinite(+t.id)||typeof t.name!=="string") bledneTagi++;
+      else tagIds.add(+t.id);
+    }
+    for(let i=0;i<dbNotes.length;i++){
+      const n=dbNotes[i];
+      if(!n||typeof n.g!=="string"||!n.g||!Array.isArray(n.tg)){bledneNotatki++;continue;}
+      if(guidy.has(n.g))duplikaty++; else guidy.add(n.g);
+      for(const id of n.tg) if(!tagIds.has(+id)) brakTagu++;
+      if(i&&i%500===0)await bezpOddajKlatke();
+    }
+    const rozneN=dbNotes.length!==notes.length, rozneT=dbTags.length!==tags.length;
+    const problem=bledneTagi+bledneNotatki+brakTagu+duplikaty;
+    const typ=problem?"err":(rozneN||rozneT)?"warn":"ok";
+    const tytul=problem?"Wymaga uwagi":(rozneN||rozneT)?"Dane w trakcie zapisu":"Baza poprawna";
+    let html=`W pamięci trwałej: <strong>${dbNotes.length.toLocaleString("pl-PL")} notatek</strong>, <strong>${dbTags.length.toLocaleString("pl-PL")} etykiet</strong> i ${ileWersji.toLocaleString("pl-PL")} historii wersji.`;
+    if(problem)html+=`<br>Nieprawidłowe rekordy: ${bledneNotatki+bledneTagi}; brakujące powiązania etykiet: ${brakTagu}; duplikaty identyfikatorów: ${duplikaty}. Zrób kopię przed dalszymi zmianami.`;
+    else if(rozneN||rozneT)html+=`<br>Liczba na ekranie chwilowo różni się od zapisu. Odczekaj kilka sekund i sprawdź ponownie.`;
+    else html+=`<br>Odczyt kontrolny i wszystkie powiązania zakończyły się prawidłowo.`;
+    _bezpKontrolaCache={typ,tytul,html}; bezpPokazKontrole(_bezpKontrolaCache); return _bezpKontrolaCache;
+  }catch(e){
+    _bezpKontrolaCache={typ:"err",tytul:"Nie można sprawdzić",html:`Nie udało się odczytać trwałej pamięci: <strong>${esc(e&&e.message||"nieznany błąd")}</strong>. Zrób kopię danych, jeśli aplikacja nadal je wyświetla.`};
+    bezpPokazKontrole(_bezpKontrolaCache); return _bezpKontrolaCache;
+  }finally{if(btn)btn.disabled=false;}
+}
+async function bezpSprawdzPlikKopii(file){
+  const btn=$("bezpCheckBackup"); if(btn)btn.disabled=true;
+  bezpWynik("warn","Sprawdzam plik — nic nie zostanie wczytane ani nadpisane…");
+  try{
+    if(!file)throw new Error("Nie wybrano pliku");
+    if(!file.size)throw new Error("Plik jest pusty");
+    if(file.size>MAX_KOPIA_JSON)throw new Error("Plik jest większy niż dopuszczalny limit "+bezpBajty(MAX_KOPIA_JSON));
+    let data; try{data=JSON.parse(await file.text());}catch(_){throw new Error("To nie jest poprawny plik JSON");}
+    if(!data||typeof data!=="object"||!Array.isArray(data.notes)||!Array.isArray(data.tags))throw new Error("Plik nie ma struktury kopii JW Study");
+    if(data.notes.length>MAX_NOTATEK||data.tags.length>MAX_ETYKIET)throw new Error("Plik przekracza bezpieczny limit liczby rekordów");
+    const tagIds=new Set(),guidy=new Set();let bledne=0,brakTagu=0,duplikaty=0,zdjecia=0,kosz=0;
+    for(const t of data.tags){if(!t||!Number.isFinite(+t.id)||typeof t.name!=="string")bledne++;else tagIds.add(+t.id);}
+    for(let i=0;i<data.notes.length;i++){
+      const n=data.notes[i];
+      if(!n||typeof n.g!=="string"||!n.g||!Array.isArray(n.tg)){bledne++;continue;}
+      if(guidy.has(n.g))duplikaty++;else guidy.add(n.g);
+      for(const id of n.tg)if(!tagIds.has(+id))brakTagu++;
+      zdjecia+=((n.h||"").match(/<img\b/gi)||[]).length;if(n.del)kosz++;
+      if(i&&i%500===0)await bezpOddajKlatke();
+    }
+    if(bledne||duplikaty)throw new Error("Plik zawiera nieprawidłowe rekordy ("+(bledne+duplikaty)+")");
+    const typ=brakTagu?"warn":"ok";
+    bezpWynik(typ,`<strong>${esc(file.name)}</strong> jest czytelną kopią.<br>${data.notes.length.toLocaleString("pl-PL")} notatek (${kosz} w koszu), ${data.tags.length.toLocaleString("pl-PL")} etykiet i ${zdjecia.toLocaleString("pl-PL")} zdjęć.${brakTagu?`<br>Uwaga: ${brakTagu} przypisań wskazuje nieistniejącą etykietę.`:""}<br><b>Plik został tylko sprawdzony — nie wczytano go.</b>`);
+  }catch(e){bezpWynik("err",`Nie można uznać pliku za poprawną kopię: <strong>${esc(e&&e.message||"nieznany błąd")}</strong>.`);}
+  finally{if(btn)btn.disabled=false;const inp=$("bezpBackupInput");if(inp)inp.value="";}
+}
+function otworzCentrumBezpieczenstwa(){
+  openModal("modalBezpieczenstwo");
+  const r=$("bezpFileResult"); if(r)r.className="bezp-result";
+  odswiezCentrumBezpieczenstwa(); sprawdzBazeDanych(false);
+}
+$("btnBackup").onclick=otworzCentrumBezpieczenstwa;
+$("bezpCheckDb").onclick=()=>sprawdzBazeDanych(true);
+$("bezpMakeBackup").onclick=async()=>{await exportJson();setTimeout(()=>{odswiezCentrumBezpieczenstwa();bezpWynik("ok","Kopia została przygotowana. Zachowaj plik poza tym urządzeniem — najlepiej także w iCloud, OneDrive lub Dysku Google.");},120);};
+$("bezpCheckBackup").onclick=()=>$("bezpBackupInput").click();
+$("bezpBackupInput").onchange=e=>bezpSprawdzPlikKopii(e.target.files&&e.target.files[0]);
 /* ===== SCALANIE KOPII (dołącz brakujące, zachowaj to, co masz) =====
    Etykiety i sekcje z innego urządzenia mogą mieć INNE numery, więc dopasowujemy je
    po nazwie i przenumerowujemy w wczytywanych notatkach. */
@@ -15580,7 +16013,9 @@ async function wczytajKopieZTekstu(tekstPliku){
       renderAll();
       /* Do tablicy trafiło naraz dużo notatek — pamięć podręczna szukania
          buduje się od nowa w bezczynności, a nie przy pierwszym klawiszu. */
-      if(typeof rozgrzejCacheSzukania === "function") setTimeout(rozgrzejCacheSzukania, 300);
+      setTimeout(()=>{
+        if(!(typeof uruchomIndeksWorkerSzukania==="function" && uruchomIndeksWorkerSzukania()) && typeof rozgrzejCacheSzukania==="function") rozgrzejCacheSzukania();
+      },300);
       showInfo("Kopia dołączona",
         (kontrolaM
           ? (kontrolaM.zgadza
@@ -15655,7 +16090,9 @@ async function wczytajKopieZTekstu(tekstPliku){
     renderAll();
     /* Do tablicy trafiło naraz dużo notatek — pamięć podręczna szukania
        buduje się od nowa w bezczynności, a nie przy pierwszym klawiszu. */
-    if(typeof rozgrzejCacheSzukania === "function") setTimeout(rozgrzejCacheSzukania, 300);
+    setTimeout(()=>{
+      if(!(typeof uruchomIndeksWorkerSzukania==="function" && uruchomIndeksWorkerSzukania()) && typeof rozgrzejCacheSzukania==="function") rozgrzejCacheSzukania();
+    },300);
     showInfo("Zastąpiono dane",
       `Zapisano i sprawdzono w bazie urządzenia:<br>`+
       `• Notatek: <b>${kontrola ? kontrola.notatki : noweNotes.length}</b><br>`+
@@ -16122,7 +16559,7 @@ function uruchomWyszukiwanie(raw){
     sortMode=window._sortPrzedSzukaniem||"new"; $("sortSel").value=sortMode;
   }
   if(typeof centrumOdswiez === "function") centrumOdswiez();
-  renderNotes();
+  if(!(typeof uruchomWorkerSzukania==="function" && uruchomWorkerSzukania())) renderNotes();
   showSearchSug(raw);
 }
 /* PISANIE W WYSZUKIWARCE ODŚWIEŻA TYLKO KOLUMNĘ NOTATEK.
@@ -24235,7 +24672,9 @@ async function syncScalDane(dane, bezPytania){
     if(typeof renderAll === "function") renderAll();
     /* Do tablicy trafiło naraz dużo notatek — pamięć podręczna szukania
        buduje się od nowa w bezczynności, a nie przy pierwszym klawiszu. */
-    if(typeof rozgrzejCacheSzukania === "function") setTimeout(rozgrzejCacheSzukania, 300);
+    setTimeout(()=>{
+      if(!(typeof uruchomIndeksWorkerSzukania==="function" && uruchomIndeksWorkerSzukania()) && typeof rozgrzejCacheSzukania==="function") rozgrzejCacheSzukania();
+    },300);
     if(typeof centrumOdswiez === "function") centrumOdswiez();
   }
   /* W podstawie zapisujemy OSOBNO nasz stan i stan pliku — po co, mówi

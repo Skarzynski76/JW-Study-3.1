@@ -1,4 +1,4 @@
-const CACHE = 'jwstudy-v300';
+const CACHE = 'jwstudy-v304';
 /* Rdzeń: dokument + wszystkie arkusze i moduły — bez nich aplikacja nie ruszy offline.
 
    TA LISTA JEST WYPISYWANA PRZEZ NARZĘDZIE. Nie dopisuj do niej ręcznie.
@@ -24,6 +24,7 @@ const CORE = [
    robić. Niezapisana daje błąd przeglądarki, z którego nie wynika, że rzecz
    po prostu wymaga internetu. */
 const EXTRA = [
+  './search-worker.js',
   './lib/jszip.min.js', './lib/sql-wasm.js', './lib/sql-wasm.wasm',
   './jszip.min.js', './sql-wasm.js', './sql-wasm.wasm',
   './manifest.webmanifest',

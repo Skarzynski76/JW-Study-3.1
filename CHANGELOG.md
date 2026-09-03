@@ -5,6 +5,63 @@ bez niej po miesiącu nie wiadomo, dlaczego coś wygląda tak, a nie inaczej.
 
 ---
 
+## v3.04 — Centrum bezpieczeństwa danych
+
+- przycisk kopii w nagłówku otwiera teraz jedno Centrum pokazujące datę
+  ostatniej kopii, liczbę zmian poza kopią oraz stan pamięci urządzenia,
+- okno podaje liczbę aktywnych notatek, wpisów w koszu, etykiet i zdjęć oraz
+  zajęte, wolne i przyznane aplikacji miejsce, jeśli przeglądarka je udostępnia,
+- kontrola bazy odczytuje IndexedDB, porównuje liczbę rekordów z ekranem,
+  sprawdza identyfikatory, powiązania etykiet i historię wersji; długa kontrola
+  oddaje sterowanie między porcjami, więc nie zamraża dotyku,
+- „Sprawdź kopię” analizuje wskazany JSON, limity, rekordy, etykiety, zdjęcia
+  i powiązania, ale nie importuje pliku ani nie zmienia żadnej notatki,
+- „Zrób kopię” używa tego samego, istniejącego mechanizmu zapisu, a po wykonaniu
+  Centrum odświeża dokładną datę i stan zabezpieczenia,
+- Centrum jest dostępne również z menu Plik i ma pełnoekranowy układ mobilny;
+  dodano osobny zestaw 19 testów bezpieczeństwa danych.
+
+## v3.03 — wyszukiwanie w tle i lżejsza lista ponad 11 tysięcy notatek
+
+- skanowanie indeksu wyszukiwania działa w osobnym wątku (`search-worker.js`),
+  dlatego wpisywanie, dotyk i przewijanie pozostają dostępne podczas szukania,
+- indeks jest przygotowywany porcjami po starcie i aktualizowany po zmianie
+  notatki; po dużym imporcie przebudowuje się bez blokowania ekranu,
+- worker przekazuje do aplikacji wyłącznie małe partie identyfikatorów, a pełne
+  reguły inteligentnego wyszukiwania i punktacja są sprawdzane na kandydatach,
+- pierwsza lista tworzy 36 kart zamiast 60, kolejne partie po 60 dochodzą przy
+  przewijaniu, a karty poza ekranem korzystają z `content-visibility`,
+- starsze przeglądarki bez obsługi Worker automatycznie używają dotychczasowej
+  ścieżki zgodności; plik workera jest również zapisany do pracy offline,
+- dodano osobny zestaw testów wątku, indeksu, zakresu, porcjowania i fallbacku.
+
+## v3.02 — automatyczny szkic i odzyskiwanie przerwanej edycji
+
+- podczas edycji zmieniona treść jest zapisywana jako osobny szkic awaryjny
+  po krótkiej chwili bezczynności; szkic nie zastępuje właściwej notatki i nie
+  zmienia jej daty modyfikacji,
+- pasek edytora rozróżnia teraz stany „Niezapisane zmiany”, „Zapisywanie…”,
+  „Szkic zapisany” i „Zapisano”, dzięki czemu wiadomo, czy tekst jest już
+  zabezpieczony na urządzeniu,
+- po przerwaniu edycji albo zamknięciu aplikacji nowszy szkic jest wykrywany
+  przy ponownym otwarciu notatki; użytkownik decyduje, czy go odzyskać,
+- przed pełnym zapisem tworzona jest ostatnia kopia szkicu, a po potwierdzonym
+  zapisie notatki szkic jest usuwany; błąd zapisu pozostawia go do odzyskania,
+- dodano osobny zestaw testów pilnujący rozdzielenia szkicu od notatki,
+  sanitacji odzyskiwanej treści, zachowania przy zamknięciu i kolejności zapisu.
+
+## v3.01 — zapis notatki działa po jednym dotknięciu
+
+- pasek notatki rozpoznaje teraz akcję z całego przycisku, również gdy palec
+  trafi dokładnie w ikonę dyskietki, jej linię SVG albo napis „Zapisz”; wcześniej
+  działał jedynie pusty fragment przycisku, dlatego na iPhonie i iPadzie zapis
+  wymagał kilku prób,
+- po pierwszym dotknięciu edytor od razu przechodzi do czytnika i pokazuje stan
+  „Zapisywanie…”, a przycisk pozostaje zablokowany do zakończenia operacji,
+- kolejne szybkie dotknięcie podczas trwającego zapisu jest ignorowane, więc nie
+  może ponownie otworzyć edytora ani rozpocząć drugiej operacji,
+- dodano test dotknięcia bezpośrednio w napis wewnątrz przycisku „Zapisz”.
+
 ## v3.00 — bezpieczny import JW Library i kontrola dużych kopii
 
 - import `.jwlibrary` zapisuje notatki, etykiety, oryginalną kopię oraz

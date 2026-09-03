@@ -1,7 +1,10 @@
 TAK, TEN KATALOG.
 
 index.html ma tu ponad 1200 kB — cała aplikacja w jednym pliku.
-Wgrywaj index.html ZAWSZE razem z sw.js.
+Wgrywaj index.html ZAWSZE razem z sw.js i search-worker.js.
+
+search-worker.js odpowiada za szybkie wyszukiwanie bez blokowania dotyku.
+Jeżeli go zabraknie, aplikacja uruchomi wolniejszy tryb zgodności.
 
 Nie zmieniaj nazwy index.html i nie wgrywaj obok kopii takich jak
 „index 3.html” albo „index 5.html”.
