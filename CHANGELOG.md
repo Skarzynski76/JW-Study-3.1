@@ -5,6 +5,56 @@ bez niej po miesiącu nie wiadomo, dlaczego coś wygląda tak, a nie inaczej.
 
 ---
 
+## v3.07 — spokojniejszy i czytelniejszy Warsztat
+
+- cztery jednakowe, ściśnięte kolumny zastąpiono czytelną hierarchią: projekty
+  mają własny rząd, a kolejki „Do przeczytania” i „Do opracowania” są szersze,
+- „Warto wrócić” jest osobnym pasem na całą szerokość, dzięki czemu nie konkuruje
+  z bieżącą pracą i pozwala szybciej rozpoznać trzy proponowane notatki,
+- zwiększono odstępy, powierzchnię dotyku i oddech między pozycjami, a ramki oraz
+  cienie są subtelniejsze,
+- na wąskim iPadzie Warsztat przechodzi w jedną kolumnę; na telefonie również
+  projekty i powroty układają się pionowo bez ściskania tekstu,
+- zachowano dotychczasowe projekty, kolejki, filtry, synchronizację i Centrum
+  bezpieczeństwa; dodano 12 kontroli nowego układu.
+
+## v3.06 — Centrum Studium jako osobista przestrzeń pracy
+
+- dodano projekty łączące notatki z różnych wersetów i publikacji; projekt
+  korzysta z etykiety, dlatego można przypisać go wielu notatkom i zachować
+  w kopii oraz podczas uzgadniania urządzeń,
+- każda notatka może trafić do kolejki „Do przeczytania” albo skrzynki
+  „Do opracowania” przez jedno podmenu `Więcej → Centrum Studium`,
+- na pulpicie pojawił się organizator z projektami, kolejką, skrzynką i lekkim
+  przypomnieniem „Warto wrócić” dla ważnych notatek nieotwieranych od miesiąca,
+- skróty i szybkie filtry prowadzą bezpośrednio do całej kolejki lub skrzynki,
+  bez uruchamiania wyszukiwarki i bez blokowania dotyku,
+- sześć dużych bloków Centrum można ukrywać i przestawiać; układ jest
+  zapamiętywany na urządzeniu, a przywrócenie domyślnego układu nie zmienia danych,
+- w Centrum widać stan ostatniej kopii i liczbę niezabezpieczonych zmian;
+  kliknięcie prowadzi do pełnego Centrum bezpieczeństwa,
+- dodano instrukcję w aplikacji, układ jednej kolumny na telefonie, układ dwóch
+  kolumn na wąskim iPadzie oraz 15 testów nowych funkcji.
+
+## v3.05 — wygodniejszy czytnik długich notatek
+
+- pasek postępu pokazuje również dokładny procent, a krótką notatkę mieszczącą
+  się na ekranie rozpoznaje jako przeczytaną w całości,
+- miejsce czytania nadal jest zapisywane osobno dla każdej notatki, ale po
+  zmianie czcionki, szerokości lub treści potrafi wrócić według procentu, jeśli
+  dawny punkt w pikselach już nie istnieje,
+- panel „Zakładki” pozwala zapisać wiele miejsc wewnątrz długiej notatki,
+  przejść do nich i je usunąć; zakładki są częścią notatki, dlatego trafiają
+  do kopii danych i synchronizacji między urządzeniami,
+- ustawienie tła czytnika jest niezależne od całej aplikacji: można wybrać
+  wygląd aplikacji, dzień, sepię albo noc bez przemalowywania list i Centrum,
+- opcjonalny gest poziomy zmienia notatkę dopiero po wyraźnym, krótkim ruchu;
+  domyślnie jest wyłączony i nie przechwytuje zaznaczania tekstu,
+- w panelu Aa można wyłączyć automatyczne chowanie narzędzi oraz dobrowolnie
+  włączyć niewygaszanie ekranu; blokada jest zwalniana po wyjściu z czytnika,
+- Centrum Studium nadal pokazuje „Kontynuuj ostatnie studium” i otwiera tekst
+  w zapamiętanym miejscu; dodano 22 testy nowego zachowania czytnika.
+
 ## v3.04 — Centrum bezpieczeństwa danych
 
 - przycisk kopii w nagłówku otwiera teraz jedno Centrum pokazujące datę

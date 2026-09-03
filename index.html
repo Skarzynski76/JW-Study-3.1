@@ -405,6 +405,7 @@ html[data-theme="dark"] .pill.par{background:#3a3a45;color:var(--accent2)}
 /* pasek czytnika: licznik + spis + znajdź */
 .fsBar{display:flex;align-items:center;gap:8px;max-width:var(--fsMax,760px);margin:0 auto 10px;padding:6px 0;border-bottom:1px solid var(--border);flex-wrap:wrap}
 .fsStat{font-size:12px;color:var(--muted)}
+.fsPct{font-size:11.5px;font-weight:700;color:var(--accent);background:var(--sel);border-radius:999px;padding:3px 8px;font-variant-numeric:tabular-nums}
 .fsBarSp{flex:1}
 .fsBarBtn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:10px;padding:5px 11px;font-size:12.5px;cursor:pointer}
 .fsBarBtn:hover{background:var(--sel);border-color:var(--accent2)}
@@ -424,6 +425,14 @@ html[data-theme="dark"] .pill.par{background:#3a3a45;color:var(--accent2)}
 .fsTocItem.sub{padding-left:26px;font-size:13px;color:var(--muted)}
 .fsTocEmpty{padding:12px;font-size:13px;color:var(--muted);text-align:center}
 .tocFlash{background:var(--sel);border-radius:6px;transition:background .3s}
+/* zakładki wewnątrz długiej notatki */
+.fsMarks{max-width:var(--fsMax,760px);margin:0 auto 12px;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:8px}
+.fsMarksHead{display:flex;align-items:center;gap:10px;padding:3px 3px 8px;border-bottom:1px solid var(--border)}
+.fsMarksHead b{font-size:13px;flex:1}.fsMarksAdd{border:1px solid var(--border);background:var(--sel);color:var(--accent);border-radius:9px;padding:6px 9px;font-size:12px;font-weight:650;cursor:pointer}
+.fsMark{display:grid;grid-template-columns:46px minmax(0,1fr) 32px;align-items:center;gap:8px;padding:8px 3px;border-bottom:1px solid color-mix(in srgb,var(--border) 72%,transparent)}
+.fsMark:last-child{border-bottom:0}.fsMarkPct{font-size:11px;font-weight:750;color:var(--accent);text-align:center;font-variant-numeric:tabular-nums}
+.fsMarkGo{border:0;background:transparent;color:var(--text);text-align:left;min-width:0;padding:2px;cursor:pointer}.fsMarkGo b,.fsMarkGo span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.fsMarkGo b{font-size:12.5px}.fsMarkGo span{font-size:11.5px;color:var(--muted);margin-top:2px}
+.fsMarkDel{border:0;background:transparent;color:var(--muted);border-radius:8px;width:30px;height:30px;cursor:pointer}.fsMarkDel:hover{background:var(--sel);color:#b42318}
 /* strzałki poprzednia/następna */
 .fsNav{position:fixed;top:50%;transform:translateY(-50%);z-index:11;width:44px;height:64px;border:none;border-radius:12px;background:rgba(0,0,0,.16);color:#fff;font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
 .fsNav:hover{background:rgba(0,0,0,.3)}
@@ -444,6 +453,19 @@ html[data-theme="dark"] .pill.par{background:#3a3a45;color:var(--accent2)}
 #readPop .rp-grp button+button{border-left:1px solid var(--border)}
 #readPop .rp-grp button.on{background:var(--sel);color:var(--accent);font-weight:600}
 #readPop .rp-grp button:hover{background:var(--sel)}
+#readPop{max-height:min(78dvh,620px);overflow:auto;-webkit-overflow-scrolling:touch}
+
+/* Motyw czytnika jest niezależny od motywu całej aplikacji. Zmienne są
+   ograniczone do pełnego ekranu, więc wybranie sepii nie przemalowuje list,
+   Centrum Studium ani ustawień. */
+#modalFs[data-reader-theme="light"]{--bg:#fbfbfa;--panel:#fff;--text:#202421;--muted:#737a76;--border:#dfe4e1;--sel:#e9f2ed;--accent:#236c52;--accent2:#74a994}
+#modalFs[data-reader-theme="sepia"]{--bg:#f2e8d1;--panel:#fbf3e2;--text:#352f25;--muted:#746a58;--border:#d9c9aa;--sel:#eadcbc;--accent:#6b6047;--accent2:#9a8662}
+#modalFs[data-reader-theme="dark"]{--bg:#151816;--panel:#202421;--text:#eef1ed;--muted:#a7aea9;--border:#3a413d;--sel:#2b3832;--accent:#79c7a5;--accent2:#8bbca7}
+#modalFs[data-reader-theme]:not([data-reader-theme="app"]) .fsmodal{background:var(--bg);color:var(--text)}
+#modalFs[data-reader-theme]:not([data-reader-theme="app"]) #fsWrap .ncard{background:var(--panel);color:var(--text)}
+#modalFs[data-reader-theme="dark"] #fsWrap .nhead{filter:brightness(.72) saturate(.8)}
+#modalFs[data-reader-theme="dark"] #fsWrap .chip-study{background:var(--panel)!important;color:var(--accent)!important}
+#modalFs[data-reader-theme="sepia"] #fsWrap .chip-study{background:#fbf3e2!important;color:var(--accent)!important}
 
 </style>
 <style>
@@ -6314,6 +6336,8 @@ html[data-theme="sepia"]{
 .cenSzybTxt{ white-space:nowrap; }
 .cenSzyb[data-cszyb="notatka"]{  --szK:var(--cenK-studiowane); }
 .cenSzyb[data-cszyb="biblia"]{   --szK:var(--cenK-wersety); }
+.cenSzyb[data-cszyb="kolejka"]{  --szK:var(--cenK-studiowane); }
+.cenSzyb[data-cszyb="inbox"]{    --szK:var(--cenK-niedok); }
 .cenSzyb[data-cszyb="powtorki"]{ --szK:var(--cenPilny); }
 .cenSzyb[data-cszyb="sync"]{     --szK:var(--cenK-dodane); }
 .cenSzyb[data-cszyb="ulubione"]{ --szK:var(--cenSerce); }
@@ -7380,6 +7404,112 @@ html[data-theme="dark"] .bezp-result.ok{background:#173b2f;color:#a8dec8}html[da
   .cenCzytMini{ grid-template-columns:minmax(0,1fr); }
   .cenCzytMini article+article{ border-left:0; }
 }
+
+/* ══════════════ CENTRUM STUDIUM — PRZESTRZEŃ ROBOCZA (v3.07) ══════════════ */
+.cenNaglAkcje{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.cenNaglAkcje .btn{ gap:7px; }
+.cenNaglAkcje .btn .ic{ width:15px; height:15px; }
+.cenBlok{ max-width:1440px; margin:0 auto; }
+.cenUklad{
+  max-width:1440px; margin:0 auto 14px; padding:14px;
+  border:1px solid color-mix(in srgb,var(--accent) 32%,var(--border)); border-radius:16px;
+  background:color-mix(in srgb,var(--accent) 4%,var(--panel)); box-shadow:var(--cien-1);
+}
+.cenUklad>header{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:10px; }
+.cenUklad>header>div{ display:flex; flex-direction:column; gap:3px; }
+.cenUklad>header b{ font-size:14px; }
+.cenUklad>header span{ color:var(--muted); font-size:11.5px; }
+.cenUkladReset{ border:0; background:transparent; color:var(--accent); padding:6px 8px; cursor:pointer; font-weight:650; }
+.cenUkladLista{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; }
+.cenUkladWiersz{
+  display:flex; align-items:center; justify-content:space-between; gap:7px;
+  min-width:0; min-height:42px; padding:6px 7px 6px 10px;
+  border:1px solid var(--border); border-radius:10px; background:var(--panel);
+}
+.cenUkladWiersz label{ display:flex; align-items:center; gap:7px; min-width:0; cursor:pointer; }
+.cenUkladWiersz label span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; }
+.cenUkladRuch{ display:flex; gap:3px; flex:0 0 auto; }
+.cenUkladRuch button{
+  display:grid; place-items:center; width:30px; height:30px; border:0; border-radius:8px;
+  background:var(--sel); color:var(--text); cursor:pointer;
+}
+.cenUkladRuch button:disabled{ opacity:.25; cursor:default; }
+
+.cenOrgan{
+  margin:0 0 18px; padding:22px; border-radius:22px;
+  border:1px solid color-mix(in srgb,var(--border) 88%,var(--accent));
+  background:var(--panel); box-shadow:0 1px 2px rgba(22,36,29,.035),0 14px 38px rgba(22,36,29,.055);
+}
+.cenOrgan>header{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px; margin-bottom:19px; }
+.cenOrgan h2{ margin:0; font-size:calc(20px * var(--uiw,1)); letter-spacing:-.025em; }
+.cenOrganGrid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:15px; }
+.cenOrganGrid>article{
+  min-width:0; min-height:168px; padding:18px; border:1px solid color-mix(in srgb,var(--border) 88%,transparent); border-radius:17px;
+  background:color-mix(in srgb,var(--accent) 1.8%,var(--panel));
+}
+.cenOrganGrid h3{
+  display:flex; align-items:center; gap:8px; margin:0 0 13px;
+  font-size:11.5px; text-transform:uppercase; letter-spacing:.055em;
+}
+.cenOrganGrid h3 .ic{ width:15px; height:15px; color:var(--accent); }
+.cenOrganGrid h3 span{ flex:1 1 auto; }
+.cenOrganGrid h3 b{ min-width:21px; padding:2px 6px; border-radius:999px; background:var(--sel); color:var(--accent); text-align:center; }
+.cenOrganProjekty,.cenOrganPowrot{ grid-column:1/-1; }
+.cenOrganProjekty{ min-height:0!important; }
+.cenProjektLista{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:9px; }
+.cenProjekt,.cenOrgPoz{
+  display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:7px;
+  width:100%; min-height:44px; padding:8px 9px; border:0; border-radius:11px;
+  background:transparent; color:var(--text); text-align:left; cursor:pointer;
+}
+.cenProjekt:hover,.cenOrgPoz:hover{ background:var(--sel); }
+.cenProjekt{ border:1px solid color-mix(in srgb,var(--border) 82%,transparent); background:var(--panel); }
+.cenProjekt i{ width:8px; height:27px; border-radius:5px; background:var(--proj,var(--accent)); }
+.cenProjekt span,.cenOrgPoz span{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; font-weight:620; }
+.cenProjekt small,.cenOrgPoz small{ color:var(--muted); font-size:10px; white-space:nowrap; }
+.cenOrgPoz{ grid-template-columns:minmax(0,1fr) auto; }
+.cenOrgLista{ display:flex; flex-direction:column; }
+.cenOrgPoz+ .cenOrgPoz{ box-shadow:inset 0 1px color-mix(in srgb,var(--border) 60%,transparent); }
+.cenOrgPusto{ display:block; color:var(--muted); font-size:11px; line-height:1.45; }
+.cenOrgWiecej{ width:100%; margin-top:9px; padding:8px; border:0; background:transparent; color:var(--accent); cursor:pointer; font-size:11px; font-weight:650; }
+.cenOrganPowrot{ min-height:0!important; }
+.cenPowrotLista{ grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+.cenPowrotLista .cenOrgPoz{
+  min-height:57px; padding:11px 12px; border-radius:12px; background:color-mix(in srgb,var(--accent) 4.5%,var(--panel));
+  box-shadow:none;
+}
+.cenBezMini{
+  display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:10px;
+  width:100%; margin-top:15px; padding:11px 13px; border:1px solid color-mix(in srgb,var(--border) 82%,transparent); border-radius:13px;
+  background:color-mix(in srgb,#2d8a63 5%,var(--panel)); color:var(--text); text-align:left; cursor:pointer;
+}
+.cenBezMini>.ic{ width:19px; height:19px; color:var(--accent); }
+.cenBezMini>span{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+.cenBezMini b{ font-size:12px; }
+.cenBezMini small{ color:var(--muted); font-size:10.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cenBezMini .cenPozStrz,.cenBezMini>svg:last-child{ width:15px; height:15px; color:var(--muted); }
+
+@container notatki (max-width:980px){
+  .cenProjektLista{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .cenUkladLista{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@container notatki (max-width:700px){
+  .cenOrganGrid{ grid-template-columns:minmax(0,1fr); }
+  .cenOrganProjekty,.cenOrganPowrot{ grid-column:auto; }
+  .cenPowrotLista{ grid-template-columns:minmax(0,1fr); }
+}
+@container notatki (max-width:520px){
+  .cenOrgan{ padding:15px; border-radius:18px; }
+  .cenOrgan>header{ align-items:center; }
+  .cenOrgan>header .cenLink{ font-size:0; width:40px; height:40px; padding:0; }
+  .cenOrgan>header .cenLink::before{ content:"＋"; display:grid; place-items:center; font-size:20px; }
+  .cenOrganGrid,.cenUkladLista,.cenProjektLista{ grid-template-columns:minmax(0,1fr); }
+  .cenOrganGrid>article{ min-height:0; }
+  .cenUklad>header{ flex-direction:column; }
+  .cenUkladReset{ align-self:flex-start; padding-left:0; }
+  .cenNaglAkcje{ width:100%; }
+  .cenNaglAkcje .btn{ flex:1 1 0; justify-content:center; }
+}
 @media (max-width:620px){
   .searchGrid{ grid-template-columns:1fr; }
   .search-modal{ width:100vw; height:100dvh; max-height:100dvh; border-radius:0; }
@@ -7395,7 +7525,7 @@ html[data-theme="dark"] .bezp-result.ok{background:#173b2f;color:#a8dec8}html[da
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <h1 class="brand-name">JW Study <span class="ver">v3.04</span></h1>
+      <h1 class="brand-name">JW Study <span class="ver">v3.07</span></h1>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -7517,6 +7647,8 @@ html[data-theme="dark"] .bezp-result.ok{background:#173b2f;color:#a8dec8}html[da
       <button class="qf" data-qf="untagged">Bez etykiety</button>
       <button class="qf" data-qf="img">Ze zdjęciem</button>
         <button class="qf" data-qf="week">Ostatni tydzień</button>
+      <button class="qf qf-cen" data-qf="cenq" data-lbl="Do przeczytania">Do przeczytania</button>
+      <button class="qf qf-cen" data-qf="ceni" data-lbl="Do opracowania">Do opracowania</button>
       <!-- Powroty do notatek wskazanych przez użytkownika. Chip pokazuje się
            tylko wtedy, gdy coś czeka — pusty uczyłby go pomijać wzrokiem. -->
       <button class="qf qf-pwt" data-qf="powtorka" data-lbl="Na dziś">Na dziś</button>
@@ -7603,7 +7735,7 @@ html[data-theme="dark"] .bezp-result.ok{background:#173b2f;color:#a8dec8}html[da
 
 <div class="overlay" id="modalFs">
   <div class="fsmodal">
-    <div id="fsProg"></div>
+    <div id="fsProg" role="progressbar" aria-label="Postęp czytania" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
     <button id="fsClose" title="Zamknij">✕</button>
     <div id="fsWrap"></div>
   </div>
@@ -7835,6 +7967,11 @@ html[data-theme="dark"] .bezp-result.ok{background:#173b2f;color:#a8dec8}html[da
     <div class="help-list">
       <div class="help-row"><span class="help-ic">📴</span><div><b>Praca offline (iPhone/iPad)</b> — otwórz aplikację w Safari <u>z internetem</u>, potem <b>Udostępnij → Dodaj do ekranu głównego</b>. Uruchom ją raz z ikony (wciąż z internetem) — pojawi się „✓ gotowa do pracy offline". Od tej pory działa bez sieci. Stan sprawdzisz w <b>⚙️ Plik</b> (🟢 na dole).</div></div>
       <div class="help-row"><span class="help-ic">📚</span><div><b>Cztery kolumny</b> — Biblia, Etykiety, Publikacje, Notatki. Klikasz pozycję, żeby zawęzić listę notatek.</div></div>
+      <div class="help-row"><span class="help-ic">🏠</span><div><b>Centrum Studium</b> — domkiem <kbd>H</kbd> wracasz do swojej przestrzeni pracy.<br>
+        • <b>Do przeczytania</b> jest kolejką materiałów na później, a <b>Do opracowania</b> skrzynką luźnych pomysłów;<br>
+        • <b>Projekty</b> łączą notatki z różnych wersetów i publikacji. W notatce wybierz <b>Więcej → Centrum Studium</b>, aby dodać ją do kolejki, skrzynki albo projektu;<br>
+        • <b>Warto wrócić</b> przypomina wartościowe ulubione notatki, których od dawna nie otwierano;<br>
+        • przycisk <b>Dostosuj</b> ukrywa i przestawia całe sekcje. Zmienia tylko pulpit — nie usuwa żadnych danych.</div></div>
       <div class="help-row"><span class="help-ic">🔍</span><div><b>Szukaj</b> u góry:<br>
         • wybierz <b>Dokładnie</b> albo <b>Inteligentnie</b> przyciskiem ze strzałką w polu wyszukiwania. Tryb inteligentny rozpoznaje polskie odmiany, literówki, synonimy i różne zapisy wersetów;<br>
         • <code>milosc pokora</code> — oba pojęcia · <code>pokora OR skromność</code> — jedno · <code>-małżeństwo</code> lub <code>NOT małżeństwo</code> — wykluczenie;<br>
@@ -7855,7 +7992,7 @@ html[data-theme="dark"] .bezp-result.ok{background:#173b2f;color:#a8dec8}html[da
         <div class="help-tip">Licznik przy temacie to <b>liczba notatek</b>, nie suma podtematów — notatka z etykietami „Ufność" i „Modlitwa" liczy się w WIERZE raz.</div>
       </div></div>
       <div class="help-row"><span class="help-ic">📁</span><div><b>Sekcje etykiet</b> — gdy masz dużo etykiet, pogrupuj je: <b>📁 Nowa sekcja</b> (np. „Kongresy”), potem przy etykiecie <b>⋯ → Sekcja</b>. Sekcje zwijasz kliknięciem w nagłówek.</div></div>
-      <div class="help-row"><span class="help-ic">📖</span><div><b>Czytnik</b> (notatka na pełnym ekranie): licznik słów i czasu czytania, <b>Spis</b> (skok do nagłówka), <b>Znajdź</b> w notatce, <b>Aa</b> (rozmiar, interlinia, szerokość, czcionka, tło). Aplikacja <b>zapamiętuje miejsce</b>, w którym skończyłeś czytać.</div></div>
+      <div class="help-row"><span class="help-ic">📖</span><div><b>Czytnik</b> (notatka na pełnym ekranie): pokazuje postęp i zapamiętuje miejsce. <b>Spis</b> prowadzi do nagłówków, <b>Znajdź</b> szuka w bieżącej notatce, a <b>Zakładki</b> zapisują dowolne miejsca w długim tekście. W <b>Aa</b> ustawisz osobne tło czytnika (dzień, sepia lub noc), tryb skupienia, opcjonalny gest między notatkami i niewygaszanie ekranu.</div></div>
       <div class="help-row"><span class="help-ic">✍️</span><div><b>W edycji</b>: przycisk <b>＋</b> wstawia odnośnik do wersetu, <b>przypis</b>, cytat, listę zadań, <b>tabelę</b> i <b>szablon notatki</b>; ikona <b>🎨</b> to zakreślacz (7 kolorów) i kolor czcionki; w menu <b>⋯</b> jest <b>Znajdź i zamień</b> oraz <b>Historia wersji</b> (do 50 wersji).</div></div>
       <div class="help-row"><span class="help-ic">⌨️</span><div><b>Pisanie skrótami</b> — na początku wiersza:<br>
         • <code>@</code> → lista notatek. Wybrana wchodzi jako <b>odsyłacz</b>; kliknięcie w niego otwiera tamtą notatkę, a strzałka wstecz wraca tutaj. Napis bierze się z bieżącego tytułu, więc zmiana tytułu przenosi się sama.<br>
@@ -8531,6 +8668,25 @@ function sanitizeNote(n, obce){
   n.itn= liczbaLubZero(n.itn);
   n.doc= liczbaLubZero(n.doc);
   n.pin = !!n.pin; n.fav = !!n.fav; n.del = !!n.del;
+  /* Organizacja w Centrum Studium jest częścią notatki, a nie ustawieniem
+     urządzenia. Dzięki temu kolejka i skrzynka jadą w kopii oraz podczas
+     uzgadniania. Wartością jest data dodania — pozwala zachować kolejność. */
+  ["cenq","ceni"].forEach(p=>{
+    if(n[p]===true) n[p]=n.mo || n.cr || new Date().toISOString();
+    else if(typeof n[p]!=="string" || !n[p]) delete n[p];
+  });
+  /* Zakładki czytnika są częścią notatki, więc jadą w kopii i między
+     urządzeniami. Ograniczamy liczbę i długości pól, żeby obcy plik nie mógł
+     wstawić tu niekontrolowanej ilości danych. */
+  if(Array.isArray(n.rb)){
+    n.rb=n.rb.slice(-80).map((m,i)=>{
+      if(!m || typeof m!=="object") return null;
+      const pct=Math.max(0,Math.min(100,Number(m.pct)||0));
+      return {id:String(m.id||("rb_import_"+i)).slice(0,80),pct,
+        label:String(m.label||"Zakładka").slice(0,120),quote:String(m.quote||"").slice(0,180),
+        ts:typeof m.ts==="string"?m.ts:""};
+    }).filter(Boolean);
+  }else delete n.rb;
   if(typeof n.ord!=="number" || !isFinite(n.ord)) delete n.ord;
   if(n.ptb!=null){ const p=Number(n.ptb); if(isFinite(p) && p>0) n.ptb=p; else delete n.ptb; }
   if(typeof n.mo!=="string") n.mo = typeof n.cr==="string" ? n.cr : new Date().toISOString();
@@ -8572,6 +8728,7 @@ function sanitizeTags(list, zrodlo, obce){
        i dopisać własny atrybut, więc przepuszczamy tylko proste, znane postacie. */
     if(t.color!=null && !kolorBezpieczny(t.color)) delete t.color;
     if(t.sec!=null && !isFinite(Number(t.sec))) delete t.sec;
+    if(t.cproj!==true) delete t.cproj;
     out.push(t);
   }
   if(odrzucone) console.warn("Pominięto "+odrzucone+" uszkodzonych etykiet ("+(zrodlo||"?")+")");
@@ -9737,6 +9894,8 @@ function matchesQuick(n){
   if(quickFilter==="untagged") return !n.tg || n.tg.length===0;
   if(quickFilter==="img") return /<img/i.test(n.h||"");
   if(quickFilter==="powtorka") return (typeof czekaNaPowrot==="function") && czekaNaPowrot(n);
+  if(quickFilter==="cenq") return !!n.cenq;
+  if(quickFilter==="ceni") return !!n.ceni;
   if(quickFilter==="week"){
     const t=Date.parse(n.mo||n.cr||"");
     return isFinite(t) && (Date.now()-t) < 7*86400000;
@@ -9792,7 +9951,7 @@ function renderQuickFilters(base){
   base = base || baseNotes();
   // pojedyncza pętla liczy wszystkie liczniki naraz (wcześniej: cztery osobne przebiegi)
   const now = Date.now();
-  const cnt={ all: base.length, pin:0, fav:0, untagged:0, img:0, week:0, powtorka:0 };
+  const cnt={ all: base.length, pin:0, fav:0, untagged:0, img:0, week:0, powtorka:0, cenq:0, ceni:0 };
   for(let i=0;i<base.length;i++){
     const n=base[i];
     if(n.pin) cnt.pin++;
@@ -9802,6 +9961,8 @@ function renderQuickFilters(base){
     const t=Date.parse(n.mo||n.cr||"");
     if(isFinite(t) && (now-t)<_QF_WEEK) cnt.week++;
     if(typeof czekaNaPowrot==="function" && czekaNaPowrot(n)) cnt.powtorka++;
+    if(n.cenq) cnt.cenq++;
+    if(n.ceni) cnt.ceni++;
   }
   box.querySelectorAll(".qf").forEach(b=>{
     const k=b.dataset.qf, c=cnt[k]||0;
@@ -9811,7 +9972,7 @@ function renderQuickFilters(base){
        zbiory, które istnieją zawsze; ten opisuje umówione spotkania — a pusty
        chip „Na dziś 0" uczyłby omijać go wzrokiem także wtedy, gdy coś w nim
        będzie. */
-    if(k==="powtorka") b.hidden = !c && quickFilter!==k;
+    if(k==="powtorka" || k==="cenq" || k==="ceni") b.hidden = !c && quickFilter!==k;
     const label = b.dataset.lbl || b.textContent.replace(/\s*\d+$/,"").trim();
     setHtml(b, esc(label) + (k!=="all" && c ? ` <span class="qf-n">${c}</span>` : ""));
     b.onclick = ()=>{ quickFilter = (quickFilter===k && k!=="all") ? "all" : k; renderNotes(); };
@@ -11134,6 +11295,7 @@ function noteCard(n){
          <div data-x="powtorka">${IC_CLOCK}Przypomnij mi o niej…${(typeof maPowtorke==="function" && maPowtorke(n))?' <span class="ddZnak">✓</span>':""}</div>
          <div data-x="szablon">${ICO.doc}Zapisz jako szablon…</div>
          <div class="dd-sep"></div>
+         <div data-x="grCentrum">${ICO.books}Centrum Studium${(n.cenq||n.ceni)?' <span class="ddZnak">✓</span>':""}<span class="ddStrz">›</span></div>
          <div data-x="grMiejsce">${ICO.bookmark}Gdzie leży<span class="ddStrz">›</span></div>
          <div data-x="grWyglad">${ICO.paint}Wygląd${(n.wys!==undefined||n.bg)?' <span class="ddZnak">✓</span>':""}<span class="ddStrz">›</span></div>
          <div data-x="grZapis">${ICO.doc}Zapisz jako plik<span class="ddStrz">›</span></div>
@@ -11148,7 +11310,7 @@ function noteCard(n){
         if(typeof obsluzPaskTla==="function" && obsluzPaskTla(ev, n, kotwica)) return;
         const it=ev.target.closest("[data-x]"); if(!it) return;
         const x=it.dataset.x; dd.style.display="none";
-        if(x==="grMiejsce" || x==="grWyglad" || x==="grZapis"){
+        if(x==="grCentrum" || x==="grMiejsce" || x==="grWyglad" || x==="grZapis"){
           setTimeout(()=>podmenuNotatki(x, n, kotwica), 40); return; }
         if(x==="ptb"){ setTimeout(()=>pubTabMenu(n, kotwica), 40); return; }
         if(x==="stb"){ setTimeout(()=>menuZakladek(kotwica, n, "note"), 40); return; }
@@ -11270,6 +11432,22 @@ let fsNavList = [];
 let fsSlad = [];
 const FS_SLAD_MAX = 30;        // dłuższego nikt nie przejdzie palcem, a pamięć ma swój koszt
 let fsListDirty = false;
+/* Ustawienia dotyczą wyłącznie czytnika. „app” znaczy: odziedzicz wygląd
+   aplikacji; pozostałe warianty nie zmieniają globalnego themeMode. */
+const READER_THEME_KEY = KP+"ReaderTheme";
+const READER_SWIPE_KEY = KP+"ReaderSwipe";
+const READER_FOCUS_KEY = KP+"ReaderFocus";
+const READER_WAKE_KEY = KP+"ReaderWake";
+let readerTheme = lsGet(READER_THEME_KEY,"app");
+if(!["app","light","sepia","dark"].includes(readerTheme)) readerTheme="app";
+let readerSwipe = lsGet(READER_SWIPE_KEY,"0")==="1";
+let readerFocus = lsGet(READER_FOCUS_KEY,"1")!=="0";
+let readerWake = lsGet(READER_WAKE_KEY,"0")==="1";
+
+function applyReaderTheme(){
+  const modal=$("modalFs"); if(!modal) return;
+  modal.dataset.readerTheme=readerTheme;
+}
 /**
  * Otwiera notatkę na pełnym ekranie (czytnik): typografia do czytania, spis treści
  * z nagłówków, szukanie w notatce, pasek postępu i zapamiętane miejsce czytania.
@@ -11293,6 +11471,7 @@ function openFs(n){
   fsGuid = n.g;
   $("modalFs").classList.remove("dok-schowany","pow-open");
   document.body.classList.add("fs-open");
+  applyReaderTheme();
   renderFs(); openModal("modalFs");
   acquireWake(); updateFsNav();
   const fm=$("modalFs").querySelector(".fsmodal"); if(fm) fm.scrollTop=0;
@@ -11348,15 +11527,17 @@ function renderFs(){
       card.appendChild(box.firstElementChild);
     }
   }
-  // pasek czytnika: licznik słów/czasu + szukaj w notatce + spis treści
+  // pasek czytnika: licznik, postęp, spis, szukanie i zakładki wewnętrzne
   const cont = card.querySelector(".ncontent");
   if(cont){
     const bar = document.createElement("div"); bar.className="fsBar";
     const st = readStats(cont);
     bar.innerHTML = `<span class="fsStat">${st.words} słów · ok. ${st.mins} min czytania</span>
+      <span class="fsPct" title="Postęp czytania">0%</span>
       <span class="fsBarSp"></span>
       <button class="fsBarBtn" data-fsb="toc" title="Spis treści (nagłówki)">${ICO.ul} Spis</button>
-      <button class="fsBarBtn" data-fsb="find" title="Znajdź w notatce">${ICO.search} Znajdź</button>`;
+      <button class="fsBarBtn" data-fsb="find" title="Znajdź w notatce">${ICO.search} Znajdź</button>
+      <button class="fsBarBtn" data-fsb="marks" title="Zakładki wewnątrz tej notatki">☆ Zakładki <span data-fmark-count>${readerMarks(n).length}</span></button>`;
     card.insertBefore(bar, cont);
     // panel wyszukiwania w notatce
     const fbox = document.createElement("div"); fbox.className="fsFind"; fbox.style.display="none";
@@ -11369,10 +11550,24 @@ function renderFs(){
     // spis treści
     const toc = document.createElement("div"); toc.className="fsToc"; toc.style.display="none";
     card.insertBefore(toc, cont);
+    // zakładki zapisują procent i krótki fragment, więc po zmianie układu nadal
+    // można znaleźć właściwe miejsce po tekście, a dopiero potem po procencie.
+    const marks = document.createElement("div"); marks.className="fsMarks"; marks.style.display="none";
+    card.insertBefore(marks, cont);
+    renderFsMarks(n, cont, marks);
     bar.addEventListener("click", e=>{
       const b=e.target.closest("[data-fsb]"); if(!b) return;
-      if(b.dataset.fsb==="find"){ toc.style.display="none"; const on=fbox.style.display==="none"; fbox.style.display=on?"flex":"none"; if(on) setTimeout(()=>fbox.querySelector(".fsFindInp").focus(),40); else clearFsFind(cont); }
-      else { fbox.style.display="none"; clearFsFind(cont); buildToc(cont,toc); toc.style.display = toc.style.display==="none"?"block":"none"; }
+      if(b.dataset.fsb==="find"){
+        toc.style.display="none"; marks.style.display="none";
+        const on=fbox.style.display==="none"; fbox.style.display=on?"flex":"none";
+        if(on) setTimeout(()=>fbox.querySelector(".fsFindInp").focus(),40); else clearFsFind(cont);
+      }else if(b.dataset.fsb==="marks"){
+        fbox.style.display="none"; clearFsFind(cont); toc.style.display="none";
+        renderFsMarks(n,cont,marks); marks.style.display=marks.style.display==="none"?"block":"none";
+      }else{
+        fbox.style.display="none"; clearFsFind(cont); marks.style.display="none";
+        buildToc(cont,toc); toc.style.display = toc.style.display==="none"?"block":"none";
+      }
     });
     fbox.addEventListener("input", e=>{ if(e.target.classList.contains("fsFindInp")) runFsFind(cont, e.target.value, fbox); });
     fbox.addEventListener("click", e=>{
@@ -11381,9 +11576,18 @@ function renderFs(){
       stepFsFind(cont, b.dataset.ff==="next"?1:-1, fbox);
     });
     fbox.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); stepFsFind(cont, e.shiftKey?-1:1, fbox); } else if(e.key==="Escape"){ fbox.style.display="none"; clearFsFind(cont); } });
+    marks.addEventListener("click", e=>{
+      const add=e.target.closest("[data-fm-add]");
+      if(add){ addReaderMark(n,cont,marks); return; }
+      const del=e.target.closest("[data-fm-del]");
+      if(del){ deleteReaderMark(n,del.dataset.fmDel,cont,marks); return; }
+      const go=e.target.closest("[data-fm-go]");
+      if(go){ goReaderMark(n,go.dataset.fmGo,cont); marks.style.display="none"; }
+    });
   }
   w.appendChild(card);
   $("modalFs")?.classList.toggle("pow-open",!!card.querySelector("details.powiazane[open]"));
+  _progLast=-1;
   updateFsProgress(); updateFsNav();
   restoreReadPos(n.g);
   zmierzNhead();
@@ -11421,6 +11625,63 @@ function readStats(el){
   const txt=(el.textContent||"").trim();
   const words = txt ? (txt.match(/[\p{L}\p{N}][\p{L}\p{N}'’-]*/gu)||[]).length : 0;
   return {words, mins: Math.max(1, Math.round(words/200))};
+}
+/* ===== zakładki wewnątrz notatki ===== */
+function readerMarks(n){
+  if(!n) return [];
+  if(!Array.isArray(n.rb)) n.rb=[];
+  return n.rb;
+}
+function readerMarkPlace(cont){
+  const fm=$("modalFs").querySelector(".fsmodal");
+  if(!fm) return {pct:0,label:"Początek notatki",quote:""};
+  const max=Math.max(0,fm.scrollHeight-fm.clientHeight);
+  const pct=max ? Math.max(0,Math.min(100,Math.round(fm.scrollTop/max*100))) : 0;
+  const y=Math.max(44,(document.querySelector("#fsWrap .nhead")?.getBoundingClientRect().bottom||0)+12);
+  const bloki=[...cont.querySelectorAll("h2,h3,p,li,blockquote,div")]
+    .filter(el=>el.textContent && el.textContent.trim() && !el.closest(".footnotes"));
+  let cel=bloki[0]||cont;
+  for(const el of bloki){ if(el.getBoundingClientRect().top<=y) cel=el; else break; }
+  const quote=(cel.textContent||"").replace(/\s+/g," ").trim().slice(0,100);
+  let head=cel.matches("h2,h3")?cel:null, p=cel.previousElementSibling;
+  while(!head && p){ if(p.matches("h2,h3")){head=p;break;} p=p.previousElementSibling; }
+  const label=(head?.textContent||quote||("Miejsce "+pct+"%" )).replace(/\s+/g," ").trim().slice(0,72);
+  return {pct,label,quote};
+}
+function storeReaderMarks(n){
+  n.rb=readerMarks(n).slice(-80);
+  saveNote(n); if(typeof bumpDirty==="function") bumpDirty();
+  fsListDirty=true;
+}
+function renderFsMarks(n,cont,box){
+  const lista=readerMarks(n).slice().sort((a,b)=>(+a.pct||0)-(+b.pct||0));
+  box.innerHTML=`<div class="fsMarksHead"><b>Zakładki w tej notatce</b><button type="button" class="fsMarksAdd" data-fm-add="1">＋ Dodaj tutaj</button></div>`+
+    (lista.length ? lista.map(m=>`<div class="fsMark"><span class="fsMarkPct">${Math.round(+m.pct||0)}%</span>`+
+      `<button type="button" class="fsMarkGo" data-fm-go="${esc(m.id)}"><b>${esc(m.label||"Zakładka")}</b><span>${esc(m.quote||"")}</span></button>`+
+      `<button type="button" class="fsMarkDel" data-fm-del="${esc(m.id)}" title="Usuń zakładkę" aria-label="Usuń zakładkę">×</button></div>`).join("")
+      : `<div class="fsTocEmpty">Nie ma jeszcze zakładek. Przewiń tekst i wybierz „Dodaj tutaj”.</div>`);
+  const licznik=document.querySelector("#fsWrap [data-fmark-count]"); if(licznik) licznik.textContent=lista.length;
+}
+function addReaderMark(n,cont,box){
+  const m=readerMarkPlace(cont);
+  const blisko=readerMarks(n).find(x=>Math.abs((+x.pct||0)-m.pct)<2 && x.quote===m.quote);
+  if(blisko){ toast("W tym miejscu jest już zakładka"); return; }
+  readerMarks(n).push({id:"rb_"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),pct:m.pct,label:m.label,quote:m.quote,ts:new Date().toISOString()});
+  storeReaderMarks(n); renderFsMarks(n,cont,box); toastOk("Dodano zakładkę w notatce");
+}
+function deleteReaderMark(n,id,cont,box){
+  n.rb=readerMarks(n).filter(x=>x.id!==id); storeReaderMarks(n); renderFsMarks(n,cont,box); toast("Usunięto zakładkę");
+}
+function goReaderMark(n,id,cont){
+  const m=readerMarks(n).find(x=>x.id===id); if(!m) return;
+  const nq=norm(m.quote||"").slice(0,48);
+  let cel=null;
+  if(nq) cel=[...cont.querySelectorAll("h2,h3,p,li,blockquote,div")].find(el=>norm(el.textContent||"").includes(nq));
+  if(cel){ cel.scrollIntoView({behavior:"smooth",block:"start"}); cel.classList.add("tocFlash"); setTimeout(()=>cel.classList.remove("tocFlash"),1200); }
+  else{
+    const fm=$("modalFs").querySelector(".fsmodal"), max=fm?fm.scrollHeight-fm.clientHeight:0;
+    if(fm) fm.scrollTo({top:max*Math.max(0,Math.min(100,+m.pct||0))/100,behavior:"smooth"});
+  }
 }
 /* ===== spis treści z nagłówków ===== */
 function buildToc(cont, toc){
@@ -11519,11 +11780,14 @@ function saveReadPos(){
   lsSetSoon(READFRAC_KEY, JSON.stringify(fr), 400);
 }
 function restoreReadPos(g){
-  const pos=readPosAll()[g]; if(!pos) return;
+  const pos=readPosAll()[g], frac=readFracAll()[g]; if(!pos && !frac) return;
   const fm=$("modalFs").querySelector(".fsmodal"); if(!fm) return;
   setTimeout(()=>{
-    if(fm.scrollHeight-fm.clientHeight < pos) return;
-    fm.scrollTop=pos; updateFsProgress();
+    const max=fm.scrollHeight-fm.clientHeight;
+    /* Po zmianie rozmiaru pisma, szerokości albo treści stary piksel może już
+       nie istnieć. Wtedy wracamy po procencie, zamiast rezygnować z powrotu. */
+    fm.scrollTop=(pos && pos<=max) ? pos : max*Math.max(0,Math.min(100,+frac||0))/100;
+    updateFsProgress();
     toast("Wrócono do miejsca, gdzie skończyłeś");
   }, 80);
 }
@@ -11631,17 +11895,23 @@ function updateFsProgress(){
     _progRaf = 0;
     const fm=$("modalFs").querySelector(".fsmodal"), p=$("fsProg"); if(!fm||!p) return;
     const max = fm.scrollHeight - fm.clientHeight;
-    const frac = max>4 ? Math.min(1, fm.scrollTop/max) : 0;
+    const frac = max>4 ? Math.min(1, fm.scrollTop/max) : 1;
     const zaokr = Math.round(frac*200)/200;              // 0,5% dokładności w zupełności wystarczy
     if(zaokr === _progLast) return;                      // nic nie zmieniamy, gdy pasek stoi w miejscu
     _progLast = zaokr;
     p.style.transform = "scaleX("+zaokr+")";
+    const procent=Math.round(zaokr*100);
+    p.setAttribute("aria-valuenow",String(procent));
+    const lbl=document.querySelector("#fsWrap .fsPct"); if(lbl) lbl.textContent=procent+"%";
   });
 }
 let wakeLock=null;
-async function acquireWake(){ try{ if("wakeLock" in navigator){ wakeLock = await navigator.wakeLock.request("screen"); } }catch(e){} }
+async function acquireWake(){
+  if(!readerWake || document.visibilityState!=="visible" || !$("modalFs").classList.contains("show")) return;
+  try{ if("wakeLock" in navigator && !wakeLock){ wakeLock = await navigator.wakeLock.request("screen"); } }catch(e){}
+}
 function releaseWake(){ try{ if(wakeLock){ wakeLock.release(); wakeLock=null; } }catch(e){} }
-document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible" && $("modalFs").classList.contains("show")) acquireWake(); });
+document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible") acquireWake(); else releaseWake(); });
 // panel typografii
 function openReadPop(btn){
   const pop=$("readPop");
@@ -11651,7 +11921,10 @@ function openReadPop(btn){
     `<div class="rp-row"><span class="rp-lbl">Interlinia</span>${seg("line",[{v:0,t:"zwarta",on:lineH===0},{v:1,t:"komfort",on:lineH===1},{v:2,t:"luźna",on:lineH===2}])}</div>`+
     `<div class="rp-row"><span class="rp-lbl">Szerokość</span>${seg("width",[{v:0,t:"wąski",on:fsWidth===0},{v:1,t:"komfort",on:fsWidth===1},{v:2,t:"pełny",on:fsWidth===2}])}</div>`+
     `<div class="rp-row"><span class="rp-lbl">Czcionka</span>${seg("font",[{v:"sans",t:"Bezszeryf.",on:readFont==="sans"},{v:"serif",t:"Szeryfowa",on:readFont==="serif"}])}</div>`+
-    `<div class="rp-row"><span class="rp-lbl">Tło</span>${seg("theme",[{v:"light",t:"Dzień",on:themeMode==="light"},{v:"sepia",t:"Sepia",on:themeMode==="sepia"},{v:"dark",t:"Noc",on:themeMode==="dark"}])}</div>`;
+    `<div class="rp-row"><span class="rp-lbl">Tło czytnika</span>${seg("theme",[{v:"app",t:"Jak aplikacja",on:readerTheme==="app"},{v:"light",t:"Dzień",on:readerTheme==="light"},{v:"sepia",t:"Sepia",on:readerTheme==="sepia"},{v:"dark",t:"Noc",on:readerTheme==="dark"}])}</div>`+
+    `<div class="rp-row"><span class="rp-lbl">Tryb skupienia</span>${seg("focus",[{v:"1",t:"Włącz",on:readerFocus},{v:"0",t:"Wyłącz",on:!readerFocus}])}</div>`+
+    `<div class="rp-row"><span class="rp-lbl">Gest między notatkami</span>${seg("swipe",[{v:"1",t:"Włącz",on:readerSwipe},{v:"0",t:"Wyłącz",on:!readerSwipe}])}</div>`+
+    `<div class="rp-row"><span class="rp-lbl">Nie wygaszaj ekranu</span>${seg("wake",[{v:"1",t:"Włącz",on:readerWake},{v:"0",t:"Wyłącz",on:!readerWake}])}</div>`;
   pop.style.display="block";
   const r=btn.getBoundingClientRect(), w=pop.offsetWidth||280, h=pop.offsetHeight||300;
   const _ob = (typeof widocznyObszar==="function") ? widocznyObszar()
@@ -11667,7 +11940,16 @@ $("readPop").addEventListener("pointerdown", e=>{
   if(grp==="line"){ lineH=+v; lsSet(KP+"LineH",lineH); applyReading(); }
   else if(grp==="width"){ fsWidth=+v; lsSet(KP+"FsW2",fsWidth); applyFsWidth(); }   /* FsW2 — patrz 11-theme.js */
   else if(grp==="font"){ readFont=v; lsSet(KP+"ReadFont",readFont); applyReading(); }
-  else if(grp==="theme"){ setTheme(v); }
+  else if(grp==="theme"){ readerTheme=v; lsSet(READER_THEME_KEY,v); applyReaderTheme(); }
+  else if(grp==="focus"){
+    readerFocus=v==="1"; lsSet(READER_FOCUS_KEY,readerFocus?"1":"0");
+    if(!readerFocus) $("modalFs").classList.remove("dok-schowany");
+  }
+  else if(grp==="swipe"){ readerSwipe=v==="1"; lsSet(READER_SWIPE_KEY,readerSwipe?"1":"0"); }
+  else if(grp==="wake"){
+    readerWake=v==="1"; lsSet(READER_WAKE_KEY,readerWake?"1":"0");
+    if(readerWake) acquireWake(); else releaseWake();
+  }
   const g=b.closest("[data-grp]"); g.querySelectorAll("button").forEach(x=>x.classList.remove("on")); b.classList.add("on");
 });
 /* Zamykanie przy dotknięciu obok — wspólne dla wszystkich okienek, w 45-zamykanie.js */
@@ -11682,7 +11964,7 @@ $("fsNext").onclick = ()=>fsGo(1);
     if(!raf) raf=requestAnimationFrame(()=>{ raf=0; updateFsProgress(); });
     clearTimeout(posT); posT=setTimeout(saveReadPos, 400);   // zapamiętaj miejsce czytania
     const modal=$("modalFs");
-    if(!document.querySelector("#fsWrap .ncard.editing") && !String(getSelection()).trim()) modal.classList.add("dok-schowany");
+    if(readerFocus && !document.querySelector("#fsWrap .ncard.editing") && !String(getSelection()).trim()) modal.classList.add("dok-schowany");
   }, {passive:true}); })();
 /* Po przewijaniu dok zostaje schowany. Pojedyncze dotknięcie pustego miejsca
    lub tekstu przywraca go; dotknięcia linków, przycisków i zaznaczenia nie są
@@ -11694,16 +11976,19 @@ $("modalFs").querySelector(".fsmodal")?.addEventListener("click", e=>{
   if(e.target.closest("a,button,input,select,textarea,[contenteditable='true'],.powPanel")) return;
   modal.classList.remove("dok-schowany");
 });
-// przesunięcie palcem (swipe) — zmiana notatki (tylko wyraźny poziomy gest, nigdy przy zaznaczaniu tekstu)
+// przesunięcie palcem — opcjonalne i wyłączone domyślnie. Nie przechwytuje
+// systemowego zaznaczania: nie blokujemy touchmove, a gest musi być krótki,
+// wyraźnie poziomy i zacząć się poza krawędzią systemowego „wstecz”.
 (function(){
   const fm=$("modalFs").querySelector(".fsmodal"); if(!fm) return;
-  let sx=0, sy=0, act=false, selAtStart="";
+  let sx=0, sy=0, st=0, act=false, selAtStart="";
   fm.addEventListener("touchstart", e=>{
-    if(e.touches.length!==1){ act=false; return; }
+    if(!readerSwipe || e.touches.length!==1){ act=false; return; }
     const t=e.target;
-    if(t.closest("img, a, button, input, textarea, select, .ncontent, .ncard.editing, #readPop")){ act=false; return; }
+    if(t.closest("img, a, button, input, textarea, select, [contenteditable='true'], .ncard.editing, #readPop, .fsFind, .fsToc, .fsMarks")){ act=false; return; }
     selAtStart = String(window.getSelection ? getSelection() : "");
-    sx=e.touches[0].clientX; sy=e.touches[0].clientY; act=true;
+    sx=e.touches[0].clientX; sy=e.touches[0].clientY; st=Date.now();
+    act=sx>24 && sx<innerWidth-24;
   }, {passive:true});
   fm.addEventListener("touchend", e=>{
     if(!act) return; act=false;
@@ -11711,7 +11996,7 @@ $("modalFs").querySelector(".fsmodal")?.addEventListener("click", e=>{
     const selNow = String(window.getSelection ? getSelection() : "");
     if(selNow.trim() || selNow!==selAtStart) return;
     const t=e.changedTouches[0], dx=t.clientX-sx, dy=t.clientY-sy;
-    if(Math.abs(dx)>90 && Math.abs(dy)<35 && Math.abs(dx)>Math.abs(dy)*2){ fsGo(dx<0 ? 1 : -1); }
+    if(Date.now()-st<700 && Math.abs(dx)>110 && Math.abs(dy)<48 && Math.abs(dx)>Math.abs(dy)*2.4){ fsGo(dx<0 ? 1 : -1); }
   }, {passive:true});
 })();
 
@@ -21569,6 +21854,15 @@ document.addEventListener("click", e=>{
    Warunek jest funkcją, bo część pozycji ma sens tylko dla notatek z miejscem
    w publikacji albo przy istniejących zakładkach. */
 const GRUPY_NOTATKI = {
+  grCentrum: {
+    tytul: "Centrum Studium",
+    poz: n=>[
+      ["cenq", n.cenq ? "Usuń z kolejki czytania" : "Dodaj do kolejki czytania", true, n.cenq?"✓":""],
+      ["ceni", n.ceni ? "Usuń z „Do opracowania”" : "Dodaj do „Do opracowania”", true, n.ceni?"✓":""],
+      ["cenprojekt", "Dodaj do projektu…", true,
+        tags.some(t=>t.cproj && n.tg.includes(t.id)) ? "✓" : ""]
+    ]
+  },
   grMiejsce: {
     tytul: "Gdzie leży",
     poz: n=>[
@@ -21640,6 +21934,14 @@ function podmenuNotatki(klucz, n, kotwica){
 
 /** Wykonuje pozycję z podmenu. Jedno miejsce dla wszystkich grup. */
 function wykonajZMenuNotatki(x, n, kotwica){
+  if(x==="cenq" || x==="ceni"){
+    if(typeof centrumToggleNotatki==="function") centrumToggleNotatki(n, x);
+    return;
+  }
+  if(x==="cenprojekt"){
+    if(typeof centrumMenuProjektow==="function") setTimeout(()=>centrumMenuProjektow(n, kotwica),40);
+    return;
+  }
   if(x==="ptb"){ setTimeout(()=>pubTabMenu(n, kotwica), 40); return; }
   if(x==="stb"){ setTimeout(()=>menuZakladek(kotwica, n, "note"), 40); return; }
   if(x==="wysokosc" && typeof menuWysokosci==="function"){
@@ -22486,9 +22788,43 @@ const CENTR_ILE = 6;
 const CENTR_DNI = 90;
 const CENTR_KLUCZ = KP + "Centrum";        // "auto" albo "lista"
 const CENTR_WLACZONE = KP + "CentrumWl";   // "1" albo "0"
+const CENTR_UKLAD_KLUCZ = KP + "CentrumUklad306";
+const CENTR_BLOKI = [
+  {id:"biblioteka", nazwa:"Biblioteka i czytelnia"},
+  {id:"organizator", nazwa:"Projekty i kolejki"},
+  {id:"szybkie", nazwa:"Szybkie akcje"},
+  {id:"ostatnie", nazwa:"Ostatnia praca"},
+  {id:"odkrywaj", nazwa:"Zadania i wyszukiwania"},
+  {id:"statystyki", nazwa:"Podsumowanie"}
+];
 
 let centrTryb = lsGet(CENTR_KLUCZ, "auto") === "lista" ? "lista" : "auto";
 let centrWlaczone = lsGet(CENTR_WLACZONE, "1") !== "0";
+let centrDostosujOtwarte = false;
+
+function centrUklad(){
+  let zapis={};
+  try{ zapis=JSON.parse(lsGet(CENTR_UKLAD_KLUCZ,"{}"))||{}; }catch(_){ zapis={}; }
+  const ids=CENTR_BLOKI.map(x=>x.id), z=Array.isArray(zapis.order)?zapis.order:[];
+  const order=[...z.filter((x,i)=>ids.includes(x)&&z.indexOf(x)===i),...ids.filter(x=>!z.includes(x))];
+  const hidden={}; ids.forEach(id=>{ hidden[id]=!!(zapis.hidden&&zapis.hidden[id]); });
+  return {order,hidden};
+}
+function centrZapiszUklad(stan){ lsSet(CENTR_UKLAD_KLUCZ,JSON.stringify(stan)); }
+function centrPanelUkladu(stan){
+  if(!centrDostosujOtwarte) return "";
+  const nazwa=Object.fromEntries(CENTR_BLOKI.map(x=>[x.id,x.nazwa]));
+  return '<section class="cenUklad" aria-label="Dostosuj Centrum Studium">'
+    + '<header><div><b>Dostosuj Centrum</b><span>Ukryj sekcję albo zmień jej miejsce. Notatki nie są usuwane.</span></div>'
+    + '<button type="button" class="cenUkladReset" data-cuklad="reset">Przywróć układ</button></header>'
+    + '<div class="cenUkladLista">' + stan.order.map((id,i)=>
+      '<div class="cenUkladWiersz"><label><input type="checkbox" data-cuklad="widocznosc" data-cblok="'+id+'"'
+      + (stan.hidden[id]?'':' checked') + '><span>'+esc(nazwa[id])+'</span></label>'
+      + '<span class="cenUkladRuch"><button type="button" data-cuklad="gora" data-cblok="'+id+'" aria-label="Przesuń wyżej"'
+      + (i===0?' disabled':'') + '>↑</button><button type="button" data-cuklad="dol" data-cblok="'+id+'" aria-label="Przesuń niżej"'
+      + (i===stan.order.length-1?' disabled':'') + '>↓</button></span></div>').join('')
+    + '</div></section>';
+}
 
 /* ——— CZY POKAZYWAĆ ——— */
 
@@ -22713,6 +23049,113 @@ function centrLosowaMysl(pomin){
   const d = new Date();
   const numer = Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
   return kandydaci[Math.abs(numer) % kandydaci.length];
+}
+
+/* ══════════════ ORGANIZATOR CENTRUM (v3.06) ══════════════ */
+function centrKolejka(pole){
+  return centrZywe().filter(n=>n[pole])
+    .sort((a,b)=>String(b[pole]).localeCompare(String(a[pole])));
+}
+function centrProjekty(){
+  return tags.filter(t=>t.cproj).map(t=>({
+    tag:t,
+    ile:centrZywe().reduce((s,n)=>s+(n.tg&&n.tg.includes(t.id)?1:0),0)
+  })).sort((a,b)=>(b.ile-a.ile)||a.tag.name.localeCompare(b.tag.name,"pl"));
+}
+function centrPowodPowrotu(n){
+  const p=[];
+  if(n.fav) p.push("ulubiona"); else if(n.pin) p.push("przypięta");
+  const k=centrKiedy(n.la||n.mo||n.cr); if(k) p.push(k);
+  return p.join(" · ") || "warto odświeżyć";
+}
+/** Kilka wartościowych notatek, do których dawno nie zaglądano. Jedna pętla,
+    żadnego wyszukiwania semantycznego — panel ma otwierać się natychmiast. */
+function centrWartoWrocic(){
+  const teraz=Date.now(), dzien=Math.floor(teraz/86400000);
+  return centrZywe().filter(n=>{
+    const t=Date.parse(n.la||n.mo||n.cr||"");
+    return isFinite(t) && teraz-t>30*86400000 && (n.fav||n.pin||(n.rb&&n.rb.length));
+  }).map(n=>{
+    const dni=Math.floor((teraz-Date.parse(n.la||n.mo||n.cr))/86400000);
+    let h=0; for(const c of String(n.g)) h=(h*31+c.charCodeAt(0))>>>0;
+    return {n, wynik:dni+(n.fav?90:0)+(n.pin?45:0)+(n.rb&&n.rb.length?25:0)+((h+dzien)%17)};
+  }).sort((a,b)=>b.wynik-a.wynik).slice(0,3).map(x=>x.n);
+}
+function centrumToggleNotatki(n,pole){
+  if(!n || (pole!=="cenq"&&pole!=="ceni")) return;
+  pushUndo({type:"note",label:pole==="cenq"?"zmianę kolejki czytania":"zmianę skrzynki do opracowania",before:cloneNote(n)});
+  if(n[pole]) delete n[pole]; else n[pole]=new Date().toISOString();
+  /* To ustawienie organizacyjne, nie zmiana treści. Nie podbijamy `mo`, bo
+     synchronizacja potrafi scalić je osobno i nie zgłosi fałszywego sporu. */
+  saveNote(n); bumpDirty(); renderAll();
+  toast(n[pole] ? (pole==="cenq"?"Dodano do kolejki czytania":"Dodano do „Do opracowania”")
+                : (pole==="cenq"?"Usunięto z kolejki":"Usunięto ze skrzynki"), n[pole]?"ok":null);
+}
+async function centrumNowyProjekt(n){
+  const name=await askText({title:"Nowy projekt w Centrum",placeholder:"np. Wykład we wtorek",okLabel:"Utwórz",
+    hint:"Projekt jest zwykłą etykietą, więc przechodzi do kopii i można przypisać go wielu notatkom."});
+  if(!name) return null;
+  const t=createTag(name); if(!t) return null;
+  t.cproj=true; if(!t.color) t.color=["#4d8875","#b78845","#70799d","#8d6f91"][t.id%4];
+  saveTags();
+  if(n && !n.tg.includes(t.id)){
+    pushUndo({type:"note",label:"dodanie notatki do projektu",before:cloneNote(n)});
+    n.tg.push(t.id); n.tgd=true; markDirty(n);
+  }
+  renderAll(); toast("Utworzono projekt „"+t.name+"”","ok"); return t;
+}
+function centrumMenuProjektow(n,kotwica){
+  const dd=$("dropdown"), projekty=centrProjekty();
+  dd.innerHTML='<div class="dd-lbl">Projekty tej notatki</div>'
+    + projekty.map(x=>'<div data-cenproj="'+x.tag.id+'">'+ICO.tag+esc(x.tag.name)
+      +(n.tg.includes(x.tag.id)?' <span class="ddZnak">✓</span>':'')+'</div>').join('')
+    + (!projekty.length?'<div class="dd-info">Nie masz jeszcze projektu.</div>':'')
+    + '<div class="dd-sep"></div><div data-cenproj="new">'+ICO.plus+'Nowy projekt…</div>';
+  dd.style.display="block";
+  const a=kotwica&&kotwica.querySelector?kotwica.querySelector('[data-act="more"]'):null;
+  placeDropdown(dd,a||kotwica||document.body);
+  dd.onclick=ev=>{
+    const it=ev.target.closest('[data-cenproj]'); if(!it) return;
+    dd.style.display="none";
+    if(it.dataset.cenproj==="new"){ centrumNowyProjekt(n); return; }
+    const id=+it.dataset.cenproj, t=tags.find(x=>x.id===id&&x.cproj); if(!t) return;
+    pushUndo({type:"note",label:"zmianę projektu notatki",before:cloneNote(n)});
+    if(n.tg.includes(id)) n.tg=n.tg.filter(x=>x!==id); else n.tg.push(id);
+    n.tgd=true; markDirty(n); renderAll();
+    toast(n.tg.includes(id)?"Dodano do projektu „"+t.name+"”":"Usunięto z projektu „"+t.name+"”");
+  };
+}
+function centrMiniLista(lista,pole){
+  if(!lista.length) return '<span class="cenOrgPusto">Dodasz tu notatkę przez <b>Więcej → Centrum Studium</b>.</span>';
+  return lista.slice(0,3).map(n=>'<button type="button" class="cenOrgPoz" data-cnota="'+esc(n.g)+'">'
+    +'<span>'+esc(centrTytulNotatki(n))+'</span><small>'+esc(centrKiedy(n[pole]||n.mo||n.cr))+'</small></button>').join('');
+}
+function centrBezpieczenstwoMini(){
+  const iso=lsGet(KP+"LastBkIso",null)||lsGet(KP+"LastBk",null), dirty=+(lsGet(KP+"Dirty",0)||0);
+  const opis=iso ? "Ostatnia kopia "+centrKiedy(iso) : "Nie zapisano jeszcze kopii";
+  return '<button type="button" class="cenBezMini" data-cakcja="bezpieczenstwo">'+ICO.save
+    +'<span><b>Bezpieczeństwo danych</b><small>'+esc(opis)+(dirty?' · '+dirty+' zmian od kopii':' · wszystko zabezpieczone')
+    +'</small></span>'+CEN_IKO.strz+'</button>';
+}
+function centrOrganizator(){
+  const projekty=centrProjekty(), kolejka=centrKolejka("cenq"), inbox=centrKolejka("ceni"), powroty=centrWartoWrocic();
+  const projektHtml=projekty.length ? projekty.slice(0,5).map(x=>
+    '<button type="button" class="cenProjekt" data-cprojekt="'+x.tag.id+'" style="--proj:'+(x.tag.color||'var(--accent)')+'">'
+    +'<i></i><span>'+esc(x.tag.name)+'</span><small>'+x.ile+'</small></button>').join('')
+    : '<span class="cenOrgPusto">Projekt łączy notatki z różnych wersetów i publikacji.</span>';
+  const powrotHtml=powroty.length ? powroty.map(n=>'<button type="button" class="cenOrgPoz" data-cnota="'+esc(n.g)+'">'
+    +'<span>'+esc(centrTytulNotatki(n))+'</span><small>'+esc(centrPowodPowrotu(n))+'</small></button>').join('')
+    : '<span class="cenOrgPusto">Gdy ulubiona notatka odleży miesiąc, pojawi się tutaj.</span>';
+  return '<section class="cenOrgan"><header><div><span class="cenSekNad">Przestrzeń robocza</span><h2>Twój warsztat</h2></div>'
+    +'<button type="button" class="cenLink" data-cakcja="nowy-projekt">＋ Nowy projekt</button></header>'
+    +'<div class="cenOrganGrid">'
+    +'<article class="cenOrganProjekty"><h3>'+ICO.tag+'<span>Moje projekty</span><b>'+projekty.length+'</b></h3><div class="cenProjektLista">'+projektHtml+'</div></article>'
+    +'<article class="cenOrganKolejka"><h3>'+ICO.bookOpen+'<span>Do przeczytania</span><b>'+kolejka.length+'</b></h3><div class="cenOrgLista">'+centrMiniLista(kolejka,"cenq")+'</div>'
+    +(kolejka.length>3?'<button class="cenOrgWiecej" data-cszyb="kolejka">Pokaż całą kolejkę</button>':'')+'</article>'
+    +'<article class="cenOrganKolejka"><h3>'+ICO.notePen+'<span>Do opracowania</span><b>'+inbox.length+'</b></h3><div class="cenOrgLista">'+centrMiniLista(inbox,"ceni")+'</div>'
+    +(inbox.length>3?'<button class="cenOrgWiecej" data-cszyb="inbox">Pokaż wszystkie</button>':'')+'</article>'
+    +'<article class="cenOrganPowrot"><h3>'+ICO.clock+'<span>Warto wrócić</span></h3><div class="cenProjektLista cenPowrotLista">'+powrotHtml+'</div></article>'
+    +'</div>'+centrBezpieczenstwoMini()+'</section>';
 }
 
 /**
@@ -23178,6 +23621,8 @@ function centrStatKafel(id, iko, ile, tyt, delta){
 const CENTR_SZYBKIE = [
   {id:"notatka",  iko:"notePen",   napis:"Szybka notatka",   krotki:"Notatka"},
   {id:"biblia",   iko:"books",     napis:"Studium biblijne", krotki:"Studium"},
+  {id:"kolejka",  iko:"bookOpen",  napis:"Kolejka czytania", krotki:"Kolejka"},
+  {id:"inbox",    iko:"notes",     napis:"Do opracowania",   krotki:"Opracuj"},
   {id:"powtorki", iko:"target",    napis:"Powtórki",         krotki:"Powtórki"},
   {id:"sync",     iko:"cloudSync", napis:"Synchronizacja",   krotki:"Synchronizacja"},
   {id:"ulubione", iko:"heart",     napis:"Ulubione",         krotki:"Ulubione"},
@@ -23221,6 +23666,14 @@ function centrSzybkieDzialanie(co){
   if(co === "powtorki"){
     if(typeof quickFilter !== "undefined") quickFilter = "powtorka";
     naListe(); return;
+  }
+  if(co === "kolejka" || co === "inbox"){
+    if(typeof quickFilter !== "undefined") quickFilter = co==="kolejka" ? "cenq" : "ceni";
+    naListe(); return;
+  }
+  if(co === "bezpieczenstwo"){
+    if(typeof otworzCentrumBezpieczenstwa==="function") otworzCentrumBezpieczenstwa();
+    return;
   }
   if(co === "ulubione"){
     if(typeof quickFilter !== "undefined") quickFilter = "fav";
@@ -23377,7 +23830,12 @@ function centrKafelPublikacji(pu){
 function rysujCentrum(){
   const el = $("centrum"); if(!el) return;
   _cenPamiec = {};                 // pamięć na czas tego jednego rysowania
-  try{ rysujCentrumWnetrze(el); }
+  try{
+    /* Stary renderer zostaje awaryjną drogą dla niepełnych, ręcznie sklejonych
+       kopii pliku. W pełnym wydaniu zawsze działa kompozycja 3.06. */
+    if(typeof rysujCentrumWnetrze306==="function") rysujCentrumWnetrze306(el);
+    else rysujCentrumWnetrze(el);
+  }
   finally{ _cenPamiec = null; }    // i ani chwili dłużej
 }
 function rysujCentrumWnetrze(el){
@@ -23464,6 +23922,56 @@ function rysujCentrumWnetrze(el){
   setHtml(el, html);
 }
 
+/** Kompozycja 3.06. Każdy duży blok powstaje dopiero wtedy, gdy jest widoczny,
+    więc ukrycie statystyk lub sekcji z zadaniami oszczędza również obliczenia. */
+function rysujCentrumWnetrze306(el){
+  const kont=centrKontynuuj(), dzis=centrNaDzis(), stan=centrUklad();
+  const tytul='<div class="cenNagl"><div class="cenTyt"><b>Centrum studium</b><span>'+esc(centrPowitanie())+'</span></div>'
+    +'<div class="cenNaglAkcje"><button type="button" class="btn" data-cakcja="dostosuj" aria-expanded="'+centrDostosujOtwarte+'">'
+    +ICO.gear+' Dostosuj</button><button type="button" class="btn" data-cakcja="lista">Pokaż wszystkie notatki</button></div></div>';
+
+  const bloki={
+    biblioteka:()=>{
+      if(typeof pubTabsFor==="function") return centrBiblioteka(kont,dzis);
+      const hero=centrHeroStudium(kont)+centrHeroPowtorki(dzis);
+      return hero?'<div class="cenGora">'+hero+'</div>':'';
+    },
+    organizator:()=>centrOrganizator(),
+    szybkie:()=>centrSzybkie(),
+    ostatnie:()=>{
+      const ulamki=(typeof readFracAll==="function")?readFracAll():{};
+      let h='<div class="cenSiatka">';
+      h+=centrSekcja("studiowane","Ostatnio studiowane",CEN_IKO.czyt,
+        centrOstatnioStudiowane(kont?kont.n.g:null).map(n=>centrWierszStudiowane(n,ulamki[n.g]||0)),{wszystkie:"studiowane"});
+      h+=centrSekcja("dodane","Ostatnio dodane",CEN_IKO.nowe,centrOstatnioDodane().map(centrWierszDodane),{wszystkie:"dodane"});
+      h+=centrSekcja("wersety","Ostatnio używane wersety",CEN_IKO.wers,centrWersety().map(w=>
+        '<button type="button" class="cenPoz" data-cwers="'+w.b+':'+w.ch+'"><span class="cenNazwa">'+esc(w.etykieta)+'</span>'
+        +'<span class="cenOpis">'+w.ile+' '+esc(centrOdmiana(w.ile,"notatka","notatki","notatek"))+'</span><span class="cenPozStrz">'+CEN_IKO.strz+'</span></button>'),
+        {wszystkie:"wersety"});
+      h+=centrSekcja("publikacje","Ulubione publikacje",CEN_IKO.pub,centrPublikacje().map(centrKafelPublikacji),
+        {dopisek:"z ostatnich "+CENTR_DNI+" dni",klasa:"cenListaP",wszystkie:"publikacje"});
+      return h+'</div>';
+    },
+    odkrywaj:()=>{
+      const niedok=centrNiedokonczone();
+      let h=centrSekcja("niedok","Niedokończone",CEN_IKO.zadan,niedok.map(x=>centrWierszNotatki(x.n,
+        "zostało "+x.zostalo+" z "+x.razem+(x.razem===1?" zadania":" zadań"))),{plakietka:niedok.length,wszystkie:"niedok"});
+      h+=centrSekcja("szukania","Ostatnie wyszukiwania",CEN_IKO.szuk,centrSzukania().map(q=>
+        '<button type="button" class="cenPoz" data-cszuk="'+esc(q)+'"><span class="cenNazwa">'+esc(q)+'</span>'
+        +'<span class="cenOpis">szukaj znowu</span><span class="cenPozStrz">'+CEN_IKO.strz+'</span></button>'));
+      return h?'<div class="cenSiatkaM">'+h+'</div>':'';
+    },
+    statystyki:()=>notes.some(n=>!n.del)?centrTwojeStudium():''
+  };
+  const widoczne=stan.order.filter(id=>!stan.hidden[id]&&bloki[id]);
+  let html=tytul+centrPanelUkladu(stan);
+  html+=widoczne.map(id=>'<div class="cenBlok" data-cblok-wrap="'+id+'">'+bloki[id]()+'</div>').join('');
+  if(!widoczne.length) html+='<div class="cenPusto"><b>Wszystkie sekcje są ukryte.</b>Otwórz „Dostosuj” i zaznacz to, co chcesz widzieć.</div>';
+  if(!kont&&!dzis.length&&!centrOstatnioDodane().length) html+='<div class="cenPusto"><b>Centrum czeka na pierwsze materiały.</b>'
+    +'Dodaj notatkę albo wczytaj kopię z JW Library. Projekty i kolejki wypełnią się tym, co sam do nich przypiszesz.</div>';
+  html+=centrStopka(); setHtml(el,html);
+}
+
 /** Nagłówek mówi, jaki dziś dzień — Centrum ma być „na dziś", nie „ogólnie". */
 function centrPowitanie(){
   const dni = ["niedziela", "poniedziałek", "wtorek", "środa", "czwartek", "piątek", "sobota"];
@@ -23532,9 +24040,28 @@ function centrumUstawWlaczone(on){
 /* ——— KLIKNIĘCIA ——— */
 if($("centrum")){
   $("centrum").addEventListener("click", ev=>{
+    const ukl=ev.target.closest("[data-cuklad]");
+    if(ukl){
+      const stan=centrUklad(), id=ukl.dataset.cblok, co=ukl.dataset.cuklad;
+      if(co==="reset"){
+        localStorage.removeItem(CENTR_UKLAD_KLUCZ); rysujCentrum(); toast("Przywrócono domyślny układ"); return;
+      }
+      if(co==="widocznosc" && id) stan.hidden[id]=!ukl.checked;
+      if((co==="gora"||co==="dol") && id){
+        const i=stan.order.indexOf(id), j=i+(co==="gora"?-1:1);
+        if(i>=0&&j>=0&&j<stan.order.length) [stan.order[i],stan.order[j]]=[stan.order[j],stan.order[i]];
+      }
+      centrZapiszUklad(stan); rysujCentrum(); return;
+    }
     const akcja = ev.target.closest("[data-cakcja]");
     if(akcja){
       if(akcja.dataset.cakcja === "lista") centrumSchowaj();
+      if(akcja.dataset.cakcja === "dostosuj"){
+        centrDostosujOtwarte=!centrDostosujOtwarte; rysujCentrum();
+      }
+      if(akcja.dataset.cakcja === "nowy-projekt") centrumNowyProjekt();
+      if(akcja.dataset.cakcja === "bezpieczenstwo" && typeof otworzCentrumBezpieczenstwa==="function")
+        otworzCentrumBezpieczenstwa();
       if(akcja.dataset.cakcja === "nowa-kolekcja"){
         if(typeof createPubTab === "function") createPubTab("*");
       }
@@ -23549,6 +24076,16 @@ if($("centrum")){
         }
       }
       return;
+    }
+
+    const projekt=ev.target.closest("[data-cprojekt]");
+    if(projekt){
+      const id=+projekt.dataset.cprojekt, t=tags.find(x=>x.id===id&&x.cproj);
+      if(!t){ toast("Tego projektu już nie ma"); rysujCentrum(); return; }
+      filt.tag=id; filt.book="all"; filt.ch=null;
+      if(typeof quickFilter!=="undefined") quickFilter="all";
+      if(typeof persistFilt==="function") persistFilt();
+      renderAll(); if(innerWidth<=900&&typeof mobileShow==="function") mobileShow("colNotes"); return;
     }
 
     const kolekcja = ev.target.closest("[data-ckolekcja]");
@@ -23854,17 +24391,19 @@ function syncListy(){
       klucz: t=> "n:" + norm(t.name),
       kluczP: p=> "n:" + norm(p.name),
       wyjscie: t=> ({uid:t.uid, name:t.name, color:t.color, ord:t.ord, orig:t.orig,
+                     cproj:t.cproj===true ? true : undefined,
                      secUid: syncUidPo("sections", t.sec), stbUid: syncUidPo("secTabs", t.stb)}),
       wejscie: (p, id)=> {
         const t = {id, uid:p.uid, name:p.name};
         if(p.color) t.color = p.color;
         if(p.ord !== undefined) t.ord = p.ord;
         if(p.orig) t.orig = p.orig;
+        if(p.cproj === true) t.cproj = true;
         const sek = daj("sections", p.secUid); if(sek !== undefined) t.sec = sek;
         const zak = daj("secTabs",  p.stbUid); if(zak !== undefined) t.stb = zak;
         return t;
       },
-      podpis: p=> [p.name||"", p.color||"", p.ord??"", p.secUid||"", p.stbUid||""].join(""),
+      podpis: p=> [p.name||"", p.color||"", p.ord??"", p.secUid||"", p.stbUid||"", p.cproj?1:0].join(""),
       opis: p=> "Etykieta „" + (p.name||"") + "”"
     },
     {
@@ -24057,7 +24596,7 @@ function syncPodpisTresci(n){
   return [n.mo || "", n.del ? 1 : 0, n.delAt || ""].join("");
 }
 /**
- * PODPIS DROBIAZGÓW: powtórka, przypięcie, ulubione.
+ * PODPIS DROBIAZGÓW: powtórka, przypięcie, ulubione oraz organizacja Centrum.
  *
  * Te trzy zapisują się BEZ podbijania daty zmiany — i słusznie, bo umówienie
  * powrotu do notatki nie jest zmianą jej treści. Gdyby jednak wchodziły do
@@ -24066,7 +24605,8 @@ function syncPodpisTresci(n){
  * syncScalDrobiazgi).
  */
 function syncPodpisDrobiazgow(n){
-  return [n.pwt ? (n.pwt.d + "/" + n.pwt.o) : "", n.pin ? 1 : 0, n.fav ? 1 : 0].join("");
+  return [n.pwt ? (n.pwt.d + "/" + n.pwt.o) : "", n.pin ? 1 : 0, n.fav ? 1 : 0,
+          n.cenq||"", n.ceni||""].join("");
 }
 
 /** Podpisy CAŁEGO stanu tego urządzenia. */
@@ -24282,6 +24822,8 @@ function syncScalDrobiazgi(n, zd, byloU, byloW){
     if(zd.pwt && zd.pwt.d) n.pwt = {d:zd.pwt.d, o:zd.pwt.o}; else delete n.pwt;
     n.pin = !!zd.pin;
     n.fav = !!zd.fav;
+    if(zd.cenq) n.cenq = zd.cenq; else delete n.cenq;
+    if(zd.ceni) n.ceni = zd.ceni; else delete n.ceni;
     return true;
   }
   /* Oba naraz albo brak podstawy — rozstrzygamy bez pytania, na korzyść tego,
@@ -24290,6 +24832,11 @@ function syncScalDrobiazgi(n, zd, byloU, byloW){
   if(dataTam && (!dataMoja || dataTam < dataMoja)){ n.pwt = {d:zd.pwt.d, o:zd.pwt.o}; zmiana = true; }
   if(zd.pin && !n.pin){ n.pin = true; zmiana = true; }
   if(zd.fav && !n.fav){ n.fav = true; zmiana = true; }
+  /* Przy równoczesnej zmianie zachowujemy wpis zamiast go zgubić. Jeśli oba
+     urządzenia dodały notatkę, wcześniejsza data utrzymuje stabilną kolejność. */
+  ["cenq","ceni"].forEach(p=>{
+    if(zd[p] && (!n[p] || String(zd[p]) < String(n[p]))){ n[p]=zd[p]; zmiana=true; }
+  });
   return zmiana;
 }
 
@@ -24473,11 +25020,14 @@ async function syncZastosuj(plan){
     const nowa = doLokalnej(zd);
     if(!nowa) return;
     /* Drobiazgi mają już swój, uzgodniony stan — podmiana treści go nie zdejmuje. */
-    const pwt = n.pwt, pin = n.pin, fav = n.fav, la = n.la;
+    const pwt = n.pwt, pin = n.pin, fav = n.fav, la = n.la,
+          cenq = n.cenq, ceni = n.ceni;
     Object.keys(n).forEach(k=>{ if(!(k in nowa)) delete n[k]; });
     Object.assign(n, nowa);
     if(pwt) n.pwt = pwt; else delete n.pwt;
     n.pin = pin; n.fav = fav;
+    if(cenq) n.cenq = cenq; else delete n.cenq;
+    if(ceni) n.ceni = ceni; else delete n.ceni;
     if(la && (!n.la || String(la) > String(n.la))) n.la = la;
     zmienioneNotatki.add(n); st.notatekZmienionych++;
   });
