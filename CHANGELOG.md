@@ -5,6 +5,21 @@ bez niej po miesiącu nie wiadomo, dlaczego coś wygląda tak, a nie inaczej.
 
 ---
 
+## v3.08 — pełne Centrum z bocznym wyborem
+
+- wdrożono pełny układ zaakceptowanej makiety: po lewej jest stały wybór
+  Centrum, projektów, kolejki, skrzynki, ostatnich materiałów i bezpieczeństwa,
+- każda pozycja otwiera rzeczywisty, osobny widok; nie jest to dekoracja ani
+  filtr wymagający uruchomienia wyszukiwarki,
+- projekty pokazują wszystkie kolekcje projektowe, kolejki wczytują pierwszą
+  bezpieczną porcję, a „Ostatnie” wykorzystuje istniejące sekcje Centrum,
+- wybrany widok jest zapamiętywany na urządzeniu; przycisk „← Centrum” zawsze
+  prowadzi z powrotem do pełnego pulpitu,
+- na telefonie i w bardzo wąskim panelu boczna nawigacja zmienia się w zwijane
+  menu, a na komputerze i szerokim iPadzie pozostaje widoczna,
+- dodano 15 testów sprawdzających wszystkie wybory, liczniki, pamięć widoku oraz
+  mobilne otwieranie i zamykanie menu.
+
 ## v3.07 — spokojniejszy i czytelniejszy Warsztat
 
 - cztery jednakowe, ściśnięte kolumny zastąpiono czytelną hierarchią: projekty

@@ -7410,6 +7410,68 @@ html[data-theme="dark"] .bezp-result.ok{background:#173b2f;color:#a8dec8}html[da
 .cenNaglAkcje .btn{ gap:7px; }
 .cenNaglAkcje .btn .ic{ width:15px; height:15px; }
 .cenBlok{ max-width:1440px; margin:0 auto; }
+/* Pełna rama Centrum 3.08. Boczny wybór jest częścią Centrum, dzięki czemu
+   nie miesza się z kolumnami Biblia / Etykiety / Publikacje. */
+.cenCentrumShell{
+  display:grid; grid-template-columns:205px minmax(0,1fr); align-items:start; gap:20px;
+  max-width:1640px; margin:0 auto;
+}
+.cenCentrumMain{ min-width:0; }
+.cenBoczna{
+  position:sticky; top:12px; min-width:0; padding:14px 10px; border-radius:18px;
+  border:1px solid color-mix(in srgb,var(--border) 84%,transparent);
+  background:color-mix(in srgb,var(--accent) 3.5%,var(--panel));
+}
+.cenBoczTyt{
+  display:block; margin:2px 10px 10px; color:var(--muted); font-size:10px;
+  font-weight:720; letter-spacing:.13em; text-transform:uppercase;
+}
+.cenBoczNav{ display:flex; flex-direction:column; gap:3px; }
+.cenBoczPoz{
+  display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:9px;
+  width:100%; min-height:43px; padding:8px 10px; border:0; border-radius:11px;
+  background:transparent; color:var(--text); text-align:left; cursor:pointer;
+}
+.cenBoczPoz:hover{ background:var(--sel); }
+.cenBoczPoz.on{
+  background:var(--panel); color:var(--accent);
+  box-shadow:0 5px 18px rgba(24,55,43,.07),inset 0 0 0 1px color-mix(in srgb,var(--accent) 13%,var(--border));
+}
+.cenBoczPoz .ic{ width:17px; height:17px; }
+.cenBoczPoz>span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11.5px; font-weight:620; }
+.cenBoczPoz>small{
+  min-width:20px; padding:2px 5px; border-radius:999px; background:var(--sel);
+  color:var(--muted); font-size:9.5px; text-align:center;
+}
+.cenBoczPoz.on>small{ color:var(--accent); }
+.cenMenuMobilne{
+  display:none; align-items:center; justify-content:space-between; gap:10px;
+  width:100%; min-height:44px; margin:0 0 10px; padding:9px 12px;
+  border:1px solid var(--border); border-radius:12px; background:var(--panel); color:var(--text);
+  font-weight:650; cursor:pointer;
+}
+.cenMenuMobilne .ic{ width:17px; height:17px; color:var(--accent); }
+.cenMenuMobilne>span{ display:flex; align-items:center; gap:8px; }
+.cenMenuMobilne>svg:last-child{ transition:transform var(--dur-szybko) var(--ease); }
+.cenMenuMobilne[aria-expanded="true"]>svg:last-child{ transform:rotate(90deg); }
+.cenPodstrona{
+  max-width:1440px; min-height:320px; margin:0 auto 16px; padding:21px;
+  border:1px solid color-mix(in srgb,var(--border) 86%,transparent); border-radius:20px;
+  background:var(--panel); box-shadow:0 10px 32px rgba(22,36,29,.045);
+}
+.cenPodstrona>header{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px; margin-bottom:17px; }
+.cenPodstrona>header h2{ margin:0 0 4px; font-size:calc(21px * var(--uiw,1)); }
+.cenPodstrona>header p{ margin:0; color:var(--muted); font-size:11.5px; }
+.cenPodAkcje{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:15px; }
+.cenPodAkcje>span{ color:var(--muted); font-size:11.5px; }
+.cenPodLista{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px 14px; }
+.cenPodLista .cenPoz{ min-height:58px; border:1px solid color-mix(in srgb,var(--border) 76%,transparent); border-radius:12px; }
+.cenProjektListaPelna{ grid-template-columns:repeat(3,minmax(0,1fr)); }
+.cenProjektListaPelna .cenProjekt{ min-height:58px; padding:11px 12px; }
+.cenPodPusto{ padding:28px 12px; color:var(--muted); text-align:center; line-height:1.5; }
+.cenPodStop{ display:flex; justify-content:center; margin-top:14px; }
+.cenBezPelne{ max-width:640px; margin:32px auto 0; }
+.cenBezPelne .cenBezMini{ min-height:68px; }
 .cenUklad{
   max-width:1440px; margin:0 auto 14px; padding:14px;
   border:1px solid color-mix(in srgb,var(--accent) 32%,var(--border)); border-radius:16px;
@@ -7490,13 +7552,23 @@ html[data-theme="dark"] .bezp-result.ok{background:#173b2f;color:#a8dec8}html[da
 .cenBezMini .cenPozStrz,.cenBezMini>svg:last-child{ width:15px; height:15px; color:var(--muted); }
 
 @container notatki (max-width:980px){
+  .cenCentrumShell{ grid-template-columns:168px minmax(0,1fr); gap:12px; }
+  .cenBoczna{ padding-left:7px; padding-right:7px; }
+  .cenBoczPoz{ padding-left:8px; padding-right:7px; gap:7px; }
   .cenProjektLista{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .cenProjektListaPelna{ grid-template-columns:repeat(2,minmax(0,1fr)); }
   .cenUkladLista{ grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
 @container notatki (max-width:700px){
+  .cenCentrumShell{ grid-template-columns:minmax(0,1fr); gap:0; }
+  .cenMenuMobilne{ display:flex; }
+  .cenBoczna{ display:none; position:static; margin:0 0 12px; }
+  .cenBoczna.otwarte{ display:block; }
+  .cenBoczNav{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:5px; }
   .cenOrganGrid{ grid-template-columns:minmax(0,1fr); }
   .cenOrganProjekty,.cenOrganPowrot{ grid-column:auto; }
   .cenPowrotLista{ grid-template-columns:minmax(0,1fr); }
+  .cenPodLista{ grid-template-columns:minmax(0,1fr); }
 }
 @container notatki (max-width:520px){
   .cenOrgan{ padding:15px; border-radius:18px; }
@@ -7504,6 +7576,8 @@ html[data-theme="dark"] .bezp-result.ok{background:#173b2f;color:#a8dec8}html[da
   .cenOrgan>header .cenLink{ font-size:0; width:40px; height:40px; padding:0; }
   .cenOrgan>header .cenLink::before{ content:"＋"; display:grid; place-items:center; font-size:20px; }
   .cenOrganGrid,.cenUkladLista,.cenProjektLista{ grid-template-columns:minmax(0,1fr); }
+  .cenBoczNav,.cenProjektListaPelna{ grid-template-columns:minmax(0,1fr); }
+  .cenPodstrona{ padding:15px; border-radius:17px; }
   .cenOrganGrid>article{ min-height:0; }
   .cenUklad>header{ flex-direction:column; }
   .cenUkladReset{ align-self:flex-start; padding-left:0; }
@@ -7525,7 +7599,7 @@ html[data-theme="dark"] .bezp-result.ok{background:#173b2f;color:#a8dec8}html[da
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <h1 class="brand-name">JW Study <span class="ver">v3.07</span></h1>
+      <h1 class="brand-name">JW Study <span class="ver">v3.08</span></h1>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -22789,6 +22863,8 @@ const CENTR_DNI = 90;
 const CENTR_KLUCZ = KP + "Centrum";        // "auto" albo "lista"
 const CENTR_WLACZONE = KP + "CentrumWl";   // "1" albo "0"
 const CENTR_UKLAD_KLUCZ = KP + "CentrumUklad306";
+const CENTR_WIDOK_KLUCZ = KP + "CentrumWidok308";
+const CENTR_WIDOKI = ["centrum","projekty","kolejka","inbox","ostatnie","bezpieczenstwo"];
 const CENTR_BLOKI = [
   {id:"biblioteka", nazwa:"Biblioteka i czytelnia"},
   {id:"organizator", nazwa:"Projekty i kolejki"},
@@ -22801,6 +22877,9 @@ const CENTR_BLOKI = [
 let centrTryb = lsGet(CENTR_KLUCZ, "auto") === "lista" ? "lista" : "auto";
 let centrWlaczone = lsGet(CENTR_WLACZONE, "1") !== "0";
 let centrDostosujOtwarte = false;
+let centrWidok = CENTR_WIDOKI.includes(lsGet(CENTR_WIDOK_KLUCZ,"centrum"))
+  ? lsGet(CENTR_WIDOK_KLUCZ,"centrum") : "centrum";
+let centrMenuOtwarte = false;
 
 function centrUklad(){
   let zapis={};
@@ -23922,14 +24001,98 @@ function rysujCentrumWnetrze(el){
   setHtml(el, html);
 }
 
-/** Kompozycja 3.06. Każdy duży blok powstaje dopiero wtedy, gdy jest widoczny,
+/* ══════════════ BOCZNA NAWIGACJA CENTRUM (v3.08) ══════════════ */
+function centrBoczna(){
+  const zywe=centrZywe();
+  const lic={
+    projekty:tags.filter(t=>t.cproj).length,
+    kolejka:zywe.filter(n=>n.cenq).length,
+    inbox:zywe.filter(n=>n.ceni).length
+  };
+  const pozycje=[
+    ["centrum","Centrum",ICO.bars,0],
+    ["projekty","Projekty",ICO.tag,lic.projekty],
+    ["kolejka","Do przeczytania",ICO.bookOpen,lic.kolejka],
+    ["inbox","Do opracowania",ICO.notePen,lic.inbox],
+    ["ostatnie","Ostatnie",ICO.clock,0],
+    ["bezpieczenstwo","Bezpieczeństwo",ICO.save,0]
+  ];
+  const nazwa=(pozycje.find(x=>x[0]===centrWidok)||pozycje[0])[1];
+  const nav=pozycje.map(x=>'<button type="button" class="cenBoczPoz'+(centrWidok===x[0]?' on':'')+'" data-cwidok="'+x[0]+'"'
+    +(centrWidok===x[0]?' aria-current="page"':'')+'>'+x[2]+'<span>'+esc(x[1])+'</span>'
+    +(x[3]?'<small>'+x[3]+'</small>':'')+'</button>').join('');
+  return '<button type="button" class="cenMenuMobilne" data-cakcja="menu-centrum" aria-expanded="'+centrMenuOtwarte+'">'
+    +'<span>'+ICO.bars+esc(nazwa)+'</span>'+CEN_IKO.strz+'</button>'
+    +'<aside class="cenBoczna'+(centrMenuOtwarte?' otwarte':'')+'"><span class="cenBoczTyt">Studium</span>'
+    +'<nav class="cenBoczNav" aria-label="Widoki Centrum Studium">'+nav+'</nav></aside>';
+}
+
+function centrNaglowekWidoku(){
+  const opisy={
+    centrum:["Centrum studium",centrPowitanie()],
+    projekty:["Projekty","Łącz notatki z różnych wersetów i publikacji"],
+    kolejka:["Do przeczytania","Materiały odłożone do spokojnego przeczytania"],
+    inbox:["Do opracowania","Pomysły i szkice czekające na rozwinięcie"],
+    ostatnie:["Ostatnia praca","Wróć do niedawno używanych materiałów"],
+    bezpieczenstwo:["Bezpieczeństwo danych","Kopia, pamięć i kontrola bazy"]
+  };
+  const o=opisy[centrWidok]||opisy.centrum;
+  const akcje=centrWidok==="centrum"
+    ? '<button type="button" class="btn" data-cakcja="dostosuj" aria-expanded="'+centrDostosujOtwarte+'">'
+      +ICO.gear+' Dostosuj</button><button type="button" class="btn" data-cakcja="lista">Pokaż wszystkie notatki</button>'
+    : '<button type="button" class="btn" data-cwidok="centrum">← Centrum</button>'
+      +'<button type="button" class="btn" data-cakcja="lista">Pokaż wszystkie notatki</button>';
+  return '<div class="cenNagl"><div class="cenTyt"><b>'+esc(o[0])+'</b><span>'+esc(o[1])+'</span></div>'
+    +'<div class="cenNaglAkcje">'+akcje+'</div></div>';
+}
+
+function centrOstatnieSekcje(kont){
+  const ulamki=(typeof readFracAll==="function")?readFracAll():{};
+  let h='<div class="cenSiatka">';
+  h+=centrSekcja("studiowane","Ostatnio studiowane",CEN_IKO.czyt,
+    centrOstatnioStudiowane(kont?kont.n.g:null).map(n=>centrWierszStudiowane(n,ulamki[n.g]||0)),{wszystkie:"studiowane"});
+  h+=centrSekcja("dodane","Ostatnio dodane",CEN_IKO.nowe,centrOstatnioDodane().map(centrWierszDodane),{wszystkie:"dodane"});
+  h+=centrSekcja("wersety","Ostatnio używane wersety",CEN_IKO.wers,centrWersety().map(w=>
+    '<button type="button" class="cenPoz" data-cwers="'+w.b+':'+w.ch+'"><span class="cenNazwa">'+esc(w.etykieta)+'</span>'
+    +'<span class="cenOpis">'+w.ile+' '+esc(centrOdmiana(w.ile,"notatka","notatki","notatek"))+'</span><span class="cenPozStrz">'+CEN_IKO.strz+'</span></button>'),
+    {wszystkie:"wersety"});
+  h+=centrSekcja("publikacje","Ulubione publikacje",CEN_IKO.pub,centrPublikacje().map(centrKafelPublikacji),
+    {dopisek:"z ostatnich "+CENTR_DNI+" dni",klasa:"cenListaP",wszystkie:"publikacje"});
+  return h+'</div>';
+}
+
+function centrPodstronaProjektow(){
+  const projekty=centrProjekty();
+  const lista=projekty.length ? projekty.map(x=>
+    '<button type="button" class="cenProjekt" data-cprojekt="'+x.tag.id+'" style="--proj:'+(x.tag.color||'var(--accent)')+'">'
+    +'<i></i><span>'+esc(x.tag.name)+'</span><small>'+x.ile+'</small></button>').join('')
+    : '<div class="cenPodPusto">Nie masz jeszcze projektu. Projekt może łączyć dowolne notatki z różnych miejsc.</div>';
+  return '<section class="cenPodstrona"><div class="cenPodAkcje"><span>'+projekty.length+' '
+    +esc(centrOdmiana(projekty.length,"projekt","projekty","projektów"))+'</span>'
+    +'<button type="button" class="cenLink" data-cakcja="nowy-projekt">＋ Nowy projekt</button></div>'
+    +'<div class="cenProjektLista cenProjektListaPelna">'+lista+'</div></section>';
+}
+
+function centrPodstronaKolejki(pole){
+  const lista=centrKolejka(pole), jestKolejka=pole==="cenq";
+  const wiersze=lista.slice(0,80).map(n=>centrWierszNotatki(n,centrKiedy(n[pole]||n.mo||n.cr))).join('');
+  const pusto='<div class="cenPodPusto">Dodasz tu notatkę przez <b>Więcej → Centrum Studium</b>.</div>';
+  return '<section class="cenPodstrona"><div class="cenPodAkcje"><span>'+lista.length+' '
+    +esc(centrOdmiana(lista.length,"notatka","notatki","notatek"))+'</span></div>'
+    +'<div class="cenPodLista">'+(wiersze||pusto)+'</div>'
+    +(lista.length>80?'<div class="cenPodStop"><button type="button" class="btn" data-cszyb="'+(jestKolejka?'kolejka':'inbox')+'">Pokaż pełną listę</button></div>':'')
+    +'</section>';
+}
+
+function centrPodstronaBezpieczenstwa(){
+  return '<section class="cenPodstrona"><div class="cenPodPusto">Tutaj szybko sprawdzisz, czy notatki są zabezpieczone. '
+    +'Pełna kontrola nie zmienia danych.</div><div class="cenBezPelne">'+centrBezpieczenstwoMini()+'</div></section>';
+}
+
+/** Kompozycja 3.06 rozwinięta o boczną nawigację w 3.08. Każdy duży blok powstaje dopiero wtedy, gdy jest widoczny,
     więc ukrycie statystyk lub sekcji z zadaniami oszczędza również obliczenia. */
 function rysujCentrumWnetrze306(el){
   const kont=centrKontynuuj(), dzis=centrNaDzis(), stan=centrUklad();
-  const tytul='<div class="cenNagl"><div class="cenTyt"><b>Centrum studium</b><span>'+esc(centrPowitanie())+'</span></div>'
-    +'<div class="cenNaglAkcje"><button type="button" class="btn" data-cakcja="dostosuj" aria-expanded="'+centrDostosujOtwarte+'">'
-    +ICO.gear+' Dostosuj</button><button type="button" class="btn" data-cakcja="lista">Pokaż wszystkie notatki</button></div></div>';
-
   const bloki={
     biblioteka:()=>{
       if(typeof pubTabsFor==="function") return centrBiblioteka(kont,dzis);
@@ -23938,20 +24101,7 @@ function rysujCentrumWnetrze306(el){
     },
     organizator:()=>centrOrganizator(),
     szybkie:()=>centrSzybkie(),
-    ostatnie:()=>{
-      const ulamki=(typeof readFracAll==="function")?readFracAll():{};
-      let h='<div class="cenSiatka">';
-      h+=centrSekcja("studiowane","Ostatnio studiowane",CEN_IKO.czyt,
-        centrOstatnioStudiowane(kont?kont.n.g:null).map(n=>centrWierszStudiowane(n,ulamki[n.g]||0)),{wszystkie:"studiowane"});
-      h+=centrSekcja("dodane","Ostatnio dodane",CEN_IKO.nowe,centrOstatnioDodane().map(centrWierszDodane),{wszystkie:"dodane"});
-      h+=centrSekcja("wersety","Ostatnio używane wersety",CEN_IKO.wers,centrWersety().map(w=>
-        '<button type="button" class="cenPoz" data-cwers="'+w.b+':'+w.ch+'"><span class="cenNazwa">'+esc(w.etykieta)+'</span>'
-        +'<span class="cenOpis">'+w.ile+' '+esc(centrOdmiana(w.ile,"notatka","notatki","notatek"))+'</span><span class="cenPozStrz">'+CEN_IKO.strz+'</span></button>'),
-        {wszystkie:"wersety"});
-      h+=centrSekcja("publikacje","Ulubione publikacje",CEN_IKO.pub,centrPublikacje().map(centrKafelPublikacji),
-        {dopisek:"z ostatnich "+CENTR_DNI+" dni",klasa:"cenListaP",wszystkie:"publikacje"});
-      return h+'</div>';
-    },
+    ostatnie:()=>centrOstatnieSekcje(kont),
     odkrywaj:()=>{
       const niedok=centrNiedokonczone();
       let h=centrSekcja("niedok","Niedokończone",CEN_IKO.zadan,niedok.map(x=>centrWierszNotatki(x.n,
@@ -23963,13 +24113,24 @@ function rysujCentrumWnetrze306(el){
     },
     statystyki:()=>notes.some(n=>!n.del)?centrTwojeStudium():''
   };
-  const widoczne=stan.order.filter(id=>!stan.hidden[id]&&bloki[id]);
-  let html=tytul+centrPanelUkladu(stan);
-  html+=widoczne.map(id=>'<div class="cenBlok" data-cblok-wrap="'+id+'">'+bloki[id]()+'</div>').join('');
-  if(!widoczne.length) html+='<div class="cenPusto"><b>Wszystkie sekcje są ukryte.</b>Otwórz „Dostosuj” i zaznacz to, co chcesz widzieć.</div>';
-  if(!kont&&!dzis.length&&!centrOstatnioDodane().length) html+='<div class="cenPusto"><b>Centrum czeka na pierwsze materiały.</b>'
-    +'Dodaj notatkę albo wczytaj kopię z JW Library. Projekty i kolejki wypełnią się tym, co sam do nich przypiszesz.</div>';
-  html+=centrStopka(); setHtml(el,html);
+  let tresc='';
+  if(centrWidok==="centrum"){
+    const widoczne=stan.order.filter(id=>!stan.hidden[id]&&bloki[id]);
+    tresc=centrPanelUkladu(stan)
+      +widoczne.map(id=>'<div class="cenBlok" data-cblok-wrap="'+id+'">'+bloki[id]()+'</div>').join('');
+    if(!widoczne.length) tresc+='<div class="cenPusto"><b>Wszystkie sekcje są ukryte.</b>Otwórz „Dostosuj” i zaznacz to, co chcesz widzieć.</div>';
+    if(!kont&&!dzis.length&&!centrOstatnioDodane().length) tresc+='<div class="cenPusto"><b>Centrum czeka na pierwsze materiały.</b>'
+      +'Dodaj notatkę albo wczytaj kopię z JW Library. Projekty i kolejki wypełnią się tym, co sam do nich przypiszesz.</div>';
+  }else if(centrWidok==="projekty") tresc=centrPodstronaProjektow();
+  else if(centrWidok==="kolejka") tresc=centrPodstronaKolejki("cenq");
+  else if(centrWidok==="inbox") tresc=centrPodstronaKolejki("ceni");
+  else if(centrWidok==="ostatnie") tresc=centrOstatnieSekcje(kont);
+  else if(centrWidok==="bezpieczenstwo") tresc=centrPodstronaBezpieczenstwa();
+  /* Aplikacja ma już nadrzędny landmark <main>. Tu jest zwykły kontener —
+     zagnieżdżony drugi <main> powodował sześć naruszeń dostępności axe. */
+  const html='<div class="cenCentrumShell">'+centrBoczna()+'<div class="cenCentrumMain">'
+    +centrNaglowekWidoku()+tresc+centrStopka()+'</div></div>';
+  setHtml(el,html);
 }
 
 /** Nagłówek mówi, jaki dziś dzień — Centrum ma być „na dziś", nie „ogólnie". */
@@ -24053,9 +24214,22 @@ if($("centrum")){
       }
       centrZapiszUklad(stan); rysujCentrum(); return;
     }
+    const widok=ev.target.closest("[data-cwidok]");
+    if(widok){
+      const id=widok.dataset.cwidok;
+      if(CENTR_WIDOKI.includes(id)){
+        centrWidok=id; centrMenuOtwarte=false; centrDostosujOtwarte=false;
+        lsSet(CENTR_WIDOK_KLUCZ,id); rysujCentrum();
+        const c=$("centrum"); if(c) c.scrollTop=0;
+      }
+      return;
+    }
     const akcja = ev.target.closest("[data-cakcja]");
     if(akcja){
       if(akcja.dataset.cakcja === "lista") centrumSchowaj();
+      if(akcja.dataset.cakcja === "menu-centrum"){
+        centrMenuOtwarte=!centrMenuOtwarte; rysujCentrum();
+      }
       if(akcja.dataset.cakcja === "dostosuj"){
         centrDostosujOtwarte=!centrDostosujOtwarte; rysujCentrum();
       }
