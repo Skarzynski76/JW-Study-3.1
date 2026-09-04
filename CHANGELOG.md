@@ -5,6 +5,23 @@ bez niej po miesiącu nie wiadomo, dlaczego coś wygląda tak, a nie inaczej.
 
 ---
 
+## v3.11 — nowe wagi powiązanych notatek
+
+- „ten sam artykuł” daje 3 punkty zamiast 8,
+- każde wspólne rzadkie słowo daje 8 punktów,
+- dodano testy dokładnych wartości obu reguł oraz ich wpływu na kolejność.
+
+## v3.10 — lżejsza sekcja publikacji
+
+- sekcja „Ulubione publikacje” w Centrum nie ma już zewnętrznej ramki ani cienia,
+- pozostałe karty Centrum zachowują dotychczasowe obramowanie i układ.
+
+## v3.09 — subtelniejsze nagłówki Centrum
+
+- nagłówki „Centrum studium” i „Twój warsztat” mają delikatne zabarwienie zamiast pełnego koloru motywu,
+- wewnętrzne nagłówki Centrum nie dziedziczą już wyglądu głównej belki aplikacji,
+- ramki nagłówków są zaokrąglone tak jak pozostałe okna i karty.
+
 ## v3.08 — pełne Centrum z bocznym wyborem
 
 - wdrożono pełny układ zaakceptowanej makiety: po lewej jest stały wybór

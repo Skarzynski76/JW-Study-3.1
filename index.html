@@ -6774,6 +6774,13 @@ body.ma-zaznaczenie #fsWrap .ntools{ opacity:.12; pointer-events:none; }
   border-radius:16px;
   transition:transform .18s var(--ease),box-shadow .18s var(--ease),border-color .18s var(--ease);
 }
+/* Publikacje są lekkim regałem, a nie kolejnym zamkniętym oknem. Usuwamy
+   wyłącznie ich zewnętrzną ramkę i cień; wiersze nadal są klikalne. */
+.cenKarta[data-sek="publikacje"]{
+  border-color:transparent;
+  background:transparent;
+  box-shadow:none;
+}
 .cenKarta h3{ margin-bottom:10px; }
 .cenPoz,.cenPowtPoz,.cenWiecej{ min-height:44px; }
 .cenLista>.cenPoz+.cenPoz,
@@ -6791,7 +6798,7 @@ body.ma-zaznaczenie #fsWrap .ntools{ opacity:.12; pointer-events:none; }
 .cenHeroObraz{ opacity:.86; }
 
 @media (hover:hover){
-  .cenHero:hover,.cenKarta:hover{
+  .cenHero:hover,.cenKarta:not([data-sek="publikacje"]):hover{
     transform:translateY(-2px);
     border-color:color-mix(in srgb, var(--accent) 34%, var(--border));
     box-shadow:0 2px 4px rgba(22,36,29,.06),0 16px 38px rgba(22,36,29,.11);
@@ -7409,6 +7416,28 @@ html[data-theme="dark"] .bezp-result.ok{background:#173b2f;color:#a8dec8}html[da
 .cenNaglAkcje{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .cenNaglAkcje .btn{ gap:7px; }
 .cenNaglAkcje .btn .ic{ width:15px; height:15px; }
+
+/* Centrum ma własne nagłówki. Ogólna reguła `header`, przeznaczona dla
+   górnej belki aplikacji, nie może nadawać sekcjom pełnego koloru motywu. */
+.cenNagl{
+  padding:13px 15px; margin-bottom:14px;
+  border:1px solid color-mix(in srgb,var(--accent) 11%,var(--border));
+  border-radius:18px;
+  background:color-mix(in srgb,var(--accent) 3.5%,var(--panel));
+  box-shadow:0 4px 18px rgba(22,36,29,.035);
+}
+#centrum .cenOrgan>header,
+#centrum .cenKolekcje>header,
+#centrum .cenUklad>header{
+  position:relative; z-index:auto; align-content:normal; row-gap:8px;
+  padding:12px 14px; margin:-5px -5px 17px;
+  border:1px solid color-mix(in srgb,var(--accent) 10%,var(--border));
+  border-radius:15px;
+  background:color-mix(in srgb,var(--accent) 3%,var(--panel));
+  color:var(--text); box-shadow:none;
+}
+#centrum .cenKolekcje>header{ margin:0 0 14px; }
+#centrum .cenUklad>header{ margin:0 0 10px; }
 .cenBlok{ max-width:1440px; margin:0 auto; }
 /* Pełna rama Centrum 3.08. Boczny wybór jest częścią Centrum, dzięki czemu
    nie miesza się z kolumnami Biblia / Etykiety / Publikacje. */
@@ -7599,7 +7628,7 @@ html[data-theme="dark"] .bezp-result.ok{background:#173b2f;color:#a8dec8}html[da
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <h1 class="brand-name">JW Study <span class="ver">v3.08</span></h1>
+      <h1 class="brand-name">JW Study <span class="ver">v3.11</span></h1>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -21193,6 +21222,7 @@ const POW_ILE          = 8;    // ile powiązań pokazujemy
 const POW_MIN_DLUGOSC  = 5;    // krótsze wyrazy zbyt często znaczą nic
 const POW_MAX_NOTATEK  = 40;   // słowo z większej liczby notatek nie jest rzadkie
 const POW_MAX_SLOW     = 400;  // ile słów bierzemy z jednej notatki
+const POW_WAGA_RZADKIE = 8;    // wspólne rzadkie słowo jest silnym związkiem treści
 
 let _skorowidz = null;         // Map(słowo → [guid, …])
 let _skorowidzNieaktualny = true;
@@ -21260,7 +21290,7 @@ function powiazaneNotatki(n, ile){
     if(n.ks && inna.ks === n.ks){
       const toSamoWydanie = (Number(inna.itn)||0) === (Number(n.itn)||0);
       const tenSamArtykul = n.doc && (Number(inna.doc)||0) === (Number(n.doc)||0);
-      if(tenSamArtykul && toSamoWydanie) dodaj(inna.g, 8, "ten sam artykuł");
+      if(tenSamArtykul && toSamoWydanie) dodaj(inna.g, 3, "ten sam artykuł");
       else if(toSamoWydanie && n.itn) dodaj(inna.g, 4, "to samo wydanie");
       else dodaj(inna.g, 2, "ta sama publikacja");
     }
@@ -21280,8 +21310,9 @@ function powiazaneNotatki(n, ile){
   moje.forEach(s=>{
     const lista = idx.get(s);
     if(!lista) return;
-    /* Im rzadsze słowo, tym więcej znaczy jego powtórzenie. */
-    const waga = lista.length <= 3 ? 5 : lista.length <= 10 ? 3 : 1;
+    /* Zgodność treści jest mocniejsza od samego miejsca w publikacji.
+       Każde wspólne rzadkie słowo ma dlatego stałą wagę 8. */
+    const waga = POW_WAGA_RZADKIE;
     lista.forEach(g=>{
       if(g === n.g) return;
       punkty.set(g, (punkty.get(g)||0) + waga);
