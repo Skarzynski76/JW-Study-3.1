@@ -1,5 +1,13 @@
 # Dziennik zmian
 
+## v3.15 — zawężanie, opisowe zapytania i zaznaczenia
+
+- Filtry etykiety, księgi, rozdziału i publikacji z licznikami wczytanej partii.
+- Lokalne reguły opisowych zapytań: rok zmiany, kolor i wybrane nazwy ksiąg.
+- Sugestie literówek dla pojedynczego słowa, także na podstawie nazw etykiet.
+- Przycisk szukania zaznaczenia: cytat, podobne słowa, adresy wersetów i artykuł.
+- Instrukcja w panelu wyszukiwania opisuje zakres i ograniczenia reguł.
+
 Najnowsze na górze. Każdy wpis podaje **przyczynę**, nie tylko listę poprawek —
 bez niej po miesiącu nie wiadomo, dlaczego coś wygląda tak, a nie inaczej.
 

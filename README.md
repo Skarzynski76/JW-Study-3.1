@@ -1,61 +1,63 @@
-# JW Study 3.14
+# Biblioteki do importu z JW Library
 
-Gotowa, jednoplikowa wersja aplikacji do publikacji przez GitHub Pages.
+Te trzy pliki są **częścią aplikacji** i wgrywa się je razem z nią. Aplikacja
+nie pobiera niczego z obcych serwerów — nie potrafi tego zrobić, bo polityka
+bezpieczeństwa treści dopuszcza wyłącznie adresy z tego samego miejsca.
 
-## Publikacja
+| Plik | Rozmiar | Do czego |
+|---|---:|---|
+| `jszip.min.js` | 95 kB | rozpakowuje archiwum `.jwlibrary` |
+| `sql-wasm.js` | 45 kB | czyta bazę SQLite z jego wnętrza |
+| `sql-wasm.wasm` | 644 kB | silnik bazy danych |
 
-Wgraj **całą zawartość tego katalogu** do głównego katalogu gałęzi używanej
-przez GitHub Pages. Najważniejsze pliki to `index.html`, `sw.js`, `search-worker.js`,
-`manifest.webmanifest`, `.nojekyll`, ikony oraz cały katalog `lib/`.
+Potrzebne **wyłącznie przy imporcie z JW Library**. Notatki, kopie zapasowe
+i przenoszenie z OneNote działają bez nich.
 
-Instrukcja wydania i ustawienia GitHub Pages: [docs/WYDANIE.md](docs/WYDANIE.md).
-Historia zmian: [CHANGELOG.md](CHANGELOG.md). Testy: [testy/README.md](testy/README.md).
+## Skąd pochodzą
 
-Ta paczka jest wersją publikacyjną z dużym, samodzielnym `index.html`. Nie
-zmieniaj nazwy `index.html` — GitHub
-Pages, manifest i tryb offline odwołują się dokładnie do tej nazwy.
+Z oficjalnego rejestru npm, czyli wprost od autorów bibliotek:
 
-W repozytorium roboczym narzędzie wydania może tworzyć dwa katalogi:
-`JW_Study_zrodla` służy do dalszej pracy nad kodem, a `JW_Study_publikacja`
-jest gotową zawartością do wgrania na GitHub. Ten katalog jest już wersją
-publikacyjną — wgrywa się jego zawartość, bez tworzenia dodatkowego `index 3`
-lub `index 5`.
+- **JSZip 3.10.1** — <https://www.npmjs.com/package/jszip>
+- **sql.js 1.14.1** — <https://www.npmjs.com/package/sql.js>
 
-## Zasady zmian w kodzie
+Obie mają otwarty kod.
 
-Kolejność modułów ma znaczenie. Po każdej zmianie uruchom:
+## Sumy kontrolne
+
+Możesz sprawdzić, że pliki są dokładnie te, które tu opisano:
 
 ```bash
-bash testy/uruchom.sh ./index.html
+cd lib
+for f in jszip.min.js sql-wasm.js sql-wasm.wasm; do
+  printf "%-16s sha384-%s\n" "$f" "$(openssl dgst -sha384 -binary $f | openssl base64 -A)"
+done
 ```
 
-Numer wersji musi być zgodny w `WERSJA`, `index.html` i `sw.js`. Plik `sw.js`
-należy publikować razem z `index.html`, aby urządzenia pobrały aktualny kod.
+Powinno wypisać:
 
-Biblioteki w `lib/` obsługują import `.jwlibrary` lokalnie; aplikacja nie musi
-pobierać ich z zewnętrznego CDN.
+```
+jszip.min.js     sha384-+mbV2IY1Zk/X1p/nWllGySJSUN8uMs+gUAN10Or95UBH0fpj6GfKgPmgC5EXieXG
+sql-wasm.js      sha384-4BFYB3flXPr2Z7nY58MEovqPlVDyWWBDlHTclbOjtPii317X+bu9vsbPUCkb//6+
+sql-wasm.wasm    sha384-o013lO7BlkJf7tacsevpQiMi8GRMaF1YW/VO/Ep3M+KW19KyiKnflwvFf00bvRwQ
+```
 
-## Centrum Studium 3.06
+## Dlaczego nie z sieci
 
-Centrum jest teraz osobistą przestrzenią pracy. Projekty łączą notatki z
-różnych wersetów i publikacji, kolejka „Do przeczytania” odkłada materiały na
-później, a „Do opracowania” zbiera luźne pomysły. Przypisanie wykonuje się w
-notatce przez `Więcej → Centrum Studium`.
+Do wersji 1.93 biblioteki pobierały się z cdnjs — od pierwszej wersji aplikacji,
+po cichu. Ryzyko było niewielkie, ale realne: taki kod wykonuje się
+**z dostępem do wszystkich notatek**, więc jego podmiana na serwerze albo po
+drodze oznaczałaby dostęp do nich. W czerwcu 2024 zdarzyło się to naprawdę
+innemu serwisowi tego typu (polyfill.io, ponad 110 000 stron).
 
-Przycisk `Dostosuj` pozwala ukryć lub przestawić sześć dużych bloków pulpitu.
-Zmiana układu nie usuwa notatek. Projekty są zapisane jako etykiety, a kolejki
-jako pola notatki, dlatego przechodzą do kopii i uzgadniania między urządzeniami.
+Prościej i pewniej jest mieć te pliki u siebie.
 
-### Wygląd Warsztatu 3.07
+## Aktualizacja
 
-Warsztat ma teraz wyraźną hierarchię zamiast czterech równych kolumn. Projekty
-zajmują osobny rząd, dwie kolejki są szersze, a „Warto wrócić” tworzy spokojny
-pas poniżej. Układ automatycznie składa się do jednej kolumny na telefonie i
-wąskim iPadzie; zmiana wyglądu nie wpływa na dane ani przypisania notatek.
+Nie jest potrzebna do działania. Gdybyś chciał nowsze wersje:
 
-### Boczna nawigacja 3.08
-
-Centrum ma pełny boczny wybór: Centrum, Projekty, Do przeczytania, Do
-opracowania, Ostatnie i Bezpieczeństwo. Każdy przycisk otwiera osobny widok,
-a wybór jest pamiętany na urządzeniu. W wąskim panelu i na telefonie menu jest
-zwijane, żeby nie odbierało miejsca treści.
+```bash
+npm install jszip sql.js
+cp node_modules/jszip/dist/jszip.min.js lib/
+cp node_modules/sql.js/dist/sql-wasm.js lib/
+cp node_modules/sql.js/dist/sql-wasm.wasm lib/
+```
