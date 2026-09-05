@@ -34,7 +34,8 @@ function przygotuj(r){
     title:norm(r.title), body:norm(r.body), tag:norm(r.tag), ref:norm(r.ref)
   };
   const tekst=norm(r.plain || [r.title,r.body,r.tag,r.ref].join(" "));
-  return {g:r.g, tekst, squash:squash(tekst), tokeny:null, pola};
+  return {g:r.g, tekst, squash:squash(tekst), tokeny:null, pola,
+    pin:!!r.pin, fav:!!r.fav};
 }
 function maWariant(r, warianty, smart){
   for(const surowy of warianty || []){
@@ -64,24 +65,70 @@ function pasuje(r,p){
   if(!ok && p.squash && p.squash.length>=3) ok=r.squash.includes(p.squash);
   return ok;
 }
+/* Punktacja jest liczona w workerze, bo dopiero on widzi WSZYSTKIE trafienia.
+   Bez niej limit wyników oznaczał „pierwsze w bazie”, a nie „najlepsze”. */
+function punkty(r,p){
+  let wynik=0;
+  const title=r.pola.title, body=r.pola.body, tag=r.pola.tag, ref=r.pola.ref;
+  for(const surowa of (p.phrases||[])){
+    const x=norm(surowa);
+    if(title===x) wynik+=900;
+    else if(title.includes(x)) wynik+=650;
+    else if(ref.includes(x)) wynik+=560;
+    else if(tag.includes(x)) wynik+=430;
+    else if(body.includes(x)) wynik+=260;
+  }
+  for(const grupa of (p.groups||[])){
+    let najlepszy=0;
+    for(const surowy of grupa||[]){
+      const x=norm(surowy).replace(/\*/g,""); if(!x) continue;
+      if(title===x) najlepszy=Math.max(najlepszy,800);
+      else if(title.includes(x)) najlepszy=Math.max(najlepszy,520);
+      if(ref.includes(x)) najlepszy=Math.max(najlepszy,470);
+      if(tag.includes(x)) najlepszy=Math.max(najlepszy,360);
+      if(body.includes(x)) najlepszy=Math.max(najlepszy,80);
+    }
+    wynik+=najlepszy||30; // dopasowanie rozmyte potwierdzone przez pasuje()
+  }
+  /* Kilka pojęć w jednym krótkim odcinku jest lepsze niż każde w innym końcu
+     wielostronicowej notatki. */
+  if((p.groups||[]).length>1){
+    const pierwsze=(p.groups||[]).map(g=>{
+      let at=-1;
+      for(const v of g||[]){ const i=body.indexOf(norm(v).replace(/\*/g,"")); if(i>=0&&(at<0||i<at)) at=i; }
+      return at;
+    });
+    if(pierwsze.every(x=>x>=0)){
+      const rozrzut=Math.max(...pierwsze)-Math.min(...pierwsze);
+      if(rozrzut<220) wynik+=220; else if(rozrzut<600) wynik+=90;
+    }
+  }
+  /* To tylko rozstrzygnięcie remisu. Ulubiona notatka nie może wyprzedzić
+     dokładnego tytułu jedynie dlatego, że ma gwiazdkę. */
+  if(r.pin) wynik+=2; if(r.fav) wynik+=1;
+  return wynik;
+}
 function szukaj(p){
   const zlecenie=++aktywneZlecenie;
   const limitWynikow=Math.max(1,+p.matchLimit || 250);
-  const limitSkanu=Math.max(1,+p.scanLimit || 1200);
   p.allowed=Array.isArray(p.allowed)?new Set(p.allowed):null;
   p.squash=squash(p.squash || "");
-  const ids=[]; let i=0; let ostatnio=0;
+  const trafienia=[]; let i=0; let ostatnio=0;
+  const wyslijWyniki=(koniec)=>{
+    /* Sortujemy kopię, aby dalsze porcje mogły spokojnie dopisywać do tablicy. */
+    const top=trafienia.slice().sort((a,b)=>b.p-a.p||a.i-b.i).slice(0,limitWynikow);
+    self.postMessage({type:"results",seq:p.seq,ids:top.map(x=>x.g),scanned:i,
+      total:rekordy.length,totalMatches:trafienia.length,done:koniec,
+      limited:!koniec || trafienia.length>limitWynikow});
+  };
   const porcja=()=>{
     if(zlecenie!==aktywneZlecenie) return;
-    const koniec=Math.min(rekordy.length,limitSkanu,i+260);
-    for(;i<koniec && ids.length<limitWynikow;i++) if(pasuje(rekordy[i],p)) ids.push(rekordy[i].g);
-    const done=i>=rekordy.length || i>=limitSkanu || ids.length>=limitWynikow;
-    if(done || ids.length-ostatnio>=30){
-      ostatnio=ids.length;
-      self.postMessage({type:"results",seq:p.seq,ids:ids.slice(),scanned:i,
-        total:rekordy.length,done:done && i>=rekordy.length,
-        limited:i<rekordy.length || ids.length>=limitWynikow});
-    }
+    const koniec=Math.min(rekordy.length,i+260);
+    for(;i<koniec;i++) if(pasuje(rekordy[i],p)) trafienia.push({g:rekordy[i].g,p:punkty(rekordy[i],p),i});
+    const done=i>=rekordy.length;
+    /* Wyniki pośrednie najwyżej co ok. 780 rekordów. Interfejs pozostaje żywy,
+       ale nie sortuje i nie rysuje listy kilkadziesiąt razy na sekundę. */
+    if(done || i-ostatnio>=780){ ostatnio=i; wyslijWyniki(done); }
     if(!done) setTimeout(porcja,0);
   };
   porcja();

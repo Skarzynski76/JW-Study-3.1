@@ -5,6 +5,37 @@ bez niej po miesiącu nie wiadomo, dlaczego coś wygląda tak, a nie inaczej.
 
 ---
 
+## v3.14 — pełne wyszukiwanie i trafniejsze wyniki
+
+- worker przeszukuje cały indeks wszystkich notatek, także rekordy leżące dalej
+  niż wcześniejszy próg 1200 pozycji,
+- limit wyników wybiera najlepsze trafienia z całej bazy zamiast pierwszych
+  znalezionych w kolejności zapisu,
+- dokładny tytuł, werset, fraza i etykieta mają wyraźne pierwszeństwo przed
+  luźnym trafieniem w treści; przypięcie i ulubienie rozstrzygają tylko remis,
+- pierwsze 50 kart pojawia się od razu, a dalsze wyniki doładowują się podczas
+  przewijania bez blokowania dotyku,
+- każda karta wyniku pokazuje maksymalnie dwa najlepsze fragmenty, liczbę
+  wystąpień oraz powód wysokiej pozycji,
+- dodano test odnajdywania wyniku po pozycji 1200, rankingu całej bazy i wyboru
+  najbardziej treściwego fragmentu.
+
+## v3.13 — stabilny powrót z powiązanych notatek
+
+- wybranie powiązanej notatki automatycznie zamyka panel powiązań,
+- panel nie przełącza już swojej zawartości z powiązań notatki źródłowej na
+  kolejne powiązania wybranej notatki,
+- czytnik zachowuje źródło na stosie nawigacji, a strzałka „Wróć” prowadzi do
+  pierwszej notatki i jej zapamiętanego miejsca czytania,
+- dodano test całej sekwencji: źródło → panel → powiązana → powrót.
+
+## v3.12 — stabilne podkreślanie w powiększonej karteczce
+
+- zapis koloru nie przebudowuje już listy, gdy notatka jest powiększona na tablicy,
+- kliknięcie palety kolorów jest traktowane jako działanie wewnątrz otwartej notatki,
+- po podkreśleniu karta zachowuje rozmiar, miejsce i podkładkę w siatce,
+- dodano testy obu dróg, które wcześniej składały kartę.
+
 ## v3.11 — nowe wagi powiązanych notatek
 
 - „ten sam artykuł” daje 3 punkty zamiast 8,
