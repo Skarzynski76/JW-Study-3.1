@@ -2066,6 +2066,33 @@ html[data-theme="dark"] #modalFs .fsmodal{ background:#151517; }
   scroll-margin-bottom:120px;      /* zapas pod kursorem przy przewijaniu do widoku */
 }
 
+/* ══════════════ SAFARI/iPadOS — CZYSTY KURSOR PRZY ZDJĘCIACH (v3.18) ══════════════
+
+   WebKit zostawia pionowe niebieskie fragmenty zaznaczenia w pustych wierszach
+   obok opływanego zdjęcia. To nie są znaki zapisane w notatce, tylko błędnie
+   odmalowane prostokąty zaznaczenia. Podczas edycji na urządzeniu Apple obraz
+   jest więc tymczasowo blokiem bez opływania. Klasy img-left/img-right i szerokość
+   pozostają w HTML — po zapisie czytnik pokazuje dokładnie wybrany układ.
+
+   Wyłączamy też przewijanie bezwładności wyłącznie na czas pełnoekranowej edycji:
+   osobna warstwa kompozycji Safari była drugim źródłem pozostającego kursora. */
+@supports (-webkit-touch-callout:none){
+  #modalFs #fsWrap .ncard.editing .ncontent img:not(.img-inline){
+    float:none!important;
+    display:block!important;
+    margin:10px auto 14px!important;
+    -webkit-user-select:none;
+    user-select:none;
+  }
+  #modalFs .fsmodal:has(#fsWrap .ncard.editing){
+    -webkit-overflow-scrolling:auto;
+  }
+}
+.ncontent[contenteditable="true"] img{
+  -webkit-user-select:none;
+  user-select:none;
+}
+
 /* ══════════════ OKNO NOWEJ NOTATKI — STAŁA SZEROKOŚĆ ══════════════
 
    Okno jest elementem układu elastycznego (.overlay ma display:flex), więc mogło się
@@ -7269,6 +7296,7 @@ html[data-theme="dark"] .bezp-result.ok{background:#173b2f;color:#a8dec8}html[da
 }
 #searchStatus[hidden]{ display:none!important; }
 .ssInfo{ color:var(--muted); font-size:12px; margin-right:auto; }
+.searchMeaning{ width:100%; margin:0; padding:5px 8px; border-radius:9px; background:var(--panel); color:var(--accent); }
 .ssChip,.ssNav{ border:1px solid var(--border); background:var(--panel); color:var(--text); border-radius:999px; padding:5px 9px; font-size:12px; cursor:pointer; }
 .ssChip.on{ color:#fff; background:var(--accent); border-color:var(--accent); }
 .searchMatch{ display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:start; gap:7px; margin:7px 12px 2px; color:var(--muted); font-size:11.5px; }
@@ -7642,14 +7670,14 @@ html[data-theme="dark"] .bezp-result.ok{background:#173b2f;color:#a8dec8}html[da
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <h1 class="brand-name">JW Study <span class="ver">v3.15</span></h1>
+      <h1 class="brand-name">JW Study <span class="ver">v3.18</span></h1>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
   <div class="searchwrap">
     <svg class="ic search-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
     <div id="searchSug"></div>
-    <input id="search" type="search" autocomplete="off" aria-label="Szukaj w notatkach" placeholder='Szukaj w notatkach…' title='Wyszukiwanie rozszerzone:&#10;• bez ogonków też działa: milosc znajdzie miłość&#10;• kilka słów — wszystkie muszą wystąpić&#10;• gwiazdka: miłos* znajdzie miłość, miłosierdzie…&#10;• "w cudzysłowie" — dokładna fraza&#10;• (słowo|inne) — którekolwiek z nich&#10;• tytuł:pokora · etykieta:studium · werset:Jan'>
+    <input id="search" type="search" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="search" aria-label="Szukaj w notatkach" placeholder='Szukaj w notatkach…' title='Wyszukiwanie rozszerzone:&#10;• bez ogonków też działa: milosc znajdzie miłość&#10;• kilka słów — wszystkie muszą wystąpić&#10;• gwiazdka: miłos* znajdzie miłość, miłosierdzie…&#10;• "w cudzysłowie" — dokładna fraza&#10;• (słowo|inne) — którekolwiek z nich&#10;• tytuł:pokora · etykieta:studium · werset:Jan'>
     <button id="btnSearchTools" type="button" aria-label="Inteligentne wyszukiwanie i instrukcja" title="Inteligentne wyszukiwanie">⌄</button>
   </div>
   <button class="btn" id="btnWszystkie" hidden title="Wróć do wszystkich notatek — czyści szukanie, etykietę, księgę i szybki filtr (0)"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5L4 12l5 7"/><path d="M4 12h9a6 6 0 0 1 0 12"/></svg> <span class="bwTxt">Wszystkie notatki</span></button>
@@ -9584,8 +9612,24 @@ const SZUK_POJECIA=[
   ["sluzba","służba","gloszenie","głoszenie","ewangelizacja"],
   ["zmartwychwstanie","wskrzeszenie","powstanie z martwych"],
   ["jehowa","bog","bóg","ojciec"],
-  ["jezus","chrystus","mesjasz","syn bozy","syn boży"]
+  ["jezus","chrystus","mesjasz","syn bozy","syn boży"],
+  ["stres","stresem","stresie","niepokoj","niepokój","zmartwienie","martwic","martwić","napiecie","napięcie","presja","spokoj","spokój","opanowanie","zdenerwowanie","zdenerwowac","zdenerwować"],
+  ["lek","lęk","strach","obawa","boje","boję","odwaga","odwazny","odważny"],
+  ["cierpliwosc","cierpliwość","wytrwalosc","wytrwałość","wytrwac","wytrwać","znosic","znosić"],
+  ["radosc","radość","szczescie","szczęście","zadowolenie","wdziecznosc","wdzięczność"],
+  ["smutek","cierpienie","choroba","zaloba","żałoba","pocieszenie","pocieszac","pocieszać"],
+  ["konflikt","klotnia","kłótnia","spor","spór","zgoda","pojednanie","pokoj","pokój"],
+  ["malzenstwo","małżeństwo","maz","mąż","zona","żona","wspolmalzonek","współmałżonek"],
+  ["rodzina","dziecko","dzieci","rodzice","wychowanie","wychowywac","wychowywać"],
+  ["decyzja","wybor","wybór","sumienie","madrosc","mądrość","rada","kierownictwo"],
+  ["samotnosc","samotność","osamotnienie","przyjazn","przyjaźń","przyjaciel"],
+  ["praca","pracowac","pracować","zatrudnienie","pieniadze","pieniądze","dlug","dług"],
+  ["nawyk","uzaleznienie","uzależnienie","pokusa","samokontrola","panowanie nad soba","panowanie nad sobą"]
 ].map(g=>g.map(normSzukStart));
+/* Te słowa pomagają rozumieć całe pytanie, ale same nie opisują jego tematu.
+   Usuwamy je wyłącznie z warstwy znaczeniowej; tryb dokładny nadal korzysta
+   z literalnych warunków z parseQuery(). */
+"jak jaki jaka jakie gdzie kiedy dlaczego czemu kto ktos ktoś prosze proszę pomoz pomóż znajde znajdę znalezc znaleźć moge mogę mozna można powinien powinienem powinnam zrobic zrobić radzic radzić sobie zachowac zachować gdy jesli jeśli wtedy mnie mi moje moja moj mojego swój swoj swoim się sie tym tego tej ten ta".split(" ").forEach(x=>SZUK_STOP.add(normSzukStart(x)));
 const SZUK_KSIEGI={mt:"mateusza",mk:"marka",lk:"lukasza",jn:"jana",dz:"dzieje apostolskie",rz:"rzymian","1kor":"1 koryntian","2kor":"2 koryntian",gal:"galatow",ef:"efezjan",flp:"filipian",kol:"kolosan","1tes":"1 tesaloniczan","2tes":"2 tesaloniczan","1tm":"1 tymoteusza","2tm":"2 tymoteusza",tyt:"tytusa",flm:"filemona",hbr:"hebrajczykow",jak:"jakuba","1pt":"1 piotra","2pt":"2 piotra","1jn":"1 jana","2jn":"2 jana","3jn":"3 jana",jud:"judy",obj:"objawienie",rdz:"rodzaju",wj:"wyjscia",kpl:"kaplanska",pwt:"powtorzonego prawa",jz:"jozuego",sedz:"sedziow",ps:"psalmy",prz:"przyslow",iz:"izajasza",jer:"jeremiasza",ez:"ezechiela",dn:"daniela"};
 function rdzenPl(s){
   s=norm(s).replace(/[^a-z0-9]/g,"");
@@ -9630,12 +9674,17 @@ function parseAdvancedQuery(raw){
   if(kolor) qSpecial.highlight=({zolty:1,"żółty":1,zielony:2,niebieski:3,fioletowy:4,czerwony:5,pomaranczowy:6,"pomarańczowy":6,turkusowy:7})[kolor[1]];
   let clean=nraw.replace(/"[^"]+"/g," ").replace(/(?:tytul|tytuł|title|t|etykieta|etykiety|tag|e|werset|wersety|ref|ksiega|księga|w|tresc|treść|body):(?:"[^"]+"|\S+)/g," ")
     .replace(/@\S+|#\S+|(?:biblia|publikacja):|kolor:\S+/g," ");
-  const tok=clean.split(/\s+/).filter(Boolean); let neg=false, orPending=false;
-  for(let t of tok){
+  /* Nawias może teraz zawierać także wielowyrazowe alternatywy, np.
+     (władca świata|bóg tego systemu). To podstawa reguł znaczeniowych. */
+  const tok=[]; let tm; const tr=/\(([^)]+)\)|(\S+)/g;
+  while((tm=tr.exec(clean))) tok.push({text:tm[1]!==undefined?tm[1]:tm[2],grouped:tm[1]!==undefined});
+  let neg=false, orPending=false;
+  for(const item of tok){
+    let t=item.text;
     if(t==="not"){neg=true;continue;} if(t==="and") continue; if(t==="or"){orPending=true;continue;}
     if(t[0]==="-"){neg=true;t=t.slice(1);} t=t.replace(/^\(|\)$/g,"");
     if(!t||SZUK_STOP.has(t)) {neg=false;orPending=false;continue;}
-    const parts=t.split("|").filter(Boolean);
+    const parts=t.split("|").map(x=>x.trim()).filter(Boolean);
     const cel=neg?qAdvNeg:qAdvTerms;
     if(orPending && cel.length) cel[cel.length-1].push(...parts);
     else cel.push(parts);
@@ -27290,7 +27339,79 @@ boot().catch(err=>{
 
 </script>
 <script>
-/* Wyszukiwanie 3.15: jawne reguły lokalne, filtry i szukanie zaznaczenia. */
+/* Wyszukiwanie 3.17: jawne reguły lokalne, filtry, tematy i zaznaczenia. */
+let searchMeaning=[];
+const SZUK_TEMATY=[
+  {
+    label:"wpływ Szatana na świat",
+    when:[["diabel","diabeł","szatan","niegodziwiec","przeciwnik"],["rzadzi","rządzi","wladza","władza","swiat","świat","system"]],
+    groups:[
+      ["diabeł","szatan","przeciwnik","niegodziwiec","kusiciel","władca świata","bóg tego systemu","bogiem tego systemu"],
+      ["rządzi","panuje","ma władzę","sprawuje władzę","władca świata","bóg tego systemu","bogiem tego systemu","kontroluje","wpływa","zwodzi","zaślepia"],
+      ["świat","światem","system rzeczy","obecny system","narody","ludzkość","społeczeństwo"]
+    ]
+  },
+  {
+    label:"Królestwo Boże i jego panowanie",
+    when:[["krolestwo","królestwo"],["rzad","rząd","rzadzi","rządzi","panowanie","ziemia"]],
+    groups:[
+      ["Królestwo Boże","Królestwo niebiańskie","królestwo","rząd Boży"],
+      ["rządzi","panuje","panowanie","król","władza"],
+      ["ziemia","ludzkość","narody","świat"]
+    ]
+  },
+  {
+    label:"dlaczego Bóg dopuszcza cierpienie",
+    when:[["bog","bóg","jehowa"],["cierpienie","cierpi","zlo","zło","dopuszcza","pozwala"]],
+    groups:[
+      ["Bóg","Jehowa"],
+      ["cierpienie","zło","nieszczęście","choroba","ból"],
+      ["dopuszcza","pozwala","przyczyna","kwestia sporna","wolna wola"]
+    ]
+  },
+  {
+    label:"stan umarłych",
+    when:[["umarli","umarly","umarły","smierc","śmierć"],["wiedza","czuja","czują","dzieje","stan"]],
+    groups:[
+      ["umarli","umarły","śmierć","grób"],
+      ["nie są świadomi","nie wiedzą","nie czuje","sen śmierci","stan umarłych"]
+    ]
+  },
+  {
+    label:"zmartwychwstanie i przyszła nadzieja",
+    when:[["zmartwychwstanie","wskrzeszenie","ożyją","powroca","powrócą"],["umarli","bliscy","nadzieja","przyszlosc","przyszłość"]],
+    groups:[
+      ["zmartwychwstanie","wskrzeszenie","powstaną","ożyją"],
+      ["umarli","zmarli","grób"],
+      ["nadzieja","przyszłość","życie wieczne","raj"]
+    ]
+  },
+  {
+    label:"chrześcijańska neutralność",
+    when:[["neutralnosc","neutralność","polityka","wybory","wojna"],["chrzescijanin","chrześcijanin","uczestniczyc","uczestniczyć","glosowac","głosować","walczyc","walczyć"]],
+    groups:[
+      ["neutralność","nie należy do świata","chrześcijanin"],
+      ["polityka","wybory","wojna","konflikt","narody"],
+      ["nie walczy","nie głosuje","nie uczestniczy","sumienie"]
+    ]
+  },
+  {
+    label:"radzenie sobie z lękiem i stresem",
+    when:[["stres","stresem","lek","lęk","niepokoj","niepokój","martwie","martwię"],["radzic","radzić","spokoj","spokój","pokonac","pokonać","pomoc"]],
+    groups:[
+      ["stres","lęk","niepokój","zmartwienie","presja"],
+      ["spokój","opanowanie","modlitwa","zaufanie","pokój Boży"]
+    ]
+  }
+];
+function zawieraTemat(tekst,haslo){
+  const n=" "+normSzukStart(tekst).replace(/[^a-z0-9]+/g," ").trim()+" ";
+  const h=normSzukStart(haslo).replace(/[^a-z0-9]+/g," ").trim();
+  return !!h&&n.includes(" "+h+" ");
+}
+function rozpoznajTematZdania(tekst){
+  return SZUK_TEMATY.find(t=>t.when.every(grupa=>grupa.some(h=>zawieraTemat(tekst,h))))||null;
+}
 function interpretujOpis(raw){
   let q=raw; const opts={},info=[];
   if(/["@#:]|\bOR\b|\bNOT\b/.test(q)) return {q,opts,info};
@@ -27313,18 +27434,39 @@ function interpretujOpis(raw){
   q=q.replace(/\b(?:przypięte|przypiete|przypiętych|przypietych)\b/i,()=>{opts.extra="pin";info.push("przypięte");return " ";});
   q=q.replace(/\b(?:z|w) ostatni(?:m)? tygodniu\b/i,()=>{opts.extra="week";info.push("ostatni tydzień");return " ";});
   q=q.replace(/^(?:znajdź|znajdz|pokaż|pokaz|szukam)\s+/i,"").replace(/notatki (?:o|na temat) /i,"").replace(/^\s*o\s+/i,"").trim();
+  /* W pytaniu pozostają słowa niosące temat. Dzięki temu „jak radzić sobie
+     ze stresem” szuka stresu, a nie wymaga wystąpienia słów „radzić sobie”. */
+  if(!/["@#:]|\b(?:OR|NOT)\b/i.test(q)){
+    const pola=[];
+    q=q.replace(/(?:tytul|tytuł|etykieta|tag|werset|ref|tresc|treść):(?:"[^"]+"|\S+)/gi,m=>{pola.push(m);return " ";});
+    const slowa=q.split(/\s+/).map(x=>x.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu,"")).filter(Boolean);
+    const wazne=slowa.filter(x=>!SZUK_STOP.has(normSzukStart(x)));
+    if(wazne.length && wazne.length<slowa.length){q=wazne.join(" ");info.push("pominięto słowa pytające");}
+    if(pola.length)q=(q+" "+pola.join(" ")).trim();
+  }
+  const temat=rozpoznajTematZdania(raw);
+  if(temat){
+    const pola=q.match(/(?:tytul|tytuł|etykieta|tag|werset|ref|tresc|treść):(?:"[^"]+"|\S+)/gi)||[];
+    q=temat.groups.map(g=>"("+g.join("|")+")").join(" ")+(pola.length?" "+pola.join(" "):"");
+    info.push("temat: "+temat.label);
+  }
   return {q:q.replace(/\s+/g," "),opts,info};
 }
 const opisoweUruchom=uruchomWyszukiwanie;
 uruchomWyszukiwanie=function(raw){
-  if((raw||"").trim()!==query) searchFacet={};
-  const p=searchMode==="smart"?interpretujOpis(raw):{q:raw,opts:{},info:[]};
+  const widoczny=String(raw||"");
+  if(widoczny.trim()!==query) searchFacet={};
+  const p=searchMode==="smart"?interpretujOpis(widoczny):{q:widoczny,opts:{},info:[]};
+  searchMeaning=p.info.slice();
   if(p.info.length){
     Object.assign(searchOpts,p.opts);lsSet(KP+"SearchOpts",JSON.stringify(searchOpts));
-    $("search").value=p.q;resetSearchWindow();
+    resetSearchWindow();
     toast("Rozpoznano: "+p.info.join(" · "));
   }
   opisoweUruchom(p.q);
+  /* Zapytanie techniczne może być uproszczone, lecz wpis użytkownika pozostaje
+     dokładnie taki, jak go wpisał. Żadnego cichego poprawiania ani zamiany. */
+  $("search").value=widoczny;
 };
 /* Zawężanie działa na metadanych i nie zmienia notatek. */
 let searchFacet={};
@@ -27350,6 +27492,10 @@ document.addEventListener("click",e=>{if(e.target&&e.target.closest&&e.target.cl
 renderSearchStatus=function(arr){
   statusBazowy(arr);if(!query)return;
   const box=$("searchStatus"),panel=document.createElement("details");panel.className="searchFacets";
+  if(searchMeaning.length){
+    const meaning=document.createElement("span");meaning.className="ssInfo searchMeaning";
+    meaning.textContent="Rozumiem jako: "+searchMeaning.join(" · ");box.appendChild(meaning);
+  }
   const sum=document.createElement("summary");sum.textContent="Zawęź wyniki — liczniki dla wczytanej partii";panel.appendChild(sum);
   const add=(name,key,entries)=>{
     const label=document.createElement("label"),sel=document.createElement("select");
@@ -27422,7 +27568,7 @@ hlBar.addEventListener("pointerdown",e=>{
   hlBar.style.display="none";dd.style.display="block";dd.style.zIndex="10050";dd.style.left="12px";dd.style.top="auto";dd.style.bottom="max(16px,env(safe-area-inset-bottom))";
 });
 const helpMore=document.createElement("p");
-helpMore.textContent='Nowe: „notatki o pokorze po 2024 roku”, „wersety o pokorze z Mateusza”, „podkreślone na żółto o zaufaniu”. To reguły lokalne, nie AI. Daty dotyczą zmiany notatki. Zawężaj etykiety i publikacje pod wynikami. Korekty zatwierdzasz dotknięciem. Zaznacz tekst i wybierz ⌕, aby szukać cytatu, podobnych notatek lub adresów wersetów.';
+helpMore.textContent='Przykłady: „notatki o pokorze po 2024 roku”, „wersety o pokorze z Mateusza”, „podkreślone na żółto o zaufaniu”, „Diabeł rządzi światem”. Tryb inteligentny rozpoznaje cały temat i pokazuje nad wynikami „Rozumiem jako”. To reguły lokalne, nie AI. Daty dotyczą zmiany notatki. Zawężaj etykiety i publikacje pod wynikami. Korekty zatwierdzasz dotknięciem. Zaznacz tekst i wybierz ⌕, aby szukać cytatu, podobnych notatek lub adresów wersetów.';
 document.querySelector(".searchHelp").appendChild(helpMore);
 </script>
 </body>

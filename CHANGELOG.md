@@ -1,5 +1,38 @@
 # Dziennik zmian
 
+## v3.18 — czysty kursor przy zdjęciach na iPadzie
+
+- usunięto niebieskie pionowe ślady pozostające obok zdjęcia podczas edycji
+  notatki w Safari na iPadzie i iPhonie,
+- podczas edycji pełnoekranowej zdjęcie jest tymczasowo pokazywane bez opływania
+  tekstem, co omija błąd rysowania pustych wierszy przez WebKit,
+- po zapisaniu wraca wybrane położenie zdjęcia; aplikacja nie zmienia klas,
+  szerokości ani treści obrazu,
+- obrazy w polu edycji nie wchodzą już do przypadkowego zaznaczenia tekstu.
+
+## v3.17 — rozpoznawanie tematów całych zdań
+
+- dodano reguły łączące kilka pojęć w jeden temat zamiast szukania wyłącznie
+  kolejnych słów wpisanych przez użytkownika,
+- zdanie „Diabeł rządzi światem” obejmuje również sformułowania takie jak
+  „Szatan”, „władca świata”, „bóg tego systemu”, „ma władzę” i „narody”,
+- dodano pierwsze reguły dla Królestwa Bożego, cierpienia, stanu umarłych,
+  zmartwychwstania, neutralności oraz radzenia sobie z lękiem,
+- nad wynikami aplikacja pokazuje „Rozumiem jako”, dzięki czemu użytkownik
+  widzi zastosowaną interpretację i może przełączyć się na tryb dokładny,
+- parser obsługuje wielowyrazowe alternatywy znaczeniowe w nawiasach.
+
+## v3.16 — wyszukiwanie bez zmiany wpisanego tekstu
+
+- wyłączono autokorektę, automatyczne wielkie litery i sprawdzanie pisowni
+  systemu iOS w głównym polu wyszukiwania,
+- tryb inteligentny zachowuje na ekranie dokładnie tekst wpisany przez
+  użytkownika; uproszczone zapytanie działa wyłącznie wewnętrznie,
+- pytania opisowe pomijają wyrazy techniczne, np. „jak”, „znaleźć” i „radzić
+  sobie”, aby szukać właściwego tematu,
+- rozszerzono lokalny słownik znaczeń m.in. o stres, lęk, cierpliwość, rodzinę,
+  małżeństwo, cierpienie, decyzje, konflikty i samokontrolę.
+
 ## v3.15 — zawężanie, opisowe zapytania i zaznaczenia
 
 - Filtry etykiety, księgi, rozdziału i publikacji z licznikami wczytanej partii.
