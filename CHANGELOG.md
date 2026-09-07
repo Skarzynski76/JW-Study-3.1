@@ -1,5 +1,34 @@
 # Dziennik zmian
 
+## v3.21 — stabilne przeciąganie ilustracji w tekście
+
+- zdjęcie można chwycić myszą lub gładzikiem i przeciągnąć bezpośrednio do
+  nowego miejsca; na ekranie dotykowym gest zaczyna się po krótkim,
+  240-milisekundowym przytrzymaniu bez odrywania palca,
+- podczas ruchu widoczny jest lekki podgląd zdjęcia i znacznik dokładnego
+  miejsca wstawienia, a treść przewija się automatycznie przy krawędzi ekranu,
+- przeniesienie zachowuje rozmiar oraz ustawienie opływania: lewo, prawo,
+  środek albo w linii; tę samą zasadę zastosowano w zapasowym poleceniu
+  „Przenieś”,
+- gest można anulować klawiszem Escape lub przerwaniem dotyku, a wykonane
+  przesunięcie trafia do historii cofania. Przyczyną wcześniejszego problemu
+  była celowa blokada natywnego przeciągania Safari bez zastąpienia jej pełnym
+  mechanizmem własnym.
+
+## v3.20 — bezpośredni import z Notatek Apple
+
+- dodano w menu Plik import archiwum ZIP z notatkami wyeksportowanymi jako
+  Markdown; zachowywane są tytuły, nagłówki, listy, formatowanie, linki oraz
+  ilustracje z katalogów Attachments,
+- nazwy plików z iPada i Maca są normalizowane, dlatego polskie znaki działają
+  również wtedy, gdy Apple zapisze je jako kilka znaków Unicode,
+- identyczne notatki są pomijane, istniejące wpisy nie są nadpisywane, a cały
+  import zapisuje się atomowo — błąd lub brak miejsca nie zostawia połowy danych,
+- dodano limity chroniące iPhone'a i iPada przed nadmiernym zużyciem pamięci
+  przez bardzo duże archiwum lub obrazy. Przyczyną wcześniejszego braku tej
+  funkcji było to, że JW Study rozumiało tylko pojedynczy JSON i bazę JW Library,
+  a eksport Apple jest zestawem powiązanych plików Markdown i zdjęć.
+
 ## v3.19 — zgodne położenie ilustracji podczas edycji
 
 - przywrócono opływanie ilustracji tekstem również podczas edycji na iPadzie

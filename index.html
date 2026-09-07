@@ -588,6 +588,14 @@ html[data-theme="dark"] .exp-base.warn,html[data-theme="dark"] .exp-warn{backgro
 .ncontent[contenteditable="true"] img{cursor:pointer}
 body.img-placing{cursor:copy}
 body.img-placing .ncontent[contenteditable="true"]{outline:2px dashed var(--accent2);outline-offset:2px}
+/* Własne przeciąganie ilustracji. Natywne HTML drag-and-drop w contenteditable
+   jest na iPadzie niestabilne, dlatego obraz śledzi palec w osobnej warstwie. */
+.ncontent[contenteditable="true"] img{touch-action:none;-webkit-user-drag:none}
+body.img-dragging,body.img-dragging *{cursor:grabbing!important}
+body.img-dragging .ncontent{user-select:none!important;-webkit-user-select:none!important}
+.ncontent img.img-drag-source{opacity:.28;filter:saturate(.65);outline:2px dashed var(--accent2);outline-offset:3px}
+.img-drag-ghost{position:fixed;left:0;top:0;z-index:10030;pointer-events:none;max-width:min(280px,42vw)!important;max-height:32vh!important;width:auto!important;height:auto!important;opacity:.88;border-radius:10px;box-shadow:0 14px 38px rgba(0,0,0,.32);transform:translate(14px,14px) scale(.96)}
+#dropCaret{position:fixed;display:none;z-index:10029;pointer-events:none;width:4px;min-height:25px;background:var(--accent);border-radius:4px;box-shadow:0 0 0 2px var(--panel),0 2px 9px rgba(0,0,0,.25)}
 .ncontent img.img-s{width:35%}
 .ncontent img.img-m{width:60%}
 .ncontent img.img-l{width:100%}
@@ -7669,7 +7677,7 @@ html[data-theme="dark"] .bezp-result.ok{background:#173b2f;color:#a8dec8}html[da
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <h1 class="brand-name">JW Study <span class="ver">v3.19</span></h1>
+      <h1 class="brand-name">JW Study <span class="ver">v3.21</span></h1>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -8425,6 +8433,38 @@ async function idbBulkChunked(store,items){
   for(let i=0;i<items.length;i+=400){
     await idbBulk(store, items.slice(i,i+400));
   }
+}
+/**
+ * Atomowy zapis importu z zewnętrznego programu (np. Notatek Apple).
+ * Cały zestaw notatek i etykiet trafia do jednej transakcji. Nieudany zapis,
+ * brak miejsca albo zamknięcie karty wycofuje wszystko.
+ */
+function idbZapiszImportZewnetrzny(noweNotatki, noweTagi, oczekiwaneNotatki, oczekiwaneTagi){
+  return new Promise((res,rej)=>{
+    if(!idb) return res(true); // tryb testowy / pamięć tymczasowa
+    let tx;
+    try{ tx=idb.transaction(["notes","tags"],"readwrite"); }
+    catch(e){ return rej(e); }
+    tx.oncomplete=()=>res(true);
+    tx.onerror=()=>rej(tx.error||new Error("zapis importu się nie powiódł"));
+    tx.onabort=()=>rej(tx.error||new Error("zapis importu został przerwany"));
+    try{
+      const sn=tx.objectStore("notes"), st=tx.objectStore("tags");
+      for(const n of (noweNotatki||[])) sn.put(n);
+      for(const t of (noweTagi||[])) st.put(t);
+      const cn=sn.count(), ct=st.count();
+      let ng=false,tg=false,nv=0,tv=0;
+      const sprawdz=()=>{
+        if(!ng||!tg) return;
+        if(nv!==oczekiwaneNotatki || tv!==oczekiwaneTagi){
+          try{ tx.abort(); }catch(_){}
+        }
+      };
+      cn.onsuccess=()=>{ng=true;nv=cn.result;sprawdz();};
+      ct.onsuccess=()=>{tg=true;tv=ct.result;sprawdz();};
+      cn.onerror=ct.onerror=()=>{try{tx.abort();}catch(_){}};
+    }catch(e){ try{tx.abort();}catch(_){} }
+  });
 }
 /**
  * Zapis jednego importu z JW Library w jednej transakcji.
@@ -14131,6 +14171,15 @@ function startImgMoveFor(img){
 }
 function startImgMove(){ startImgMoveFor(selImg); }
 function cancelImgMove(){ movePending=null; document.body.classList.remove("img-placing"); }
+/* Najpierw umieszczamy nieruchomy znacznik, dopiero potem przenosimy istniejący
+   węzeł obrazu. Bez tego zakres wskazujący rodzica potrafi przesunąć swój offset
+   w chwili wyjęcia zdjęcia i wstawić je o akapit za daleko. */
+function przeniesObrazDoRange(img,range,ce){
+  try{
+    const zn=document.createComment("miejsce-ilustracji");range.insertNode(zn);
+    zn.parentNode.insertBefore(img,zn);zn.remove();return true;
+  }catch(_){try{ce.appendChild(img);return true;}catch(__){return false;}}
+}
 /* wstawienie zdjęcia (z pliku, wklejenia lub upuszczenia) — jedna wspólna funkcja */
 function insertImageUrl(ce, url, range){
   if(!ce) return null;
@@ -14164,13 +14213,7 @@ function placeImgAt(e){
   }
   cancelImgMove();
   range.collapse(true);
-  const rect = ce.getBoundingClientRect();
-  const side = (e.clientX - rect.left) < rect.width*0.5 ? "img-left" : "img-right";
-  try{
-    range.insertNode(img);
-    img.classList.remove("img-center","img-inline","img-left","img-right");
-    img.classList.add(side);
-  }catch(_){ try{ ce.appendChild(img); }catch(__){} }
+  przeniesObrazDoRange(img,range,ce);
   commitLiveEdit(ce);
   showImgBar(img);
   toast("Przeniesiono zdjęcie");
@@ -14217,22 +14260,103 @@ document.addEventListener("drop", async e=>{
     for(const f of files){ if(f.type && f.type.indexOf("image")===0){ try{ const url=await compressImage(f); if(!(await checkSpaceForImage(url.length))) return; insertImageUrl(ce, url, range); range=null; }catch(_){} } }
   }
 });
-/* PRZYTRZYMAJ zdjęcie (long-press / przytrzymanie myszy) → podnieś do przeniesienia, potem dotknij miejsca */
-let lpTimer=null, lpImg=null, lpXY=null;
-document.addEventListener("pointerdown", e=>{
-  const img = e.target.closest && e.target.closest('.ncontent img');
-  if(!img || !img.closest('[contenteditable="true"]')) return;
-  if(e.target.closest("#imgHandles")) return;
-  if(movePending) return;
-  lpImg=img; lpXY={x:e.clientX,y:e.clientY};
-  clearTimeout(lpTimer);
-  lpTimer=setTimeout(()=>{ if(lpImg){ startImgMoveFor(lpImg); suppressImgClick=true; lpImg=null; } }, 450);
-});
-document.addEventListener("pointermove", e=>{
-  if(lpImg && lpXY && Math.hypot(e.clientX-lpXY.x, e.clientY-lpXY.y)>10){ clearTimeout(lpTimer); lpImg=null; }
-});
-document.addEventListener("pointerup", ()=>{ clearTimeout(lpTimer); lpImg=null; });
-document.addEventListener("pointercancel", ()=>{ clearTimeout(lpTimer); lpImg=null; });
+/* ===== BEZPOŚREDNIE PRZECIĄGANIE ZDJĘCIA =====
+   Mysz/gładzik: chwyć i przesuń. Palec/rysik: krótkie przytrzymanie, potem
+   przesuń bez odrywania. Klasa opływania (lewo/prawo/środek/w linii) nie jest
+   zmieniana — przenosimy tylko pozycję obrazu w treści. */
+const IMG_DRAG_HOLD=240, IMG_DRAG_PROG=5, IMG_DRAG_EDGE=72;
+let imgDrag=null;
+function imgDragRange(x,y,ce){
+  let r=caretRangeFromPoint(x,y);
+  if(!r || !ce.contains(r.startContainer)) return null;
+  if(imgDrag && (r.startContainer===imgDrag.img || imgDrag.img.contains(r.startContainer))) return null;
+  try{r=r.cloneRange();r.collapse(true);return r;}catch(_){return null;}
+}
+function imgDragCaret(r,x,y){
+  const c=$("dropCaret"); if(!c)return;
+  if(!r){c.style.display="none";return;}
+  let rr=null;
+  try{const rs=typeof r.getClientRects==="function"?[...r.getClientRects()]:[];rr=rs[0]||null;}catch(_){}
+  const el=r.startContainer&&r.startContainer.nodeType===1?r.startContainer:r.startContainer&&r.startContainer.parentElement;
+  if(!rr&&el&&el.getBoundingClientRect)rr=el.getBoundingClientRect();
+  const ob=(typeof widocznyObszar==="function")?widocznyObszar():{lewo:0,gora:0,prawo:innerWidth,dol:innerHeight};
+  const left=Math.max(ob.lewo+3,Math.min((rr&&isFinite(rr.left)?rr.left:x),ob.prawo-7));
+  const top=Math.max(ob.gora+3,Math.min((rr&&isFinite(rr.top)?rr.top:y-12),ob.dol-29));
+  c.style.left=left+"px";c.style.top=top+"px";c.style.height=Math.max(25,Math.min(44,(rr&&rr.height)||28))+"px";c.style.display="block";
+}
+function imgDragScrollHost(ce){
+  return ce.closest(".fsmodal")||ce.closest(".list")||document.scrollingElement||document.documentElement;
+}
+function imgDragAt(x,y){
+  const s=imgDrag;if(!s||!s.active)return;
+  s.x=x;s.y=y;s.ghost.style.left=x+"px";s.ghost.style.top=y+"px";
+  const r=imgDragRange(x,y,s.ce);if(r)s.range=r;
+  imgDragCaret(r,x,y);
+}
+function imgDragKlatka(){
+  const s=imgDrag;if(!s||!s.active)return;
+  const ob=(typeof widocznyObszar==="function")?widocznyObszar():{gora:0,dol:innerHeight};
+  let krok=0;
+  if(s.y<ob.gora+IMG_DRAG_EDGE)krok=-Math.ceil((ob.gora+IMG_DRAG_EDGE-s.y)/7);
+  else if(s.y>ob.dol-IMG_DRAG_EDGE)krok=Math.ceil((s.y-(ob.dol-IMG_DRAG_EDGE))/7);
+  krok=Math.max(-16,Math.min(16,krok));
+  if(krok){const h=s.scrollHost;if(h===document.scrollingElement||h===document.documentElement)scrollBy(0,krok);else if(h&&typeof h.scrollBy==="function")h.scrollBy(0,krok);else if(h)h.scrollTop+=krok;imgDragAt(s.x,s.y);}
+  s.raf=requestAnimationFrame(imgDragKlatka);
+}
+function imgDragAktywuj(){
+  const s=imgDrag;if(!s||s.active)return;
+  clearTimeout(s.timer);s.active=true;suppressImgClick=true;
+  if(typeof histZapisz==="function")histZapisz(s.ce);
+  const n=notes.find(x=>x.g===(s.ce.closest(".ncard")||{}).dataset?.g);
+  s.before=n&&typeof cloneNote==="function"?cloneNote(n):null;
+  hideImgBar();document.body.classList.add("img-dragging");s.img.classList.add("img-drag-source");s.img.setAttribute("aria-grabbed","true");
+  const ghost=s.img.cloneNode(true);ghost.className="img-drag-ghost";ghost.removeAttribute("style");document.body.appendChild(ghost);s.ghost=ghost;
+  try{const sel=getSelection();if(sel&&sel.removeAllRanges)sel.removeAllRanges();}catch(_){}
+  imgDragAt(s.x,s.y);s.raf=requestAnimationFrame(imgDragKlatka);
+}
+function imgDragSprzataj(pokaz){
+  const s=imgDrag;if(!s)return;
+  clearTimeout(s.timer);if(s.raf)cancelAnimationFrame(s.raf);
+  if(s.ghost)s.ghost.remove();$("dropCaret").style.display="none";
+  s.img.classList.remove("img-drag-source");s.img.removeAttribute("aria-grabbed");document.body.classList.remove("img-dragging");
+  imgDrag=null;if(pokaz&&s.img.isConnected)showImgBar(s.img);
+}
+function imgDragUp(e,anuluj){
+  const s=imgDrag;if(!s||e.pointerId!==s.pointerId)return;
+  if(!s.active){imgDragSprzataj(true);return;}
+  e.preventDefault();
+  if(!anuluj&&s.range){
+    przeniesObrazDoRange(s.img,s.range,s.ce);
+    if(s.before&&typeof pushUndo==="function")pushUndo({type:"note",label:"przeniesienie ilustracji",before:s.before});
+    if(typeof histZapisz==="function")histZapisz(s.ce);
+    commitLiveEdit(s.ce);imgDragSprzataj(true);toast("Przeniesiono zdjęcie");
+  }else{imgDragSprzataj(true);if(anuluj)toast("Przenoszenie anulowane");}
+}
+document.addEventListener("pointerdown",e=>{
+  if(e.button!==undefined&&e.button!==0)return;
+  const img=e.target.closest&&e.target.closest('.ncontent[contenteditable="true"] img');
+  if(!img||e.target.closest("#imgHandles")||movePending)return;
+  if(imgDrag)imgDragSprzataj(false);
+  const ce=img.closest('.ncontent[contenteditable="true"]');
+  imgDrag={img,ce,pointerId:e.pointerId,x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,
+    active:false,range:null,ghost:null,timer:0,raf:0,scrollHost:imgDragScrollHost(ce),pointerType:e.pointerType||"mouse"};
+  try{img.setPointerCapture(e.pointerId);}catch(_){}
+  if(imgDrag.pointerType==="mouse"){}else imgDrag.timer=setTimeout(imgDragAktywuj,IMG_DRAG_HOLD);
+  e.preventDefault();
+},true);
+document.addEventListener("pointermove",e=>{
+  const s=imgDrag;if(!s||e.pointerId!==s.pointerId)return;
+  s.x=e.clientX;s.y=e.clientY;
+  const dyst=Math.hypot(e.clientX-s.startX,e.clientY-s.startY);
+  if(!s.active&&s.pointerType==="mouse"&&dyst>=IMG_DRAG_PROG)imgDragAktywuj();
+  if(s.active){e.preventDefault();imgDragAt(e.clientX,e.clientY);}
+},{capture:true,passive:false});
+document.addEventListener("pointerup",e=>imgDragUp(e,false),true);
+document.addEventListener("pointercancel",e=>imgDragUp(e,true),true);
+document.addEventListener("contextmenu",e=>{if(e.target.closest&&e.target.closest('.ncontent[contenteditable="true"] img'))e.preventDefault();},true);
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&imgDrag){e.preventDefault();imgDragUp({pointerId:imgDrag.pointerId,preventDefault(){}},true);}});
+addEventListener("blur",()=>{if(imgDrag)imgDragUp({pointerId:imgDrag.pointerId,preventDefault(){}},true);});
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"&&imgDrag)imgDragUp({pointerId:imgDrag.pointerId,preventDefault(){}},true);});
 /* zapisz treść, gdy pole edycji traci ostrość (np. dotknięcie pełnego ekranu) — chroni zdjęcia przed zniknięciem */
 document.addEventListener("focusout", e=>{
   const ce = e.target && e.target.closest && e.target.closest('.ncontent[contenteditable="true"]');
@@ -14907,6 +15031,9 @@ $("btnMenu").onclick = e=>{
     <div data-m="import">${ic.down}Importuj backup <b>.jwlibrary</b>…</div>
     <div data-m="export">${ic.up}Eksportuj do JW Library</div>
     <div class="dd-sep"></div>
+    <div class="dd-lbl">Notatki z innych aplikacji</div>
+    <div data-m="apple">${ic.down}Importuj z Notatek Apple <span class="dd-hint">ZIP + Markdown</span></div>
+    <div class="dd-sep"></div>
     <div class="dd-lbl">Inne urządzenia</div>
     <div data-m="sync">${ic.sync}Uzgodnij z iPhonem, iPadem, Makiem…</div>
     <div class="dd-sep"></div>
@@ -14942,6 +15069,7 @@ $("btnMenu").onclick = e=>{
     if(m==="sync"){ if(typeof syncUzgodnijTeraz==="function") syncUzgodnijTeraz(); }
     else if(m==="security"){ if(typeof otworzCentrumBezpieczenstwa==="function") otworzCentrumBezpieczenstwa(); }
     else if(m==="import")openFilePicker("jwl");
+    else if(m==="apple")openFilePicker("apple");
     else if(m==="export")startExport();
     else if(m==="json")exportJson();
     else if(m==="cloud")shareBackup();
@@ -15010,13 +15138,24 @@ async function getLibs(){
     SQL = await initSqlJs({locateFile: f => baza + f});
   }
 }
+/** Notatki Apple są zwykłym ZIP-em — nie wymagają cięższej biblioteki SQLite. */
+async function getZipLib(){
+  if(typeof JSZip!=="undefined") return JSZip;
+  for(const kandydat of BIBLIOTEKI.jszip.pliki){
+    try{ await loadScript(kandydat); if(typeof JSZip!=="undefined") return JSZip; }catch(e){}
+  }
+  throw new Error("Brakuje biblioteki JSZip. Wgraj cały katalog lib/ razem z index.html.");
+}
 
 /* ================= WYBÓR PLIKU (import / kopia JSON) ================= */
 function openFilePicker(mode){
-  $("mfTitle").textContent = mode==="jwl" ? "📥 Import backupu JW Library" : "📂 Wczytanie kopii danych";
+  $("mfTitle").textContent = mode==="jwl" ? "📥 Import backupu JW Library"
+    : mode==="apple" ? "🍎 Import z Notatek Apple" : "📂 Wczytanie kopii danych";
   $("mfDesc").textContent = mode==="jwl"
     ? "Wybierz plik .jwlibrary (kopię zapasową z aplikacji JW Library). Aplikacja doda tylko nowe notatki — Twoje zmiany zostaną."
-    : "Wybierz zapisany wcześniej plik kopii (.json). W następnym kroku wybierzesz, czy dołączyć brakujące notatki (scalanie), czy zastąpić wszystko.\n\nPrzenosisz notatki z OneNote? Otwórz stronę onenote.html obok aplikacji. Na telefonie skopiuj tam kopię do schowka i użyj poniżej „Wklej treść”.";
+    : mode==="apple"
+      ? "Wybierz plik ZIP utworzony w aplikacji Pliki z notatek wyeksportowanych jako Markdown. Zachowam tytuły, formatowanie, linki i ilustracje; przed zapisem zobaczysz podsumowanie."
+      : "Wybierz zapisany wcześniej plik kopii (.json). W następnym kroku wybierzesz, czy dołączyć brakujące notatki (scalanie), czy zastąpić wszystko.\n\nPrzenosisz notatki z OneNote? Otwórz stronę onenote.html obok aplikacji. Na telefonie skopiuj tam kopię do schowka i użyj poniżej „Wklej treść”.";
   const inp = $("mfInput");
   inp.value = "";
   /* Bez ograniczenia rozszerzeń. Android i część systemów Windows nie zna
@@ -15033,12 +15172,12 @@ function openFilePicker(mode){
    łatwiej wkleić niż zapisać, odszukać i wskazać. Wklejenie trafia dokładnie
    w to samo sprawdzanie co plik — nie omija żadnego zabezpieczenia. */
 $("mfWklej").onclick = async ()=>{
-  if($("mfInput").dataset.mode==="jwl"){
-    showInfo("Kopii z JW Library nie da się wkleić",
-      "Plik <b>.jwlibrary</b> to spakowane archiwum z bazą danych, a nie tekst — "+
-      "trzeba go wskazać przyciskiem <b>„Wybierz plik…\"</b>.<br><br>"+
-      "Wklejanie działa dla kopii <b>.json</b> aplikacji JW Study, w tym dla pliku "+
-      "z przeniesienia notatek z OneNote.");
+  if($("mfInput").dataset.mode!=="json"){
+    const apple=$("mfInput").dataset.mode==="apple";
+    showInfo(apple ? "Eksportu z Notatek Apple nie da się wkleić" : "Kopii z JW Library nie da się wkleić",
+      apple
+        ? "Eksport zawiera wiele plików Markdown i osobne ilustracje. Wskaż cały plik <b>ZIP</b> przyciskiem <b>„Wybierz plik…\"</b>."
+        : "Plik <b>.jwlibrary</b> to spakowane archiwum z bazą danych, a nie tekst — trzeba go wskazać przyciskiem <b>„Wybierz plik…\"</b>.<br><br>Wklejanie działa dla kopii <b>.json</b> aplikacji JW Study, w tym dla pliku z przeniesienia notatek z OneNote.");
     return;
   }
   let wklejone = "";
@@ -15058,6 +15197,7 @@ $("mfInput").addEventListener("change", e=>{
   closeModal("modalFile");
   if(!e.target.files.length) return;
   if(e.target.dataset.mode==="jwl") handleImportFile(e);
+  else if(e.target.dataset.mode==="apple") handleAppleNotesFile(e);
   else handleJsonFile(e);
 });
 
@@ -15087,9 +15227,10 @@ class ImportAnulowany extends Error{
   constructor(){ super("Import został anulowany — niczego nie zapisano."); this.name="ImportAnulowany"; }
 }
 let _stanImportu=null;
-function pokazPostepImportu(){
+function pokazPostepImportu(tytul){
   _stanImportu={anulowany:false,zapisRozpoczety:false};
   const m=$("modalImportu"); m.dataset.cancelled="0";
+  $("importTitle").textContent=tytul||"Import z JW Library";
   $("importCancel").disabled=false;
   $("importCancel").textContent="Anuluj";
   $("importCancel").onclick=()=>{
@@ -15145,6 +15286,168 @@ function ludzkiRozmiar(b){
   return b >= 1048576 ? (b/1048576).toFixed(1)+" MB" : Math.round(b/1024)+" KB";
 }
 
+/* ================= IMPORT Z NOTATEK APPLE =================
+   Eksport z iPada/Maca składa się z plików Markdown i katalogów Attachments.
+   Import odbywa się lokalnie; nic nie jest wysyłane do sieci. */
+const MAX_APPLE_MD=10*1024*1024;
+const MAX_APPLE_OBRAZ=15*1024*1024;
+const MAX_APPLE_RAZEM=100*1024*1024;
+const MAX_APPLE_MOBILE_RAZEM=40*1024*1024;
+const MAX_APPLE_NOTATEK=5000;
+
+function appleNfc(s){
+  s=String(s||"");
+  return typeof s.normalize==="function" ? s.normalize("NFC") : s;
+}
+function appleEsc(s){
+  return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function appleKatalog(path){
+  const p=appleNfc(path).replace(/\\/g,"/").split("/"); p.pop(); return p.join("/");
+}
+function applePolaczSciezke(katalog, wzgledna){
+  let rel=String(wzgledna||"").trim().replace(/^<|>$/g,"");
+  try{ rel=decodeURIComponent(rel); }catch(_){}
+  const wynik=[];
+  for(const cz of (appleNfc(katalog+"/"+rel).replace(/\\/g,"/").split("/"))){
+    if(!cz||cz===".") continue;
+    if(cz===".."){ wynik.pop(); continue; }
+    wynik.push(cz);
+  }
+  return wynik.join("/");
+}
+function appleMime(path){
+  const ext=(String(path).match(/\.([a-z0-9]+)$/i)||[])[1];
+  return ({png:"image/png",jpg:"image/jpeg",jpeg:"image/jpeg",gif:"image/gif",webp:"image/webp"})[(ext||"").toLowerCase()]||"";
+}
+function appleInline(tekst, obrazy){
+  const schowek=[];
+  let s=String(tekst||"");
+  const token=html=>{const i=schowek.push(html)-1;return "\u0001APPLE"+i+"\u0002";};
+  s=s.replace(/!\[([^\]]*)\]\(([^)]+)\)/g,(_,alt,src)=>{
+    const i=obrazy.push({src:String(src||"").trim(),alt:String(alt||"")})-1;
+    return token("@@APPLEIMG"+i+"@@");
+  });
+  s=s.replace(/\[([^\]]+)\]\(([^)]+)\)/g,(_,label,href)=>{
+    const h=String(href||"").trim();
+    if(!/^(https?:\/\/|mailto:|jwlibrary:)/i.test(h)) return String(label||"");
+    return token('<a href="'+appleEsc(h)+'">'+appleEsc(label)+'</a>');
+  });
+  s=appleEsc(s)
+    .replace(/\*\*([^*\n]+)\*\*/g,"<b>$1</b>")
+    .replace(/__([^_\n]+)__/g,"<b>$1</b>")
+    .replace(/~~([^~\n]+)~~/g,"<s>$1</s>")
+    .replace(/(^|[^*])\*([^*\n]+)\*/g,"$1<i>$2</i>")
+    .replace(/(^|[^_])_([^_\n]+)_/g,"$1<i>$2</i>");
+  return s.replace(/\u0001APPLE(\d+)\u0002/g,(_,i)=>schowek[+i]||"");
+}
+function appleMarkdownHtml(markdown){
+  const obrazy=[];
+  const linie=String(markdown||"").replace(/^\uFEFF/,"").replace(/\r\n?/g,"\n").split("\n");
+  let tytul="", html=[], lista="";
+  const zamknijListe=()=>{if(lista){html.push("</"+lista+">");lista="";}};
+  for(let i=0;i<linie.length;i++){
+    const raw=linie[i], trim=raw.trim();
+    let m;
+    if(!tytul && (m=trim.match(/^#\s+(.+)$/))){tytul=m[1].replace(/[*_~`]/g,"").trim();continue;}
+    if(!trim){zamknijListe();if(html.length && html[html.length-1]!=="<div><br></div>")html.push("<div><br></div>");continue;}
+    if((m=trim.match(/^(#{1,3})\s+(.+)$/))){zamknijListe();const poziom=m[1].length<=2?"h2":"h3";html.push("<"+poziom+">"+appleInline(m[2],obrazy)+"</"+poziom+">");continue;}
+    if((m=trim.match(/^>\s?(.*)$/))){zamknijListe();html.push("<blockquote>"+appleInline(m[1],obrazy)+"</blockquote>");continue;}
+    if((m=trim.match(/^[-*+]\s+\[([ xX])\]\s+(.*)$/))){
+      if(lista!=="ul"){zamknijListe();lista="ul";html.push('<ul class="tasklist">');}
+      html.push('<li'+(m[1].toLowerCase()==="x"?' class="done"':"")+">"+appleInline(m[2],obrazy)+"</li>");continue;
+    }
+    if((m=trim.match(/^[-*+]\s+(.*)$/))){if(lista!=="ul"){zamknijListe();lista="ul";html.push("<ul>");}html.push("<li>"+appleInline(m[1],obrazy)+"</li>");continue;}
+    if((m=trim.match(/^\d+[.)]\s+(.*)$/))){if(lista!=="ol"){zamknijListe();lista="ol";html.push("<ol>");}html.push("<li>"+appleInline(m[1],obrazy)+"</li>");continue;}
+    zamknijListe(); html.push("<div>"+appleInline(raw.replace(/\s{2}$/,""),obrazy)+"</div>");
+  }
+  zamknijListe();
+  while(html[0]==="<div><br></div>")html.shift();
+  while(html[html.length-1]==="<div><br></div>")html.pop();
+  return {tytul:tytul||"Notatka bez tytułu",html:html.join(""),obrazy};
+}
+function appleTaSamaNotatka(a,b){
+  return tekstDoPorownania(a&&a.t)===tekstDoPorownania(b&&b.t) &&
+    tekstDoPorownania((a&&a.c)||(a&&a.h?htmlToPlain(a.h):""))===
+    tekstDoPorownania((b&&b.c)||(b&&b.h?htmlToPlain(b.h):""));
+}
+
+async function handleAppleNotesFile(e){
+  const file=e.target.files[0]; e.target.value="";
+  if(!file) return;
+  const limitRazem=importNaUrzadzeniuMobilnym()?MAX_APPLE_MOBILE_RAZEM:MAX_APPLE_RAZEM;
+  if(!/\.zip$/i.test(file.name||"")){showInfo("Nie wczytano notatek","Wskaż plik <b>ZIP</b> utworzony w aplikacji Pliki.");return;}
+  if(!file.size||file.size>limityImportu().archiwum){showInfo("Nie wczytano notatek","Archiwum jest puste albo zbyt duże dla tego urządzenia.");return;}
+  pokazPostepImportu("Import z Notatek Apple");
+  try{
+    ustawPostepImportu(5,"Wczytuję obsługę ZIP…"); await getZipLib(); sprawdzAnulowanieImportu();
+    ustawPostepImportu(12,"Odczytuję archiwum…");
+    let zip; try{zip=await JSZip.loadAsync(await file.arrayBuffer());}
+    catch(_){throw new Error("Pliku nie da się otworzyć jako ZIP. Utwórz archiwum ponownie w aplikacji Pliki.");}
+    const wszystkie=Object.keys(zip.files);
+    if(wszystkie.length>MAX_WPISOW_ZIP)throw new Error("Archiwum zawiera zbyt wiele plików ("+wszystkie.length+").");
+    const mapa=new Map();
+    for(const p of wszystkie)if(!zip.files[p].dir && !/(^|\/)__MACOSX\//.test(p))mapa.set(appleNfc(p),p);
+    const md=[...mapa.keys()].filter(p=>/\.md$/i.test(p));
+    if(!md.length)throw new Error("W archiwum nie znaleziono plików Markdown (.md).");
+    if(md.length>MAX_APPLE_NOTATEK)throw new Error("Archiwum zawiera więcej niż "+MAX_APPLE_NOTATEK+" notatek.");
+    const pierwszy=md[0].split("/")[0].trim();
+    const nazwaTagu=pierwszy||"Notatki Apple";
+    ustawPostepImportu(18,"Znaleziono "+md.length+" notatek…");
+    const zgoda=await askConfirm("Zaimportować notatki z Apple?",
+      "Znaleziono <b>"+md.length+"</b> plików Markdown. Trafią do etykiety <b>"+appleEsc(nazwaTagu)+"</b>.<br><br>"+
+      "Identyczne notatki zostaną pominięte, a istniejące nie będą nadpisane. Ilustracje zostaną osadzone w treści.<br><br>"+
+      "Przed dużym importem warto użyć <b>Plik → Zapisz kopię danych</b>.",{okLabel:"Importuj"});
+    if(!zgoda)throw new ImportAnulowany();
+    sprawdzAnulowanieImportu();
+    const tagiNowe=tags.map(t=>Object.assign({},t));
+    let tag=tagiNowe.find(t=>appleNfc(t.name).toLocaleLowerCase("pl")===appleNfc(nazwaTagu).toLocaleLowerCase("pl"));
+    if(!tag){tag={id:nastepnyNumer(tagiNowe),name:nazwaTagu,nw:true};tagiNowe.push(tag);}
+    const nowe=[], znane=notes.slice(); let pominiete=0,brakObrazow=0,obrazy=0,razem=0;
+    for(let i=0;i<md.length;i++){
+      sprawdzAnulowanieImportu();
+      const sciezka=md[i], wpis=zip.files[mapa.get(sciezka)];
+      const rozmiar=wpis&&wpis._data&&wpis._data.uncompressedSize;
+      if(rozmiar&&rozmiar>MAX_APPLE_MD)throw new Error("Notatka „"+sciezka+"” jest większa niż "+ludzkiRozmiar(MAX_APPLE_MD)+".");
+      const parsed=appleMarkdownHtml(await wpis.async("string"));
+      const kat=appleKatalog(sciezka); let html=parsed.html;
+      for(let j=0;j<parsed.obrazy.length;j++){
+        const ref=parsed.obrazy[j], cel=applePolaczSciezke(kat,ref.src), real=mapa.get(cel), mime=appleMime(cel);
+        let zamiana="<div>[Brak ilustracji: "+appleEsc(ref.alt||ref.src)+"]</div>";
+        if(real&&mime){
+          const ob=zip.files[real], wielkosc=(ob._data&&ob._data.uncompressedSize)||0;
+          if(wielkosc>MAX_APPLE_OBRAZ)throw new Error("Ilustracja „"+ref.src+"” jest większa niż "+ludzkiRozmiar(MAX_APPLE_OBRAZ)+".");
+          razem+=wielkosc;if(razem>limitRazem)throw new Error("Ilustracje po rozpakowaniu przekraczają bezpieczny limit "+ludzkiRozmiar(limitRazem)+" dla tego urządzenia.");
+          const b64=await ob.async("base64");
+          zamiana='<img src="data:'+mime+';base64,'+b64+'" class="img-center" style="width:60%">';obrazy++;
+        }else brakObrazow++;
+        html=html.split("@@APPLEIMG"+j+"@@").join(zamiana);
+      }
+      const clean=sanitize(html), now=new Date().toISOString();
+      const n={g:crypto.randomUUID().toUpperCase(),t:parsed.tytul,h:clean,c:htmlToPlain(clean),
+        b:0,ch:0,v:0,pub:"",ks:"",doc:0,itn:0,col:0,cr:now,mo:now,tg:[tag.id],nw:true,tgd:true,appleSrc:sciezka};
+      if(znane.some(x=>appleTaSamaNotatka(x,n))){pominiete++;continue;}
+      if(znane.some(x=>appleNfc(x.appleSrc||"")===sciezka))n.t+=" (ponowny import z Apple)";
+      nowe.push(n);znane.push(n);
+      ustawPostepImportu(22+Math.round((i+1)/md.length*58),"Przygotowuję notatki "+(i+1)+" z "+md.length+"…");
+      if(i%8===0)await oddechImportu();
+    }
+    if(!nowe.length){schowajPostepImportu();showInfo("Nie dodano duplikatów","Wszystkie notatki z tego archiwum są już w JW Study.");return;}
+    await sprawdzMiejsceDlaImportu(file.size,razem);
+    rozpocznijZapisImportu();ustawPostepImportu(84,"Zapisuję cały import bezpiecznie…");
+    await idbZapiszImportZewnetrzny(nowe,tagiNowe,notes.length+nowe.length,tagiNowe.length);
+    notes.push(...nowe);tags=tagiNowe;bumpTagsVer();bumpDirty();
+    if(typeof workerOznaczIndeksDoOdbudowy==="function")workerOznaczIndeksDoOdbudowy();
+    ustawPostepImportu(100,"Gotowe");renderAll();await oddechImportu();schowajPostepImportu();
+    showInfo("Zaimportowano notatki Apple","Dodano <b>"+nowe.length+"</b> notatek i <b>"+obrazy+"</b> ilustracji do etykiety <b>"+appleEsc(tag.name)+"</b>."+
+      (pominiete?"<br>Pominięto identyczne: "+pominiete+".":"")+(brakObrazow?"<br>Nie znaleziono ilustracji: "+brakObrazow+".":""));
+  }catch(err){
+    if(_stanImportu)schowajPostepImportu();
+    if(!(err instanceof ImportAnulowany))showInfo("Nie zaimportowano notatek",appleEsc(err&&err.message||"Nieznany błąd")+"<br><br><b>Dotychczasowe dane pozostały bez zmian.</b>");
+  }
+}
+
 async function handleImportFile(e){
   const file=e.target.files[0]; e.target.value="";
   if(!file) return;
@@ -15159,7 +15462,7 @@ async function handleImportFile(e){
     if(file.size === 0) throw new Error("Plik jest pusty.");
   }catch(err){ showInfo("Nie wczytano kopii", esc(err.message)); return; }
 
-  pokazPostepImportu();
+  pokazPostepImportu("Import z JW Library");
   let db = null;
   let zapisano=false;
   try{
