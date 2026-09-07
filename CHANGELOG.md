@@ -1,5 +1,15 @@
 # Dziennik zmian
 
+## v3.19 — zgodne położenie ilustracji podczas edycji
+
+- przywrócono opływanie ilustracji tekstem również podczas edycji na iPadzie
+  i iPhonie; widok roboczy jest teraz taki sam jak widok po zapisaniu,
+- ponownie można umieścić ilustrację po lewej, na środku, po prawej lub w linii
+  i od razu zobaczyć wynik bez zamykania edytora,
+- ślady kursora Safari są usuwane przez oddzielną warstwę rysowania pola tekstu,
+  bez zmieniania ułożenia treści,
+- zachowano ochronę przed przypadkowym zaznaczaniem samego obrazu.
+
 ## v3.18 — czysty kursor przy zdjęciach na iPadzie
 
 - usunięto niebieskie pionowe ślady pozostające obok zdjęcia podczas edycji

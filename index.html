@@ -2066,23 +2066,22 @@ html[data-theme="dark"] #modalFs .fsmodal{ background:#151517; }
   scroll-margin-bottom:120px;      /* zapas pod kursorem przy przewijaniu do widoku */
 }
 
-/* ══════════════ SAFARI/iPadOS — CZYSTY KURSOR PRZY ZDJĘCIACH (v3.18) ══════════════
+/* ══════════════ SAFARI/iPadOS — CZYSTY KURSOR PRZY ZDJĘCIACH (v3.19) ══════════════
 
    WebKit zostawia pionowe niebieskie fragmenty zaznaczenia w pustych wierszach
    obok opływanego zdjęcia. To nie są znaki zapisane w notatce, tylko błędnie
-   odmalowane prostokąty zaznaczenia. Podczas edycji na urządzeniu Apple obraz
-   jest więc tymczasowo blokiem bez opływania. Klasy img-left/img-right i szerokość
-   pozostają w HTML — po zapisie czytnik pokazuje dokładnie wybrany układ.
+   odmalowane prostokąty zaznaczenia. Pole edycji dostaje własną warstwę rysowania,
+   ale zdjęcie NIE traci float ani marginesów: podczas pracy i po zapisie układ
+   jest identyczny, a zmiana lewo/środek/prawo jest widoczna natychmiast.
 
    Wyłączamy też przewijanie bezwładności wyłącznie na czas pełnoekranowej edycji:
    osobna warstwa kompozycji Safari była drugim źródłem pozostającego kursora. */
 @supports (-webkit-touch-callout:none){
-  #modalFs #fsWrap .ncard.editing .ncontent img:not(.img-inline){
-    float:none!important;
-    display:block!important;
-    margin:10px auto 14px!important;
-    -webkit-user-select:none;
-    user-select:none;
+  #modalFs #fsWrap .ncard.editing .ncontent{
+    -webkit-transform:translateZ(0);
+    transform:translateZ(0);
+    -webkit-backface-visibility:hidden;
+    backface-visibility:hidden;
   }
   #modalFs .fsmodal:has(#fsWrap .ncard.editing){
     -webkit-overflow-scrolling:auto;
@@ -7670,7 +7669,7 @@ html[data-theme="dark"] .bezp-result.ok{background:#173b2f;color:#a8dec8}html[da
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <h1 class="brand-name">JW Study <span class="ver">v3.18</span></h1>
+      <h1 class="brand-name">JW Study <span class="ver">v3.19</span></h1>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
