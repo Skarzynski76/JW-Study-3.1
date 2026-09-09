@@ -502,6 +502,17 @@ html[data-theme="dark"] .pill.par{background:#3a3a45;color:var(--accent2)}
 #modalImportu .import-actions{display:flex;justify-content:flex-end;margin-top:16px}
 #modalImportu .import-cancel{min-height:42px}
 #modalImportu[data-cancelled="1"] .import-cancel{opacity:.55;pointer-events:none}
+.smart-modal{width:min(760px,94vw);max-height:min(90vh,820px);overflow:auto;padding:0!important}
+.smart-head{display:flex;gap:12px;align-items:center;padding:20px 22px 14px;border-bottom:1px solid var(--border)}
+.smart-head .smart-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:color-mix(in srgb,var(--accent) 12%,var(--panel));color:var(--accent);font-size:22px;flex:none}
+.smart-head h3{margin:0 0 3px}.smart-head p{margin:0;color:var(--muted);font-size:12.5px}
+.smart-body{padding:18px 22px 22px}.smart-drop{display:grid;place-items:center;min-height:112px;border:1.5px dashed color-mix(in srgb,var(--accent) 45%,var(--border));border-radius:16px;background:color-mix(in srgb,var(--accent) 4%,var(--panel));text-align:center;padding:16px;cursor:pointer}
+.smart-drop strong{display:block;color:var(--text);margin-bottom:4px}.smart-drop span{font-size:12.5px;color:var(--muted)}
+.smart-file-list{display:grid;gap:6px;margin:10px 0}.smart-file{display:flex;align-items:center;gap:9px;padding:9px 11px;border:1px solid var(--border);border-radius:10px;background:var(--panel2);font-size:13px}.smart-file b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.smart-file small{margin-left:auto;color:var(--muted);white-space:nowrap}
+.smart-options{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}.smart-options label{font-size:12px;color:var(--muted)}.smart-options select,.smart-options input[type="text"]{display:block;width:100%;margin-top:5px}.smart-checks{display:flex;flex-wrap:wrap;gap:10px 18px;margin-top:14px}.smart-checks label{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--text)}
+.smart-note{margin-top:14px;padding:10px 12px;border-radius:11px;background:var(--panel2);color:var(--muted);font-size:12.5px;line-height:1.45}.smart-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;flex-wrap:wrap}
+.smart-summary{font-size:13px;color:var(--muted);margin-bottom:12px}.smart-preview-list{display:grid;gap:8px;max-height:46vh;overflow:auto;padding-right:3px}.smart-preview-row{display:grid;grid-template-columns:auto 1fr;gap:9px;padding:10px;border:1px solid var(--border);border-radius:12px;background:var(--panel2)}.smart-preview-row input[type="text"]{width:100%;margin:0 0 4px}.smart-preview-row small{color:var(--muted);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.smart-warn{color:#9a6415!important}
+@media(max-width:620px){.smart-modal{width:100vw;max-width:none;height:100dvh;max-height:none;border-radius:0!important}.smart-head{padding-top:calc(16px + env(safe-area-inset-top,0px))}.smart-options{grid-template-columns:1fr}.smart-body{padding:14px 16px calc(18px + env(safe-area-inset-bottom,0px))}.smart-preview-list{max-height:52vh}}
 /* okno eksportu do JW Library — kroki i ostrzeżenie */
 .exp-steps{display:flex;flex-direction:column;gap:10px;margin:4px 0 14px}
 .exp-step{display:flex;gap:11px;align-items:flex-start;font-size:13.5px;line-height:1.5;color:var(--text)}
@@ -7677,7 +7688,7 @@ html[data-theme="dark"] .bezp-result.ok{background:#173b2f;color:#a8dec8}html[da
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <h1 class="brand-name">JW Study <span class="ver">v3.21</span></h1>
+      <h1 class="brand-name">JW Study <span class="ver">v3.23</span></h1>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -7910,6 +7921,47 @@ html[data-theme="dark"] .bezp-result.ok{background:#173b2f;color:#a8dec8}html[da
   </div>
 </div>
 
+<div class="overlay" id="modalSmartImport">
+  <div class="modal smart-modal" role="dialog" aria-modal="true" aria-labelledby="smartTitle">
+    <div class="smart-head">
+      <span class="smart-icon" aria-hidden="true">⌁</span>
+      <div><h3 id="smartTitle">Inteligentny import dokumentu</h3><p>PDF, Word i obrazy — rozpoznawanie odbywa się lokalnie na tym urządzeniu</p></div>
+    </div>
+    <div class="smart-body">
+      <section id="smartSetup">
+        <label class="smart-drop" for="smartInput">
+          <strong>Wybierz jeden lub wiele plików</strong>
+          <span>PDF · DOCX · PNG · JPG · JPEG · WEBP</span>
+          <input id="smartInput" type="file" multiple accept=".pdf,.docx,image/png,image/jpeg,image/webp" hidden>
+        </label>
+        <div class="smart-file-list" id="smartFiles" aria-live="polite"></div>
+        <div class="smart-options">
+          <label>Sposób podziału
+            <select id="smartSplit">
+              <option value="file">Jedna notatka z każdego pliku</option>
+              <option value="parts">Według nagłówków lub stron</option>
+            </select>
+          </label>
+          <label>Etykieta importu
+            <input id="smartTag" type="text" maxlength="60" value="Importowane dokumenty">
+          </label>
+        </div>
+        <div class="smart-checks">
+          <label><input id="smartOcr" type="checkbox" checked> OCR dla skanów i obrazów</label>
+          <label><input id="smartImages" type="checkbox" checked> Zachowaj obraz przy zrzucie ekranu</label>
+        </div>
+        <div class="smart-note"><b>Bezpieczny import:</b> przed zapisaniem zobaczysz listę powstających notatek. Duplikaty są pomijane, a dotychczasowe dane nie są nadpisywane. Starsze pliki Word <b>.doc</b> trzeba najpierw zapisać jako <b>.docx</b>.</div>
+        <div class="smart-actions"><button class="btn" data-zamknij="modalSmartImport">Anuluj</button><button class="btn primary" id="smartAnalyze" type="button" disabled>Rozpoznaj i pokaż podgląd</button></div>
+      </section>
+      <section id="smartPreview" hidden>
+        <div class="smart-summary" id="smartSummary"></div>
+        <div class="smart-preview-list" id="smartPreviewList"></div>
+        <div class="smart-actions"><button class="btn" id="smartBack" type="button">Wróć</button><button class="btn primary" id="smartSave" type="button">Dodaj wybrane notatki</button></div>
+      </section>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="modalNew">
   <div class="modal nn-modal">
     <div class="nn-head">
@@ -8133,6 +8185,7 @@ html[data-theme="dark"] .bezp-result.ok{background:#173b2f;color:#a8dec8}html[da
         • panel pozwala wybrać daty, podświetlenie, rodzaj notatki i zakres, zapisać zapytanie jako <b>inteligentną zakładkę</b>, przypiąć historię oraz znaleźć notatki podobne i duplikaty;<br>
         • wyniki są domyślnie sortowane według trafności. Nad listą można przełączyć grupę oraz przechodzić strzałkami między wynikami. Nadal dostępne są kolejność biblijna, publikacja i data.</div></div>
       <div class="help-row"><span class="help-ic">✚</span><div><b>Nowa notatka</b> — dodaj notatkę i (opcjonalnie) przypnij do konkretnego wersetu.</div></div>
+      <div class="help-row"><span class="help-ic">📄</span><div><b>Inteligentny import dokumentów</b> — wybierz <b>Plik → Inteligentny import</b>, aby dodać PDF, pliki Word <code>.docx</code>, zdjęcia lub zrzuty ekranu. PDF-y z tekstem są czytane bez OCR, a skany i obrazy rozpoznawane po polsku lokalnie na urządzeniu. Możesz utworzyć jedną notatkę z pliku albo podzielić dokument według nagłówków i stron. Przed zapisem zawsze zobaczysz podgląd i możesz odznaczyć wybrane części.</div></div>
       <div class="help-row"><span class="help-ic">📌</span><div><b>Przypnij</b> ważne notatki — zawsze będą na górze listy.</div></div>
       <div class="help-row"><span class="help-ic">🗺️</span><div><b>Mapa tematów</b> — przycisk w pasku górnym albo klawisz <kbd>M</kbd>.<br>
         Osobista encyklopedia: po lewej drzewo tematów, po prawej notatki wybranego miejsca.
@@ -15032,6 +15085,7 @@ $("btnMenu").onclick = e=>{
     <div data-m="export">${ic.up}Eksportuj do JW Library</div>
     <div class="dd-sep"></div>
     <div class="dd-lbl">Notatki z innych aplikacji</div>
+    <div data-m="smart">${ic.down}<b>Inteligentny import</b> <span class="dd-hint">PDF, Word, zdjęcia</span></div>
     <div data-m="apple">${ic.down}Importuj z Notatek Apple <span class="dd-hint">ZIP + Markdown</span></div>
     <div class="dd-sep"></div>
     <div class="dd-lbl">Inne urządzenia</div>
@@ -15069,6 +15123,7 @@ $("btnMenu").onclick = e=>{
     if(m==="sync"){ if(typeof syncUzgodnijTeraz==="function") syncUzgodnijTeraz(); }
     else if(m==="security"){ if(typeof otworzCentrumBezpieczenstwa==="function") otworzCentrumBezpieczenstwa(); }
     else if(m==="import")openFilePicker("jwl");
+    else if(m==="smart")otworzSmartImport();
     else if(m==="apple")openFilePicker("apple");
     else if(m==="export")startExport();
     else if(m==="json")exportJson();
@@ -15227,6 +15282,7 @@ class ImportAnulowany extends Error{
   constructor(){ super("Import został anulowany — niczego nie zapisano."); this.name="ImportAnulowany"; }
 }
 let _stanImportu=null;
+let _anulujImportDodatkowo=null;
 function pokazPostepImportu(tytul){
   _stanImportu={anulowany:false,zapisRozpoczety:false};
   const m=$("modalImportu"); m.dataset.cancelled="0";
@@ -15236,6 +15292,7 @@ function pokazPostepImportu(tytul){
   $("importCancel").onclick=()=>{
     if(!_stanImportu || _stanImportu.zapisRozpoczety) return;
     _stanImportu.anulowany=true; m.dataset.cancelled="1";
+    if(typeof _anulujImportDodatkowo==="function")try{_anulujImportDodatkowo();}catch(_){ }
     $("importStage").textContent="Kończę bez zapisywania…";
     $("importCancel").textContent="Anulowanie…";
   };
@@ -15257,7 +15314,7 @@ function rozpocznijZapisImportu(){
   $("importCancel").textContent="Zapisywanie…";
 }
 function schowajPostepImportu(){
-  $("importCancel").onclick=null; closeModal("modalImportu"); _stanImportu=null;
+  $("importCancel").onclick=null; closeModal("modalImportu"); _stanImportu=null; _anulujImportDodatkowo=null;
 }
 function oddechImportu(){ return new Promise(res=>setTimeout(res,0)); }
 
@@ -15395,11 +15452,18 @@ async function handleAppleNotesFile(e){
     const pierwszy=md[0].split("/")[0].trim();
     const nazwaTagu=pierwszy||"Notatki Apple";
     ustawPostepImportu(18,"Znaleziono "+md.length+" notatek…");
+    /* Nie wolno zostawić okna postępu nad pytaniem. Oba są pełnoekranowymi
+       warstwami o tym samym priorytecie; na iPadzie późniejsze w DOM okno
+       postępu zasłaniało przycisk „Importuj”, więc program wyglądał jak
+       zawieszony dokładnie przy 18%. Na czas decyzji postęp znika. */
+    schowajPostepImportu();
     const zgoda=await askConfirm("Zaimportować notatki z Apple?",
       "Znaleziono <b>"+md.length+"</b> plików Markdown. Trafią do etykiety <b>"+appleEsc(nazwaTagu)+"</b>.<br><br>"+
       "Identyczne notatki zostaną pominięte, a istniejące nie będą nadpisane. Ilustracje zostaną osadzone w treści.<br><br>"+
       "Przed dużym importem warto użyć <b>Plik → Zapisz kopię danych</b>.",{okLabel:"Importuj"});
-    if(!zgoda)throw new ImportAnulowany();
+    if(!zgoda)return;
+    pokazPostepImportu("Import z Notatek Apple");
+    ustawPostepImportu(18,"Rozpoczynam import "+md.length+" notatek…");
     sprawdzAnulowanieImportu();
     const tagiNowe=tags.map(t=>Object.assign({},t));
     let tag=tagiNowe.find(t=>appleNfc(t.name).toLocaleLowerCase("pl")===appleNfc(nazwaTagu).toLocaleLowerCase("pl"));
@@ -15447,6 +15511,244 @@ async function handleAppleNotesFile(e){
     if(!(err instanceof ImportAnulowany))showInfo("Nie zaimportowano notatek",appleEsc(err&&err.message||"Nieznany błąd")+"<br><br><b>Dotychczasowe dane pozostały bez zmian.</b>");
   }
 }
+
+/* ================= INTELIGENTNY IMPORT DOKUMENTÓW =================
+   PDF z warstwą tekstową czytamy bez OCR. Skanowane strony i obrazy trafiają
+   do Tesseract uruchomionego w Web Workerze. DOCX konwertuje Mammoth. Wszystkie
+   biblioteki są lokalne, a zapis całej partii jest atomowy. */
+const SMART_MAX_PLIK_MOBILE=45*1024*1024;
+const SMART_MAX_PLIK_DESKTOP=120*1024*1024;
+const SMART_MAX_PLIKOW=40;
+const SMART_MAX_STRON_MOBILE=120;
+const SMART_MAX_STRON_DESKTOP=400;
+let smartPliki=[];
+let smartWyniki=[];
+let smartOcrWorker=null;
+let smartPracuje=false;
+
+function smartNazwaBezRozszerzenia(nazwa){
+  return String(nazwa||"Dokument").replace(/\.(pdf|docx|png|jpe?g|webp)$/i,"").trim()||"Dokument";
+}
+function smartTyp(file){
+  const n=String(file&&file.name||"").toLowerCase(), t=String(file&&file.type||"").toLowerCase();
+  if(t==="application/pdf"||/\.pdf$/.test(n))return "pdf";
+  if(t==="application/vnd.openxmlformats-officedocument.wordprocessingml.document"||/\.docx$/.test(n))return "docx";
+  if(/^image\/(png|jpeg|webp)$/.test(t)||/\.(png|jpe?g|webp)$/.test(n))return "image";
+  return "";
+}
+function smartHtmlZTekstu(tekst){
+  const linie=String(tekst||"").replace(/\r\n?/g,"\n").split("\n");
+  const out=[]; let akapit=[];
+  const flush=()=>{if(!akapit.length)return;out.push("<div>"+akapit.map(appleEsc).join("<br>")+"</div>");akapit=[];};
+  for(const linia of linie){
+    if(!linia.trim()){flush();if(out.length&&out[out.length-1]!=="<div><br></div>")out.push("<div><br></div>");}
+    else akapit.push(linia.trimEnd());
+  }
+  flush(); while(out[out.length-1]==="<div><br></div>")out.pop();
+  return out.join("");
+}
+function smartPodzielNaglowki(html, tytulBazowy){
+  const box=parsujBezwladnie(html), dzieci=[...box.childNodes];
+  const maNaglowki=dzieci.some(n=>n.nodeType===1&&(n.tagName==="H2"||n.tagName==="H3"));
+  if(!maNaglowki)return [{title:tytulBazowy,html}];
+  const wynik=[];let nazwa=tytulBazowy,buf=[];
+  const dodaj=()=>{const h=buf.map(n=>n.outerHTML||appleEsc(n.textContent||"")).join("");if(htmlToPlain(h).trim())wynik.push({title:nazwa,html:h});buf=[];};
+  for(const n of dzieci){
+    if(n.nodeType===1&&(n.tagName==="H2"||n.tagName==="H3")){
+      if(buf.length)dodaj(); nazwa=(n.textContent||"").trim()||tytulBazowy;
+    }else buf.push(n);
+  }
+  if(buf.length)dodaj();
+  return wynik.length?wynik:[{title:tytulBazowy,html}];
+}
+async function smartWczytajSkrypt(sciezka, globalName){
+  if(globalName&&window[globalName])return window[globalName];
+  await loadScript(sciezka);
+  if(globalName&&!window[globalName])throw new Error("Nie udało się uruchomić biblioteki "+globalName+".");
+  return globalName?window[globalName]:true;
+}
+async function smartPdfLib(){
+  const lib=await smartWczytajSkrypt("./lib/smart-import/pdf.min.js","pdfjsLib");
+  lib.GlobalWorkerOptions.workerSrc=new URL("./lib/smart-import/pdf.worker.min.js",location.href).href;
+  return lib;
+}
+async function smartMammoth(){return smartWczytajSkrypt("./lib/smart-import/mammoth.browser.min.js","mammoth");}
+async function smartWorkerOcr(){
+  if(smartOcrWorker)return smartOcrWorker;
+  await smartWczytajSkrypt("./lib/smart-import/tesseract.min.js","Tesseract");
+  ustawPostepImportu(8,"Uruchamiam polskie rozpoznawanie tekstu…");
+  const baza=new URL("./lib/smart-import/",location.href).href;
+  smartOcrWorker=await Tesseract.createWorker("pol",1,{
+    workerPath:baza+"tesseract.worker.min.js",
+    corePath:baza+"tesseract-core-lstm.wasm.js",
+    langPath:baza+"lang",
+    logger:m=>{
+      if(!m||typeof m.progress!=="number")return;
+      const p=10+Math.round(m.progress*55);
+      ustawPostepImportu(p,"OCR: "+String(m.status||"rozpoznawanie tekstu").replace(/_/g," ")+"…");
+    }
+  });
+  return smartOcrWorker;
+}
+async function smartZakonczOcr(){
+  if(!smartOcrWorker)return;
+  const w=smartOcrWorker;smartOcrWorker=null;
+  try{await w.terminate();}catch(_){ }
+}
+async function smartObraz(blob){
+  return new Promise((res,rej)=>{
+    const url=URL.createObjectURL(blob),img=new Image();
+    img.onload=()=>{URL.revokeObjectURL(url);res(img);};
+    img.onerror=()=>{URL.revokeObjectURL(url);rej(new Error("Nie można odczytać obrazu."));};
+    img.src=url;
+  });
+}
+function smartCanvas(img,maxBok){
+  const sk=Math.min(1,(maxBok||2200)/Math.max(img.naturalWidth||img.width,img.naturalHeight||img.height));
+  const c=document.createElement("canvas");c.width=Math.max(1,Math.round((img.naturalWidth||img.width)*sk));c.height=Math.max(1,Math.round((img.naturalHeight||img.height)*sk));
+  c.getContext("2d",{alpha:false}).drawImage(img,0,0,c.width,c.height);return c;
+}
+async function smartRozpoznajObraz(zrodlo){
+  sprawdzAnulowanieImportu();const w=await smartWorkerOcr();sprawdzAnulowanieImportu();
+  const r=await w.recognize(zrodlo);sprawdzAnulowanieImportu();return String(r&&r.data&&r.data.text||"").trim();
+}
+function smartTekstPdf(items){
+  const linie=[];let aktualna=[],ostatniY=null;
+  for(const it of (items||[])){
+    const s=String(it.str||"");if(!s)continue;const y=it.transform&&it.transform[5];
+    if(ostatniY!==null&&Number.isFinite(y)&&Math.abs(y-ostatniY)>Math.max(3,(it.height||8)*.55)){linie.push(aktualna.join(" ").replace(/\s+/g," ").trim());aktualna=[];}
+    aktualna.push(s);if(Number.isFinite(y))ostatniY=y;if(it.hasEOL){linie.push(aktualna.join(" ").replace(/\s+/g," ").trim());aktualna=[];ostatniY=null;}
+  }
+  if(aktualna.length)linie.push(aktualna.join(" ").replace(/\s+/g," ").trim());
+  return linie.filter(Boolean).join("\n");
+}
+async function smartOcrStronyPdf(page){
+  const v1=page.getViewport({scale:1}),scale=Math.min(2,2200/Math.max(v1.width,v1.height));
+  const vp=page.getViewport({scale}),c=document.createElement("canvas");c.width=Math.ceil(vp.width);c.height=Math.ceil(vp.height);
+  await page.render({canvasContext:c.getContext("2d",{alpha:false}),viewport:vp}).promise;
+  try{return await smartRozpoznajObraz(c);}finally{c.width=1;c.height=1;}
+}
+async function smartCzytajPdf(file, dziel, ocr, bazaPostepu){
+  const pdfjs=await smartPdfLib(),buf=await file.arrayBuffer(),doc=await pdfjs.getDocument({data:new Uint8Array(buf)}).promise;
+  const limit=importNaUrzadzeniuMobilnym()?SMART_MAX_STRON_MOBILE:SMART_MAX_STRON_DESKTOP;
+  if(doc.numPages>limit)throw new Error("PDF ma "+doc.numPages+" stron; bezpieczny limit dla tego urządzenia to "+limit+".");
+  const strony=[];
+  for(let i=1;i<=doc.numPages;i++){
+    sprawdzAnulowanieImportu();ustawPostepImportu(bazaPostepu+Math.round(i/doc.numPages*58),"PDF „"+file.name+"”: strona "+i+" z "+doc.numPages+"…");
+    const page=await doc.getPage(i),content=await page.getTextContent(),warstwa=smartTekstPdf(content.items);
+    let tekst=warstwa,ostrzezenie="";
+    if(tekst.replace(/\s/g,"").length<24){
+      if(ocr){tekst=await smartOcrStronyPdf(page);if(!tekst)ostrzezenie="Nie udało się rozpoznać tekstu na tej stronie.";}
+      else ostrzezenie="Strona wygląda jak skan — OCR był wyłączony.";
+    }
+    strony.push({nr:i,tekst,html:smartHtmlZTekstu(tekst),warning:ostrzezenie});
+    try{page.cleanup();}catch(_){ } if(i%2===0)await oddechImportu();
+  }
+  try{await doc.destroy();}catch(_){ }
+  const baza=smartNazwaBezRozszerzenia(file.name);
+  if(dziel==="parts")return strony.map(s=>({title:baza+" — strona "+s.nr,html:s.html||"<div>[Brak rozpoznanego tekstu]</div>",source:file.name,page:s.nr,kind:"pdf",warning:s.warning}));
+  const html=strony.map(s=>(doc.numPages>1?"<h2>Strona "+s.nr+"</h2>":"")+(s.html||"<div>[Brak rozpoznanego tekstu]</div>")).join("");
+  return [{title:baza,html,source:file.name,kind:"pdf",warning:strony.filter(s=>s.warning).map(s=>"s. "+s.nr+": "+s.warning).join(" ")}];
+}
+async function smartCzytajDocx(file,dziel){
+  const buf=await file.arrayBuffer();
+  /* DOCX też jest archiwum ZIP. Sprawdzamy je przed Mammoth, aby mały plik
+     skompresowany nie rozwinął się do setek megabajtów w pamięci iPada. */
+  await getZipLib();
+  let zip;try{zip=await JSZip.loadAsync(buf);}catch(_){throw new Error("Plik DOCX jest uszkodzony albo nie jest dokumentem Word.");}
+  const wpisy=Object.values(zip.files);if(wpisy.length>MAX_WPISOW_ZIP)throw new Error("Dokument Word zawiera zbyt wiele składników.");
+  if(!zip.file("word/document.xml"))throw new Error("W pliku nie znaleziono treści dokumentu Word.");
+  const limit=importNaUrzadzeniuMobilnym()?80*1024*1024:250*1024*1024;
+  const rozpakowane=wpisy.reduce((s,x)=>s+(x&&x._data&&x._data.uncompressedSize||0),0);
+  if(rozpakowane>limit)throw new Error("Dokument po rozpakowaniu przekracza bezpieczny limit "+ludzkiRozmiar(limit)+".");
+  const mm=await smartMammoth();
+  const wynik=await mm.convertToHtml({arrayBuffer:buf},{
+    convertImage:mm.images.imgElement(async image=>({src:"data:"+image.contentType+";base64,"+await image.read("base64")}))
+  });
+  let raw=String(wynik.value||"");
+  const dom=parsujBezwladnie(raw),h1=dom.querySelector("h1"),nazwa=(h1&&h1.textContent.trim())||smartNazwaBezRozszerzenia(file.name);
+  raw=raw.replace(/<h1(\s[^>]*)?>/gi,"<h2>").replace(/<\/h1>/gi,"</h2>");
+  const clean=sanitize(raw);
+  const czesci=dziel==="parts"?smartPodzielNaglowki(clean,nazwa):[{title:nazwa,html:clean}];
+  return czesci.map((x,i)=>({title:x.title||nazwa,html:x.html||"<div>[Pusty dokument]</div>",source:file.name,part:i+1,kind:"docx",warning:(wynik.messages||[]).length?"Część złożonego formatowania mogła zostać uproszczona.":""}));
+}
+async function smartCzytajObraz(file,zachowaj,ocr){
+  const img=await smartObraz(file),canvas=smartCanvas(img,2200);let tekst="";
+  try{if(ocr)tekst=await smartRozpoznajObraz(canvas);
+    const foto=zachowaj?'<img src="'+canvas.toDataURL("image/jpeg",.84)+'" class="img-center" style="width:75%">':"";
+    const html=foto+(foto&&tekst?"<div><br></div>":"")+smartHtmlZTekstu(tekst)+(tekst?"":"<div>[Nie rozpoznano tekstu na obrazie]</div>");
+    return [{title:smartNazwaBezRozszerzenia(file.name),html,source:file.name,kind:"image",warning:ocr&&!tekst?"Nie udało się rozpoznać tekstu.":(!ocr?"OCR był wyłączony.":"")}];
+  }finally{canvas.width=1;canvas.height=1;}
+}
+function smartRenderPliki(){
+  const box=$("smartFiles");box.innerHTML=smartPliki.map(f=>'<div class="smart-file"><span aria-hidden="true">'+(smartTyp(f)==="pdf"?"📄":smartTyp(f)==="docx"?"📝":"🖼️")+'</span><b>'+appleEsc(f.name)+'</b><small>'+ludzkiRozmiar(f.size)+'</small></div>').join("");
+  $("smartAnalyze").disabled=!smartPliki.length;
+}
+function smartRenderPodglad(){
+  $("smartSummary").innerHTML="Powstanie <b>"+smartWyniki.length+"</b> notatek. Odznacz te, których nie chcesz dodawać, i popraw tytuły w razie potrzeby.";
+  $("smartPreviewList").innerHTML=smartWyniki.map((x,i)=>'<label class="smart-preview-row"><input type="checkbox" data-smart-check="'+i+'" checked><span><input type="text" maxlength="180" data-smart-title="'+i+'" value="'+appleEsc(x.title)+'"><small>'+appleEsc(x.source+(x.page?" · strona "+x.page:""))+'</small>'+(x.warning?'<small class="smart-warn">⚠ '+appleEsc(x.warning)+'</small>':"")+'</span></label>').join("");
+  $("smartSetup").hidden=true;$("smartPreview").hidden=false;openModal("modalSmartImport");
+}
+function otworzSmartImport(){
+  smartPliki=[];smartWyniki=[];$("smartInput").value="";$("smartFiles").innerHTML="";$("smartAnalyze").disabled=true;
+  $("smartSetup").hidden=false;$("smartPreview").hidden=true;openModal("modalSmartImport");
+}
+$("smartInput").addEventListener("change",e=>{
+  const lista=[...(e.target.files||[])];
+  if(lista.length>SMART_MAX_PLIKOW){showInfo("Za dużo plików","Jednorazowo wybierz najwyżej <b>"+SMART_MAX_PLIKOW+"</b> plików.");e.target.value="";return;}
+  const limit=importNaUrzadzeniuMobilnym()?SMART_MAX_PLIK_MOBILE:SMART_MAX_PLIK_DESKTOP;
+  const zle=lista.find(f=>!smartTyp(f)||!f.size||f.size>limit);
+  if(zle){showInfo("Nieobsługiwany plik","Plik <b>"+appleEsc(zle.name)+"</b> ma nieobsługiwany format, jest pusty albo przekracza limit "+ludzkiRozmiar(limit)+".");e.target.value="";return;}
+  smartPliki=lista;smartRenderPliki();
+});
+$("smartAnalyze").onclick=async()=>{
+  if(!smartPliki.length||smartPracuje)return;smartPracuje=true;$("smartAnalyze").disabled=true;
+  const dziel=$("smartSplit").value,ocr=$("smartOcr").checked,zachowaj=$("smartImages").checked;
+  closeModal("modalSmartImport");pokazPostepImportu("Inteligentny import");smartWyniki=[];const bledy=[];
+  _anulujImportDodatkowo=()=>{if(smartOcrWorker){try{smartOcrWorker.terminate();}catch(_){ }smartOcrWorker=null;}};
+  try{
+    for(let i=0;i<smartPliki.length;i++){
+      const f=smartPliki[i],typ=smartTyp(f),baza=12+Math.round(i/smartPliki.length*70);sprawdzAnulowanieImportu();
+      ustawPostepImportu(baza,"Odczytuję „"+f.name+"” ("+(i+1)+" z "+smartPliki.length+")…");
+      try{
+        const x=typ==="pdf"?await smartCzytajPdf(f,dziel,ocr,baza):typ==="docx"?await smartCzytajDocx(f,dziel):await smartCzytajObraz(f,zachowaj,ocr);
+        smartWyniki.push(...x);
+      }catch(err){if(err instanceof ImportAnulowany)throw err;bledy.push(f.name+": "+(err&&err.message||"błąd odczytu"));}
+      await oddechImportu();
+    }
+    await smartZakonczOcr();sprawdzAnulowanieImportu();
+    if(!smartWyniki.length)throw new Error(bledy.join(" ")||"Nie znaleziono treści do zaimportowania.");
+    if(bledy.length)smartWyniki[0].warning=(smartWyniki[0].warning?smartWyniki[0].warning+" ":"")+"Pominięte pliki: "+bledy.join("; ");
+    ustawPostepImportu(100,"Podgląd jest gotowy");await oddechImportu();schowajPostepImportu();smartRenderPodglad();
+  }catch(err){const anulowany=err instanceof ImportAnulowany||(_stanImportu&&_stanImportu.anulowany);await smartZakonczOcr();if(_stanImportu)schowajPostepImportu();if(!anulowany)showInfo("Nie odczytano dokumentów",appleEsc(err&&err.message||"Nieznany błąd")+"<br><br><b>Żadna notatka nie została zapisana.</b>");}
+  finally{smartPracuje=false;$("smartAnalyze").disabled=!smartPliki.length;}
+};
+$("smartBack").onclick=()=>{$("smartPreview").hidden=true;$("smartSetup").hidden=false;};
+$("smartSave").onclick=async()=>{
+  if(smartPracuje)return;
+  const wybrane=[];
+  $("smartPreviewList").querySelectorAll("[data-smart-check]").forEach(ch=>{if(!ch.checked)return;const i=+ch.dataset.smartCheck,x=Object.assign({},smartWyniki[i]);const inp=$("smartPreviewList").querySelector('[data-smart-title="'+i+'"]');x.title=(inp&&inp.value.trim())||x.title;wybrane.push(x);});
+  if(!wybrane.length){toast("Zaznacz co najmniej jedną notatkę");return;}
+  smartPracuje=true;$("smartSave").disabled=true;closeModal("modalSmartImport");pokazPostepImportu("Zapisywanie dokumentów");
+  try{
+    const tagiNowe=tags.map(t=>Object.assign({},t)),nazwaTagu=$("smartTag").value.trim()||"Importowane dokumenty";
+    let tag=tagiNowe.find(t=>norm(t.name)===norm(nazwaTagu));if(!tag){tag={id:nastepnyNumer(tagiNowe),name:nazwaTagu,nw:true};tagiNowe.push(tag);}
+    const nowe=[],znane=notes.slice();let duplikaty=0,suma=0;
+    for(let i=0;i<wybrane.length;i++){
+      sprawdzAnulowanieImportu();const x=wybrane[i],clean=sanitize(x.html),now=new Date().toISOString();
+      const n={g:crypto.randomUUID().toUpperCase(),t:String(x.title||"Dokument").slice(0,180),h:clean,c:htmlToPlain(clean),b:0,ch:0,v:0,pub:"",ks:"",doc:0,itn:0,col:0,cr:now,mo:now,tg:[tag.id],nw:true,tgd:true,importSrc:x.source,importKind:x.kind};
+      if(x.page)n.importPage=x.page;if(x.part)n.importPart=x.part;
+      if(znane.some(a=>appleTaSamaNotatka(a,n))){duplikaty++;continue;}nowe.push(n);znane.push(n);suma+=clean.length*2;
+    }
+    if(!nowe.length){schowajPostepImportu();showInfo("Nie dodano duplikatów","Wybrane dokumenty są już zapisane w JW Study.");return;}
+    await sprawdzMiejsceDlaImportu(smartPliki.reduce((a,f)=>a+f.size,0),suma);rozpocznijZapisImportu();ustawPostepImportu(70,"Zapisuję "+nowe.length+" notatek w jednej transakcji…");
+    await idbZapiszImportZewnetrzny(nowe,tagiNowe,notes.length+nowe.length,tagiNowe.length);
+    notes.push(...nowe);tags=tagiNowe;bumpTagsVer();bumpDirty();if(typeof workerOznaczIndeksDoOdbudowy==="function")workerOznaczIndeksDoOdbudowy();
+    ustawPostepImportu(100,"Gotowe");renderAll();await oddechImportu();schowajPostepImportu();
+    showInfo("Dokumenty zaimportowane","Dodano <b>"+nowe.length+"</b> notatek do etykiety <b>"+appleEsc(tag.name)+"</b>."+(duplikaty?"<br>Pominięto duplikaty: "+duplikaty+".":"")+"<br><br>Rozpoznane odsyłacze biblijne staną się aktywne podczas wyświetlania notatki.");
+  }catch(err){if(_stanImportu)schowajPostepImportu();showInfo("Nie zapisano dokumentów",appleEsc(err&&err.message||"Nieznany błąd")+"<br><br><b>Dotychczasowe dane pozostały bez zmian.</b>");}
+  finally{smartPracuje=false;$("smartSave").disabled=false;}
+};
 
 async function handleImportFile(e){
   const file=e.target.files[0]; e.target.value="";

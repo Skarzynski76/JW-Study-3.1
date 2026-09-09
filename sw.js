@@ -1,4 +1,4 @@
-const CACHE = 'jwstudy-v321';
+const CACHE = 'jwstudy-v323';
 /* Rdzeń: dokument + wszystkie arkusze i moduły — bez nich aplikacja nie ruszy offline.
 
    TA LISTA JEST WYPISYWANA PRZEZ NARZĘDZIE. Nie dopisuj do niej ręcznie.
@@ -26,6 +26,11 @@ const CORE = [
 const EXTRA = [
   './search-worker.js',
   './lib/jszip.min.js', './lib/sql-wasm.js', './lib/sql-wasm.wasm',
+  './lib/smart-import/pdf.min.js', './lib/smart-import/pdf.worker.min.js',
+  './lib/smart-import/mammoth.browser.min.js',
+  './lib/smart-import/tesseract.min.js', './lib/smart-import/tesseract.worker.min.js',
+  './lib/smart-import/tesseract-core-lstm.wasm.js',
+  './lib/smart-import/lang/pol.traineddata.gz',
   './jszip.min.js', './sql-wasm.js', './sql-wasm.wasm',
   './manifest.webmanifest',
   './onenote.html',

@@ -1,5 +1,27 @@
 # Dziennik zmian
 
+## v3.23 — inteligentny import PDF, Worda i obrazów
+
+- jedno okno importuje wiele plików PDF, DOCX, PNG, JPG i WEBP;
+- PDF-y z warstwą tekstową nie uruchamiają kosztownego OCR, a zeskanowane
+  strony są rozpoznawane automatycznie po polsku;
+- DOCX zachowuje nagłówki, listy, tabele, linki i osadzone ilustracje;
+- użytkownik wybiera jedną notatkę z pliku albo podział według nagłówków/stron;
+- przed zapisem dostępny jest podgląd, zmiana tytułów i odznaczenie części;
+- obrazy są skalowane przed osadzeniem, strony PDF zwalniają pamięć po każdej
+  stronie, a interfejs regularnie oddaje sterowanie urządzeniu;
+- cała partia zapisuje się atomowo, duplikaty są pomijane, a biblioteki oraz
+  polski model OCR są częścią paczki i działają bez wysyłania dokumentów.
+
+## v3.22 — odblokowane potwierdzenie importu Apple
+
+- okno postępu znika na czas pytania „Zaimportować notatki z Apple?”, dzięki
+  czemu przyciski „Importuj” i „Anuluj” są zawsze widoczne oraz dotykalne,
+- po zatwierdzeniu okno postępu wraca i import rozpoczyna przygotowywanie
+  notatek od 18%; rezygnacja zamyka całą operację bez zmiany danych,
+- przyczyną zatrzymania nie był plik ZIP: dwa pełnoekranowe okna miały ten sam
+  priorytet warstwy, a późniejsze okno postępu zasłaniało oczekujące pytanie.
+
 ## v3.21 — stabilne przeciąganie ilustracji w tekście
 
 - zdjęcie można chwycić myszą lub gładzikiem i przeciągnąć bezpośrednio do

@@ -16,6 +16,10 @@ kopii z katalogu lib/, ale nie jest już od niego uzależniona.
 Import ZIP z Notatek Apple korzysta z tego samego pliku jszip.min.js, dlatego
 nie pomijaj go ani katalogu lib/ podczas wgrywania tej wersji.
 
+Inteligentny import PDF, DOCX i obrazów wymaga całego katalogu
+lib/smart-import/. Wgraj go razem z aplikacją — zawiera lokalne biblioteki PDF,
+Word oraz polskie OCR.
+
 Na GitHub usuń stare pliki „index 3.html”, „index 5.html” itp. Strona używa
 tylko pliku o dokładnej nazwie index.html, lecz stare kopie wprowadzają w błąd.
 
