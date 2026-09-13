@@ -512,6 +512,7 @@ html[data-theme="dark"] .pill.par{background:#3a3a45;color:var(--accent2)}
 .smart-options{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}.smart-options label{font-size:12px;color:var(--muted)}.smart-options select,.smart-options input[type="text"]{display:block;width:100%;margin-top:5px}.smart-checks{display:flex;flex-wrap:wrap;gap:10px 18px;margin-top:14px}.smart-checks label{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--text)}
 .smart-note{margin-top:14px;padding:10px 12px;border-radius:11px;background:var(--panel2);color:var(--muted);font-size:12.5px;line-height:1.45}.smart-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;flex-wrap:wrap}
 .smart-summary{font-size:13px;color:var(--muted);margin-bottom:12px}.smart-preview-list{display:grid;gap:8px;max-height:46vh;overflow:auto;padding-right:3px}.smart-preview-row{display:grid;grid-template-columns:auto 1fr;gap:9px;padding:10px;border:1px solid var(--border);border-radius:12px;background:var(--panel2)}.smart-preview-row input[type="text"]{width:100%;margin:0 0 4px}.smart-preview-row small{color:var(--muted);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.smart-warn{color:#9a6415!important}
+.smart-preview-row>div{min-width:0}.smart-preview-row small.smart-warn{white-space:normal;overflow-wrap:anywhere}.smart-content{margin-top:8px;font-size:13px}.smart-content summary{cursor:pointer;color:var(--accent)}.smart-content>div{max-height:260px;overflow:auto;margin-top:8px;overflow-wrap:anywhere}.smart-content img{max-width:100%;height:auto}.smart-content table{border-collapse:collapse}.smart-content td,.smart-content th{border:1px solid var(--border);padding:4px}
 @media(max-width:620px){.smart-modal{width:100vw;max-width:none;height:100dvh;max-height:none;border-radius:0!important}.smart-head{padding-top:calc(16px + env(safe-area-inset-top,0px))}.smart-options{grid-template-columns:1fr}.smart-body{padding:14px 16px calc(18px + env(safe-area-inset-bottom,0px))}.smart-preview-list{max-height:52vh}}
 /* okno eksportu do JW Library — kroki i ostrzeżenie */
 .exp-steps{display:flex;flex-direction:column;gap:10px;margin:4px 0 14px}
@@ -7688,7 +7689,7 @@ html[data-theme="dark"] .bezp-result.ok{background:#173b2f;color:#a8dec8}html[da
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <h1 class="brand-name">JW Study <span class="ver">v3.23</span></h1>
+      <h1 class="brand-name">JW Study <span class="ver">v3.24</span></h1>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -7932,7 +7933,7 @@ html[data-theme="dark"] .bezp-result.ok{background:#173b2f;color:#a8dec8}html[da
         <label class="smart-drop" for="smartInput">
           <strong>Wybierz jeden lub wiele plików</strong>
           <span>PDF · DOCX · PNG · JPG · JPEG · WEBP</span>
-          <input id="smartInput" type="file" multiple accept=".pdf,.docx,image/png,image/jpeg,image/webp" hidden>
+          <input id="smartInput" type="file" multiple hidden>
         </label>
         <div class="smart-file-list" id="smartFiles" aria-live="polite"></div>
         <div class="smart-options">
@@ -7948,7 +7949,7 @@ html[data-theme="dark"] .bezp-result.ok{background:#173b2f;color:#a8dec8}html[da
         </div>
         <div class="smart-checks">
           <label><input id="smartOcr" type="checkbox" checked> OCR dla skanów i obrazów</label>
-          <label><input id="smartImages" type="checkbox" checked> Zachowaj obraz przy zrzucie ekranu</label>
+          <label><input id="smartImages" type="checkbox" checked> Zachowaj obrazy skanów i zrzutów ekranu</label>
         </div>
         <div class="smart-note"><b>Bezpieczny import:</b> przed zapisaniem zobaczysz listę powstających notatek. Duplikaty są pomijane, a dotychczasowe dane nie są nadpisywane. Starsze pliki Word <b>.doc</b> trzeba najpierw zapisać jako <b>.docx</b>.</div>
         <div class="smart-actions"><button class="btn" data-zamknij="modalSmartImport">Anuluj</button><button class="btn primary" id="smartAnalyze" type="button" disabled>Rozpoznaj i pokaż podgląd</button></div>
@@ -8472,10 +8473,32 @@ function idbOpen(){return new Promise((res,rej)=>{
   r.onblocked = ()=>zakoncz(rej, new Error("Pamięć jest zablokowana przez inną kartę aplikacji"));
 });}
 function idbAll(store){return new Promise((res,rej)=>{const t=idb.transaction(store).objectStore(store).getAll();t.onsuccess=()=>res(t.result);t.onerror=rej;});}
-function idbPut(store,val,key){return new Promise((res,rej)=>{const t=idb.transaction(store,"readwrite").objectStore(store).put(val,key);t.onsuccess=()=>res();t.onerror=rej;});}
-function idbDelKey(store,key){return new Promise((res,rej)=>{const t=idb.transaction(store,"readwrite").objectStore(store).delete(key);t.onsuccess=()=>res();t.onerror=rej;});}
+function bladBrakuPamieci(){ return new Error("Trwała pamięć jest niedostępna. Zmiany nie zostały zapisane. Zrób kopię JSON i odśwież aplikację po zamknięciu pozostałych kart JW Study."); }
+function pokazBrakPamieci(){
+  let el=$("storageWarning");
+  if(!el){
+    el=document.createElement("div");el.id="storageWarning";el.setAttribute("role","alert");
+    el.style.cssText="position:fixed;bottom:0;left:0;right:0;z-index:99999;padding:12px 18px;background:#7f1d1d;color:white;font:14px/1.5 sans-serif;text-align:center";
+    document.body.appendChild(el);
+  }
+  el.textContent="Brak trwałego zapisu — zmiany znikną po zamknięciu lub odświeżeniu. Zapisz kopię JSON przez Plik. Zamknij inne karty JW Study, a następnie otwórz aplikację ponownie.";
+}
+/* Sukces operacji put/delete nie jest jeszcze zatwierdzeniem transakcji. */
+function idbWrite(store, wykonaj){return new Promise((res,rej)=>{
+  if(!idb){pokazBrakPamieci();return rej(bladBrakuPamieci());}
+  let tx;
+  try{
+    tx=idb.transaction(store,"readwrite");
+    tx.oncomplete=()=>res();
+    tx.onerror=()=>rej(tx.error||new Error("Nie udało się zapisać danych."));
+    tx.onabort=()=>rej(tx.error||new Error("Zapis danych został przerwany."));
+    wykonaj(tx.objectStore(store));
+  }catch(e){if(tx)try{tx.abort();}catch(_){}rej(e);}
+});}
+function idbPut(store,val,key){return idbWrite(store,os=>os.put(val,key));}
+function idbDelKey(store,key){return idbWrite(store,os=>os.delete(key));}
 function idbGet(store,key){return new Promise((res,rej)=>{const t=idb.transaction(store).objectStore(store).get(key);t.onsuccess=()=>res(t.result);t.onerror=rej;});}
-function idbBulk(store,items){return new Promise((res,rej)=>{const tx=idb.transaction(store,"readwrite");const os=tx.objectStore(store);items.forEach(i=>os.put(i));tx.oncomplete=()=>res();tx.onerror=rej;});}
+function idbBulk(store,items){return idbWrite(store,os=>items.forEach(i=>os.put(i)));}
 /**
  * Zapisuje dużą listę rekordów w porcjach, żeby jedna transakcja nie trwała zbyt długo
  * i nie zablokowała interfejsu na słabszym urządzeniu.
@@ -8494,7 +8517,7 @@ async function idbBulkChunked(store,items){
  */
 function idbZapiszImportZewnetrzny(noweNotatki, noweTagi, oczekiwaneNotatki, oczekiwaneTagi){
   return new Promise((res,rej)=>{
-    if(!idb) return res(true); // tryb testowy / pamięć tymczasowa
+    if(!idb){pokazBrakPamieci();return rej(bladBrakuPamieci());}
     let tx;
     try{ tx=idb.transaction(["notes","tags"],"readwrite"); }
     catch(e){ return rej(e); }
@@ -8701,7 +8724,7 @@ function saveNote(n){
      potrzebny. */
   if(typeof unieaktualnijPowiazane==="function") unieaktualnijPowiazane();
   if(typeof workerAktualizujNotatke==="function") workerAktualizujNotatke(n);
-  if(!idb) return Promise.resolve(true);
+  if(!idb){pokazBrakPamieci();return Promise.resolve(false);}
   return idbPut("notes", n).then(()=>true).catch(e=>{
     reportSaveError(e,"notatka");
     return false;
@@ -8787,7 +8810,7 @@ async function szkicOdzyskaj(card,n){
   let s; try{s=await idbGet("meta",szkicKlucz(n.g));}catch(e){return false;}
   if(!s||s.g!==n.g) return false;
   const zapisanyH=sanitize(s.h||"");
-  const takiSam=(s.t||"").trim()===(n.t||"").trim() && htmlToPlain(zapisanyH)===htmlToPlain(contentHtml(n));
+  const takiSam=(s.t||"").trim()===(n.t||"").trim() && zapisanyH===sanitize(n.h||esc(n.c||""));
   const czasSzkicu=Date.parse(s.ts||"")||0, czasNotatki=Date.parse(n.mo||"")||0;
   if(takiSam || (czasNotatki && czasSzkicu<=czasNotatki)){ szkicUsun(n.g); return false; }
   const tak=await askConfirm("Odzyskać niezapisany szkic?",
@@ -9002,7 +9025,11 @@ async function decodeEmbedded(){
  * @returns {Promise<void>}
  */
 async function boot(){
-  try{ idb = await idbOpen(); }catch(e){ console.warn("IndexedDB niedostępne", e); }
+  try{
+    idb = await idbOpen();
+    idb.onversionchange=()=>{idb.close();idb=null;pokazBrakPamieci();};
+    idb.onclose=()=>{idb=null;pokazBrakPamieci();};
+  }catch(e){ console.warn("IndexedDB niedostępne", e); pokazBrakPamieci(); }
   // 1. wczytaj to, co zapisane w przeglądarce (Twoje zmiany mają pierwszeństwo)
   let stored = [], storedTags = [];
   if(idb){
@@ -15168,8 +15195,9 @@ function loadScript(src){
     if(jest) return res();
     const s = document.createElement("script");
     s.src = src;
-    s.onload = ()=>{ s.dataset.ok="1"; res(); };
-    s.onerror = ()=>{ s.remove(); rej(new Error("Nie można wczytać: "+src)); };
+    const timer=setTimeout(()=>{s.remove();rej(new Error("Przekroczono czas wczytywania: "+src+". Sprawdź połączenie lub kompletność plików aplikacji."));},30000);
+    s.onload = ()=>{ clearTimeout(timer);s.dataset.ok="1"; res(); };
+    s.onerror = ()=>{ clearTimeout(timer);s.remove(); rej(new Error("Nie można wczytać: "+src+". Wgraj cały katalog lib/ z paczki aplikacji.")); };
     document.head.appendChild(s);
   });
 }
@@ -15525,6 +15553,26 @@ let smartPliki=[];
 let smartWyniki=[];
 let smartOcrWorker=null;
 let smartPracuje=false;
+let smartAbortController=null;
+/* terminate() Tesseracta nie odrzuca oczekującego recognize(). Nasza obietnica
+   musi zakończyć się także po anulowaniu, inaczej kolejne importy są blokowane. */
+function smartCzekaj(praca, limit=120000){
+  const signal=smartAbortController&&smartAbortController.signal;
+  return new Promise((res,rej)=>{
+    let timer;
+    const zakoncz=(fn,x)=>{clearTimeout(timer);if(signal)signal.removeEventListener("abort",anuluj);fn(x);};
+    const anuluj=()=>zakoncz(rej,new ImportAnulowany());
+    Promise.resolve(praca).then(x=>zakoncz(res,x),e=>zakoncz(rej,e));
+    if(signal&&signal.aborted){anuluj();return;}
+    if(signal)signal.addEventListener("abort",anuluj,{once:true});
+    timer=setTimeout(()=>zakoncz(rej,new Error("Odczyt trwał zbyt długo. Spróbuj mniejszego dokumentu lub wyłącz OCR.")),limit);
+  });
+}
+function smartMaTresc(html){return !!htmlToPlain(html).trim()||/<img\b/i.test(html);}
+function smartTaSamaNotatka(a,b){
+  return !a.del&&tekstDoPorownania(a.t)===tekstDoPorownania(b.t)&&
+    sanitize(a.h||esc(a.c||""))===sanitize(b.h||esc(b.c||""));
+}
 
 function smartNazwaBezRozszerzenia(nazwa){
   return String(nazwa||"Dokument").replace(/\.(pdf|docx|png|jpe?g|webp)$/i,"").trim()||"Dokument";
@@ -15549,13 +15597,14 @@ function smartHtmlZTekstu(tekst){
 }
 function smartPodzielNaglowki(html, tytulBazowy){
   const box=parsujBezwladnie(html), dzieci=[...box.childNodes];
-  const maNaglowki=dzieci.some(n=>n.nodeType===1&&(n.tagName==="H2"||n.tagName==="H3"));
+  const naglowek=n=>n.nodeType===1&&/^H[1-6]$/.test(n.tagName);
+  const maNaglowki=dzieci.some(naglowek);
   if(!maNaglowki)return [{title:tytulBazowy,html}];
   const wynik=[];let nazwa=tytulBazowy,buf=[];
-  const dodaj=()=>{const h=buf.map(n=>n.outerHTML||appleEsc(n.textContent||"")).join("");if(htmlToPlain(h).trim())wynik.push({title:nazwa,html:h});buf=[];};
+  const dodaj=()=>{const h=buf.map(n=>n.outerHTML||appleEsc(n.textContent||"")).join("");if(smartMaTresc(h))wynik.push({title:nazwa,html:h});buf=[];};
   for(const n of dzieci){
-    if(n.nodeType===1&&(n.tagName==="H2"||n.tagName==="H3")){
-      if(buf.length)dodaj(); nazwa=(n.textContent||"").trim()||tytulBazowy;
+    if(naglowek(n)){
+      if(buf.length)dodaj(); nazwa=(n.textContent||"").trim()||tytulBazowy;buf.push(n);
     }else buf.push(n);
   }
   if(buf.length)dodaj();
@@ -15563,7 +15612,7 @@ function smartPodzielNaglowki(html, tytulBazowy){
 }
 async function smartWczytajSkrypt(sciezka, globalName){
   if(globalName&&window[globalName])return window[globalName];
-  await loadScript(sciezka);
+  await smartCzekaj(loadScript(sciezka),35000);
   if(globalName&&!window[globalName])throw new Error("Nie udało się uruchomić biblioteki "+globalName+".");
   return globalName?window[globalName]:true;
 }
@@ -15578,16 +15627,22 @@ async function smartWorkerOcr(){
   await smartWczytajSkrypt("./lib/smart-import/tesseract.min.js","Tesseract");
   ustawPostepImportu(8,"Uruchamiam polskie rozpoznawanie tekstu…");
   const baza=new URL("./lib/smart-import/",location.href).href;
-  smartOcrWorker=await Tesseract.createWorker("pol",1,{
+  const signal=smartAbortController&&smartAbortController.signal;
+  let porzucony=false;
+  const tworzenie=Tesseract.createWorker("pol",1,{
     workerPath:baza+"tesseract.worker.min.js",
+    workerBlobURL:false, // CSP dopuszcza lokalny worker, ale celowo nie blob:.
     corePath:baza+"tesseract-core-lstm.wasm.js",
     langPath:baza+"lang",
     logger:m=>{
-      if(!m||typeof m.progress!=="number")return;
+      if(!m||typeof m.progress!=="number"||!_stanImportu||(signal&&signal.aborted))return;
       const p=10+Math.round(m.progress*55);
       ustawPostepImportu(p,"OCR: "+String(m.status||"rozpoznawanie tekstu").replace(/_/g," ")+"…");
     }
   });
+  tworzenie.then(w=>{if(porzucony||(signal&&signal.aborted))Promise.resolve(w.terminate()).catch(()=>{});},()=>{});
+  try{smartOcrWorker=await smartCzekaj(tworzenie);}
+  catch(e){porzucony=true;throw e;}
   return smartOcrWorker;
 }
 async function smartZakonczOcr(){
@@ -15610,91 +15665,152 @@ function smartCanvas(img,maxBok){
 }
 async function smartRozpoznajObraz(zrodlo){
   sprawdzAnulowanieImportu();const w=await smartWorkerOcr();sprawdzAnulowanieImportu();
-  const r=await w.recognize(zrodlo);sprawdzAnulowanieImportu();return String(r&&r.data&&r.data.text||"").trim();
+  try{
+    const r=await smartCzekaj(w.recognize(zrodlo));sprawdzAnulowanieImportu();return String(r&&r.data&&r.data.text||"").trim();
+  }catch(e){await smartZakonczOcr();throw e;}
 }
 function smartTekstPdf(items){
-  const linie=[];let aktualna=[],ostatniY=null;
+  const linie=[];let linia="",poprzedni=null;
+  const flush=()=>{if(linia.trim())linie.push(linia.replace(/\s+/g," ").trim());linia="";poprzedni=null;};
   for(const it of (items||[])){
-    const s=String(it.str||"");if(!s)continue;const y=it.transform&&it.transform[5];
-    if(ostatniY!==null&&Number.isFinite(y)&&Math.abs(y-ostatniY)>Math.max(3,(it.height||8)*.55)){linie.push(aktualna.join(" ").replace(/\s+/g," ").trim());aktualna=[];}
-    aktualna.push(s);if(Number.isFinite(y))ostatniY=y;if(it.hasEOL){linie.push(aktualna.join(" ").replace(/\s+/g," ").trim());aktualna=[];ostatniY=null;}
-  }
-  if(aktualna.length)linie.push(aktualna.join(" ").replace(/\s+/g," ").trim());
-  return linie.filter(Boolean).join("\n");
-}
-async function smartOcrStronyPdf(page){
-  const v1=page.getViewport({scale:1}),scale=Math.min(2,2200/Math.max(v1.width,v1.height));
-  const vp=page.getViewport({scale}),c=document.createElement("canvas");c.width=Math.ceil(vp.width);c.height=Math.ceil(vp.height);
-  await page.render({canvasContext:c.getContext("2d",{alpha:false}),viewport:vp}).promise;
-  try{return await smartRozpoznajObraz(c);}finally{c.width=1;c.height=1;}
-}
-async function smartCzytajPdf(file, dziel, ocr, bazaPostepu){
-  const pdfjs=await smartPdfLib(),buf=await file.arrayBuffer(),doc=await pdfjs.getDocument({data:new Uint8Array(buf)}).promise;
-  const limit=importNaUrzadzeniuMobilnym()?SMART_MAX_STRON_MOBILE:SMART_MAX_STRON_DESKTOP;
-  if(doc.numPages>limit)throw new Error("PDF ma "+doc.numPages+" stron; bezpieczny limit dla tego urządzenia to "+limit+".");
-  const strony=[];
-  for(let i=1;i<=doc.numPages;i++){
-    sprawdzAnulowanieImportu();ustawPostepImportu(bazaPostepu+Math.round(i/doc.numPages*58),"PDF „"+file.name+"”: strona "+i+" z "+doc.numPages+"…");
-    const page=await doc.getPage(i),content=await page.getTextContent(),warstwa=smartTekstPdf(content.items);
-    let tekst=warstwa,ostrzezenie="";
-    if(tekst.replace(/\s/g,"").length<24){
-      if(ocr){tekst=await smartOcrStronyPdf(page);if(!tekst)ostrzezenie="Nie udało się rozpoznać tekstu na tej stronie.";}
-      else ostrzezenie="Strona wygląda jak skan — OCR był wyłączony.";
+    const s=String(it.str||""),tr=it.transform||[],y=tr[5],x=tr[4];
+    if(s){
+      if(poprzedni&&Number.isFinite(y)&&Number.isFinite(poprzedni.y)&&
+         Math.abs(y-poprzedni.y)>Math.max(3,(it.height||8)*.55))flush();
+      if(linia&&!/\s$/.test(linia)&&!/^\s/.test(s)){
+        const luka=poprzedni&&Number.isFinite(x)&&Number.isFinite(poprzedni.koniec)?x-poprzedni.koniec:null;
+        if(luka===null||luka>Math.max(1,(it.height||8)*.12)||luka<-2)linia+=" ";
+      }
+      linia+=s;poprzedni={y,koniec:Number.isFinite(x)&&Number.isFinite(it.width)?x+it.width:null};
     }
-    strony.push({nr:i,tekst,html:smartHtmlZTekstu(tekst),warning:ostrzezenie});
-    try{page.cleanup();}catch(_){ } if(i%2===0)await oddechImportu();
+    if(it.hasEOL)flush(); // PDF.js może oznaczyć koniec wiersza pustym elementem.
   }
-  try{await doc.destroy();}catch(_){ }
+  flush();return linie.join("\n");
+}
+async function smartCzytajSkanPdf(page,ocr,zachowaj){
+  const v1=page.getViewport({scale:1}),scale=Math.min(2,2200/Math.max(v1.width,v1.height));
+  const vp=page.getViewport({scale}),c=document.createElement("canvas");
+  c.width=Math.ceil(vp.width);c.height=Math.ceil(vp.height);
+  let render;
+  try{
+    render=page.render({canvasContext:c.getContext("2d",{alpha:false}),viewport:vp});
+    await smartCzekaj(render.promise);
+    const obraz=zachowaj?'<img src="'+c.toDataURL("image/jpeg",.84)+'" class="img-center" style="width:100%">':"";
+    let tekst="",warning="";
+    if(ocr){
+      try{tekst=await smartRozpoznajObraz(c);}
+      catch(e){
+        if(e instanceof ImportAnulowany)throw e;
+        await smartZakonczOcr();
+        if(!obraz)throw e;
+        warning="OCR nie zadziałał; zachowano obraz strony. "+(e.message||"");
+      }
+      if(!tekst&&!warning)warning="Nie rozpoznano tekstu na tej stronie.";
+    }else warning="OCR wyłączony — zachowano wyłącznie obraz strony.";
+    if(!tekst&&!obraz)throw new Error("Strona nie ma tekstu. Włącz OCR lub zachowanie obrazów skanów.");
+    return {tekst,html:obraz+smartHtmlZTekstu(tekst),warning};
+  }finally{
+    if(render)try{render.cancel();}catch(_){}
+    c.width=1;c.height=1;
+  }
+}
+async function smartCzytajPdf(file, dziel, ocr, bazaPostepu=0, zachowaj=true){
+  const pdfjs=await smartPdfLib(),buf=await smartCzekaj(file.arrayBuffer());
+  sprawdzAnulowanieImportu();
+  const task=pdfjs.getDocument({data:new Uint8Array(buf),isEvalSupported:false});
+  const strony=[];
+  try{
+    const doc=await smartCzekaj(task.promise);
+    const limit=importNaUrzadzeniuMobilnym()?SMART_MAX_STRON_MOBILE:SMART_MAX_STRON_DESKTOP;
+    if(doc.numPages>limit)throw new Error("PDF ma "+doc.numPages+" stron; bezpieczny limit dla tego urządzenia to "+limit+".");
+    for(let i=1;i<=doc.numPages;i++){
+      sprawdzAnulowanieImportu();ustawPostepImportu(Math.min(90,bazaPostepu+Math.round(i/doc.numPages*58)),"PDF „"+file.name+"”: strona "+i+" z "+doc.numPages+"…");
+      const page=await smartCzekaj(doc.getPage(i));
+      try{
+        const content=await smartCzekaj(page.getTextContent()),tekst=smartTekstPdf(content.items);
+        // Krótki, ale prawidłowy tekst nie jest skanem i nie wymaga OCR.
+        const wynik=tekst.trim()?{tekst,html:smartHtmlZTekstu(tekst),warning:""}:await smartCzytajSkanPdf(page,ocr,zachowaj);
+        strony.push({nr:i,...wynik});
+      }finally{try{page.cleanup();}catch(_){}}
+      if(i%2===0)await oddechImportu();
+    }
+  }catch(e){
+    if(e&&e.name==="PasswordException")throw new Error("PDF jest chroniony hasłem. Otwórz go w czytniku PDF i zapisz kopię bez hasła, a następnie zaimportuj ją ponownie.");
+    throw e;
+  }finally{try{await task.destroy();}catch(_){}}
   const baza=smartNazwaBezRozszerzenia(file.name);
-  if(dziel==="parts")return strony.map(s=>({title:baza+" — strona "+s.nr,html:s.html||"<div>[Brak rozpoznanego tekstu]</div>",source:file.name,page:s.nr,kind:"pdf",warning:s.warning}));
-  const html=strony.map(s=>(doc.numPages>1?"<h2>Strona "+s.nr+"</h2>":"")+(s.html||"<div>[Brak rozpoznanego tekstu]</div>")).join("");
+  if(dziel==="parts")return strony.map(s=>({title:baza+" — strona "+s.nr,html:s.html,source:file.name,page:s.nr,kind:"pdf",warning:s.warning}));
+  const html=strony.map(s=>(strony.length>1?"<h2>Strona "+s.nr+"</h2>":"")+s.html).join("");
   return [{title:baza,html,source:file.name,kind:"pdf",warning:strony.filter(s=>s.warning).map(s=>"s. "+s.nr+": "+s.warning).join(" ")}];
 }
 async function smartCzytajDocx(file,dziel){
-  const buf=await file.arrayBuffer();
+  const buf=await smartCzekaj(file.arrayBuffer());sprawdzAnulowanieImportu();
   /* DOCX też jest archiwum ZIP. Sprawdzamy je przed Mammoth, aby mały plik
      skompresowany nie rozwinął się do setek megabajtów w pamięci iPada. */
   await getZipLib();
-  let zip;try{zip=await JSZip.loadAsync(buf);}catch(_){throw new Error("Plik DOCX jest uszkodzony albo nie jest dokumentem Word.");}
+  let zip;try{zip=await smartCzekaj(JSZip.loadAsync(buf));}catch(e){if(e instanceof ImportAnulowany)throw e;throw new Error("Plik DOCX jest uszkodzony albo nie jest dokumentem Word.");}
   const wpisy=Object.values(zip.files);if(wpisy.length>MAX_WPISOW_ZIP)throw new Error("Dokument Word zawiera zbyt wiele składników.");
   if(!zip.file("word/document.xml"))throw new Error("W pliku nie znaleziono treści dokumentu Word.");
   const limit=importNaUrzadzeniuMobilnym()?80*1024*1024:250*1024*1024;
   const rozpakowane=wpisy.reduce((s,x)=>s+(x&&x._data&&x._data.uncompressedSize||0),0);
   if(rozpakowane>limit)throw new Error("Dokument po rozpakowaniu przekracza bezpieczny limit "+ludzkiRozmiar(limit)+".");
   const mm=await smartMammoth();
-  const wynik=await mm.convertToHtml({arrayBuffer:buf},{
+  sprawdzAnulowanieImportu();
+  const wynik=await smartCzekaj(mm.convertToHtml({arrayBuffer:buf},{
     convertImage:mm.images.imgElement(async image=>({src:"data:"+image.contentType+";base64,"+await image.read("base64")}))
-  });
+  }));
+  sprawdzAnulowanieImportu();
   let raw=String(wynik.value||"");
   const dom=parsujBezwladnie(raw),h1=dom.querySelector("h1"),nazwa=(h1&&h1.textContent.trim())||smartNazwaBezRozszerzenia(file.name);
-  raw=raw.replace(/<h1(\s[^>]*)?>/gi,"<h2>").replace(/<\/h1>/gi,"</h2>");
+  raw=raw.replace(/<h([1-6])(?:\s[^>]*)?>/gi,(_,n)=>+n<=2?"<h2>":"<h3>")
+    .replace(/<\/h([1-6])>/gi,(_,n)=>+n<=2?"</h2>":"</h3>");
   const clean=sanitize(raw);
+  if(!smartMaTresc(clean))throw new Error("Dokument Word nie zawiera tekstu ani obsługiwanych ilustracji.");
   const czesci=dziel==="parts"?smartPodzielNaglowki(clean,nazwa):[{title:nazwa,html:clean}];
   return czesci.map((x,i)=>({title:x.title||nazwa,html:x.html||"<div>[Pusty dokument]</div>",source:file.name,part:i+1,kind:"docx",warning:(wynik.messages||[]).length?"Część złożonego formatowania mogła zostać uproszczona.":""}));
 }
 async function smartCzytajObraz(file,zachowaj,ocr){
-  const img=await smartObraz(file),canvas=smartCanvas(img,2200);let tekst="";
-  try{if(ocr)tekst=await smartRozpoznajObraz(canvas);
+  const img=await smartCzekaj(smartObraz(file)),canvas=smartCanvas(img,2200);let tekst="",warning="";
+  try{
+    if(ocr)try{tekst=await smartRozpoznajObraz(canvas);}catch(e){
+      if(e instanceof ImportAnulowany||!zachowaj)throw e;
+      await smartZakonczOcr();warning="OCR nie zadziałał; zachowano obraz. "+(e.message||"");
+    }
     const foto=zachowaj?'<img src="'+canvas.toDataURL("image/jpeg",.84)+'" class="img-center" style="width:75%">':"";
-    const html=foto+(foto&&tekst?"<div><br></div>":"")+smartHtmlZTekstu(tekst)+(tekst?"":"<div>[Nie rozpoznano tekstu na obrazie]</div>");
-    return [{title:smartNazwaBezRozszerzenia(file.name),html,source:file.name,kind:"image",warning:ocr&&!tekst?"Nie udało się rozpoznać tekstu.":(!ocr?"OCR był wyłączony.":"")}];
+    if(!foto&&!tekst)throw new Error("Nie rozpoznano treści. Włącz OCR lub zachowanie obrazu.");
+    const html=foto+(foto&&tekst?"<div><br></div>":"")+smartHtmlZTekstu(tekst);
+    return [{title:smartNazwaBezRozszerzenia(file.name),html,source:file.name,kind:"image",warning:warning||(ocr&&!tekst?"Nie udało się rozpoznać tekstu.":(!ocr?"OCR był wyłączony.":""))}];
   }finally{canvas.width=1;canvas.height=1;}
 }
 function smartRenderPliki(){
   const box=$("smartFiles");box.innerHTML=smartPliki.map(f=>'<div class="smart-file"><span aria-hidden="true">'+(smartTyp(f)==="pdf"?"📄":smartTyp(f)==="docx"?"📝":"🖼️")+'</span><b>'+appleEsc(f.name)+'</b><small>'+ludzkiRozmiar(f.size)+'</small></div>').join("");
   $("smartAnalyze").disabled=!smartPliki.length;
 }
+function smartPokazZaimportowane(tag){
+  query="";$("search").value="";
+  filt.tag=tag.id;filt.book="all";filt.ch=null;
+  if(typeof quickFilter!=="undefined")quickFilter="all";
+  if(typeof persistFilt==="function")persistFilt();
+  renderAll();
+  if(innerWidth<=900&&typeof mobileShow==="function")mobileShow("colNotes");
+}
 function smartRenderPodglad(){
   $("smartSummary").innerHTML="Powstanie <b>"+smartWyniki.length+"</b> notatek. Odznacz te, których nie chcesz dodawać, i popraw tytuły w razie potrzeby.";
-  $("smartPreviewList").innerHTML=smartWyniki.map((x,i)=>'<label class="smart-preview-row"><input type="checkbox" data-smart-check="'+i+'" checked><span><input type="text" maxlength="180" data-smart-title="'+i+'" value="'+appleEsc(x.title)+'"><small>'+appleEsc(x.source+(x.page?" · strona "+x.page:""))+'</small>'+(x.warning?'<small class="smart-warn">⚠ '+appleEsc(x.warning)+'</small>':"")+'</span></label>').join("");
+  $("smartPreviewList").innerHTML=smartWyniki.map((x,i)=>'<div class="smart-preview-row"><input type="checkbox" aria-label="Dodaj notatkę '+(i+1)+'" data-smart-check="'+i+'" checked><div><input type="text" aria-label="Tytuł notatki '+(i+1)+'" maxlength="180" data-smart-title="'+i+'" value="'+appleEsc(x.title)+'"><small>'+appleEsc(x.source+(x.page?" · strona "+x.page:""))+'</small>'+(x.warning?'<small class="smart-warn">⚠ '+appleEsc(x.warning)+'</small>':"")+'<details class="smart-content"><summary>Pokaż treść notatki</summary><div>'+sanitize(x.html)+'</div></details></div></div>').join("");
   $("smartSetup").hidden=true;$("smartPreview").hidden=false;openModal("modalSmartImport");
 }
 function otworzSmartImport(){
+  if(smartPracuje){toast("Poczekaj na zakończenie lub anulowanie bieżącego importu.");return;}
   smartPliki=[];smartWyniki=[];$("smartInput").value="";$("smartFiles").innerHTML="";$("smartAnalyze").disabled=true;
   $("smartSetup").hidden=false;$("smartPreview").hidden=true;openModal("modalSmartImport");
 }
 $("smartInput").addEventListener("change",e=>{
+  if(smartPracuje)return;
   const lista=[...(e.target.files||[])];
+  if(!lista.length)return;
+  smartPliki=[];smartWyniki=[];smartRenderPliki();
+  const staryWord=lista.find(f=>/\.doc$/i.test(f.name||""));
+  if(staryWord){showInfo("Starszy dokument Word","Plik <b>"+appleEsc(staryWord.name)+"</b> jest w formacie .doc. W Wordzie lub LibreOffice wybierz Zapisz jako → DOCX albo PDF i wskaż zapisaną kopię.");e.target.value="";return;}
   if(lista.length>SMART_MAX_PLIKOW){showInfo("Za dużo plików","Jednorazowo wybierz najwyżej <b>"+SMART_MAX_PLIKOW+"</b> plików.");e.target.value="";return;}
   const limit=importNaUrzadzeniuMobilnym()?SMART_MAX_PLIK_MOBILE:SMART_MAX_PLIK_DESKTOP;
   const zle=lista.find(f=>!smartTyp(f)||!f.size||f.size>limit);
@@ -15705,13 +15821,15 @@ $("smartAnalyze").onclick=async()=>{
   if(!smartPliki.length||smartPracuje)return;smartPracuje=true;$("smartAnalyze").disabled=true;
   const dziel=$("smartSplit").value,ocr=$("smartOcr").checked,zachowaj=$("smartImages").checked;
   closeModal("modalSmartImport");pokazPostepImportu("Inteligentny import");smartWyniki=[];const bledy=[];
-  _anulujImportDodatkowo=()=>{if(smartOcrWorker){try{smartOcrWorker.terminate();}catch(_){ }smartOcrWorker=null;}};
+  smartAbortController=new AbortController();
+  _anulujImportDodatkowo=()=>{smartAbortController.abort();smartZakonczOcr();};
   try{
     for(let i=0;i<smartPliki.length;i++){
       const f=smartPliki[i],typ=smartTyp(f),baza=12+Math.round(i/smartPliki.length*70);sprawdzAnulowanieImportu();
       ustawPostepImportu(baza,"Odczytuję „"+f.name+"” ("+(i+1)+" z "+smartPliki.length+")…");
       try{
-        const x=typ==="pdf"?await smartCzytajPdf(f,dziel,ocr,baza):typ==="docx"?await smartCzytajDocx(f,dziel):await smartCzytajObraz(f,zachowaj,ocr);
+        const x=typ==="pdf"?await smartCzytajPdf(f,dziel,ocr,baza,zachowaj):typ==="docx"?await smartCzytajDocx(f,dziel):await smartCzytajObraz(f,zachowaj,ocr);
+        sprawdzAnulowanieImportu();
         smartWyniki.push(...x);
       }catch(err){if(err instanceof ImportAnulowany)throw err;bledy.push(f.name+": "+(err&&err.message||"błąd odczytu"));}
       await oddechImportu();
@@ -15720,8 +15838,8 @@ $("smartAnalyze").onclick=async()=>{
     if(!smartWyniki.length)throw new Error(bledy.join(" ")||"Nie znaleziono treści do zaimportowania.");
     if(bledy.length)smartWyniki[0].warning=(smartWyniki[0].warning?smartWyniki[0].warning+" ":"")+"Pominięte pliki: "+bledy.join("; ");
     ustawPostepImportu(100,"Podgląd jest gotowy");await oddechImportu();schowajPostepImportu();smartRenderPodglad();
-  }catch(err){const anulowany=err instanceof ImportAnulowany||(_stanImportu&&_stanImportu.anulowany);await smartZakonczOcr();if(_stanImportu)schowajPostepImportu();if(!anulowany)showInfo("Nie odczytano dokumentów",appleEsc(err&&err.message||"Nieznany błąd")+"<br><br><b>Żadna notatka nie została zapisana.</b>");}
-  finally{smartPracuje=false;$("smartAnalyze").disabled=!smartPliki.length;}
+  }catch(err){const anulowany=err instanceof ImportAnulowany||(_stanImportu&&_stanImportu.anulowany);await smartZakonczOcr();if(_stanImportu)schowajPostepImportu();if(!anulowany)await showInfo("Nie odczytano dokumentów",appleEsc(err&&err.message||"Nieznany błąd")+"<br><br><b>Żadna notatka nie została zapisana.</b>");openModal("modalSmartImport");}
+  finally{smartAbortController=null;smartPracuje=false;$("smartAnalyze").disabled=!smartPliki.length;}
 };
 $("smartBack").onclick=()=>{$("smartPreview").hidden=true;$("smartSetup").hidden=false;};
 $("smartSave").onclick=async()=>{
@@ -15730,7 +15848,9 @@ $("smartSave").onclick=async()=>{
   $("smartPreviewList").querySelectorAll("[data-smart-check]").forEach(ch=>{if(!ch.checked)return;const i=+ch.dataset.smartCheck,x=Object.assign({},smartWyniki[i]);const inp=$("smartPreviewList").querySelector('[data-smart-title="'+i+'"]');x.title=(inp&&inp.value.trim())||x.title;wybrane.push(x);});
   if(!wybrane.length){toast("Zaznacz co najmniej jedną notatkę");return;}
   smartPracuje=true;$("smartSave").disabled=true;closeModal("modalSmartImport");pokazPostepImportu("Zapisywanie dokumentów");
+  let zapisano=false;
   try{
+    if(!idb){pokazBrakPamieci();throw bladBrakuPamieci();}
     const tagiNowe=tags.map(t=>Object.assign({},t)),nazwaTagu=$("smartTag").value.trim()||"Importowane dokumenty";
     let tag=tagiNowe.find(t=>norm(t.name)===norm(nazwaTagu));if(!tag){tag={id:nastepnyNumer(tagiNowe),name:nazwaTagu,nw:true};tagiNowe.push(tag);}
     const nowe=[],znane=notes.slice();let duplikaty=0,suma=0;
@@ -15738,15 +15858,24 @@ $("smartSave").onclick=async()=>{
       sprawdzAnulowanieImportu();const x=wybrane[i],clean=sanitize(x.html),now=new Date().toISOString();
       const n={g:crypto.randomUUID().toUpperCase(),t:String(x.title||"Dokument").slice(0,180),h:clean,c:htmlToPlain(clean),b:0,ch:0,v:0,pub:"",ks:"",doc:0,itn:0,col:0,cr:now,mo:now,tg:[tag.id],nw:true,tgd:true,importSrc:x.source,importKind:x.kind};
       if(x.page)n.importPage=x.page;if(x.part)n.importPart=x.part;
-      if(znane.some(a=>appleTaSamaNotatka(a,n))){duplikaty++;continue;}nowe.push(n);znane.push(n);suma+=clean.length*2;
+      if(znane.some(a=>smartTaSamaNotatka(a,n))){duplikaty++;continue;}nowe.push(n);znane.push(n);suma+=clean.length*2;
     }
     if(!nowe.length){schowajPostepImportu();showInfo("Nie dodano duplikatów","Wybrane dokumenty są już zapisane w JW Study.");return;}
     await sprawdzMiejsceDlaImportu(smartPliki.reduce((a,f)=>a+f.size,0),suma);rozpocznijZapisImportu();ustawPostepImportu(70,"Zapisuję "+nowe.length+" notatek w jednej transakcji…");
     await idbZapiszImportZewnetrzny(nowe,tagiNowe,notes.length+nowe.length,tagiNowe.length);
+    zapisano=true;
     notes.push(...nowe);tags=tagiNowe;bumpTagsVer();bumpDirty();if(typeof workerOznaczIndeksDoOdbudowy==="function")workerOznaczIndeksDoOdbudowy();
     ustawPostepImportu(100,"Gotowe");renderAll();await oddechImportu();schowajPostepImportu();
+    smartPokazZaimportowane(tag);
     showInfo("Dokumenty zaimportowane","Dodano <b>"+nowe.length+"</b> notatek do etykiety <b>"+appleEsc(tag.name)+"</b>."+(duplikaty?"<br>Pominięto duplikaty: "+duplikaty+".":"")+"<br><br>Rozpoznane odsyłacze biblijne staną się aktywne podczas wyświetlania notatki.");
-  }catch(err){if(_stanImportu)schowajPostepImportu();showInfo("Nie zapisano dokumentów",appleEsc(err&&err.message||"Nieznany błąd")+"<br><br><b>Dotychczasowe dane pozostały bez zmian.</b>");}
+  }catch(err){
+    if(_stanImportu)schowajPostepImportu();
+    if(zapisano){await showInfo("Dokumenty zapisane","Zapis do bazy zakończył się poprawnie, ale nie udało się odświeżyć widoku. Otwórz aplikację ponownie, aby zobaczyć notatki.");}
+    else{
+      if(!(err instanceof ImportAnulowany))await showInfo("Nie zapisano dokumentów",appleEsc(err&&err.message||"Nieznany błąd")+"<br><br><b>Dotychczasowe dane pozostały bez zmian.</b> Podgląd pozostaje dostępny po zamknięciu tego komunikatu.");
+      openModal("modalSmartImport");
+    }
+  }
   finally{smartPracuje=false;$("smartSave").disabled=false;}
 };
 
@@ -17060,6 +17189,7 @@ async function handleJsonFile(e){
 async function wczytajKopieZTekstu(tekstPliku){
   let data;
   try{
+    if(!idb){pokazBrakPamieci();throw bladBrakuPamieci();}
     const f = {size: (tekstPliku||"").length};
     /* Kopia JSON jest wczytywana w całości do pamięci i przetwarzana jako tekst.
        Przy 16 000 notatek plik ma kilkanaście MB, więc 200 MB to zapas z nawiązką,

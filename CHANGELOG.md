@@ -1,5 +1,21 @@
 # Dziennik zmian
 
+## v3.24 — poprawki zapisu, offline i importu dokumentów
+
+- zapis pojedynczych rekordów czeka na zatwierdzenie całej transakcji i obsługuje jej przerwanie;
+- brak trwałej pamięci wywołuje widoczne ostrzeżenie; zapis notatki nie udaje sukcesu, a import nie dodaje danych wyłącznie do pamięci tymczasowej;
+- szkice porównywane są z uwzględnieniem formatowania i ilustracji;
+- Service Worker rozdziela dokumenty aplikacji i OneNote, odrzuca błędne odpowiedzi HTTP i usuwa wyłącznie stare cache tej samej instalacji;
+- OCR uruchamia lokalny worker zgodny z istniejącą polityką CSP; anulowanie i limit czasu kończą oczekujące operacje;
+- krótkie teksty PDF nie są zastępowane OCR, a fragmenty słów i końce wierszy są poprawnie łączone;
+- dokumenty i płótna PDF są zwalniane również po błędzie; skany mogą zachować obraz strony, gdy OCR zawiedzie;
+- podział DOCX nie pomija samych nagłówków ani sekcji z ilustracją i uwzględnia wszystkie poziomy nagłówków;
+- podgląd pokazuje treść notatek; komunikaty wyjaśniają nieobsługiwany DOC, chroniony PDF i brak bibliotek;
+- porównywanie duplikatów dokumentów uwzględnia HTML i obrazy; notatki w koszu nie blokują ponownego importu;
+- błąd zapisu pozostawia wybrane elementy i zmienione tytuły w podglądzie, a udany import pokazuje etykietę z dodanymi notatkami;
+- dołączono samodzielny zestaw testów regresji i instrukcję aktualizacji.
+
+
 ## v3.23 — inteligentny import PDF, Worda i obrazów
 
 - jedno okno importuje wiele plików PDF, DOCX, PNG, JPG i WEBP;

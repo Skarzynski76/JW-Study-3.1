@@ -23,5 +23,5 @@ Word oraz polskie OCR.
 Na GitHub usuń stare pliki „index 3.html”, „index 5.html” itp. Strona używa
 tylko pliku o dokładnej nazwie index.html, lecz stare kopie wprowadzają w błąd.
 
-Testów, narzędzi i dokumentacji tu nie ma i być nie powinno — zostają
-u Ciebie na dysku, w wersji roboczej.
+Dodatkowe katalogi testy/ i docs/ zawierają testy regresji oraz instrukcję
+aktualizacji. Nie są potrzebne do działania strony; można je pominąć przy publikacji.
