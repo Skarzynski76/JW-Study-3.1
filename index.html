@@ -22,7 +22,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="JW Study">
 <meta name="theme-color" content="#256b52">
 <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
@@ -7689,7 +7689,7 @@ html[data-theme="dark"] .bezp-result.ok{background:#173b2f;color:#a8dec8}html[da
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <h1 class="brand-name">JW Study <span class="ver">v3.36</span></h1>
+      <h1 class="brand-name">JW Study <span class="ver">v3.37</span></h1>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -9115,10 +9115,15 @@ async function boot(){
   buildStatic();
   initViewBar();
   renderAll();
-  // iPad/iPhone uruchomione z ikony ekranu początkowego: na iPadzie env(safe-area-inset-top)
-  // bywa równe 0 mimo paska stanu — wymuś minimalny margines
+  // iPad/iPhone uruchomione z ikony ekranu początkowego: po aktualizacji systemu
+  // półprzezroczysty pasek stanu potrafi zajść na nagłówek, a env() nadal zwraca 0.
+  // Rezerwujemy więc osobny, pusty pas nad treścią nagłówka.
   if(isIOS() && navigator.standalone){
-    document.querySelector("header").style.paddingTop = "max(calc(10px + env(safe-area-inset-top, 0px)), 40px)";
+    document.body.classList.add("ios-standalone");
+    const ipad = navigator.maxTouchPoints>1 && Math.min(screen.width,screen.height)>=700;
+    document.querySelector("header").style.paddingTop = ipad
+      ? "max(calc(14px + env(safe-area-inset-top, 0px)), 56px)"
+      : "max(calc(12px + env(safe-area-inset-top, 0px)), 46px)";
   }
   $("loading").style.display = "none";
   updateBackupBadge();
@@ -11153,7 +11158,15 @@ try{ bibleKs = localStorage.getItem(KP+"BibleKs") || ""; }catch(e){}
  */
 function finderUrl(n){
   if(n.b){
-    const bible = String(n.b).padStart(2,"0")+String(n.ch||1).padStart(3,"0")+String(n.v||0).padStart(3,"0");
+    const kod = v=>String(n.b).padStart(2,"0")+String(n.ch||1).padStart(3,"0")+String(v||0).padStart(3,"0");
+    const wersety=Array.isArray(n.verses)&&n.verses.length
+      ? [...new Set(n.verses.map(Number).filter(v=>v>0))].sort((a,b)=>a-b)
+      : (n.v2&&n.v2>n.v ? Array.from({length:n.v2-n.v+1},(_,i)=>n.v+i) : [n.v||0]);
+    let bible=kod(wersety[0]);
+    if(wersety.length>1){
+      const ciagly=wersety.every((v,i)=>i===0||v===wersety[i-1]+1);
+      bible=ciagly ? kod(wersety[0])+"-"+kod(wersety[wersety.length-1]) : wersety.map(kod).join(",");
+    }
     return "https://www.jw.org/finder?srcid=jwlshare&wtlocale=P&prefer=lang&bible="+bible+"&pub="+(bibleKs||"nwt");
   }
   if(n.doc) return "https://www.jw.org/finder?srcid=jwlshare&wtlocale=P&prefer=lang&docid="+n.doc;
@@ -13877,10 +13890,24 @@ function askConfirm(title, html, opts){
 }
 function parseRef(s){
   s=(s||"").trim(); if(!s) return null;
-  // wydziel rozdział:werset(-werset) z końca
-  const mNum = s.match(/\s(\d+)(?:\s*[:.,]\s*(\d+)(?:\s*[-–]\s*(\d+))?)?\s*$/);
-  let bookPart=s, ch=0, v=0, v2=0;
-  if(mNum){ bookPart=s.slice(0,mNum.index).trim(); ch=+mNum[1]; v=mNum[2]?+mNum[2]:0; v2=mNum[3]?+mNum[3]:0; }
+  // Rozpoznaje pojedynczy werset, zakres oraz listę: 19:3-5 i 18:3,4.
+  const mNum = s.match(/\s(\d+)(?:\s*([:.,])\s*(\d+)((?:\s*[-–,;]\s*\d+)*))?\s*$/);
+  let bookPart=s, ch=0, v=0, v2=0, verses=[];
+  if(mNum){
+    bookPart=s.slice(0,mNum.index).trim(); ch=+mNum[1]; v=mNum[3]?+mNum[3]:0;
+    if(v){
+      verses=[v];
+      const ogon=mNum[4]||""; let mm;
+      const rx=/\s*([-–,;])\s*(\d+)/g;
+      while((mm=rx.exec(ogon))){
+        const koniec=+mm[2];
+        if((mm[1]==="-"||mm[1]==="–") && koniec>=verses[verses.length-1]){
+          for(let x=verses[verses.length-1]+1;x<=koniec;x++) verses.push(x);
+        }else if(koniec>0) verses.push(koniec);
+      }
+      verses=[...new Set(verses)]; v2=verses.length>1?verses[verses.length-1]:0;
+    }
+  }
   const np=norm(bookPart); if(!np) return null;
   let best=-1, bestScore=-1;
   for(let i=1;i<BOOKS.length;i++){
@@ -13891,18 +13918,25 @@ function parseRef(s){
     if(sc>bestScore){ bestScore=sc; best=i; }
   }
   if(best<0 || bestScore<2) return null;
-  return {b:best, ch:ch||0, v:v||0, v2:v2||0};
+  return {b:best, ch:ch||0, v:v||0, v2:v2||0, verses};
 }
 function refText(r){
-  let s=BOOKS[r.b]; if(r.ch){ s+=" "+r.ch; if(r.v){ s+=":"+r.v; if(r.v2) s+="-"+r.v2; } }
+  let s=BOOKS[r.b]; if(r.ch){ s+=" "+r.ch; if(r.v){
+    s+=":"+r.v;
+    const vv=Array.isArray(r.verses)?r.verses:[];
+    if(vv.length>1){
+      const ciagly=vv.every((x,i)=>i===0||x===vv[i-1]+1);
+      s+=ciagly?"-"+vv[vv.length-1]:","+vv.slice(1).join(",");
+    }else if(r.v2) s+="-"+r.v2;
+  } }
   return s;
 }
 /* ===== automatyczne wykrywanie odniesień do wersetów w tekście notatki ===== */
 const REF_RX = (function(){
   const esc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
   const names = BOOKS.slice(1).slice().sort((a,b)=>b.length-a.length).map(esc);
-  try{ return new RegExp("(?<![\\p{L}\\p{N}])("+names.join("|")+")\\s+(\\d+)\\s*[:.,]\\s*(\\d+)(?:\\s*[-–]\\s*\\d+)?","gu"); }
-  catch(e){ return new RegExp("("+names.join("|")+")\\s+(\\d+)\\s*[:.,]\\s*(\\d+)(?:\\s*[-–]\\s*\\d+)?","g"); }
+  try{ return new RegExp("(?<![\\p{L}\\p{N}])("+names.join("|")+")\\s+(\\d+)\\s*[:.,]\\s*(\\d+)(?:\\s*[-–,;]\\s*\\d+)*","gu"); }
+  catch(e){ return new RegExp("("+names.join("|")+")\\s+(\\d+)\\s*[:.,]\\s*(\\d+)(?:\\s*[-–,;]\\s*\\d+)*","g"); }
 })();
 function autolinkRefs(container){
   if(!container) return;
@@ -13923,7 +13957,7 @@ function autolinkRefs(container){
     while((m=REF_RX.exec(text))){
       const start=m.index, end=start+m[0].length;
       if(start>last) frag.appendChild(document.createTextNode(text.slice(last,start)));
-      const ref=parseRef(m[0]); const url=ref?finderUrl({b:ref.b,ch:ref.ch||1,v:ref.v||0}):null;
+      const ref=parseRef(m[0]); const url=ref?finderUrl(ref):null;
       if(url){ const a=document.createElement("a"); a.className="jwl-ref auto"; a.href=url; a.target="_blank"; a.rel="noopener noreferrer"; a.setAttribute("data-url",url); a.textContent=m[0]; frag.appendChild(a); }
       else frag.appendChild(document.createTextNode(m[0]));
       last=end;
@@ -13938,7 +13972,7 @@ async function insertVerseRef(ce){
   if(txt===null || txt==="") return;
   const ref=parseRef(txt);
   if(!ref){ toast("Nie rozpoznano — wpisz np. Jan 3:16"); return; }
-  const url=finderUrl({b:ref.b,ch:ref.ch||1,v:ref.v||0});
+  const url=finderUrl(ref);
   if(!url){ toast("Brak linku do tego miejsca"); return; }
   const a=document.createElement("a");
   a.className="jwl-ref"; a.href=url; a.target="_blank"; a.rel="noopener noreferrer"; a.setAttribute("data-url",url); a.textContent=refText(ref);
@@ -14889,13 +14923,20 @@ function saveContentEl(contEl, n){
   if(typeof przPrzenumeruj==="function") przPrzenumeruj(contEl);
   n.h=clean; n.c=htmlToPlain(clean);
   markDirty(n);
-  /* NIE przebudowuj całej listy w trakcie pracy z tekstem. W pełnym ekranie
-     odświeżenie jest już odkładane do zamknięcia. Tak samo musi być w
-     wydobytej karteczce na tablicy: jej DOM zawiera właśnie zapisany kolor,
-     a renderNotes() odłożyłby ją natychmiast do małego rozmiaru. */
-  const wydobyta = contEl.closest && contEl.closest("#noteList.v-tablica .ncard.wydobyta");
+  /* Kolor został już naniesiony bezpośrednio w bieżącym DOM. Przerysowanie listy
+     zmieniało kolejność wg daty modyfikacji i przesuwało kartę spod palca.
+     Zostawiamy więc kartę dokładnie na miejscu i aktualizujemy jej wpis w cache. */
+  const card=contEl.closest && contEl.closest(".ncard");
   if(fsGuid){ fsListDirty=true; }
-  else if(!wydobyta){ renderNotes(); }
+  else if(card){
+    const data=card.querySelector(".pill.date");
+    if(data){
+      const tmp=document.createElement("div"); tmp.innerHTML=noteCardDate(n);
+      if(tmp.firstElementChild) data.replaceWith(tmp.firstElementChild);
+    }
+    const hit=_cardCache.get(n.g);
+    if(hit && hit.node===card){ hit.sig=noteCardSig(n); hit.note=n; }
+  }
 }
 hlBar.addEventListener("pointerdown", e=>{
   e.preventDefault();
@@ -14921,30 +14962,24 @@ hlBar.addEventListener("pointerdown", e=>{
   saveContentEl(contEl, n);
 }, true);
 function applyMark(range,color){
-  /* Nie wkładamy kilku akapitów do jednego <mark> — taki HTML jest niepoprawny
-     i Safari potrafi go przebudować inaczej przy każdym zapisie. Kolorujemy
-     osobno rzeczywiste fragmenty tekstowe, od końca, więc zakres nie rozpada
-     się podczas zmian DOM. */
-  const root = range.commonAncestorContainer.nodeType===1
-    ? range.commonAncestorContainer : range.commonAncestorContainer.parentElement;
-  const walker=document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  const odcinki=[]; let node;
-  while(node=walker.nextNode()){
-    if(!node.nodeValue || !node.nodeValue.length) continue;
-    try{ if(!range.intersectsNode(node)) continue; }catch(_){ continue; }
-    let a=node===range.startContainer ? range.startOffset : 0;
-    let b=node===range.endContainer ? range.endOffset : node.nodeValue.length;
-    a=Math.max(0,Math.min(a,node.nodeValue.length));
-    b=Math.max(a,Math.min(b,node.nodeValue.length));
-    if(b>a) odcinki.push([node,a,b]);
-  }
+  /* Wyjmujemy zaznaczony fragment, zdejmujemy z niego poprzedni kolor i dopiero
+     nakładamy nowy. Range.extractContents rozcina stary <mark> na granicach
+     zaznaczenia, więc kolor poza zaznaczeniem zostaje, a dwa kolory nie są
+     nigdy zagnieżdżone jeden w drugim. */
+  const cont=(range.commonAncestorContainer.nodeType===1
+    ? range.commonAncestorContainer : range.commonAncestorContainer.parentElement).closest(".ncontent");
+  const frag=range.extractContents();
+  [...frag.querySelectorAll("mark")].forEach(m=>m.replaceWith(...m.childNodes));
+  const walker=document.createTreeWalker(frag,NodeFilter.SHOW_TEXT);
+  const teksty=[]; let node;
+  while(node=walker.nextNode()) if(node.nodeValue && node.nodeValue.length) teksty.push(node);
   const nowe=[];
-  odcinki.reverse().forEach(([tekst,a,b])=>{
-    const cz=document.createRange(); cz.setStart(tekst,a); cz.setEnd(tekst,b);
+  teksty.forEach(tekst=>{
     const mark=document.createElement("mark"); mark.className="hl"+color;
-    mark.appendChild(cz.extractContents()); cz.insertNode(mark);
-    nowe.push(mark);
+    tekst.parentNode.replaceChild(mark,tekst); mark.appendChild(tekst); nowe.push(mark);
   });
+  range.insertNode(frag);
+  if(cont) cont.querySelectorAll("mark:empty").forEach(m=>m.remove());
   return nowe;
 }
 function wrapTag(range,tag){
@@ -14953,10 +14988,12 @@ function wrapTag(range,tag){
   catch(err){ const frag=range.extractContents(); el.appendChild(frag); range.insertNode(el); }
 }
 function unwrapMarks(range,contEl){
-  [...contEl.querySelectorAll("mark")].filter(m=>range.intersectsNode(m)).forEach(m=>{
-    while(m.firstChild) m.parentNode.insertBefore(m.firstChild,m);
-    m.remove();
-  });
+  /* Tak samo przy usuwaniu koloru: zdejmujemy go tylko z zaznaczonej części,
+     nie z całego, dłuższego podkreślenia, które przecina zaznaczenie. */
+  const frag=range.extractContents();
+  [...frag.querySelectorAll("mark")].forEach(m=>m.replaceWith(...m.childNodes));
+  range.insertNode(frag);
+  contEl.querySelectorAll("mark:empty").forEach(m=>m.remove());
 }
 
 </script>
@@ -15651,7 +15688,7 @@ function smartPodzielNaglowki(html, tytulBazowy){
 const smartAssetUrls=new Map();
 function smartAssetBytes(nazwa){
   const el=document.getElementById("smartAsset-"+nazwa);
-  if(!el)throw new Error("Niekompletna wersja aplikacji: brak biblioteki "+nazwa+". Wgraj index.html wersji 3.36.");
+  if(!el)throw new Error("Niekompletna wersja aplikacji: brak biblioteki "+nazwa+". Wgraj index.html wersji 3.37.");
   const raw=atob(el.textContent.trim()),bytes=new Uint8Array(raw.length);
   for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
   return bytes;
