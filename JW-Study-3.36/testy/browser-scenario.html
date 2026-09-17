@@ -1,0 +1,16 @@
+<button style="position:fixed;top:0;left:0;z-index:999999" onclick="testImport()">TEST IMPORT</button><pre id="testResult" style="position:fixed;top:40px;left:0;background:white;color:black;z-index:999999;max-width:90vw;white-space:pre-wrap"></pre><script>
+async function testImport(){const out=document.getElementById('testResult');out.textContent='RUNNING';const results=[];pokazPostepImportu('Test');smartAbortController=new AbortController();try{
+for(const [name,path,kind] of [['Test.pdf','text.pdf','pdf'],['Word.docx','word.docx','docx'],['Zdjęcie.png','ocr.png','image'],['Skan.pdf','scan.pdf','pdf'],['Word-skan.docx','word-scan.docx','docx']]){
+const b=await (await fetch('./testy/fixtures/'+path)).blob(),f=new File([b],name);await smartSprawdzTyp(f);
+const r=kind==='pdf'?await smartCzytajPdf(f,'file',true):kind==='docx'?await smartCzytajDocx(f,'file',name==='Word-skan.docx'):await smartCzytajObraz(f,false,true);
+if((name==='Skan.pdf'||name==='Word-skan.docx')&&!htmlToPlain(r[0].html).includes('Jehowa jest moim Pasterzem.'))throw Error(name+' brak OCR');
+if(!htmlToPlain(r[0].html).trim())throw Error(name+' pusty');results.push(...r);
+}
+smartWyniki=results;smartPliki=[];await smartZakonczOcr();schowajPostepImportu();smartRenderPodglad();
+document.querySelector('[data-smart-body="0"]').innerHTML='<div>Poprawiona treść PDF</div>';
+await $('smartSave').onclick();
+if(!notes.some(n=>n.c.includes('Poprawiona treść PDF')))throw Error('Brak poprawionej notatki');
+if(!notes.some(n=>n.c.includes('Jehowa jest moim Pasterzem.')))throw Error('Brak notatki OCR');
+out.textContent='PASS: PDF, DOCX, OCR zdjęcia, OCR skanowanego PDF, OCR ilustracji DOCX, edycja i zapis. Zewnętrzne biblioteki zwracają 404. Liczba: '+notes.length;
+}catch(e){out.textContent='FAIL '+e.message;}finally{await smartZakonczOcr();if(_stanImportu)schowajPostepImportu();}}
+</script>

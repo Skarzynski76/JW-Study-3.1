@@ -1,0 +1,33 @@
+OK  Składnia wszystkich skryptów i zgodność wersji
+OK  Brak bazy nie daje sukcesu zapisu ani importu
+OK  Zapis czeka na commit; abort po operacji kończy się błędem
+OK  Szkic z nowym formatowaniem lub ilustracją jest proponowany do odzyskania
+OK  Niezmieniony szkic jest usuwany bez pytania
+OK  Łączenie fragmentów słów i pusty znacznik końca linii PDF
+Warning: fetchStandardFontData: failed to fetch file "LiberationSans-Regular.ttf" with "UnknownErrorException: The standard font "baseUrl" parameter must be specified, ensure that the "standardFontDataUrl" API parameter is provided.".
+Warning: fetchStandardFontData: failed to fetch file "LiberationSans-Regular.ttf" with "UnknownErrorException: The standard font "baseUrl" parameter must be specified, ensure that the "standardFontDataUrl" API parameter is provided.".
+Warning: Indexing all PDF objects
+OK  Rzeczywisty PDF: krótki tekst bez OCR oraz podział stron
+OK  PDF zwalnia dokument po limicie stron i błędzie odczytu
+OK  Skan: zachowany obraz przy awarii OCR; brak pustych notatek
+OK  Anulowanie kończy oczekiwanie nawet gdy biblioteka nie odpowiada
+OK  OCR używa lokalnego workera zgodnego z CSP
+OK  Spóźniony worker po anulowaniu jest zamykany
+OK  Word: nagłówki bez akapitów i sekcje z ilustracją nie znikają
+OK  Duplikaty uwzględniają obrazy, formatowanie i kosz
+OK  Rzeczywisty DOCX: polski tekst, nagłówki, tabela, obraz, konwersja i podział
+OK  Rzeczywisty OCR: lokalny WebAssembly i polski model z paczki
+OK  Atomowy import: zatwierdzenie całości albo wycofanie przy błędnej liczbie
+OK  Przycisk dodawania: wybór i tytuł są zapisywane dopiero po commit; błąd zachowuje podgląd
+OK  Offline: OneNote i aplikacja mają oddzielne dokumenty
+OK  Aktualizacja usuwa tylko stary cache tej samej instalacji
+OK  HTTP 404 nie jest zapisywany jako działająca kopia offline
+OK  Wszystkie pliki do importu/offline znajdują się w paczce
+OK  Typ pliku pochodzi z zawartości; błędna nazwa nie jest zmieniana
+OK  Dokładny OCR obejmuje PDF mający częściową warstwę tekstową
+OK  Wbudowane biblioteki są poza komentarzami HTML i zgodne z plikami
+OK  Model OCR inicjalizuje nazwę języka zamiast danych binarnych
+
+26/26 testów OK
+
+Test przeglądarkowy (Codex na Macu) przy 404 dla zewnętrznych bibliotek: 5 rodzajów importu, edycja i zapis — PASS. Przycisk wyboru zrzutu, OCR i zapis — PASS. Safari na Macu: 5 rodzajów importu, edycja, zapis, ponowne otwarcie i brak duplikatów — PASS. Fizyczny iPad/iPadOS: nie testowano.

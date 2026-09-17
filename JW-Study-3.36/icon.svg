@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <title>JW Study</title>
+  <defs>
+    <linearGradient id="bg" x1="0.15" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#8b9668"/>
+      <stop offset="0.5" stop-color="#7c8759"/>
+      <stop offset="1" stop-color="#6b7549"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0.6" y2="1">
+      <stop offset="0" stop-color="#f2f4f6"/>
+      <stop offset="0.35" stop-color="#c8cdd3"/>
+      <stop offset="0.65" stop-color="#9ba1a8"/>
+      <stop offset="1" stop-color="#d8dce1"/>
+    </linearGradient>
+    <linearGradient id="coverG" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#e9eaec"/>
+      <stop offset="0.5" stop-color="#cfd2d6"/>
+      <stop offset="1" stop-color="#a8adb4"/>
+    </linearGradient>
+    <linearGradient id="edgeG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f6f7f9"/>
+      <stop offset="0.45" stop-color="#d2d6db"/>
+      <stop offset="1" stop-color="#9fa5ad"/>
+    </linearGradient>
+    <linearGradient id="pgL" x1="0.2" y1="0" x2="1" y2="0.5">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#e6e7e5"/>
+    </linearGradient>
+    <linearGradient id="pgR" x1="0.8" y1="0" x2="0" y2="0.5">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#e6e7e5"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="0.2">
+      <stop offset="0" stop-color="#f0d99a"/>
+      <stop offset="0.45" stop-color="#dcb862"/>
+      <stop offset="1" stop-color="#b8913f"/>
+    </linearGradient>
+  </defs>
+
+  <!-- TŁO: zieleń + srebrna ramka -->
+  <rect x="18" y="18" width="988" height="988" rx="212" fill="url(#bg)"/>
+  <rect x="18" y="18" width="988" height="988" rx="212" fill="none" stroke="url(#rim)" stroke-width="26"/>
+  <rect x="40" y="40" width="944" height="944" rx="192" fill="none" stroke="#000000" stroke-opacity="0.10" stroke-width="3"/>
+
+  <!-- cień pod książką -->
+  <ellipse cx="512" cy="836" rx="330" ry="46" fill="#000000" opacity="0.18"/>
+
+  <!-- SREBRNA OKŁADKA (płyta pod kartkami) -->
+  <path d="M196 300 h632 a44 44 0 0 1 44 44 v420 a44 44 0 0 1 -44 44 H196 a44 44 0 0 1 -44 -44 V344 a44 44 0 0 1 44 -44 z"
+        fill="url(#coverG)" stroke="#8f959c" stroke-width="6"/>
+  <path d="M196 316 h632 a30 30 0 0 1 30 30 v416 a30 30 0 0 1 -30 30 H196 a30 30 0 0 1 -30 -30 V346 a30 30 0 0 1 30 -30 z"
+        fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="4"/>
+
+  <!-- SREBRNE BRZEGI KARTEK (warstwy) -->
+  <g stroke="#aab0b7" stroke-width="4" fill="url(#edgeG)">
+    <path d="M232 268 C 352 236, 452 260, 508 300 L 508 792 C 452 748, 340 736, 232 762 Z" opacity="0.55"/>
+    <path d="M244 258 C 360 228, 458 252, 510 292 L 510 792 C 456 748, 348 734, 244 758 Z" opacity="0.7"/>
+    <path d="M792 268 C 672 236, 572 260, 516 300 L 516 792 C 572 748, 684 736, 792 762 Z" opacity="0.55"/>
+    <path d="M780 258 C 664 228, 566 252, 514 292 L 514 792 C 568 748, 676 734, 780 758 Z" opacity="0.7"/>
+  </g>
+
+  <!-- KARTKI -->
+  <path d="M258 250 C 372 220, 462 246, 508 288 L 508 786 C 458 742, 356 728, 258 752 Z"
+        fill="url(#pgL)" stroke="#c3c6c9" stroke-width="5"/>
+  <path d="M766 250 C 652 220, 562 246, 516 288 L 516 786 C 566 742, 668 728, 766 752 Z"
+        fill="url(#pgR)" stroke="#c3c6c9" stroke-width="5"/>
+
+  <!-- linie tekstu -->
+  <g fill="none" stroke="#cdd0d2" stroke-width="16" stroke-linecap="round">
+    <path d="M318 366 C 386 352, 442 366, 480 392"/>
+    <path d="M318 442 C 386 428, 442 442, 480 468"/>
+    <path d="M318 518 C 386 504, 442 518, 480 544"/>
+    <path d="M318 594 C 386 580, 442 594, 480 620"/>
+    <path d="M318 670 C 386 656, 442 670, 480 696"/>
+    <path d="M706 366 C 638 352, 582 366, 544 392"/>
+    <path d="M706 442 C 638 428, 582 442, 544 468"/>
+    <path d="M706 518 C 638 504, 582 518, 544 544"/>
+    <path d="M706 594 C 638 580, 582 594, 544 620"/>
+    <path d="M706 670 C 638 656, 582 670, 544 696"/>
+  </g>
+
+  <!-- grzbiet + oczko -->
+  <path d="M508 288 L 508 786 L 516 786 L 516 288 Z" fill="#d7dade"/>
+  <path d="M470 786 C 470 754, 554 754, 554 786 C 554 828, 470 828, 470 786 Z" fill="url(#coverG)" stroke="#8f959c" stroke-width="6"/>
+  <ellipse cx="512" cy="790" rx="30" ry="22" fill="url(#bg)" stroke="#9aa0a7" stroke-width="5"/>
+
+  <!-- ZŁOTA ZAKŁADKA -->
+  <path d="M700 214 L 838 214 L 838 604 L 769 528 L 700 604 Z" fill="url(#gold)" stroke="#9d7a30" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M700 214 L 730 214 L 730 566 L 700 604 Z" fill="#ffffff" opacity="0.25"/>
+</svg>

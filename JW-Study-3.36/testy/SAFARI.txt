@@ -1,0 +1,15 @@
+Weryfikacja JW Study 3.36 — Safari na Macu, 17.09.2026
+
+PASS: PDF z warstwą tekstową.
+PASS: dokument DOCX z polskimi znakami i tabelą.
+PASS: polski OCR obrazu PNG.
+PASS: OCR skanowanego PDF.
+PASS: OCR ilustracji w DOCX.
+PASS: zmiana treści w podglądzie i zapis nowych notatek.
+PASS: po odświeżeniu nadal istnieje pięć notatek.
+PASS: ponowny import tych samych danych nie dodaje duplikatów.
+
+Serwer testowy celowo zwracał 404 dla katalogu lib i zewnętrznych plików JSZip. Wbudowane biblioteki wersji 3.36 wystarczyły do zakończenia importu.
+Nie testowano na fizycznym iPadzie ani schowka systemowego iPada.
+
+Sprawdzona strona online nadal pokazywała v3.24 i nie zawierała wbudowanego workera PDF. Paczka 3.36 wymaga wdrożenia. Kod aplikacji nie wymagał dodatkowej zmiany podczas tej rundy testów; uaktualniono dokumentację wyników.

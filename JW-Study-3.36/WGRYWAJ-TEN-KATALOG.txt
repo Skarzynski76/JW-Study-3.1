@@ -1,0 +1,2 @@
+JW Study 3.36
+Wgraj ZAWARTOŚĆ tego katalogu do dotychczasowego katalogu GitHub Pages. Podmień index.html i sw.js. Zachowaj rozszerzenia. Nie dopisuj .json. Przeczytaj AKTUALIZACJA-3.36.txt.
