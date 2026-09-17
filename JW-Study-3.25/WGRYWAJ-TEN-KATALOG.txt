@@ -1,0 +1,27 @@
+TAK, TEN KATALOG.
+
+index.html ma tu ponad 1200 kB — cała aplikacja w jednym pliku.
+Wgrywaj index.html ZAWSZE razem z sw.js i search-worker.js.
+
+search-worker.js odpowiada za szybkie wyszukiwanie bez blokowania dotyku.
+Jeżeli go zabraknie, aplikacja uruchomi wolniejszy tryb zgodności.
+
+Nie zmieniaj nazwy index.html i nie wgrywaj obok kopii takich jak
+„index 3.html” albo „index 5.html”.
+
+Żeby import .jwlibrary działał zawsze, wgraj do katalogu głównego także:
+jszip.min.js, sql-wasm.js i sql-wasm.wasm. Aplikacja potrafi użyć również
+kopii z katalogu lib/, ale nie jest już od niego uzależniona.
+
+Import ZIP z Notatek Apple korzysta z tego samego pliku jszip.min.js, dlatego
+nie pomijaj go ani katalogu lib/ podczas wgrywania tej wersji.
+
+Inteligentny import PDF, DOCX i obrazów wymaga całego katalogu
+lib/smart-import/. Wgraj go razem z aplikacją — zawiera lokalne biblioteki PDF,
+Word oraz polskie OCR.
+
+Na GitHub usuń stare pliki „index 3.html”, „index 5.html” itp. Strona używa
+tylko pliku o dokładnej nazwie index.html, lecz stare kopie wprowadzają w błąd.
+
+Dodatkowe katalogi testy/ i docs/ zawierają testy regresji oraz instrukcję
+aktualizacji. Nie są potrzebne do działania strony; można je pominąć przy publikacji.

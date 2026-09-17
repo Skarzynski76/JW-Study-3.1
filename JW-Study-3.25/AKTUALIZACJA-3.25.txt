@@ -1,0 +1,26 @@
+JW Study 3.25 — poprawki importu
+
+AKTUALIZACJA
+1. Rozpakuj ZIP. Wgraj całą zawartość katalogu JW-Study-3.25 na dotychczasowy hosting aplikacji, zachowując katalog lib i wszystkie nazwy plików.
+2. Nie dopisuj .json do nazwy archiwum ani do plików aplikacji. index.html ma pozostać index.html, sw.js ma pozostać sw.js.
+3. Na iPadzie otwórz dotychczasowy adres aplikacji przy połączeniu z internetem, odśwież stronę i zaakceptuj aktualizację, jeśli pojawi się komunikat. Zamknij i ponownie otwórz aplikację. Sprawdź numer 3.25.
+4. Nie usuwaj danych witryny w Safari — tam przechowywane są notatki. Przed aktualizacją zapisz kopię danych w aplikacji.
+
+IMPORT
+Plik → Inteligentny import dokumentu → wybierz dokumenty → Rozpoznaj i pokaż podgląd → Pokaż i popraw treść notatki → Dodaj wybrane notatki.
+PDF i DOCX oraz PNG, JPG/JPEG i WEBP są rozpoznawane po zawartości, również przy błędnej nazwie lub pustym typie MIME. Nazwy wybranych plików nie są zmieniane.
+Gdy PDF pokazuje tylko nagłówek lub część tekstu, zaznacz OCR oraz „Dokładny OCR”. Ta opcja rozpoznaje wszystkie strony PDF i tekst z ilustracji w Wordzie. Tekst ilustracji Worda jest dodawany na końcu dokumentu.
+Starszy binarny Word .doc wymaga zapisania jako .docx w Wordzie. HEIC nie jest obsługiwany — wybierz JPEG/PNG.
+OCR może popełniać błędy; treść można poprawić w podglądzie przed utworzeniem notatki.
+
+ZMIANY
+- Identyfikacja plików po sygnaturze i strukturze DOCX, bez zmiany nazw.
+- Dokładny OCR dla PDF z częściowym tekstem i obrazów wewnątrz Worda.
+- Edycja treści przed zapisem, ochrona przed zapisaniem pustej notatki.
+- Białe tło dla przezroczystych obrazów OCR.
+- Nowy cache aplikacji 3.25.
+
+WERYFIKACJA
+24/24 testów regresji. W przeglądarce Codex: rzeczywisty PDF, DOCX, polski OCR zdjęcia, edycja podglądu, zapis trzech notatek i ponowne uruchomienie bez duplikatów.
+Nie przeprowadzono testu na fizycznym iPadzie ani w Safari iPadOS. Błędu użytkownika nie odtworzono na dostarczonej próbce testowej; do potwierdzenia konkretnego przypadku potrzebny jest problematyczny dokument i komunikat błędu.
+Wersja na hostingu nie została zmieniona — paczkę trzeba wgrać.
