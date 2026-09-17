@@ -1,16 +1,11 @@
 /* Osobny cache dla każdej instalacji (np. dwóch projektów GitHub Pages).
    Starszych, wspólnych cache nie usuwamy: mogą należeć do innej instalacji. */
 const CACHE_PREFIX = 'jwstudy-' + encodeURIComponent(self.registration.scope) + '-';
-const CACHE = CACHE_PREFIX + 'v324';
+const CACHE = CACHE_PREFIX + 'v336';
 const CORE = ['./', './index.html'];
 const EXTRA = [
   './search-worker.js',
   './lib/jszip.min.js', './lib/sql-wasm.js', './lib/sql-wasm.wasm',
-  './lib/smart-import/pdf.min.js', './lib/smart-import/pdf.worker.min.js',
-  './lib/smart-import/mammoth.browser.min.js',
-  './lib/smart-import/tesseract.min.js', './lib/smart-import/tesseract.worker.min.js',
-  './lib/smart-import/tesseract-core-lstm.wasm.js',
-  './lib/smart-import/lang/pol.traineddata.gz',
   './jszip.min.js', './sql-wasm.js', './sql-wasm.wasm',
   './manifest.webmanifest', './onenote.html',
   './icon-192.png', './icon-512.png', './icon-maskable-512.png',
