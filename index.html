@@ -7717,6 +7717,63 @@ html[data-theme="dark"] .bezp-result.ok{background:#173b2f;color:#a8dec8}html[da
   .ssInfo{ min-width:max-content; }
   .searchMatch{ margin-left:8px; margin-right:8px; }
 }
+
+/* Tematy automatyczne: osobna, spokojna grupa nad ręcznymi sekcjami. */
+#tagList .autoHead{
+  --secBg:color-mix(in srgb,var(--accent2) 20%,var(--panel));
+  --secLine:color-mix(in srgb,var(--accent) 55%,var(--border));
+  --secFg:var(--text); --secFg2:var(--muted);
+  margin-top:9px;
+}
+#tagList .autoHead .autoBadge{
+  flex:0 0 auto; padding:2px 5px; border-radius:6px;
+  background:color-mix(in srgb,var(--accent) 13%,transparent);
+  color:var(--accent); font-size:calc(8px * var(--uiw,1)); font-weight:750; letter-spacing:.08em;
+}
+#tagList .item.autoTopic{ margin-left:12px; width:calc(100% - 12px); }
+#tagList .item.autoTopic .nm{ font-weight:500; }
+#tagList .autoEmpty{ margin-left:12px; }
+html[data-theme="dark"] #tagList .autoHead{
+  --secBg:color-mix(in srgb,var(--accent2) 16%,#25252b);
+  --secLine:color-mix(in srgb,var(--accent2) 58%,#44444c);
+}
+
+/* 3.44 — czytelna warstwa tematów automatycznych. Gwiazdka jest wspólnym
+   znakiem w nagłówku, na karcie i w oknie reguł. */
+#tagList .autoHead{ position:relative; overflow:hidden; }
+#tagList .autoHead::before{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background:radial-gradient(circle at 88% 18%,rgba(255,255,255,.65),transparent 31%);
+}
+#tagList .autoHead>*{ position:relative; }
+#tagList .autoHead .autoManage{
+  width:27px;height:27px;flex:0 0 27px;border:0;border-radius:9px;background:rgba(255,255,255,.58);
+  color:var(--accent);font-size:14px;display:grid;place-items:center;cursor:pointer;
+}
+#tagList .autoHead .autoManage:hover{background:#fff;transform:translateY(-1px)}
+#tagList .item.autoTopic{ border-style:dashed; }
+#tagList .item.autoTopic.active{ border-style:solid; box-shadow:0 5px 14px color-mix(in srgb,var(--accent) 18%,transparent); }
+.autoMatch{
+  --autoKolor:var(--accent2); margin:2px 16px 8px;padding:7px 9px;border:1px solid color-mix(in srgb,var(--autoKolor) 58%,var(--border));
+  border-radius:11px;background:linear-gradient(100deg,color-mix(in srgb,var(--autoKolor) 20%,var(--panel)),var(--panel));
+  display:flex;align-items:center;gap:7px;color:var(--muted);font-size:calc(11px * var(--ui));
+}
+.autoMatchIco{color:color-mix(in srgb,var(--autoKolor) 70%,var(--text));font-size:15px}.autoMatch b{color:var(--text)}
+.autoMatch button{margin-left:auto;border:0;background:transparent;color:var(--accent);font:inherit;font-weight:650;padding:5px 7px;border-radius:7px;cursor:pointer}
+.autoMatch button:hover{background:color-mix(in srgb,var(--autoKolor) 20%,transparent)}
+.autoTematyModal{width:min(660px,94vw);max-height:min(84dvh,780px);overflow:auto}
+.autoModalKicker{font-size:10px;letter-spacing:.12em;font-weight:750;color:var(--accent)}
+.autoTematyModal h3{margin:3px 0 0}.autoModalLead{line-height:1.55;color:var(--muted);margin:4px 0 14px}
+.autoBuiltin{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 14px;border-radius:13px;background:linear-gradient(120deg,color-mix(in srgb,var(--accent2) 18%,var(--panel)),var(--panel));border:1px solid var(--border)}
+.autoBuiltin span{font-size:12px;color:var(--muted)}
+.autoModalHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:18px 0 9px}.autoModalHead h4{margin:0}
+.autoRules{display:grid;gap:7px}.autoRule{display:grid;grid-template-columns:12px minmax(0,1fr) auto 34px;align-items:center;gap:9px;padding:10px;border:1px solid var(--border);border-radius:12px;background:var(--panel)}
+.autoRuleDot{width:10px;height:10px;border-radius:50%;box-shadow:0 0 0 3px color-mix(in srgb,currentColor 10%,transparent)}
+.autoRule small{display:block;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.autoRule button{border:0;background:var(--bg);color:var(--muted);padding:6px 8px;border-radius:8px;cursor:pointer}.autoRule button:hover{color:var(--text);background:var(--sel)}
+.autoRulesEmpty{padding:22px;text-align:center;border:1px dashed var(--border);border-radius:12px;color:var(--muted)}
+.autoModalFoot{display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)}.autoModalFoot span{font-size:11.5px;color:var(--muted)}
+@media(max-width:620px){.autoBuiltin,.autoModalFoot{align-items:flex-start;flex-direction:column}.autoRule{grid-template-columns:12px minmax(0,1fr) 34px}.autoRule [data-auto-edit]{grid-column:2/3;justify-self:start}.autoMatch{margin-left:10px;margin-right:10px;flex-wrap:wrap}.autoMatch button{margin-left:22px}}
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -7725,7 +7782,7 @@ html[data-theme="dark"] .bezp-result.ok{background:#173b2f;color:#a8dec8}html[da
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <h1 class="brand-name">JW Study <span class="ver">v3.42</span></h1>
+      <h1 class="brand-name">JW Study <span class="ver">v3.44</span></h1>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -8298,6 +8355,18 @@ html[data-theme="dark"] .bezp-result.ok{background:#173b2f;color:#a8dec8}html[da
   </div>
 </div>
 
+<div class="overlay" id="modalAutoTematy">
+  <div class="modal autoTematyModal" role="dialog" aria-label="Tematy automatyczne">
+    <div class="nn-head"><div><span class="autoModalKicker">✦ INTELIGENTNE PORZĄDKOWANIE</span><h3>Tematy automatyczne</h3></div></div>
+    <p class="autoModalLead">Wbudowane tematy rozpoznają treść bez zmieniania Twoich ręcznych etykiet. Możesz dodać własny temat albo poprawić nietrafione dopasowanie przy konkretnej notatce.</p>
+    <div class="autoBuiltin"><b>13 wbudowanych tematów</b><span>działają lokalnie i bez internetu</span></div>
+    <div class="autoModalHead"><h4>Moje własne reguły</h4><button class="btn primary" type="button" id="autoAddRule">＋ Nowy temat</button></div>
+    <div id="autoTematyLista" class="autoRules"></div>
+    <div class="autoModalFoot"><button class="btn" type="button" id="autoResetEx">Brak wykluczeń</button><span>Wykluczenie usuwa notatkę tylko z tematu automatycznego.</span></div>
+    <div class="btnrow" style="justify-content:flex-end;margin-top:18px"><button class="btn" data-zamknij="modalAutoTematy">Gotowe</button></div>
+  </div>
+</div>
+
 <div class="overlay" id="modalSettings">
   <div class="modal" role="dialog" aria-label="Ustawienia">
     <div class="nn-head"><h3>Ustawienia</h3></div>
@@ -8688,7 +8757,7 @@ async function sprawdzImport(ileNotatek, ileEtykiet, nazwaKopii, dataKopii){
  * @param {Object[]} [noweSzablony]
  * @returns {Promise<boolean>}
  */
-function idbZastapWszystko(noweNotes, noweTags, noweSekcje, noweZakladki, noweZakladkiSekcji, noweSzablony){
+function idbZastapWszystko(noweNotes, noweTags, noweSekcje, noweZakladki, noweZakladkiSekcji, noweSzablony, noweAutoTematy){
   return new Promise((res, rej)=>{
     if(!idb) return res(false);
     let tx;
@@ -8708,6 +8777,7 @@ function idbZastapWszystko(noweNotes, noweTags, noweSekcje, noweZakladki, noweZa
       sm.put(noweZakladki, "pubTabs");
       sm.put(Array.isArray(noweZakladkiSekcji) ? noweZakladkiSekcji : [], "secTabs");
       sm.put(Array.isArray(noweSzablony)       ? noweSzablony       : [], "szablony");
+      sm.put(autoTematySanity(noweAutoTematy), "autoTopics");
     }catch(e){
       try{ tx.abort(); }catch(_){}
       rej(e);
@@ -8972,6 +9042,7 @@ function sanitizeNote(n, obce){
     if(n.pm!=null && !/^[\d.]{1,6}(em|px|rem)?$/.test(String(n.pm))) delete n.pm;
   }
   n.tg = Array.isArray(n.tg) ? n.tg.map(Number).filter(x=>isFinite(x)) : [];
+  n.atex = Array.isArray(n.atex) ? [...new Set(n.atex.map(x=>String(x||"")).filter(x=>/^[a-z0-9_-]{1,60}$/i.test(x)))].slice(0,60) : [];
   n.b  = liczbaLubZero(n.b);
   n.ch = liczbaLubZero(n.ch);
   n.v  = liczbaLubZero(n.v);
@@ -9144,6 +9215,7 @@ async function boot(){
   if(typeof filt.book==="number" && filt.book>0) expandedBook = filt.book;
   if(idb){ try{ deletedTagNames = (await idbGet("meta","deletedTags")) || []; }catch(e){} }
   if(idb){ try{ sections = (await idbGet("meta","sections")) || []; }catch(e){ sections=[]; } }
+  if(typeof autoTematyWczytaj==="function") await autoTematyWczytaj();
   if(typeof loadPubTabs==="function") await loadPubTabs();
   if(typeof loadSecTabs==="function") await loadSecTabs();
   if(typeof loadSzablony==="function") await loadSzablony();
@@ -9408,9 +9480,145 @@ async function showStorageInfo(){
     }
   }catch(e){ el.textContent = "Notatek: "+notes.filter(n=>!n.del).length; }
 }
+/* ================= AUTOMATYCZNE TEMATY =================
+   To są filtry wirtualne: niczego nie dopisują do n.tg, więc ręczne etykiety,
+   sekcje i zakładki użytkownika pozostają dokładnie tam, gdzie je umieścił.
+   Jedna notatka może należeć do kilku tematów jednocześnie. */
+const AUTO_TEMATY = [
+  {id:"modlitwa",       name:"Modlitwa",                 color:"#a8c7fa", slowa:["modlitw","prosba do jehowy","blagan","dziekczyni"]},
+  {id:"wiara",          name:"Wiara i zaufanie",         color:"#b8d8ba", slowa:["wiar","wierzyc","zaufan","ufnosc","polegan na jehowie"]},
+  {id:"nadzieja",       name:"Nadzieja i przyszłość",    color:"#f3d48f", slowa:["nadziej","przyszlosc","zmartwychwst","wskrzesz","zycie wieczne","nowy swiat","raj"]},
+  {id:"milosc",         name:"Miłość i życzliwość",      color:"#f2b8c6", slowa:["milosc","kochac","serdeczn","zyczliw","wspolczuc"]},
+  {id:"przebaczenie",   name:"Przebaczenie i pokój",     color:"#d5c2ee", slowa:["przebacz","wybacz","pojednan","zgoda","pokoj z innymi","konflikt","klotni"]},
+  {id:"rodzina",        name:"Rodzina i małżeństwo",     color:"#f1c6a8", slowa:["rodzin","malzen","wspolmalzon","zona","maz","rodzic","dziec","wychowan"]},
+  {id:"zbor",           name:"Zbór i bracia",            color:"#aed9d1", slowa:["zbor","bracia","siostry","wspolwyznaw","starsz zboru","nadzorc"]},
+  {id:"sluzba",         name:"Służba i głoszenie",       color:"#b9cfec", slowa:["sluzb","gloszen","kaznodziej","ewangeliz","studium biblijne","rozmow z ludzmi"]},
+  {id:"trudnosci",      name:"Próby i pocieszenie",      color:"#d8c4b6", slowa:["trudnos","cierp","chorob","smut","zalob","przesladow","pocieszen","niepokoj","lek","stres"]},
+  {id:"decyzje",        name:"Mądrość i decyzje",        color:"#e3d49d", slowa:["madrosc","decyzj","sumieni","wybor","kierownictw","dobra rada","roztropn"]},
+  {id:"cechy",          name:"Cechy chrześcijańskie",    color:"#c7dca8", slowa:["pokor","cierpliw","wytrwal","lagodn","samokontrol","opanowan","uczciw","lojaln"]},
+  {id:"ochrona",        name:"Pokusy i ochrona duchowa", color:"#c9c5dd", slowa:["pokus","szatan","demon","materializm","uzalezn","niemoraln","grzech","ochrona duchow"]},
+  {id:"radosc",         name:"Radość i wdzięczność",     color:"#f4dfa3", slowa:["rados","wdzieczn","szczesc","zadowolen","pozytywn"]}
+];
+let autoTematyWlasne = [];
+const AUTO_KOLORY = ["#a8c7fa","#b8d8ba","#f3d48f","#f2b8c6","#d5c2ee","#f1c6a8","#aed9d1","#c7dca8"];
+const _autoTematCache = new Map();
+function normAutoTemat(s){
+  return String(s||"").toLowerCase().replace(/ł/g,"l").normalize("NFD")
+    .replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g," ").replace(/\s+/g," ").trim();
+}
+function tekstAutoTemat(n){
+  const reczny=(n.tg||[]).map(id=>(tags.find(t=>t.id===id)||{}).name||"").join(" ");
+  const tresc=n.c || String(n.h||"").replace(/<[^>]*>/g," ");
+  return normAutoTemat((n.t||"")+" "+tresc+" "+reczny);
+}
+function wszystkieAutoTematy(){ return AUTO_TEMATY.concat(autoTematyWlasne); }
+function autoTematySanity(raw){
+  const src=raw&&typeof raw==="object"&&Array.isArray(raw.custom)?raw.custom:[];
+  const seen=new Set();
+  return {custom:src.slice(0,40).reduce((out,t,i)=>{
+    if(!t||typeof t!=="object") return out;
+    const name=String(t.name||"").replace(/[<>]/g,"").trim().slice(0,60);
+    const slowa=(Array.isArray(t.slowa)?t.slowa:String(t.slowa||"").split(","))
+      .map(x=>String(x||"").replace(/[<>]/g,"").trim().slice(0,60)).filter(Boolean).slice(0,24);
+    if(!name||!slowa.length) return out;
+    let id=/^u_[a-z0-9_-]{1,50}$/i.test(String(t.id||""))?String(t.id):"u_import_"+i;
+    while(seen.has(id)) id+="_"+i; seen.add(id);
+    const color=/^#[0-9a-f]{6}$/i.test(String(t.color||""))?String(t.color):AUTO_KOLORY[i%AUTO_KOLORY.length];
+    out.push({id,name,slowa,color}); return out;
+  },[])};
+}
+function autoTematyEksport(){ return {custom:autoTematyWlasne.map(t=>({...t,slowa:t.slowa.slice()}))}; }
+function autoTematyUstaw(raw,zapisz){
+  autoTematyWlasne=autoTematySanity(raw).custom; _autoTematCache.clear();
+  try{ lsSet(KP+"AutoTopics",JSON.stringify(autoTematyEksport())); }catch(_){}
+  if(zapisz!==false&&idb) idbPut("meta",autoTematyEksport(),"autoTopics").catch(e=>reportSaveError(e,"tematy automatyczne"));
+}
+async function autoTematyWczytaj(){
+  let raw=null;
+  if(idb){ try{ raw=await idbGet("meta","autoTopics"); }catch(_){} }
+  if(!raw){ try{ raw=JSON.parse(lsGet(KP+"AutoTopics","null")); }catch(_){} }
+  autoTematyUstaw(raw||{custom:[]},false);
+}
+function autoTematyScal(raw){
+  const incoming=autoTematySanity(raw).custom, byId=new Set(autoTematyWlasne.map(t=>t.id)), mapa={};
+  incoming.forEach(t=>{
+    const same=autoTematyWlasne.find(x=>normAutoTemat(x.name)===normAutoTemat(t.name));
+    if(same){ same.slowa=[...new Set(same.slowa.concat(t.slowa))].slice(0,24); mapa[t.id]=same.id; return; }
+    let id=t.id; while(byId.has(id)) id+="_kopia"; byId.add(id); autoTematyWlasne.push({...t,id}); mapa[t.id]=id;
+  });
+  autoTematyUstaw({custom:autoTematyWlasne});
+  return mapa;
+}
+function autoTematyNotatki(n){
+  const tg=(n.tg||[]).join(","), c=String(n.c||""), h=String(n.h||"");
+  const sig=String(n.mo||"")+"|"+String(n.t||"")+"|"+c.length+"|"+h.length+"|"+tg+
+    "|"+(n.tg||[]).map(id=>(tags.find(t=>t.id===id)||{}).name||"").join(",")+"|"+(n.atex||[]).join(",")+
+    "|"+autoTematyWlasne.map(t=>t.id+":"+t.name+":"+t.slowa.join(",")).join(";");
+  const old=_autoTematCache.get(n.g);
+  if(old && old.sig===sig) return old.ids;
+  const tekst=tekstAutoTemat(n), ids=[], wykluczone=new Set(Array.isArray(n.atex)?n.atex:[]);
+  wszystkieAutoTematy().forEach(t=>{
+    if(!wykluczone.has(t.id)&&t.slowa.some(s=>tekst.includes(normAutoTemat(s)))) ids.push(t.id);
+  });
+  _autoTematCache.set(n.g,{sig,ids});
+  return ids;
+}
+function autoTematPasuje(n,id){ return autoTematyNotatki(n).includes(id); }
+function autoTematyZlicz(base){
+  const counts=Object.create(null); let notatki=0;
+  base.forEach(n=>{ const ids=autoTematyNotatki(n); if(ids.length) notatki++; ids.forEach(id=>counts[id]=(counts[id]||0)+1); });
+  return {notatki, lista:wszystkieAutoTematy().map(t=>({...t,count:counts[t.id]||0}))};
+}
+function autoTematyOtwarte(){ return lsGet(KP+"AutoTematyOpen","1")!=="0"; }
+function aktywnyAutoTemat(){
+  const id=typeof filt.tag==="string"&&filt.tag.indexOf("auto:")===0?filt.tag.slice(5):"";
+  return id?wszystkieAutoTematy().find(t=>t.id===id)||null:null;
+}
+function autoTematWyklucz(n,id){
+  if(!n||!id)return;
+  pushUndo({type:"note",label:"wykluczenie z tematu automatycznego",before:cloneNote(n)});
+  n.atex=[...new Set((Array.isArray(n.atex)?n.atex:[]).concat(id))];
+  _autoTematCache.delete(n.g); markDirty(n); renderAll(); toast("Notatka nie będzie już pokazywana w tym temacie");
+}
+function autoTematKarta(n){
+  const t=aktywnyAutoTemat(); if(!t)return "";
+  return `<div class="autoMatch" style="--autoKolor:${t.color}"><span class="autoMatchIco">✦</span><span>Rozpoznany temat: <b>${esc(t.name)}</b></span><button type="button" data-act="autoexclude" title="Ta notatka nie pasuje do tego tematu">Nie pasuje</button></div>`;
+}
+function autoWykluczenIle(){ return notes.reduce((s,n)=>s+(Array.isArray(n.atex)?n.atex.length:0),0); }
+function renderAutoTematyModal(){
+  const el=$("autoTematyLista"); if(!el)return;
+  const wlasne=autoTematyWlasne.map(t=>`<div class="autoRule" data-auto-id="${esc(t.id)}"><span class="autoRuleDot" style="background:${t.color}"></span><div><b>${esc(t.name)}</b><small>${esc(t.slowa.join(", "))}</small></div><button type="button" data-auto-edit="${esc(t.id)}" title="Edytuj">Edytuj</button><button type="button" data-auto-del="${esc(t.id)}" title="Usuń">×</button></div>`).join("");
+  el.innerHTML=wlasne||`<div class="autoRulesEmpty">Nie masz jeszcze własnych reguł.</div>`;
+  const ile=autoWykluczenIle(), reset=$("autoResetEx");
+  if(reset){reset.disabled=!ile;reset.textContent=ile?`Przywróć wykluczenia (${ile})`:"Brak wykluczeń";}
+}
+async function autoTematEdytuj(id){
+  const old=id?autoTematyWlasne.find(t=>t.id===id):null;
+  const name=await askText({title:old?"Nazwa własnego tematu":"Nowy temat automatyczny",value:old?old.name:"",placeholder:"np. Gościnność",okLabel:old?"Dalej":"Dalej",hint:"Ta nazwa pojawi się w kolumnie Tematy automatyczne."});
+  if(!name||!name.trim())return;
+  const words=await askText({title:"Słowa rozpoznające temat",value:old?old.slowa.join(", "):"",placeholder:"np. gościnność, zapraszanie, otwarty dom",okLabel:"Zapisz",hint:"Wpisz słowa lub zwroty oddzielone przecinkami. Wystarczy jedno dopasowanie."});
+  const slowa=String(words||"").split(",").map(x=>x.trim()).filter(Boolean).slice(0,24); if(!slowa.length){toast("Wpisz przynajmniej jedno słowo");return;}
+  if(old){old.name=name.trim().slice(0,60);old.slowa=slowa;}
+  else autoTematyWlasne.push({id:"u_"+Date.now().toString(36),name:name.trim().slice(0,60),slowa,color:AUTO_KOLORY[autoTematyWlasne.length%AUTO_KOLORY.length]});
+  autoTematyUstaw({custom:autoTematyWlasne}); bumpDirty(); renderAutoTematyModal(); renderAll();
+}
+async function autoTematUsun(id){
+  const t=autoTematyWlasne.find(x=>x.id===id); if(!t)return;
+  if(!(await askConfirm("Usunąć własny temat?",`Reguła „${esc(t.name)}” zostanie usunięta. Ręczne etykiety notatek pozostaną bez zmian.`,{okLabel:"Usuń",danger:true})))return;
+  autoTematyWlasne=autoTematyWlasne.filter(x=>x.id!==id);
+  notes.forEach(n=>{if(Array.isArray(n.atex)&&n.atex.includes(id)){n.atex=n.atex.filter(x=>x!==id);saveNote(n);}});
+  autoTematyUstaw({custom:autoTematyWlasne}); bumpDirty(); renderAutoTematyModal(); renderAll();
+}
+function autoTematyPrzywroc(){
+  let ile=0; notes.forEach(n=>{if(Array.isArray(n.atex)&&n.atex.length){ile+=n.atex.length;delete n.atex;saveNote(n);}});
+  if(!ile)return; _autoTematCache.clear(); bumpDirty(); renderAutoTematyModal(); renderAll(); toast("Przywrócono automatyczne dopasowania");
+}
+function otworzAutoTematy(){ renderAutoTematyModal(); openModal("modalAutoTematy"); }
+
 function noteMatchesTag(n,t){
   if(t==="all") return true;
   if(t==="none") return n.tg.length===0;
+  if(typeof t==="string" && t.indexOf("auto:")===0) return autoTematPasuje(n,t.slice(5));
   /* „stb:<id>" — zakładka wewnątrz sekcji: notatki wrzucone wprost
      oraz te noszące którąkolwiek z etykiet przypisanych do tej zakładki. */
   if(typeof t==="string" && t.indexOf("stb:")===0)
@@ -10443,6 +10651,23 @@ function renderTags(){
      Pozycja z zerem uczy omijać wzrokiem miejsce, w którym czasem coś jest. */
   let html = tagItem("all","Wszystkie",base.length);
   if(untagged || String(filt.tag)==="none") html += tagItem("none","Bez etykiety",untagged);
+  // ——— TEMATY AUTOMATYCZNE ———
+  // Wirtualne filtry nie dotykają n.tg. Licznik „not.” liczy unikalne notatki,
+  // bo jedna notatka może trafnie pasować do kilku tematów.
+  const auto=autoTematyZlicz(base), autoOpen=autoTematyOtwarte();
+  html += `<div class="secHead autoHead${autoOpen?"":" closed"}" data-auto-sec="1"
+    title="Tematy są rozpoznawane z treści. Nie zmieniają Twoich ręcznych etykiet ani sekcji.">
+    <span class="secArr">${autoOpen?"▾":"▸"}</span>
+    <span class="secName">Tematy automatyczne</span>
+    <span class="autoBadge">AUTO</span><span class="secCnt">${auto.notatki} not.</span>
+    <button class="autoManage" type="button" title="Własne tematy i wykluczenia" aria-label="Ustawienia tematów automatycznych">✦</button></div>`;
+  if(autoOpen){
+    const widoczne=auto.lista.filter(t=>t.count || String(filt.tag)==="auto:"+t.id);
+    if(widoczne.length) widoczne.forEach(t=>{
+      html += tagItem("auto:"+t.id,t.name,t.count,false,t.color,true).replace('class="item ','class="item autoTopic ');
+    });
+    else html += `<div class="secEmpty autoEmpty">Tematy pojawią się automatycznie, gdy treść notatek będzie do nich pasować.</div>`;
+  }
   // ——— SEKCJE (grupy etykiet) ———
   const secs = sections.slice().sort((a,b)=>(a.ord??0)-(b.ord??0));
   secs.forEach(s=>{
@@ -10488,7 +10713,13 @@ function renderTags(){
   /* Przenoszenie etykiet i zakładek obsługuje 34-chwytanie.js — nasłuchuje na
      dokumencie, więc nie trzeba niczego podpinać po przerysowaniu listy. */
   // obsługa nagłówków sekcji
-  el.querySelectorAll(".secHead").forEach(h=>{
+  const autoHead=el.querySelector(".autoHead");
+  if(autoHead) autoHead.onclick=e=>{
+    if(e.target.closest(".autoManage")){ otworzAutoTematy(); return; }
+    lsSet(KP+"AutoTematyOpen",autoTematyOtwarte()?"0":"1");
+    renderTags();
+  };
+  el.querySelectorAll(".secHead:not(.autoHead)").forEach(h=>{
     const sid=+h.dataset.sec;
     h.onclick = e=>{
       if(e.target.classList.contains("secMore")){ const s=sections.find(x=>x.id===sid); if(s) sectionMenu(e,s); return; }
@@ -10534,7 +10765,8 @@ function renderTags(){
         if(t) tagMenu(e, t);
         return;
       }
-      filt.tag = it.dataset.k==="all"?"all":it.dataset.k==="none"?"none":+it.dataset.k;
+      const key=it.dataset.k;
+      filt.tag = key==="all"?"all":key==="none"?"none":key.indexOf("auto:")===0?key:+key;
       persistFilt(); renderAll();
       if(innerWidth<=900) mobileShow("colNotes");
     };
@@ -10549,6 +10781,13 @@ function renderTags(){
     }
   });
 }
+$("autoAddRule").onclick=()=>autoTematEdytuj();
+$("autoResetEx").onclick=autoTematyPrzywroc;
+$("autoTematyLista").onclick=e=>{
+  const edit=e.target.closest("[data-auto-edit]"), del=e.target.closest("[data-auto-del]");
+  if(edit) autoTematEdytuj(edit.dataset.autoEdit);
+  else if(del) autoTematUsun(del.dataset.autoDel);
+};
 let dragTagId = null;
 /* ================= SEKCJE ETYKIET =================
    Sekcja grupuje etykiety (np. „Kongresy" → Kongres 2019, 2020…).
@@ -11307,6 +11546,7 @@ function noteCardSig(n){
   return [n.g, n.mo, n.t, (n.h||n.c||"").length, n.pin?1:0, n.fav?1:0, n.ord||0, n.ptb||0, n.tg.join(","), n.b, n.ch, n.v,
           n.ks, n.itn, n.par, n.ff, n.lh, n.pm, n.la, n.stb, n.cr, n.wys, n.bg,
           (n.pwt ? n.pwt.d+"/"+n.pwt.o : ""),
+          (n.atex||[]).join(","), (typeof filt.tag==="string"&&filt.tag.indexOf("auto:")===0?filt.tag:""),
           sortujePoUtworzeniu(), _tagsVer, query?query+":"+(searchScores.get(n.g)||0):""].join("\u0001");
 }
 /**
@@ -11672,7 +11912,7 @@ function noteCard(n){
   const match=sd?`<div class="searchMatch"><span class="searchReason">${esc(sd.reason||"dopasowanie")}</span>`+
     `<span class="searchSnippets">${fragmenty.filter(Boolean).map(s=>`<span class="searchSnippet">${hilite(esc(s))}</span>`).join("")}</span>`+
     (ileTraf?`<span class="searchHits">${ileTraf}</span>`:"")+`</div>`:"";
-  d.innerHTML = noteCardHead(n) + noteCardMeta(n) + noteCardChips(n) + match +
+  d.innerHTML = noteCardHead(n) + noteCardMeta(n) + noteCardChips(n) + autoTematKarta(n) + match +
                 (typeof htmlPaskaPowtorki==="function" ? htmlPaskaPowtorki(n) : "") +
                 `<div class="ncontent">${contentHtml(n)}</div>` +
                 `<div class="wysUchwyt" title="Przeciągnij, aby zmienić wysokość notatki (dwuklik = jak w widoku)"></div>` +
@@ -11705,6 +11945,7 @@ function noteCard(n){
     if(["fs","edit","copy","link","openref"].includes(act) || (actionEl && actionEl.matches("a.sbtn"))) touchAccess(n);
     if(!act) return;
     if(act==="fs"){ openFs(n); return; }
+    if(act==="autoexclude"){ const t=aktywnyAutoTemat(); if(t) autoTematWyklucz(n,t.id); return; }
     if(act==="more" || act==="exp"){
       const dd=$("dropdown");
       dd.innerHTML =
@@ -15760,7 +16001,7 @@ function smartPodzielNaglowki(html, tytulBazowy){
 const smartAssetUrls=new Map();
 function smartAssetBytes(nazwa){
   const el=document.getElementById("smartAsset-"+nazwa);
-  if(!el)throw new Error("Niekompletna wersja aplikacji: brak biblioteki "+nazwa+". Wgraj index.html wersji 3.42.");
+  if(!el)throw new Error("Niekompletna wersja aplikacji: brak biblioteki "+nazwa+". Wgraj index.html wersji 3.44.");
   const raw=atob(el.textContent.trim()),bytes=new Uint8Array(raw.length);
   for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
   return bytes;
@@ -17018,7 +17259,8 @@ function daneKopii(){
              warsztatu użytkownika, więc kopia przenosi je na inne urządzenie. */
           searchSaved: (typeof savedSearches==="function" ? savedSearches() : []),
           searchMode: (typeof searchMode!=="undefined" ? searchMode : "smart"),
-          searchOpts: (typeof searchOpts!=="undefined" ? searchOpts : null)};
+          searchOpts: (typeof searchOpts!=="undefined" ? searchOpts : null),
+          autoTopics: (typeof autoTematyEksport==="function" ? autoTematyEksport() : {custom:[]})};
 }
 
 function bezpieczneWyszukiwania(data){
@@ -17432,6 +17674,7 @@ async function wczytajKopieZTekstu(tekstPliku){
     data.searchSaved = bezpieczneWyszukiwania(data);
     data.searchOpts = bezpieczneOpcjeSzukania(data.searchOpts);
     data.searchMode = data.searchMode==="exact" ? "exact" : "smart";
+    data.autoTopics = autoTematySanity(data.autoTopics);
     /* Szablony przesiewamy TUTAJ, w jednym miejscu z resztą — a nie dopiero
        przy scalaniu. Droga „Zastąp wszystko" scalania nie wykonuje, więc
        wcześniej szablony z pliku nie były sprawdzane przez nikogo. */
@@ -17488,6 +17731,10 @@ async function wczytajKopieZTekstu(tekstPliku){
 
   try{
     if(choice==="merge" || choice==="mergeLayout" || choice==="mergeNadpisz"){
+      if(choice!=="merge"){
+        const mapaAuto=autoTematyScal(data.autoTopics);
+        (data.notes||[]).forEach(n=>{if(Array.isArray(n.atex))n.atex=n.atex.map(id=>mapaAuto[id]||id);});
+      }
       const {st, changed} = mergeBackup(data, choice!=="merge", choice==="mergeNadpisz");
       sortTags();
       if(idb){
@@ -17544,11 +17791,12 @@ async function wczytajKopieZTekstu(tekstPliku){
        po „Zastąp wszystko" wszystko było z pliku, a szablony zostawały stare —
        czyli z urządzenia, którego reszty danych już nie ma. */
     const noweSzablony = Array.isArray(data.szablony) ? data.szablony : [];
+    const noweAutoTematy = autoTematySanity(data.autoTopics);
 
     let kontrola = null;
     if(idb){
       await idbZastapWszystko(noweNotes, noweTags, noweSekcje, noweZakladki,
-                              noweZakladkiSekcji, noweSzablony);
+                              noweZakladkiSekcji, noweSzablony, noweAutoTematy);
       kontrola = await sprawdzZapis(noweNotes.length, noweTags.length);
       if(kontrola && !kontrola.zgadza){
         showInfo("Zapis niepełny",
@@ -17568,6 +17816,7 @@ async function wczytajKopieZTekstu(tekstPliku){
     if(typeof secTabs!=="undefined")  secTabs  = noweZakladkiSekcji;
     if(typeof szablony!=="undefined"){ szablony = noweSzablony;
       if(typeof rysujSzablony==="function") rysujSzablony(); }
+    autoTematyUstaw(noweAutoTematy,false);
     if(typeof storeSavedSearches==="function"){
       storeSavedSearches(Array.isArray(data.searchSaved)?data.searchSaved:[]);
       searchMode=data.searchMode==="exact"?"exact":"smart";
