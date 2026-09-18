@@ -7774,6 +7774,81 @@ html[data-theme="dark"] #tagList .autoHead{
 .autoRulesEmpty{padding:22px;text-align:center;border:1px dashed var(--border);border-radius:12px;color:var(--muted)}
 .autoModalFoot{display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)}.autoModalFoot span{font-size:11.5px;color:var(--muted)}
 @media(max-width:620px){.autoBuiltin,.autoModalFoot{align-items:flex-start;flex-direction:column}.autoRule{grid-template-columns:12px minmax(0,1fr) 34px}.autoRule [data-auto-edit]{grid-column:2/3;justify-self:start}.autoMatch{margin-left:10px;margin-right:10px;flex-wrap:wrap}.autoMatch button{margin-left:22px}}
+
+/* 3.45 — spokojniejsze, bardziej przestrzenne wykończenie. Wszystkie zmiany są
+   wyłącznie wizualne: nie zmieniają wymiarów danych ani zachowania funkcji. */
+:root{
+  --powierzchnia:color-mix(in srgb,var(--panel) 94%,var(--accent) 6%);
+  --obrys:color-mix(in srgb,var(--border) 78%,var(--accent) 22%);
+  --cien-panelu:0 1px 2px rgba(18,38,29,.035),0 12px 32px rgba(18,38,29,.065);
+}
+body{background:color-mix(in srgb,var(--bg) 96%,var(--accent) 4%)}
+header{
+  background:linear-gradient(112deg,color-mix(in srgb,var(--accent) 90%,#173e31),var(--accent),color-mix(in srgb,var(--accent2) 72%,var(--accent)));
+  border-bottom-color:rgba(0,0,0,.11);box-shadow:0 1px 0 rgba(255,255,255,.09) inset,0 7px 22px rgba(22,58,43,.14)
+}
+.brand{padding-right:4px}.brand-logo{border-radius:11px;box-shadow:0 2px 8px rgba(0,0,0,.22),0 0 0 1px rgba(255,255,255,.26)}
+.brand-name{letter-spacing:-.018em}.brand-name .ver{display:inline-block;margin-left:2px;padding:2px 5px;border-radius:999px;background:rgba(255,255,255,.12);color:rgba(255,255,255,.82)!important}
+header .searchwrap{background:rgba(255,255,255,.18);box-shadow:0 1px 0 rgba(255,255,255,.12) inset}
+header .btn,header .fontctl,header #sortSel{box-shadow:0 1px 0 rgba(255,255,255,.09) inset}
+header .btn.primary{box-shadow:0 4px 13px rgba(15,45,33,.16)}
+
+main{
+  background:
+    radial-gradient(900px 500px at 8% -8%,color-mix(in srgb,var(--accent2) 10%,transparent),transparent 62%),
+    radial-gradient(760px 480px at 100% 100%,color-mix(in srgb,#c39a6b 9%,transparent),transparent 66%),
+    color-mix(in srgb,var(--bg) 97%,var(--accent) 3%);
+}
+.col{border-radius:19px!important}
+#colBooks,#colTags,#colPubs,#colNotes{
+  border:1px solid var(--obrys);background:color-mix(in srgb,var(--panel) 98%,var(--accent) 2%);box-shadow:var(--cien-panelu)
+}
+.col h2,.pubTitle{position:relative;padding-top:15px!important;color:color-mix(in srgb,var(--muted) 84%,var(--accent));letter-spacing:.085em}
+.col h2::after,.pubTitle::after{content:"";display:block;width:22px;height:2px;margin-top:7px;border-radius:2px;background:color-mix(in srgb,var(--accent) 48%,transparent)}
+#tagPanel,#pubPanel{background:transparent}
+
+#pasekListy{
+  border-bottom:1px solid color-mix(in srgb,var(--border) 72%,transparent);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--panel) 98%,var(--accent) 2%),var(--panel));
+}
+.vb-group{padding:3px;gap:2px;border:0;background:var(--sel)}
+.vb+.vb{border-left:0}.vb{border-radius:8px}.vb.on{box-shadow:0 2px 7px color-mix(in srgb,var(--accent) 25%,transparent)}
+.qf{border-color:color-mix(in srgb,var(--border) 82%,var(--accent));background:color-mix(in srgb,var(--panel) 98%,var(--accent) 2%)}
+.qf:hover{border-color:color-mix(in srgb,var(--accent) 42%,var(--border));background:color-mix(in srgb,var(--accent) 7%,var(--panel))}
+.qf.on{box-shadow:0 3px 10px color-mix(in srgb,var(--accent) 19%,transparent)}
+
+#bookList .item,#tagList .item,#pubList .item{border:1px solid transparent!important}
+#bookList .item:hover,#tagList .item:hover,#pubList .item:hover{border-color:color-mix(in srgb,var(--accent) 18%,var(--border))!important;background:color-mix(in srgb,var(--accent) 6%,var(--panel))}
+#bookList .item.active,#tagList .item.active,#pubList .item.active{
+  background:linear-gradient(105deg,var(--accent),color-mix(in srgb,var(--accent2) 62%,var(--accent)));
+  border-color:transparent!important;box-shadow:0 5px 13px color-mix(in srgb,var(--accent) 22%,transparent)
+}
+.secHead{box-shadow:0 2px 8px color-mix(in srgb,var(--secLine,var(--accent)) 16%,transparent);transition:transform .14s ease,box-shadow .14s ease}
+.secHead:hover{transform:translateY(-1px);box-shadow:0 5px 14px color-mix(in srgb,var(--secLine,var(--accent)) 21%,transparent)}
+#tagList .autoHead{border-color:color-mix(in srgb,var(--accent) 24%,var(--border));background:linear-gradient(112deg,color-mix(in srgb,var(--accent2) 17%,var(--panel)),color-mix(in srgb,var(--accent) 5%,var(--panel)))}
+#tagList .item.autoTopic{border:1px solid color-mix(in srgb,var(--accent2) 14%,transparent)!important;background:color-mix(in srgb,var(--accent2) 3%,transparent)}
+
+.ncard{
+  border:1px solid color-mix(in srgb,var(--border) 82%,var(--accent) 18%);border-radius:17px;
+  box-shadow:0 1px 2px rgba(18,38,29,.025),0 5px 17px rgba(18,38,29,.035)
+}
+.ncard:hover{border-color:color-mix(in srgb,var(--accent) 27%,var(--border));box-shadow:0 2px 5px rgba(18,38,29,.045),0 12px 28px rgba(18,38,29,.075)}
+.ncard::before{width:4px;border-radius:4px 0 0 4px;opacity:.82}
+.ntitle{font-weight:650;letter-spacing:-.021em}.ncontent{color:color-mix(in srgb,var(--text) 93%,var(--muted))}
+.ntools{background:color-mix(in srgb,var(--bg) 60%,var(--panel));border-top-color:color-mix(in srgb,var(--border) 70%,transparent)}
+.autoMatch{box-shadow:0 2px 10px color-mix(in srgb,var(--autoKolor) 10%,transparent)}
+
+.modal,#askModal .askbox,#msgModal .askbox{border:1px solid color-mix(in srgb,var(--border) 72%,white);box-shadow:0 22px 70px rgba(13,30,23,.22),0 2px 8px rgba(13,30,23,.09)}
+.autoBuiltin{background:linear-gradient(120deg,color-mix(in srgb,var(--accent2) 15%,var(--panel)),color-mix(in srgb,var(--accent) 3%,var(--panel)))}
+.autoRule{transition:border-color .14s ease,transform .14s ease,box-shadow .14s ease}.autoRule:hover{transform:translateY(-1px);border-color:color-mix(in srgb,var(--accent) 26%,var(--border));box-shadow:0 6px 18px rgba(18,38,29,.06)}
+
+html[data-theme="dark"]{--powierzchnia:color-mix(in srgb,var(--panel) 96%,var(--accent) 4%);--obrys:color-mix(in srgb,var(--border) 88%,var(--accent) 12%);--cien-panelu:0 12px 32px rgba(0,0,0,.25)}
+html[data-theme="dark"] main{background:radial-gradient(900px 500px at 8% -8%,color-mix(in srgb,var(--accent2) 9%,transparent),transparent 62%),var(--bg)}
+html[data-theme="dark"] .ncard{box-shadow:0 4px 16px rgba(0,0,0,.17)}
+
+/* Nagłówek iPada pozostaje jednolity i nieprzezroczysty pod szkłem systemowym. */
+body.ipad-standalone header{background-image:none!important;box-shadow:0 5px 18px rgba(20,50,38,.13)}
+@media(max-width:760px){main{gap:8px;padding:8px}.col{border-radius:15px!important}.ncard{border-radius:15px}.brand-name .ver{background:transparent;padding:0}}
 </style></head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
@@ -7782,7 +7857,7 @@ html[data-theme="dark"] #tagList .autoHead{
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <h1 class="brand-name">JW Study <span class="ver">v3.44</span></h1>
+      <h1 class="brand-name">JW Study <span class="ver">v3.45</span></h1>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -16001,7 +16076,7 @@ function smartPodzielNaglowki(html, tytulBazowy){
 const smartAssetUrls=new Map();
 function smartAssetBytes(nazwa){
   const el=document.getElementById("smartAsset-"+nazwa);
-  if(!el)throw new Error("Niekompletna wersja aplikacji: brak biblioteki "+nazwa+". Wgraj index.html wersji 3.44.");
+  if(!el)throw new Error("Niekompletna wersja aplikacji: brak biblioteki "+nazwa+". Wgraj index.html wersji 3.45.");
   const raw=atob(el.textContent.trim()),bytes=new Uint8Array(raw.length);
   for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
   return bytes;
