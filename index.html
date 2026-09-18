@@ -640,7 +640,9 @@ html[data-theme="dark"] #imgBar input[type=range]{accent-color:#5fae8b}
 mark.hl1{background:var(--hl1)}mark.hl2{background:var(--hl2)}mark.hl3{background:var(--hl3)}
 mark.hl4{background:var(--hl4)}mark.hl5{background:var(--hl5)}mark.hl6{background:var(--hl6)}
 mark.hl7{background:var(--hl7)}
-mark{padding:0 1px;border-radius:3px}
+/* Bez bocznego wypełnienia: podczas ponownego zaznaczania tekstu systemowy
+   niebieski kolor zaznaczenia nie odsłania na brzegach poprzedniego koloru. */
+mark{padding:0;border-radius:3px}
 #hlBar .tb.fmt{font-family:Georgia,serif;width:25px;text-align:center;font-size:14.5px}
 #hlBar .sep{width:1px;height:20px;background:rgba(0,0,0,.12)}
 .qhl{background:#9fd9ff;border-radius:3px;box-shadow:0 0 0 1px #6db9e8}
@@ -5147,6 +5149,9 @@ html[data-theme="dark"] .histDiff del{ background:rgba(240,138,130,.16); }
 #centrum{
   flex:1 1 auto; min-height:0;
   overflow:auto; -webkit-overflow-scrolling:touch;
+  /* A−/A+ steruje teraz również tekstem Centrum. Zachowujemy osobną skalę
+     interfejsu, ale dokładamy skalę czytania ustawianą w applyFs(). */
+  --uiw:calc(var(--ui, 1) * var(--winScale, 1) * var(--cenScale, 1));
   /* Rezerwa pod paskiem nad listą — ta sama zmienna, z której korzysta lista,
      żeby pierwszy kafelek nie schował się pod filtrami. */
   padding:calc(10px + var(--wysPaska, 0px)) 14px 40px;
@@ -7499,7 +7504,13 @@ html[data-theme="dark"] .bezp-result.ok{background:#173b2f;color:#a8dec8}html[da
 }
 #centrum .cenKolekcje>header{ margin:0 0 14px; }
 #centrum .cenUklad>header{ margin:0 0 10px; }
-.cenBlok{ max-width:1440px; margin:0 auto; }
+.cenBlokiGrid{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(min(430px,100%),1fr));
+  gap:14px; align-items:start; max-width:1440px; margin:0 auto;
+}
+.cenBlok{ min-width:0; max-width:none; margin:0; }
+.cenBlok[data-cblok-wrap="biblioteka"],
+.cenBlok[data-cblok-wrap="organizator"]{ grid-column:1/-1; }
 /* Pełna rama Centrum 3.08. Boczny wybór jest częścią Centrum, dzięki czemu
    nie miesza się z kolumnami Biblia / Etykiety / Publikacje. */
 .cenCentrumShell{
@@ -7650,6 +7661,7 @@ html[data-theme="dark"] .bezp-result.ok{background:#173b2f;color:#a8dec8}html[da
   .cenUkladLista{ grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
 @container notatki (max-width:700px){
+  .cenBlokiGrid{ grid-template-columns:minmax(0,1fr); }
   .cenCentrumShell{ grid-template-columns:minmax(0,1fr); gap:0; }
   .cenMenuMobilne{ display:flex; }
   .cenBoczna{ display:none; position:static; margin:0 0 12px; }
@@ -7689,7 +7701,7 @@ html[data-theme="dark"] .bezp-result.ok{background:#173b2f;color:#a8dec8}html[da
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <h1 class="brand-name">JW Study <span class="ver">v3.37</span></h1>
+      <h1 class="brand-name">JW Study <span class="ver">v3.38</span></h1>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -9115,15 +9127,10 @@ async function boot(){
   buildStatic();
   initViewBar();
   renderAll();
-  // iPad/iPhone uruchomione z ikony ekranu początkowego: po aktualizacji systemu
-  // półprzezroczysty pasek stanu potrafi zajść na nagłówek, a env() nadal zwraca 0.
-  // Rezerwujemy więc osobny, pusty pas nad treścią nagłówka.
+  // Przy stylu paska `default` iPadOS sam rezerwuje miejsce na pasek stanu.
+  // Nie dokładamy stałych pikseli: na iPadOS 27 tworzyły drugi, pusty pas.
   if(isIOS() && navigator.standalone){
     document.body.classList.add("ios-standalone");
-    const ipad = navigator.maxTouchPoints>1 && Math.min(screen.width,screen.height)>=700;
-    document.querySelector("header").style.paddingTop = ipad
-      ? "max(calc(14px + env(safe-area-inset-top, 0px)), 56px)"
-      : "max(calc(12px + env(safe-area-inset-top, 0px)), 46px)";
   }
   $("loading").style.display = "none";
   updateBackupBadge();
@@ -12624,6 +12631,9 @@ function applyFs(){
   const r = document.documentElement.style;
   r.setProperty("--noteFs", noteFs+"px");
   r.setProperty("--colFs", listFs+"px");
+  /* Centrum jest miejscem czytania, więc A−/A+ nie może omijać jego kart.
+     Skala wynika z tego samego rozmiaru co treść notatek, z bezpiecznym limitem. */
+  r.setProperty("--cenScale", Math.min(1.65,Math.max(.75,noteFs/FS_BAZA)).toFixed(3));
   const ui = uiScale;
   r.setProperty("--ui", ui);
   r.setProperty("--uiFs", (13 * ui).toFixed(2)+"px");
@@ -14961,26 +14971,60 @@ hlBar.addEventListener("pointerdown", e=>{
   renderHlBar();
   saveContentEl(contEl, n);
 }, true);
+function przesuniecieTekstu(cont,node,offset){
+  const r=document.createRange(); r.selectNodeContents(cont); r.setEnd(node,offset);
+  return r.toString().length;
+}
+function nalozKolorNaPrzedzial(cont,pocz,kon,color){
+  if(kon<=pocz) return;
+  const walker=document.createTreeWalker(cont,NodeFilter.SHOW_TEXT);
+  const trafione=[]; let node,pozycja=0;
+  while(node=walker.nextNode()){
+    const nast=pozycja+node.nodeValue.length;
+    const a=Math.max(0,pocz-pozycja), b=Math.min(node.nodeValue.length,kon-pozycja);
+    if(b>a) trafione.push({node,a,b});
+    pozycja=nast; if(pozycja>=kon) break;
+  }
+  /* Od końca, aby splitText nie przesuwał granic wcześniejszych fragmentów. */
+  for(let i=trafione.length-1;i>=0;i--){
+    const x=trafione[i]; let tekst=x.node;
+    if(x.b<tekst.nodeValue.length) tekst.splitText(x.b);
+    if(x.a>0) tekst=tekst.splitText(x.a);
+    const mark=document.createElement("mark"); mark.className="hl"+color;
+    tekst.parentNode.insertBefore(mark,tekst); mark.appendChild(tekst);
+  }
+}
+function przebudujKolory(range,cont,color){
+  /* Zapisujemy kolory jako przedziały znaków, zdejmujemy WSZYSTKIE znaczniki,
+     a potem budujemy je od nowa. Dzięki temu zaznaczenie zaczynające się
+     wewnątrz starego <mark> nie może utworzyć drugiego <mark> w jego środku. */
+  const dl=(cont.textContent||"").length, kolory=new Uint8Array(dl);
+  [...cont.querySelectorAll("mark")].forEach(m=>{
+    const k=+(((m.className||"").match(/hl([1-7])/)||[])[1]||0); if(!k) return;
+    const r=document.createRange(); r.selectNodeContents(m);
+    const a=przesuniecieTekstu(cont,r.startContainer,r.startOffset);
+    const b=przesuniecieTekstu(cont,r.endContainer,r.endOffset);
+    kolory.fill(k,Math.max(0,a),Math.min(dl,b));
+  });
+  const pocz=przesuniecieTekstu(cont,range.startContainer,range.startOffset);
+  const kon=przesuniecieTekstu(cont,range.endContainer,range.endOffset);
+  kolory.fill(color||0,Math.max(0,pocz),Math.min(dl,kon));
+  [...cont.querySelectorAll("mark")].reverse().forEach(m=>m.replaceWith(...m.childNodes));
+  cont.normalize();
+  const przedzialy=[]; let i=0;
+  while(i<dl){
+    const k=kolory[i], a=i; while(i<dl&&kolory[i]===k)i++;
+    if(k) przedzialy.push({a,b:i,k});
+  }
+  for(let j=przedzialy.length-1;j>=0;j--){
+    const x=przedzialy[j]; nalozKolorNaPrzedzial(cont,x.a,x.b,x.k);
+  }
+  cont.querySelectorAll("mark:empty").forEach(m=>m.remove());
+}
 function applyMark(range,color){
-  /* Wyjmujemy zaznaczony fragment, zdejmujemy z niego poprzedni kolor i dopiero
-     nakładamy nowy. Range.extractContents rozcina stary <mark> na granicach
-     zaznaczenia, więc kolor poza zaznaczeniem zostaje, a dwa kolory nie są
-     nigdy zagnieżdżone jeden w drugim. */
   const cont=(range.commonAncestorContainer.nodeType===1
     ? range.commonAncestorContainer : range.commonAncestorContainer.parentElement).closest(".ncontent");
-  const frag=range.extractContents();
-  [...frag.querySelectorAll("mark")].forEach(m=>m.replaceWith(...m.childNodes));
-  const walker=document.createTreeWalker(frag,NodeFilter.SHOW_TEXT);
-  const teksty=[]; let node;
-  while(node=walker.nextNode()) if(node.nodeValue && node.nodeValue.length) teksty.push(node);
-  const nowe=[];
-  teksty.forEach(tekst=>{
-    const mark=document.createElement("mark"); mark.className="hl"+color;
-    tekst.parentNode.replaceChild(mark,tekst); mark.appendChild(tekst); nowe.push(mark);
-  });
-  range.insertNode(frag);
-  if(cont) cont.querySelectorAll("mark:empty").forEach(m=>m.remove());
-  return nowe;
+  if(cont) przebudujKolory(range,cont,color);
 }
 function wrapTag(range,tag){
   const el=document.createElement(tag);
@@ -14988,12 +15032,7 @@ function wrapTag(range,tag){
   catch(err){ const frag=range.extractContents(); el.appendChild(frag); range.insertNode(el); }
 }
 function unwrapMarks(range,contEl){
-  /* Tak samo przy usuwaniu koloru: zdejmujemy go tylko z zaznaczonej części,
-     nie z całego, dłuższego podkreślenia, które przecina zaznaczenie. */
-  const frag=range.extractContents();
-  [...frag.querySelectorAll("mark")].forEach(m=>m.replaceWith(...m.childNodes));
-  range.insertNode(frag);
-  contEl.querySelectorAll("mark:empty").forEach(m=>m.remove());
+  przebudujKolory(range,contEl,0);
 }
 
 </script>
@@ -15688,7 +15727,7 @@ function smartPodzielNaglowki(html, tytulBazowy){
 const smartAssetUrls=new Map();
 function smartAssetBytes(nazwa){
   const el=document.getElementById("smartAsset-"+nazwa);
-  if(!el)throw new Error("Niekompletna wersja aplikacji: brak biblioteki "+nazwa+". Wgraj index.html wersji 3.37.");
+  if(!el)throw new Error("Niekompletna wersja aplikacji: brak biblioteki "+nazwa+". Wgraj index.html wersji 3.38.");
   const raw=atob(el.textContent.trim()),bytes=new Uint8Array(raw.length);
   for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
   return bytes;
@@ -17394,11 +17433,13 @@ async function wczytajKopieZTekstu(tekstPliku){
 
   const incoming=(data.notes||[]).filter(n=>!n.del).length;
   const mineCount=notes.filter(n=>!n.del).length;
-  const hasLayout = (Array.isArray(data.sections) && data.sections.length) || (data.tags||[]).some(t=>t.sec!==undefined||t.color);
+  const hasLayout = (Array.isArray(data.sections) && data.sections.length)
+    || (Array.isArray(data.secTabs) && data.secTabs.length)
+    || (data.tags||[]).some(t=>t.sec!==undefined||t.stb!==undefined||t.color);
   const choice = await askChoice("Wczytanie kopii danych",
     `<p class="ch-lead">W pliku: <b>${incoming}</b> notatek · na tym urządzeniu: <b>${mineCount}</b></p>`+
     `<dl class="ch-opts">`+
-    `<dt>Dołącz + układ</dt><dd>Dokłada notatki i przenosi porządek etykiet: sekcje, przypisania, kolory oraz zakładki publikacji. Wybierz, żeby na wszystkich urządzeniach było tak samo.</dd>`+
+    `<dt>Dołącz + układ</dt><dd>Dokłada notatki i przenosi cały porządek: sekcje, przypisania, kolory oraz zakładki sekcji i publikacji. Wybierz, żeby na wszystkich urządzeniach było tak samo.</dd>`+
     `<dt>Dołącz (same notatki)</dt><dd>Dokłada tylko treść. Układ etykiet na tym urządzeniu zostaje bez zmian.</dd>`+
     `<dt>Dołącz + nadpisz istniejące</dt><dd>Jak wyżej, ale notatki, które już masz, dostają treść z pliku — nawet gdy daty są takie same. Wybierz, gdy <b>powtarzasz przenoszenie z innego programu</b> i chcesz poprawioną wersję.</dd>`+
     `<dt class="ch-danger">Zastąp wszystko</dt><dd>Usuwa obecne dane i wstawia zawartość pliku. <b>Tego nie da się cofnąć.</b></dd>`+
@@ -24321,14 +24362,28 @@ function centrOrganizator(){
  * co użytkownik przeniósł w kolumnie Publikacje, natychmiast widać także tu.
  */
 function centrBiblioteka(kont, dzis){
-  const kolekcje = (typeof pubTabsFor === "function" ? pubTabsFor("*") : []).slice(0, 6);
+  /* Centrum pokazuje oba rodzaje kolekcji. Wcześniej widziało wyłącznie
+     zakładki ogólne z kolumny Publikacje, więc zakładki przypisane do sekcji
+     były zapisane i przenoszone w kopii, ale znikały z samego Centrum. */
+  const ogolne = (typeof pubTabsFor === "function" ? pubTabsFor("*") : [])
+    .map(z=>({rodzaj:"pub", z, sekcja:""}));
+  const sekcyjne = (typeof secTabs !== "undefined" ? secTabs : []).slice()
+    .sort((a,b)=>{
+      const sa=sections.find(s=>s.id===a.sec), sb=sections.find(s=>s.id===b.sec);
+      return ((sa&&sa.ord)||0)-((sb&&sb.ord)||0) || (a.ord||0)-(b.ord||0);
+    }).map(z=>({rodzaj:"sek", z, sekcja:(sections.find(s=>s.id===z.sec)||{}).name||"Sekcja"}));
+  const kolekcje = [...ogolne,...sekcyjne].slice(0, 8);
   const kolory = ["#4d8875", "#b78845", "#70799d", "#8d6f91", "#5e8392", "#9b705b"];
-  const kafle = kolekcje.map((t, i)=>{
-    const ile = typeof pubTabCount === "function" ? pubTabCount(t.id) : 0;
-    return '<button type="button" class="cenKol" style="--kol:' + kolory[i % kolory.length] + '" data-ckolekcja="' + esc(t.id) + '">'
-      + '<span class="cenKolPas"></span><span class="cenKolIk">' + CEN_IKO.pub + '</span>'
-      + '<span class="cenKolTxt"><b>' + esc(t.name) + '</b><small>' + ile + ' '
-      + esc(centrOdmiana(ile, "notatka", "notatki", "notatek")) + '</small></span>'
+  const kafle = kolekcje.map((w, i)=>{
+    const t=w.z, sek=w.rodzaj==="sek";
+    const ile = sek ? (typeof secTabCount==="function"?secTabCount(t.id):0)
+                    : (typeof pubTabCount === "function" ? pubTabCount(t.id) : 0);
+    const kolor=(t.color&&typeof kolorBezpieczny==="function"&&kolorBezpieczny(t.color))?t.color:kolory[i % kolory.length];
+    const atrybut=sek?' data-czakladka-sekcji="'+esc(t.id)+'"':' data-ckolekcja="'+esc(t.id)+'"';
+    const opis=(sek?w.sekcja+' · ':'')+ile+' '+centrOdmiana(ile,"notatka","notatki","notatek");
+    return '<button type="button" class="cenKol" style="--kol:' + kolor + '"'+atrybut+'>'
+      + '<span class="cenKolPas"></span><span class="cenKolIk">' + (sek?CEN_IKO.wers:CEN_IKO.pub) + '</span>'
+      + '<span class="cenKolTxt"><b>' + esc(t.name) + '</b><small>' + esc(opis) + '</small></span>'
       + '<span class="cenKolStrz">' + CEN_IKO.strz + '</span></button>';
   }).join("");
 
@@ -25195,7 +25250,9 @@ function rysujCentrumWnetrze306(el){
   if(centrWidok==="centrum"){
     const widoczne=stan.order.filter(id=>!stan.hidden[id]&&bloki[id]);
     tresc=centrPanelUkladu(stan)
-      +widoczne.map(id=>'<div class="cenBlok" data-cblok-wrap="'+id+'">'+bloki[id]()+'</div>').join('');
+      +'<div class="cenBlokiGrid">'
+      +widoczne.map(id=>'<div class="cenBlok" data-cblok-wrap="'+id+'">'+bloki[id]()+'</div>').join('')
+      +'</div>';
     if(!widoczne.length) tresc+='<div class="cenPusto"><b>Wszystkie sekcje są ukryte.</b>Otwórz „Dostosuj” i zaznacz to, co chcesz widzieć.</div>';
     if(!kont&&!dzis.length&&!centrOstatnioDodane().length) tresc+='<div class="cenPusto"><b>Centrum czeka na pierwsze materiały.</b>'
       +'Dodaj notatkę albo wczytaj kopię z JW Library. Projekty i kolejki wypełnią się tym, co sam do nich przypiszesz.</div>';
@@ -25350,6 +25407,19 @@ if($("centrum")){
       if(typeof persistFilt === "function") persistFilt();
       renderAll();
       if(innerWidth <= 900 && typeof mobileShow === "function") mobileShow("colNotes");
+      return;
+    }
+
+    const zakladkaSekcji = ev.target.closest("[data-czakladka-sekcji]");
+    if(zakladkaSekcji){
+      const id=+zakladkaSekcji.dataset.czakladkaSekcji;
+      const istnieje=typeof secTabs!=="undefined" && secTabs.some(z=>z.id===id);
+      if(!istnieje){ toast("Tej zakładki już nie ma"); rysujCentrum(); return; }
+      filt.tag="stb:"+id; filt.book="all"; filt.ch=null;
+      if(typeof quickFilter!=="undefined") quickFilter="all";
+      if(typeof persistFilt==="function") persistFilt();
+      renderAll();
+      if(innerWidth<=900&&typeof mobileShow==="function") mobileShow("colNotes");
       return;
     }
 
@@ -26198,10 +26268,9 @@ async function syncScalHistorie(zdalna){
 /**
  * Zamienia decyzje na zmiany w pamięci aplikacji i w bazie urządzenia.
  *
- * Kolejność jest istotna: sekcje przed etykietami i zakładkami sekcji, bo
- * etykieta odsyła do sekcji; wszystkie listy przed notatkami, bo notatka
- * odsyła do etykiet i zakładek. Odwrotna kolejność zostawiałaby odsyłacze
- * w próżnię.
+ * Kolejność jest istotna: sekcje → zakładki sekcji → etykiety. Etykieta może
+ * wskazywać jednocześnie sekcję i zakładkę, więc obie mapy muszą już istnieć.
+ * Wszystkie listy powstają przed notatkami, które odsyłają do nich dalej.
  */
 async function syncZastosuj(plan){
   const st = {notatekNowych:0, notatekZmienionych:0, etykietNowych:0,
@@ -26210,7 +26279,11 @@ async function syncZastosuj(plan){
   const zmienioneNotatki = new Set();
 
   /* ——— listy ——— */
-  for(const o of plan.opisy){
+  const kolejnoscList=[...plan.opisy].sort((a,b)=>{
+    const pri={sections:0,secTabs:1,tags:2,pubTabs:3,szablony:4};
+    return (pri[a.rodzaj]??9)-(pri[b.rodzaj]??9);
+  });
+  for(const o of kolejnoscList){
     const w = plan.listy[o.rodzaj];
     if(!w) continue;
     const lista = o.lista();
