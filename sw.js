@@ -1,7 +1,7 @@
 /* Osobny cache dla każdej instalacji (np. dwóch projektów GitHub Pages).
    Starszych, wspólnych cache nie usuwamy: mogą należeć do innej instalacji. */
 const CACHE_PREFIX = 'jwstudy-' + encodeURIComponent(self.registration.scope) + '-';
-const CACHE = CACHE_PREFIX + 'v340';
+const CACHE = CACHE_PREFIX + 'v341';
 const CORE = ['./', './index.html'];
 const EXTRA = [
   './search-worker.js',

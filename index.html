@@ -7725,7 +7725,7 @@ html[data-theme="dark"] .bezp-result.ok{background:#173b2f;color:#a8dec8}html[da
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <h1 class="brand-name">JW Study <span class="ver">v3.40</span></h1>
+      <h1 class="brand-name">JW Study <span class="ver">v3.41</span></h1>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -15261,9 +15261,14 @@ $("btnMenu").onclick = e=>{
     <div class="dd-note" id="ddStorage">Sprawdzam zajętość pamięci…</div>`;
   dd.style.display="block";
   showStorageInfo();
-  placeDropdown(dd, e.target);
+  placeDropdown(dd, e.currentTarget);
   dd.onclick=ev=>{
-    const m=ev.target.dataset.m;
+    /* Pozycja zawiera SVG, <b> i opis. Na dotyku celem zdarzenia jest zwykle
+       właśnie ten element wewnętrzny, dlatego odczytujemy data-m z całego
+       najbliższego wiersza. */
+    const pozycja=ev.target && ev.target.closest ? ev.target.closest("[data-m]") : null;
+    if(!pozycja || !dd.contains(pozycja)) return;
+    const m=pozycja.dataset.m;
     dd.style.display="none";
     if(m==="sync"){ if(typeof syncUzgodnijTeraz==="function") syncUzgodnijTeraz(); }
     else if(m==="security"){ if(typeof otworzCentrumBezpieczenstwa==="function") otworzCentrumBezpieczenstwa(); }
@@ -15754,7 +15759,7 @@ function smartPodzielNaglowki(html, tytulBazowy){
 const smartAssetUrls=new Map();
 function smartAssetBytes(nazwa){
   const el=document.getElementById("smartAsset-"+nazwa);
-  if(!el)throw new Error("Niekompletna wersja aplikacji: brak biblioteki "+nazwa+". Wgraj index.html wersji 3.40.");
+  if(!el)throw new Error("Niekompletna wersja aplikacji: brak biblioteki "+nazwa+". Wgraj index.html wersji 3.41.");
   const raw=atob(el.textContent.trim()),bytes=new Uint8Array(raw.length);
   for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
   return bytes;
