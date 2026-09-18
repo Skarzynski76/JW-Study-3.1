@@ -7857,7 +7857,7 @@ body.ipad-standalone header{background-image:none!important;box-shadow:0 5px 18p
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <h1 class="brand-name">JW Study <span class="ver">v3.45</span></h1>
+      <h1 class="brand-name">JW Study <span class="ver">v3.46</span></h1>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -8433,7 +8433,7 @@ body.ipad-standalone header{background-image:none!important;box-shadow:0 5px 18p
 <div class="overlay" id="modalAutoTematy">
   <div class="modal autoTematyModal" role="dialog" aria-label="Tematy automatyczne">
     <div class="nn-head"><div><span class="autoModalKicker">✦ INTELIGENTNE PORZĄDKOWANIE</span><h3>Tematy automatyczne</h3></div></div>
-    <p class="autoModalLead">Wbudowane tematy rozpoznają treść bez zmieniania Twoich ręcznych etykiet. Możesz dodać własny temat albo poprawić nietrafione dopasowanie przy konkretnej notatce.</p>
+    <p class="autoModalLead">Temat wymaga kilku zgodnych wskazówek albo mocnego trafienia w tytule, ręcznej etykiecie lub całym zwrocie. Możesz dodać własną regułę albo poprawić nietrafione dopasowanie przy konkretnej notatce.</p>
     <div class="autoBuiltin"><b>13 wbudowanych tematów</b><span>działają lokalnie i bez internetu</span></div>
     <div class="autoModalHead"><h4>Moje własne reguły</h4><button class="btn primary" type="button" id="autoAddRule">＋ Nowy temat</button></div>
     <div id="autoTematyLista" class="autoRules"></div>
@@ -9587,6 +9587,44 @@ function tekstAutoTemat(n){
   return normAutoTemat((n.t||"")+" "+tresc+" "+reczny);
 }
 function wszystkieAutoTematy(){ return AUTO_TEMATY.concat(autoTematyWlasne); }
+/* Reguły są normalizowane tylko po zmianie ustawień. Poprzednio każde słowo
+   każdej reguły było upraszczane ponownie dla każdej notatki. */
+let _autoRegulyCache={sig:"",lista:[]};
+function autoTematyReguly(){
+  if(_autoRegulyCache.sig)return _autoRegulyCache;
+  const tematy=wszystkieAutoTematy();
+  const sig=tematy.map(t=>t.id+":"+t.name+":"+t.slowa.join(",")).join(";");
+  _autoRegulyCache={sig,lista:tematy.map(t=>({t,slowa:[...new Set(t.slowa.map(normAutoTemat).filter(Boolean))]}))};
+  return _autoRegulyCache;
+}
+function autoPole(s){
+  const tekst=normAutoTemat(s);
+  return {tekst,slowa:tekst?tekst.split(" "):[]};
+}
+function autoIleTrafien(pole,regula){
+  if(!pole.tekst||!regula)return 0;
+  if(regula.includes(" ")) return (" "+pole.tekst+" ").includes(" "+regula+" ")?1:0;
+  let ile=0;
+  pole.slowa.forEach(w=>{
+    /* Rdzeń od czterech znaków może dopasować odmianę słowa. Krótsze hasła,
+       np. „mąż” i „lęk”, muszą być całym słowem i nie wpadają w inne wyrazy. */
+    if(w===regula || (regula.length>=4&&w.startsWith(regula))) ile++;
+  });
+  return ile;
+}
+function autoTematPewny(pola,slowa){
+  /* Tytuł i ręczna etykieta są świadomym, mocnym sygnałem. */
+  if(slowa.some(s=>autoIleTrafien(pola.tytul,s)>0 || autoIleTrafien(pola.etykiety,s)>0))return true;
+  /* Pełny zwrot w treści jest bardziej jednoznaczny niż pojedyncze słowo. */
+  if(slowa.some(s=>s.includes(" ")&&autoIleTrafien(pola.tresc,s)>0))return true;
+  let rozne=0;
+  for(const s of slowa){
+    const ile=autoIleTrafien(pola.tresc,s);
+    if(ile>=2)return true;              // to samo pojęcie wraca w notatce
+    if(ile===1&&++rozne>=2)return true; // dwa różne sygnały tego samego tematu
+  }
+  return false;
+}
 function autoTematySanity(raw){
   const src=raw&&typeof raw==="object"&&Array.isArray(raw.custom)?raw.custom:[];
   const seen=new Set();
@@ -9604,7 +9642,7 @@ function autoTematySanity(raw){
 }
 function autoTematyEksport(){ return {custom:autoTematyWlasne.map(t=>({...t,slowa:t.slowa.slice()}))}; }
 function autoTematyUstaw(raw,zapisz){
-  autoTematyWlasne=autoTematySanity(raw).custom; _autoTematCache.clear();
+  autoTematyWlasne=autoTematySanity(raw).custom; _autoTematCache.clear(); _autoRegulyCache={sig:"",lista:[]};
   try{ lsSet(KP+"AutoTopics",JSON.stringify(autoTematyEksport())); }catch(_){}
   if(zapisz!==false&&idb) idbPut("meta",autoTematyEksport(),"autoTopics").catch(e=>reportSaveError(e,"tematy automatyczne"));
 }
@@ -9626,14 +9664,17 @@ function autoTematyScal(raw){
 }
 function autoTematyNotatki(n){
   const tg=(n.tg||[]).join(","), c=String(n.c||""), h=String(n.h||"");
+  const reguly=autoTematyReguly();
   const sig=String(n.mo||"")+"|"+String(n.t||"")+"|"+c.length+"|"+h.length+"|"+tg+
     "|"+(n.tg||[]).map(id=>(tags.find(t=>t.id===id)||{}).name||"").join(",")+"|"+(n.atex||[]).join(",")+
-    "|"+autoTematyWlasne.map(t=>t.id+":"+t.name+":"+t.slowa.join(",")).join(";");
+    "|"+reguly.sig;
   const old=_autoTematCache.get(n.g);
   if(old && old.sig===sig) return old.ids;
-  const tekst=tekstAutoTemat(n), ids=[], wykluczone=new Set(Array.isArray(n.atex)?n.atex:[]);
-  wszystkieAutoTematy().forEach(t=>{
-    if(!wykluczone.has(t.id)&&t.slowa.some(s=>tekst.includes(normAutoTemat(s)))) ids.push(t.id);
+  const etykiety=(n.tg||[]).map(id=>(tags.find(t=>t.id===id)||{}).name||"").join(" ");
+  const pola={tytul:autoPole(n.t||""),tresc:autoPole(n.c||String(n.h||"").replace(/<[^>]*>/g," ")),etykiety:autoPole(etykiety)};
+  const ids=[], wykluczone=new Set(Array.isArray(n.atex)?n.atex:[]);
+  reguly.lista.forEach(({t,slowa})=>{
+    if(!wykluczone.has(t.id)&&autoTematPewny(pola,slowa)) ids.push(t.id);
   });
   _autoTematCache.set(n.g,{sig,ids});
   return ids;
@@ -9671,7 +9712,7 @@ async function autoTematEdytuj(id){
   const old=id?autoTematyWlasne.find(t=>t.id===id):null;
   const name=await askText({title:old?"Nazwa własnego tematu":"Nowy temat automatyczny",value:old?old.name:"",placeholder:"np. Gościnność",okLabel:old?"Dalej":"Dalej",hint:"Ta nazwa pojawi się w kolumnie Tematy automatyczne."});
   if(!name||!name.trim())return;
-  const words=await askText({title:"Słowa rozpoznające temat",value:old?old.slowa.join(", "):"",placeholder:"np. gościnność, zapraszanie, otwarty dom",okLabel:"Zapisz",hint:"Wpisz słowa lub zwroty oddzielone przecinkami. Wystarczy jedno dopasowanie."});
+  const words=await askText({title:"Słowa rozpoznające temat",value:old?old.slowa.join(", "):"",placeholder:"np. gościnność, zapraszanie, otwarty dom",okLabel:"Zapisz",hint:"Wpisz słowa lub zwroty oddzielone przecinkami. W treści wymagane są dwa sygnały; tytuł, ręczna etykieta lub cały zwrot wystarczą samodzielnie."});
   const slowa=String(words||"").split(",").map(x=>x.trim()).filter(Boolean).slice(0,24); if(!slowa.length){toast("Wpisz przynajmniej jedno słowo");return;}
   if(old){old.name=name.trim().slice(0,60);old.slowa=slowa;}
   else autoTematyWlasne.push({id:"u_"+Date.now().toString(36),name:name.trim().slice(0,60),slowa,color:AUTO_KOLORY[autoTematyWlasne.length%AUTO_KOLORY.length]});
@@ -10731,7 +10772,7 @@ function renderTags(){
   // bo jedna notatka może trafnie pasować do kilku tematów.
   const auto=autoTematyZlicz(base), autoOpen=autoTematyOtwarte();
   html += `<div class="secHead autoHead${autoOpen?"":" closed"}" data-auto-sec="1"
-    title="Tematy są rozpoznawane z treści. Nie zmieniają Twoich ręcznych etykiet ani sekcji.">
+    title="Temat wymaga kilku zgodnych wskazówek albo mocnego trafienia w tytule, etykiecie lub całym zwrocie. Ręczne przypisania pozostają bez zmian.">
     <span class="secArr">${autoOpen?"▾":"▸"}</span>
     <span class="secName">Tematy automatyczne</span>
     <span class="autoBadge">AUTO</span><span class="secCnt">${auto.notatki} not.</span>
@@ -10741,7 +10782,7 @@ function renderTags(){
     if(widoczne.length) widoczne.forEach(t=>{
       html += tagItem("auto:"+t.id,t.name,t.count,false,t.color,true).replace('class="item ','class="item autoTopic ');
     });
-    else html += `<div class="secEmpty autoEmpty">Tematy pojawią się automatycznie, gdy treść notatek będzie do nich pasować.</div>`;
+    else html += `<div class="secEmpty autoEmpty">Tematy pojawią się, gdy notatka będzie miała kilka zgodnych wskazówek.</div>`;
   }
   // ——— SEKCJE (grupy etykiet) ———
   const secs = sections.slice().sort((a,b)=>(a.ord??0)-(b.ord??0));
@@ -16076,7 +16117,7 @@ function smartPodzielNaglowki(html, tytulBazowy){
 const smartAssetUrls=new Map();
 function smartAssetBytes(nazwa){
   const el=document.getElementById("smartAsset-"+nazwa);
-  if(!el)throw new Error("Niekompletna wersja aplikacji: brak biblioteki "+nazwa+". Wgraj index.html wersji 3.45.");
+  if(!el)throw new Error("Niekompletna wersja aplikacji: brak biblioteki "+nazwa+". Wgraj index.html wersji 3.46.");
   const raw=atob(el.textContent.trim()),bytes=new Uint8Array(raw.length);
   for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
   return bytes;
