@@ -22,7 +22,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="JW Study">
 <meta name="theme-color" content="#256b52">
 <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
@@ -111,6 +111,21 @@ body.ios-standalone::before{
   pointer-events:none;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;
 }
 body.ios-standalone header{background-color:var(--accent)!important;background-image:none!important;}
+/* iPadOS 27 w trybie okienkowym nakłada wysoki pas szkła. Zostawiamy pod nim
+   pustą strefę; właściwe przyciski zaczynają się dopiero niżej. */
+body.ipad-standalone header{
+  --ipad-system-clearance:38px;
+  padding-top:calc(10px + env(safe-area-inset-top,0px) + var(--ipad-system-clearance))!important;
+}
+body.ipad-standalone header .searchwrap,
+body.ipad-standalone header .btn,
+body.ipad-standalone header #sortSel,
+body.ipad-standalone header .fontctl,
+body.ipad-standalone header .ikony-grupa{
+  background:color-mix(in srgb,var(--accent) 72%,white 28%)!important;
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+}
+body.ipad-standalone header .btn.primary{background:#fff!important;color:var(--accent)!important;}
 </style>
 <style>
 /* ==========================================================================
@@ -7710,7 +7725,7 @@ html[data-theme="dark"] .bezp-result.ok{background:#173b2f;color:#a8dec8}html[da
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <h1 class="brand-name">JW Study <span class="ver">v3.39</span></h1>
+      <h1 class="brand-name">JW Study <span class="ver">v3.40</span></h1>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -9140,6 +9155,9 @@ async function boot(){
   // Nie dokładamy stałych pikseli: na iPadOS 27 tworzyły drugi, pusty pas.
   if(isIOS() && navigator.standalone){
     document.body.classList.add("ios-standalone");
+    const ipadOS = /iPad/.test(navigator.userAgent) ||
+      (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1);
+    if(ipadOS) document.body.classList.add("ipad-standalone");
   }
   $("loading").style.display = "none";
   updateBackupBadge();
@@ -15736,7 +15754,7 @@ function smartPodzielNaglowki(html, tytulBazowy){
 const smartAssetUrls=new Map();
 function smartAssetBytes(nazwa){
   const el=document.getElementById("smartAsset-"+nazwa);
-  if(!el)throw new Error("Niekompletna wersja aplikacji: brak biblioteki "+nazwa+". Wgraj index.html wersji 3.39.");
+  if(!el)throw new Error("Niekompletna wersja aplikacji: brak biblioteki "+nazwa+". Wgraj index.html wersji 3.40.");
   const raw=atob(el.textContent.trim()),bytes=new Uint8Array(raw.length);
   for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
   return bytes;
