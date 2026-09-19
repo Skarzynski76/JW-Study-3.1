@@ -7857,7 +7857,7 @@ body.ipad-standalone header{background-image:none!important;box-shadow:0 5px 18p
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <h1 class="brand-name">JW Study <span class="ver">v3.46</span></h1>
+      <h1 class="brand-name">JW Study <span class="ver">v3.47</span></h1>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -9769,6 +9769,16 @@ function noteMatchesBook(n,b){
   if(b===0) return !n.b;
   return n.b===b;
 }
+/* Wyszukiwanie uruchomione jako „cała baza” wcześniej ignorowało późniejsze
+   dotknięcie księgi, rozdziału lub etykiety. Liczniki w kolumnach się zmieniały,
+   lecz lista notatek pozostawała taka sama. Świadomy wybór w kolumnie oznacza,
+   że od tej chwili użytkownik chce zawężać właśnie bieżące wyniki. */
+function wlaczZawezenieWynikow(){
+  if((query || (typeof aktywneOpcjeSzukania==="function"&&aktywneOpcjeSzukania())) && searchOpts.scope==="all"){
+    searchOpts.scope="current";
+    lsSet(KP+"SearchOpts",JSON.stringify(searchOpts));
+  }
+}
 /* ===== zestaw ikon kreskowych (sama grafika — bez wpływu na działanie) ===== */
 const svgIc = (d, sw) => `<svg class="ic mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw||1.7}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const IC_GRIP   = svgIc('<circle cx="9" cy="6" r="1.1" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="1.1" fill="currentColor" stroke="none"/><circle cx="9" cy="18" r="1.1" fill="currentColor" stroke="none"/><circle cx="15" cy="6" r="1.1" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1.1" fill="currentColor" stroke="none"/><circle cx="15" cy="18" r="1.1" fill="currentColor" stroke="none"/>');
@@ -9961,6 +9971,7 @@ function renderPubPanel(){
   el.querySelectorAll(".pubPick").forEach(it=>{
     it.onclick=e=>{
       if(e.target.classList.contains("pubDrag")) return;
+      wlaczZawezenieWynikow();
       const k="pub:"+it.dataset.key;
       filt.book = (String(filt.book)===k) ? "all" : k;
       filt.ch=null; persistFilt(); renderAll();
@@ -10856,6 +10867,7 @@ function renderTags(){
         return;
       }
       if(e.target.closest(".dragOrd")) return;
+      wlaczZawezenieWynikow();
       filt.tag = String(filt.tag)==="stb:"+id ? "all" : "stb:"+id;
       persistFilt(); renderAll();
       if(innerWidth<=900) mobileShow("colNotes");
@@ -10882,6 +10894,7 @@ function renderTags(){
         return;
       }
       const key=it.dataset.k;
+      wlaczZawezenieWynikow();
       filt.tag = key==="all"?"all":key==="none"?"none":key.indexOf("auto:")===0?key:+key;
       persistFilt(); renderAll();
       if(innerWidth<=900) mobileShow("colNotes");
@@ -11364,6 +11377,7 @@ function renderBooks(){
     it.onclick = ()=>{
       const raw = it.dataset.k;
       const k = raw==="all" ? "all" : (raw.indexOf("pub:")===0 ? raw : +raw);
+      wlaczZawezenieWynikow();
       if(typeof k==="number" && k>0){
         expandedBook = (expandedBook===k && filt.book===k) ? null : k;
       } else expandedBook = null;
@@ -11378,6 +11392,7 @@ function renderBooks(){
     ch.onclick = e=>{
       e.stopPropagation();
       const c = +ch.dataset.ch;
+      wlaczZawezenieWynikow();
       filt.ch = (filt.ch===c)? null : c;
       persistFilt(); renderAll();
       if(innerWidth<=900 && filt.ch!=null) mobileShow("colNotes");
@@ -12861,16 +12876,38 @@ function doladujWynikiSzukania(){
   resetQueryCache();
   if(!(typeof uruchomWorkerSzukania==="function" && uruchomWorkerSzukania())) renderNotes();
 }
+function opisFiltrowWynikow(){
+  const a=[];
+  if(typeof filt.book==="number"){
+    if(filt.book>0)a.push(BOOKS[filt.book]||("księga "+filt.book));
+    else if(filt.book===0)a.push("publikacje i własne");
+  }else if(typeof filt.book==="string"&&filt.book!=="all"){
+    a.push(filt.book.indexOf("ptb:")===0?"zakładka publikacji":"wybrana publikacja");
+  }
+  if(filt.ch!=null)a.push("rozdział "+filt.ch);
+  if(typeof filt.tag==="number"){
+    const t=tags.find(x=>x.id===filt.tag); a.push(t?t.name:"wybrana etykieta");
+  }else if(filt.tag==="none")a.push("bez etykiety");
+  else if(typeof filt.tag==="string"&&filt.tag.indexOf("auto:")===0){
+    const t=wszystkieAutoTematy().find(x=>x.id===filt.tag.slice(5)); a.push(t?t.name:"temat automatyczny");
+  }else if(typeof filt.tag==="string"&&filt.tag!=="all")a.push("wybrana zakładka");
+  return a.join(" · ");
+}
 function renderSearchStatus(arr){
   const box=$("searchStatus"); const active=!!query||aktywneOpcjeSzukania(); box.hidden=!active; if(!active){box.innerHTML="";return;}
   const cnt={all:arr.length,bible:0,publication:0,own:0}; arr.forEach(n=>cnt[kategoriaNotatki(n)]++);
+  const zakres=opisFiltrowWynikow();
   const calosc=searchInProgress?` · sprawdzono ${searchScannedCount} z ${notes.length}`
     :(searchTotalMatches>arr.length?` · znaleziono ${searchTotalMatches}, pokazano najlepsze ${arr.length}`:" · przeszukano całą bazę");
   box.innerHTML=`<span class="ssInfo">${searchMode==="smart"?"Inteligentnie":"Dokładnie"} · ${arr.length}${searchWasLimited?"+":""} wyników${calosc}</span>`+
+    (zakres?`<button class="ssChip on ssZakres" data-ssfiltersclear="1" title="Usuń zawężenie">Wyniki w: ${esc(zakres)} ×</button>`:"")+
     [["all","Wszystkie"],["bible","Biblia"],["publication","Publikacje"],["own","Własne"]].map(([k,l])=>`<button class="ssChip${searchOpts.group===k?" on":""}" data-ssgroup="${k}">${l} ${cnt[k]}</button>`).join("")+
     (searchWasLimited&&!searchInProgress?`<button class="ssNav" data-ssmore="1">Wczytaj dalsze</button>`:"")+
     `<button class="ssNav" data-ssnav="-1" title="Poprzedni wynik">↑</button><button class="ssNav" data-ssnav="1" title="Następny wynik">↓</button><button class="ssNav" data-sshelp="1">Instrukcja</button><button class="ssNav" data-ssclear="1">Wyczyść</button>`;
   box.onclick=e=>{
+    if(e.target.closest("[data-ssfiltersclear]")){
+      filt.tag="all";filt.book="all";filt.ch=null;persistFilt();resetSearchWindow();resetQueryCache();renderAll();return;
+    }
     const g=e.target.closest("[data-ssgroup]"); if(g){searchOpts.group=g.dataset.ssgroup;lsSet(KP+"SearchOpts",JSON.stringify(searchOpts));resetSearchWindow();resetQueryCache();renderAll();return;}
     if(e.target.closest("[data-ssmore]")){
       doladujWynikiSzukania();
@@ -16117,7 +16154,7 @@ function smartPodzielNaglowki(html, tytulBazowy){
 const smartAssetUrls=new Map();
 function smartAssetBytes(nazwa){
   const el=document.getElementById("smartAsset-"+nazwa);
-  if(!el)throw new Error("Niekompletna wersja aplikacji: brak biblioteki "+nazwa+". Wgraj index.html wersji 3.46.");
+  if(!el)throw new Error("Niekompletna wersja aplikacji: brak biblioteki "+nazwa+". Wgraj index.html wersji 3.47.");
   const raw=atob(el.textContent.trim()),bytes=new Uint8Array(raw.length);
   for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
   return bytes;
@@ -19576,6 +19613,7 @@ function bindPubTabs(el){
     it.onclick = e=>{
       const wiecej = e.target.closest("[data-ptmore]");
       if(wiecej){ e.stopPropagation(); pubTabOptions(+wiecej.dataset.ptmore, wiecej); return; }
+      wlaczZawezenieWynikow();
       const k = "ptb:"+it.dataset.ptb;
       filt.book = (String(filt.book)===k) ? "all" : k;
       filt.ch=null; persistFilt(); renderAll();
@@ -19586,6 +19624,7 @@ function bindPubTabs(el){
     it.onclick=e=>{
       const del=e.target.closest("[data-ptrefdel]");
       if(del){ e.stopPropagation(); removePubRefFromTab(+del.dataset.ptowner,del.dataset.ptrefdel); return; }
+      wlaczZawezenieWynikow();
       const k="ptb:"+it.dataset.ptowner;
       filt.book=(String(filt.book)===k)?"all":k;
       filt.ch=null; persistFilt(); renderAll();
