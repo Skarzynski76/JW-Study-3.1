@@ -7857,7 +7857,7 @@ body.ipad-standalone header{background-image:none!important;box-shadow:0 5px 18p
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <h1 class="brand-name">JW Study <span class="ver">v3.47</span></h1>
+      <h1 class="brand-name">JW Study <span class="ver">v3.48</span></h1>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -8471,7 +8471,7 @@ const BOOKS = ["","Rodzaju","Wyjścia","Kapłańska","Liczb","Powtórzonego Praw
 const DBNAME = "jwStudyClean";   // nazwa pamięci tej kopii aplikacji
 const KP = "jws";               // prefiks ustawień
 let notes = [], tags = [];
-let filt = {tag:"all", book:"all", ch:null};
+let filt = {tag:"all", book:"all", ch:null, pub:"all"};
 let query = "", sortMode = "new";
 /* Pierwsza porcja mieści kilka ekranów, ale nie tworzy od razu sześćdziesięciu
    rozbudowanych kart. Pozostałe dochodzą automatycznie przy przewijaniu. */
@@ -9287,6 +9287,12 @@ async function boot(){
   sortTags();
   const sf = lsGet(KP+"Filt", null);
   if(sf){ try{ Object.assign(filt, JSON.parse(sf)); }catch(e){ console.warn("Nieczytelne zapamiętane filtry — pomijam", e); } }
+  /* Migracja ze starszych wersji: publikacja była zapisana w polu księgi.
+     Od 3.48 oba filtry są niezależne, więc wybór publikacji nie kasuje Biblii. */
+  if(typeof filt.book==="string" && /^(pub|ptb):/.test(filt.book)){
+    filt.pub=filt.book; filt.book="all"; filt.ch=null;
+  }
+  if(!filt.pub) filt.pub="all";
   if(typeof filt.book==="number" && filt.book>0) expandedBook = filt.book;
   if(idb){ try{ deletedTagNames = (await idbGet("meta","deletedTags")) || []; }catch(e){} }
   if(idb){ try{ sections = (await idbGet("meta","sections")) || []; }catch(e){ sections=[]; } }
@@ -9751,23 +9757,27 @@ function noteMatchesTag(n,t){
   }
   return n.tg.includes(t);
 }
-/* filtr księgi; dodatkowo obsługuje wybór publikacji: "pub:SYMBOL" */
+/* Filtry Biblii i publikacji są niezależne. Dzięki temu ciąg
+   słowo → księga → rozdział → etykieta → publikacja jest przecięciem (AND),
+   a późniejszy wybór nie usuwa wcześniejszego. */
 function noteMatchesBook(n,b){
   if(b==="all") return true;
-  /* własna zakładka wewnątrz publikacji — patrz 27-pubtabs.js */
-  if(typeof b==="string" && b.indexOf("ptb:")===0)
-    return typeof pubTabHasNote==="function" && pubTabHasNote(n,+b.slice(4));
-  if(typeof b==="string" && b.indexOf("pub:")===0){
-    const key=b.slice(4);
-    if(n.b) return false;
-    if(key.indexOf("year:")===0){                       // cały rocznik danej kategorii
-      const p=key.split(":");                           // year:kategoria:rok
-      return pubCatOf(n).id===p[1] && (pubYearOf(n)||"—")===p[2];
+  if(b===0) return !n.b;
+  return n.b===b;
+}
+function noteMatchesPub(n,p){
+  if(!p || p==="all") return true;
+  if(typeof p==="string" && p.indexOf("ptb:")===0)
+    return typeof pubTabHasNote==="function" && pubTabHasNote(n,+p.slice(4));
+  if(typeof p==="string" && p.indexOf("pub:")===0){
+    const key=p.slice(4);
+    if(key.indexOf("year:")===0){
+      const cz=key.split(":");
+      return pubCatOf(n).id===cz[1] && (pubYearOf(n)||"—")===cz[2];
     }
     return pubKeyOf(n)===key;
   }
-  if(b===0) return !n.b;
-  return n.b===b;
+  return true;
 }
 /* Wyszukiwanie uruchomione jako „cała baza” wcześniej ignorowało późniejsze
    dotknięcie księgi, rozdziału lub etykiety. Liczniki w kolumnach się zmieniały,
@@ -9898,7 +9908,7 @@ function rysujSciezkePub(){
 }
 function renderPubPanel(){
   const el=$("pubList"); if(!el) return;
-  const base = notes.filter(n=>!n.del && !n.b && noteMatchesTag(n,filt.tag) && noteMatchesQuery(n));
+  const base = notes.filter(n=>!n.del && noteMatchesTag(n,filt.tag) && noteMatchesBook(n,filt.book) && noteMatchesCh(n) && noteMatchesQuery(n));
   const rst=$("pubReset");
   rysujSciezkePub();
   const grip = '<span class="pubDrag" title="Przeciągnij: zmień kolejność lub dodaj do Mojej zakładki">'+IC_GRIP+'</span>';
@@ -9936,8 +9946,8 @@ function renderPubPanel(){
       inCat.forEach(n=>{ const k=pubKeyOf(n); items[k]=(items[k]||0)+1; });
       applyPubOrder(Object.keys(items).sort((a,b)=>items[b]-items[a])).forEach(k=>{
         const wKs = String(k).split("|")[0];
-        const act=String(filt.book)==="pub:"+k || (String(filt.book).indexOf("ptb:")===0 && ksKontekst===wKs);
-        html+=`<div class="item pubPick pubMove${String(filt.book)==="pub:"+k?" active":""}" data-key="${esc(k)}" data-ord="${esc(k)}" data-pubref="pub:${esc(k)}" data-pubreflabel="${esc(pubKeyLabel(k))}">${grip}<span class="nm">${esc(pubKeyLabel(k))}</span><span class="cnt">${items[k]}</span></div>`;
+        const act=String(filt.pub)==="pub:"+k || (String(filt.pub).indexOf("ptb:")===0 && ksKontekst===wKs);
+        html+=`<div class="item pubPick pubMove${String(filt.pub)==="pub:"+k?" active":""}" data-key="${esc(k)}" data-ord="${esc(k)}" data-pubref="pub:${esc(k)}" data-pubreflabel="${esc(pubKeyLabel(k))}">${grip}<span class="nm">${esc(pubKeyLabel(k))}</span><span class="cnt">${items[k]}</span></div>`;
         // po wybraniu publikacji pokazujemy pod nią jej własne zakładki
         if(act && typeof pubTabRowsHtml==="function") html+=pubTabRowsHtml(String(k).split("|")[0]);
       });
@@ -9953,11 +9963,11 @@ function renderPubPanel(){
     }));
     // cały rocznik jednym kliknięciem — zawsze na górze, nie przenosi się
     const yKey="year:"+pubView.cat+":"+pubView.year;
-    html+=`<div class="item pubPick${String(filt.book)==="pub:"+yKey?" active":""}" data-key="${esc(yKey)}" data-pubref="year:${esc(pubView.cat)}:${esc(pubView.year)}" data-pubreflabel="Cały rocznik ${esc(pubView.year)}"><span class="nm">Cały rocznik ${esc(pubView.year)}</span><span class="cnt">${inYear.length}</span></div>`;
+    html+=`<div class="item pubPick${String(filt.pub)==="pub:"+yKey?" active":""}" data-key="${esc(yKey)}" data-pubref="year:${esc(pubView.cat)}:${esc(pubView.year)}" data-pubreflabel="Cały rocznik ${esc(pubView.year)}"><span class="nm">Cały rocznik ${esc(pubView.year)}</span><span class="cnt">${inYear.length}</span></div>`;
     keys.forEach(k=>{
       const itn=String(k).split("|")[1];
       const lbl= itn ? issueLabel(itn) : pubKeyLabel(k);
-      const act=String(filt.book)==="pub:"+k;
+      const act=String(filt.pub)==="pub:"+k;
       html+=`<div class="item pubPick pubMove${act?" active":""}" data-key="${esc(k)}" data-ord="${esc(k)}" data-pubref="pub:${esc(k)}" data-pubreflabel="${esc(lbl)}">${grip}<span class="nm">${esc(lbl)}</span><span class="cnt">${items[k]}</span></div>`;
       if(act && typeof pubTabRowsHtml==="function") html+=pubTabRowsHtml(String(k).split("|")[0]);
     });
@@ -9973,8 +9983,8 @@ function renderPubPanel(){
       if(e.target.classList.contains("pubDrag")) return;
       wlaczZawezenieWynikow();
       const k="pub:"+it.dataset.key;
-      filt.book = (String(filt.book)===k) ? "all" : k;
-      filt.ch=null; persistFilt(); renderAll();
+      filt.pub = (String(filt.pub)===k) ? "all" : k;
+      persistFilt(); renderAll();
       if(innerWidth<=900) mobileShow("colNotes");
     };
   });
@@ -10512,7 +10522,7 @@ function uruchomIndeksWorkerSzukania(){
 function workerPlanSzukania(){
   const rozwin=g=>searchMode==="smart"?[...new Set(g.flatMap(wariantyPojecia))]:g.slice();
   let allowed=null;
-  if(searchOpts.scope!=="all") allowed=notes.filter(n=>n&&!n.del&&noteMatchesTag(n,filt.tag)&&noteMatchesBook(n,filt.book)&&noteMatchesCh(n)).map(n=>n.g);
+  if(searchOpts.scope!=="all") allowed=notes.filter(n=>n&&!n.del&&noteMatchesTag(n,filt.tag)&&noteMatchesBook(n,filt.book)&&noteMatchesCh(n)&&noteMatchesPub(n,filt.pub)).map(n=>n.g);
   const allowedSet=allowed?new Set(allowed):null;
   allowed=notes.filter(n=>n&&!n.del&&przechodziOpcjeSzukania(n)&&(!allowedSet||allowedSet.has(n.g))).map(n=>n.g);
   return {type:"search",seq:_swSeq,mode:searchMode,
@@ -10647,13 +10657,13 @@ function matchesQuick(n){
 function baseNotes(){
   const globalne=(query||aktywneOpcjeSzukania())&&searchOpts.scope==="all";
   const aktywne=!!query||aktywneOpcjeSzukania();
-  if(!aktywne) return notes.filter(n=>!n.del && noteMatchesTag(n,filt.tag) && noteMatchesBook(n,filt.book) && noteMatchesCh(n));
+  if(!aktywne) return notes.filter(n=>!n.del && noteMatchesTag(n,filt.tag) && noteMatchesBook(n,filt.book) && noteMatchesCh(n) && noteMatchesPub(n,filt.pub));
   const zWorkera=typeof workerWynikiBiezace==="function"?workerWynikiBiezace():null;
   if(zWorkera){
     const wynik=[];
     for(const n of zWorkera.notes){
       if(!n || n.del) continue;
-      if(!globalne && !(noteMatchesTag(n,filt.tag) && noteMatchesBook(n,filt.book) && noteMatchesCh(n))) continue;
+      if(!globalne && !(noteMatchesTag(n,filt.tag) && noteMatchesBook(n,filt.book) && noteMatchesCh(n) && noteMatchesPub(n,filt.pub))) continue;
       /* Worker daje szeroką listę kandydatów. Pełne reguły, punktacja i filtry
          specjalne są sprawdzane już tylko na tej małej partii. */
       if(noteMatchesQuery(n)) wynik.push(n);
@@ -10670,7 +10680,7 @@ function baseNotes(){
   for(;i<notes.length && i<searchScanLimit && wynik.length<searchMatchLimit;i++){
     const n=notes[i];
     if(!n || n.del) continue;
-    if(!globalne && !(noteMatchesTag(n,filt.tag) && noteMatchesBook(n,filt.book) && noteMatchesCh(n))) continue;
+    if(!globalne && !(noteMatchesTag(n,filt.tag) && noteMatchesBook(n,filt.book) && noteMatchesCh(n) && noteMatchesPub(n,filt.pub))) continue;
     if(noteMatchesQuery(n)) wynik.push(n);
   }
   searchScannedCount=i;
@@ -10769,7 +10779,7 @@ function licznikSekcji(s, sumaZEtykiet){
 
 /* ================= KOLUMNA 1: ZAKŁADKI ================= */
 function renderTags(){
-  const base = notes.filter(n=>!n.del && noteMatchesBook(n,filt.book) && noteMatchesCh(n) && noteMatchesQuery(n));
+  const base = notes.filter(n=>!n.del && noteMatchesBook(n,filt.book) && noteMatchesCh(n) && noteMatchesPub(n,filt.pub) && noteMatchesQuery(n));
   const counts = {}; let untagged=0;
   base.forEach(n=>{ if(!n.tg.length)untagged++; n.tg.forEach(t=>counts[t]=(counts[t]||0)+1); });
   const el = $("tagList");
@@ -11361,7 +11371,7 @@ async function renameTag(id){
 "use strict";
 /* ================= KOLUMNA 2: KSIĘGI + ROZDZIAŁY ================= */
 function renderBooks(){
-  const base = notes.filter(n=>!n.del && noteMatchesTag(n,filt.tag) && noteMatchesQuery(n));
+  const base = notes.filter(n=>!n.del && noteMatchesTag(n,filt.tag) && noteMatchesPub(n,filt.pub) && noteMatchesQuery(n));
   const counts = {}; let pubs=0;
   base.forEach(n=>{ if(n.b)counts[n.b]=(counts[n.b]||0)+1; else pubs++; });
   const el = $("bookList");
@@ -11381,7 +11391,7 @@ function renderBooks(){
       if(typeof k==="number" && k>0){
         expandedBook = (expandedBook===k && filt.book===k) ? null : k;
       } else expandedBook = null;
-      filt.book = (String(filt.book)===String(k) && typeof k==="string" && k.indexOf("pub:")===0) ? "all" : k;  // ponowne kliknięcie publikacji = wyłącz
+      filt.book = k;
       filt.ch = null;
       persistFilt(); renderAll();
       // na telefonie: księga zostaje (żeby wybrać rozdział), reszta przełącza na notatki
@@ -12881,8 +12891,6 @@ function opisFiltrowWynikow(){
   if(typeof filt.book==="number"){
     if(filt.book>0)a.push(BOOKS[filt.book]||("księga "+filt.book));
     else if(filt.book===0)a.push("publikacje i własne");
-  }else if(typeof filt.book==="string"&&filt.book!=="all"){
-    a.push(filt.book.indexOf("ptb:")===0?"zakładka publikacji":"wybrana publikacja");
   }
   if(filt.ch!=null)a.push("rozdział "+filt.ch);
   if(typeof filt.tag==="number"){
@@ -12891,6 +12899,15 @@ function opisFiltrowWynikow(){
   else if(typeof filt.tag==="string"&&filt.tag.indexOf("auto:")===0){
     const t=wszystkieAutoTematy().find(x=>x.id===filt.tag.slice(5)); a.push(t?t.name:"temat automatyczny");
   }else if(typeof filt.tag==="string"&&filt.tag!=="all")a.push("wybrana zakładka");
+  if(typeof filt.pub==="string"&&filt.pub!=="all"){
+    if(filt.pub.indexOf("ptb:")===0){
+      const z=typeof pubTabs!=="undefined"&&pubTabs.find(x=>String(x.id)===filt.pub.slice(4));
+      a.push(z?z.name:"zakładka publikacji");
+    }else{
+      const k=filt.pub.slice(4);
+      a.push(k.indexOf("year:")===0 ? "rocznik "+k.split(":")[2] : pubKeyLabel(k));
+    }
+  }
   return a.join(" · ");
 }
 function renderSearchStatus(arr){
@@ -12906,7 +12923,7 @@ function renderSearchStatus(arr){
     `<button class="ssNav" data-ssnav="-1" title="Poprzedni wynik">↑</button><button class="ssNav" data-ssnav="1" title="Następny wynik">↓</button><button class="ssNav" data-sshelp="1">Instrukcja</button><button class="ssNav" data-ssclear="1">Wyczyść</button>`;
   box.onclick=e=>{
     if(e.target.closest("[data-ssfiltersclear]")){
-      filt.tag="all";filt.book="all";filt.ch=null;persistFilt();resetSearchWindow();resetQueryCache();renderAll();return;
+      filt.tag="all";filt.book="all";filt.ch=null;filt.pub="all";persistFilt();resetSearchWindow();resetQueryCache();renderAll();return;
     }
     const g=e.target.closest("[data-ssgroup]"); if(g){searchOpts.group=g.dataset.ssgroup;lsSet(KP+"SearchOpts",JSON.stringify(searchOpts));resetSearchWindow();resetQueryCache();renderAll();return;}
     if(e.target.closest("[data-ssmore]")){
@@ -16154,7 +16171,7 @@ function smartPodzielNaglowki(html, tytulBazowy){
 const smartAssetUrls=new Map();
 function smartAssetBytes(nazwa){
   const el=document.getElementById("smartAsset-"+nazwa);
-  if(!el)throw new Error("Niekompletna wersja aplikacji: brak biblioteki "+nazwa+". Wgraj index.html wersji 3.47.");
+  if(!el)throw new Error("Niekompletna wersja aplikacji: brak biblioteki "+nazwa+". Wgraj index.html wersji 3.48.");
   const raw=atob(el.textContent.trim()),bytes=new Uint8Array(raw.length);
   for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
   return bytes;
@@ -16366,7 +16383,7 @@ function smartRenderPliki(){
 }
 function smartPokazZaimportowane(tag){
   query="";$("search").value="";
-  filt.tag=tag.id;filt.book="all";filt.ch=null;
+  filt.tag=tag.id;filt.book="all";filt.ch=null;filt.pub="all";
   if(typeof quickFilter!=="undefined")quickFilter="all";
   if(typeof persistFilt==="function")persistFilt();
   renderAll();
@@ -19456,7 +19473,7 @@ function pubStats(ks){
 
 /** Publikacja, w kontekście której jesteśmy — z wybranego filtru albo z kategorii. */
 function pubCtxKs(){
-  const b = String(filt.book||"");
+  const b = String(filt.pub||"");
   if(b.indexOf("pub:")===0){
     const key=b.slice(4);
     if(key.indexOf("year:")!==0) return key.split("|")[0];
@@ -19518,7 +19535,7 @@ async function deletePubTab(id){
   notes.forEach(n=>{ if(n.ptb===id){ delete n.ptb; if(idb) saveNote(n); } });
   pubTabs = pubTabs.filter(x=>x.id!==id);
   savePubTabs();
-  if(String(filt.book)==="ptb:"+id){ filt.book="all"; persistFilt(); }
+  if(String(filt.pub)==="ptb:"+id){ filt.pub="all"; persistFilt(); }
   renderAll(); toastOk("Usunięto zakładkę");
 }
 /** Przypisanie notatki do zakładki (albo wypisanie, gdy id jest puste). */
@@ -19577,7 +19594,7 @@ function pubTabRowsHtml(ks){
     ? `<div class="strefaPoczatku" data-upusc-start="zakladkaPub" data-cel="${lista[0].id}">⇧ Upuść na początku zakładek</div>`
     : "";
   lista.forEach(t=>{
-    const act = String(filt.book)==="ptb:"+t.id;
+    const act = String(filt.pub)==="ptb:"+t.id;
     h += `<div class="item ptbItem${act?" active":""}" data-ptb="${t.id}" data-ord="${t.id}">`+
          `<span class="dragOrd" title="Przeciągnij, aby zmienić kolejność">${IC_GRIP}</span>`+
          `<span class="nm">${esc(t.name)}</span>`+
@@ -19615,8 +19632,8 @@ function bindPubTabs(el){
       if(wiecej){ e.stopPropagation(); pubTabOptions(+wiecej.dataset.ptmore, wiecej); return; }
       wlaczZawezenieWynikow();
       const k = "ptb:"+it.dataset.ptb;
-      filt.book = (String(filt.book)===k) ? "all" : k;
-      filt.ch=null; persistFilt(); renderAll();
+      filt.pub = (String(filt.pub)===k) ? "all" : k;
+      persistFilt(); renderAll();
       if(innerWidth<=900) mobileShow("colNotes");
     };
   });
@@ -19626,8 +19643,8 @@ function bindPubTabs(el){
       if(del){ e.stopPropagation(); removePubRefFromTab(+del.dataset.ptowner,del.dataset.ptrefdel); return; }
       wlaczZawezenieWynikow();
       const k="ptb:"+it.dataset.ptowner;
-      filt.book=(String(filt.book)===k)?"all":k;
-      filt.ch=null; persistFilt(); renderAll();
+      filt.pub=(String(filt.pub)===k)?"all":k;
+      persistFilt(); renderAll();
       if(innerWidth<=900) mobileShow("colNotes");
     };
   });
@@ -21035,6 +21052,7 @@ function czynneZawezenia(){
   if(query) co.push("szukanie");
   if(filt.tag && filt.tag!=="all") co.push("etykieta");
   if(filt.book && filt.book!=="all") co.push("księga");
+  if(filt.pub && filt.pub!=="all") co.push("publikacja");
   if(filt.ch) co.push("rozdział");
   if(typeof quickFilter!=="undefined" && quickFilter!=="all") co.push("szybki filtr");
   return co;
@@ -21047,7 +21065,7 @@ function pokazWszystkieNotatki(){
   if(pole) pole.value = "";
   const sug = $("searchSug");
   if(sug){ sug.style.display = "none"; setHtml(sug, ""); }
-  filt.tag = "all"; filt.book = "all"; filt.ch = null;
+  filt.tag = "all"; filt.book = "all"; filt.ch = null; filt.pub = "all";
   if(typeof quickFilter!=="undefined") quickFilter = "all";
   renderAll();
   const ile = notes.filter(n=>!n.del).length;
@@ -21111,6 +21129,7 @@ function szukajWszedzie(){
   let zdjete = false;      // czy naprawdę coś zawężało listę
   if(filt.tag && String(filt.tag) !== "all"){ filt.tag = "all"; zdjete = true; }
   if(filt.book && String(filt.book) !== "all"){ filt.book = "all"; zdjete = true; }
+  if(filt.pub && String(filt.pub) !== "all"){ filt.pub = "all"; zdjete = true; }
   if(filt.ch != null){ filt.ch = null; zdjete = true; }
   if(typeof expandedBook !== "undefined" && expandedBook){ expandedBook = null; }
   if(typeof quickFilter !== "undefined" && quickFilter !== "all"){ quickFilter = "all"; zdjete = true; }
@@ -24469,6 +24488,7 @@ function centrCosWybrane(){
   return !!q
     || (filt && String(filt.tag) !== "all")
     || (filt && String(filt.book) !== "all")
+    || (filt && String(filt.pub||"all") !== "all")
     || (filt && filt.ch != null)
     || (typeof sortMode !== "undefined" && sortMode === "recent");
 }
@@ -25747,7 +25767,7 @@ function centrumPokaz(){
      MUSI po drodze wyczyścić filtry — inaczej naciśnięcie go przy wybranej
      etykiecie nie robiłoby nic i wyglądałoby na zepsute. */
   if(centrCosWybrane()){
-    filt.tag = "all"; filt.book = "all"; filt.ch = null;
+    filt.tag = "all"; filt.book = "all"; filt.ch = null; filt.pub = "all";
     if(typeof expandedBook !== "undefined") expandedBook = null;
     if(typeof sortMode !== "undefined" && sortMode === "recent") sortMode = "mod";
     const inp = $("search");
@@ -25828,7 +25848,7 @@ if($("centrum")){
     if(projekt){
       const id=+projekt.dataset.cprojekt, t=tags.find(x=>x.id===id&&x.cproj);
       if(!t){ toast("Tego projektu już nie ma"); rysujCentrum(); return; }
-      filt.tag=id; filt.book="all"; filt.ch=null;
+      filt.tag=id; filt.book="all"; filt.ch=null; filt.pub="all";
       if(typeof quickFilter!=="undefined") quickFilter="all";
       if(typeof persistFilt==="function") persistFilt();
       renderAll(); if(innerWidth<=900&&typeof mobileShow==="function") mobileShow("colNotes"); return;
@@ -25839,7 +25859,7 @@ if($("centrum")){
       const id = +kolekcja.dataset.ckolekcja;
       const istnieje = typeof pubTabsFor === "function" && pubTabsFor("*").some(t=>t.id===id);
       if(!istnieje){ toast("Tej kolekcji już nie ma"); rysujCentrum(); return; }
-      filt.tag = "all"; filt.book = "ptb:" + id; filt.ch = null;
+      filt.tag = "all"; filt.book = "all"; filt.ch = null; filt.pub = "ptb:" + id;
       if(typeof quickFilter !== "undefined") quickFilter = "all";
       if(typeof persistFilt === "function") persistFilt();
       renderAll();
@@ -25852,7 +25872,7 @@ if($("centrum")){
       const id=+zakladkaSekcji.dataset.czakladkaSekcji;
       const istnieje=typeof secTabs!=="undefined" && secTabs.some(z=>z.id===id);
       if(!istnieje){ toast("Tej zakładki już nie ma"); rysujCentrum(); return; }
-      filt.tag="stb:"+id; filt.book="all"; filt.ch=null;
+      filt.tag="stb:"+id; filt.book="all"; filt.ch=null; filt.pub="all";
       if(typeof quickFilter!=="undefined") quickFilter="all";
       if(typeof persistFilt==="function") persistFilt();
       renderAll();
@@ -25916,7 +25936,7 @@ if($("centrum")){
     const wers = ev.target.closest("[data-cwers]");
     if(wers){
       const [b, ch] = wers.dataset.cwers.split(":").map(Number);
-      filt.tag = "all"; filt.book = b; filt.ch = ch;
+      filt.tag = "all"; filt.book = b; filt.ch = ch; filt.pub = "all";
       if(typeof expandedBook !== "undefined") expandedBook = b;
       centrTryb = "auto";            // wybór filtra sam odsłoni listę
       if(typeof persistFilt === "function") persistFilt();
@@ -25926,7 +25946,7 @@ if($("centrum")){
     }
     const pub = ev.target.closest("[data-cpub]");
     if(pub){
-      filt.tag = "all"; filt.book = "pub:" + pub.dataset.cpub; filt.ch = null;
+      filt.tag = "all"; filt.book = "all"; filt.ch = null; filt.pub = "pub:" + pub.dataset.cpub;
       if(typeof persistFilt === "function") persistFilt();
       renderAll();
       if(innerWidth <= 900 && typeof mobileShow === "function") mobileShow("colNotes");
@@ -28490,7 +28510,7 @@ function mapaNaListe(rodzaj, id){
   else if(rodzaj === "podtemat")  filt.tag = id;
   else if(rodzaj === "bez")       filt.tag = "none";
   else                            filt.tag = "all";
-  filt.book = "all"; filt.ch = null;
+  filt.book = "all"; filt.ch = null; filt.pub = "all";
   if(typeof expandedBook !== "undefined") expandedBook = null;
   if(typeof persistFilt === "function") persistFilt();
   if(typeof centrumSchowaj === "function") centrumSchowaj();
