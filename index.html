@@ -2111,6 +2111,12 @@ html[data-theme="dark"] #modalFs .fsmodal{ background:#151517; }
   user-select:text;
   scroll-margin-bottom:120px;      /* zapas pod kursorem przy przewijaniu do widoku */
 }
+/* Enter w edytorze tworzy pojedynczy wiersz (<br>). Starsze bloki DIV/P podczas
+   edycji też nie dostają dodatkowego marginesu, więc tekst nie „rozsuwa się”
+   po dotknięciu pola na iPadzie. */
+.ncontent[contenteditable="true"] > div,
+.ncontent[contenteditable="true"] > p{margin-top:0!important;margin-bottom:0!important}
+.ncontent[contenteditable="true"] img.imgsel{outline-style:solid;box-shadow:0 0 0 4px color-mix(in srgb,var(--accent2) 22%,transparent),0 4px 16px rgba(0,0,0,.2)}
 
 /* ══════════════ SAFARI/iPadOS — CZYSTY KURSOR PRZY ZDJĘCIACH (v3.19) ══════════════
 
@@ -7849,7 +7855,27 @@ html[data-theme="dark"] .ncard{box-shadow:0 4px 16px rgba(0,0,0,.17)}
 /* Nagłówek iPada pozostaje jednolity i nieprzezroczysty pod szkłem systemowym. */
 body.ipad-standalone header{background-image:none!important;box-shadow:0 5px 18px rgba(20,50,38,.13)}
 @media(max-width:760px){main{gap:8px;padding:8px}.col{border-radius:15px!important}.ncard{border-radius:15px}.brand-name .ver{background:transparent;padding:0}}
-</style></head>
+</style><style>
+/* JW Study 3.50 — bloki, malarz formatów i podpisy ilustracji */
+.ncontent > div.callout{margin:.65em 0!important;padding:11px 14px 11px 42px;border:1px solid var(--border);border-left:5px solid var(--callout,#6d8f7d);border-radius:12px;background:color-mix(in srgb,var(--callout,#6d8f7d) 10%,var(--panel));position:relative;clear:both}
+.ncontent > div.callout::before{content:var(--callout-icon,"•");position:absolute;left:14px;top:10px;font-size:18px;font-weight:800;color:var(--callout,#6d8f7d)}
+.ncontent > div.callout-important{--callout:#c48a21;--callout-icon:"!"}
+.ncontent > div.callout-conclusion{--callout:#2e7a5f;--callout-icon:"✓"}
+.ncontent > div.callout-question{--callout:#3f6fa8;--callout-icon:"?"}
+.ncontent > div.callout-example{--callout:#7a5aa6;--callout-icon:"→"}
+.editbar button.eb-painter.active{background:var(--accent);color:#fff;box-shadow:none}
+.ncontent figure.note-figure{display:table;max-width:100%;margin:12px auto;clear:both;text-align:center}
+.ncontent figure.note-figure.img-left{float:left;margin:5px 16px 10px 0;clear:none}
+.ncontent figure.note-figure.img-right{float:right;margin:5px 0 10px 16px;clear:none}
+.ncontent figure.note-figure.img-inline{display:inline-table;vertical-align:middle;margin:2px 6px;clear:none}
+.ncontent figure.note-figure img{display:block!important;float:none!important;width:100%!important;max-width:100%;margin:0!important}
+.ncontent figure.note-figure figcaption{display:table-caption;caption-side:bottom;padding:6px 4px 0;color:var(--muted);font-size:.86em;line-height:1.35;text-align:center;font-style:italic}
+.ncontent[contenteditable="true"] figure.note-figure figcaption{cursor:text;outline:none}
+.ncontent img.img-rot-90{transform:rotate(90deg)}
+.ncontent img.img-rot-180{transform:rotate(180deg)}
+.ncontent img.img-rot-270{transform:rotate(270deg)}
+</style>
+</head>
 <body>
 <div id="loading" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><div id="loadMsg">Wczytywanie notatek…</div></div>
 
@@ -7857,7 +7883,7 @@ body.ipad-standalone header{background-image:none!important;box-shadow:0 5px 18p
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <h1 class="brand-name">JW Study <span class="ver">v3.48</span></h1>
+      <h1 class="brand-name">JW Study <span class="ver">v3.50</span></h1>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -8008,6 +8034,9 @@ body.ipad-standalone header{background-image:none!important;box-shadow:0 5px 18p
   <button data-iw="img-inline" title="W linii tekstu"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h5"/><rect x="9" y="4" width="6" height="6" rx="1"/><path d="M16 7h5M3 13h18M3 17h18"/></svg></button>
   <span class="sep"></span>
   <button data-imove="1" title="Przenieś w tekście — potem dotknij miejsca"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16M4 12h16"/><path d="M9 7l3-3 3 3M9 17l3 3 3-3M7 9l-3 3 3 3M17 9l3 3-3 3"/></svg></button>
+  <button data-irot="-1" title="Obróć w lewo">↶</button>
+  <button data-irot="1" title="Obróć w prawo">↷</button>
+  <button data-icap="1" title="Dodaj lub zmień podpis">Podpis</button>
   <span class="sep"></span>
   <button data-idel="1" title="Usuń obraz"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/><path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/></svg></button>
 </div>
@@ -8193,7 +8222,8 @@ body.ipad-standalone header{background-image:none!important;box-shadow:0 5px 18p
 
     <div class="actions">
       <button class="btn" data-zamknij="modalNew">Anuluj</button>
-      <button class="btn primary" id="nnSave"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> Utwórz notatkę</button>
+      <button class="btn" id="nnSave">Utwórz</button>
+      <button class="btn primary" id="nnSaveEdit"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> Utwórz i edytuj</button>
     </div>
   </div>
 </div>
@@ -9288,7 +9318,7 @@ async function boot(){
   const sf = lsGet(KP+"Filt", null);
   if(sf){ try{ Object.assign(filt, JSON.parse(sf)); }catch(e){ console.warn("Nieczytelne zapamiętane filtry — pomijam", e); } }
   /* Migracja ze starszych wersji: publikacja była zapisana w polu księgi.
-     Od 3.48 oba filtry są niezależne, więc wybór publikacji nie kasuje Biblii. */
+     Od 3.49 oba filtry są niezależne, więc wybór publikacji nie kasuje Biblii. */
   if(typeof filt.book==="string" && /^(pub|ptb):/.test(filt.book)){
     filt.pub=filt.book; filt.book="all"; filt.ch=null;
   }
@@ -13569,6 +13599,7 @@ function buildEditbar(n){
     <button data-cmd="italic" data-st="italic" title="Kursywa"><i>I</i></button>
     <button data-cmd="underline" data-st="underline" title="Podkreślenie"><u>U</u></button>
     <button class="eb-mobile-extra" data-cmd="strikeThrough" data-st="strikeThrough" title="Przekreślenie"><s>S</s></button>
+    <button class="eb-painter" data-painter="1" title="Malarz formatów — kopiuj, potem nałóż">🖌</button>
     <span class="eb-sep"></span>
     <button class="eb-mobile-extra" data-cmd="insertUnorderedList" data-st="insertUnorderedList" title="Lista punktowana">${ICO.ul}</button>
     <button class="eb-mobile-extra" data-cmd="insertOrderedList" data-st="insertOrderedList" title="Lista numerowana">${ICO.ol}</button>
@@ -13581,6 +13612,8 @@ function buildEditbar(n){
     if(ev.target.closest("select, label.eb-img")){ edSavedRange = captureRange(); return; }
     const pop = ev.target.closest("[data-pop]");
     if(pop){ ev.preventDefault(); edSavedRange = captureRange(); openEbPop(pop.dataset.pop, pop, bar); return; }
+    const malarz=ev.target.closest("[data-painter]");
+    if(malarz){ev.preventDefault();edSavedRange=captureRange();malarzFormatKlik(bar);return;}
     ev.preventDefault();                          // nie gub zaznaczenia
     const b = ev.target.closest("[data-cmd]");
     if(b) wykonajWTresci(b.dataset.cmd, bar);
@@ -13602,9 +13635,11 @@ function buildEditbar(n){
       try{
         const url = await compressImage(f);
         if(!(await checkSpaceForImage(url.length))) break;
-        insertImageUrl(ceIns, url, zakres);
-        zakres = null;              // kolejne zdjęcia lądują za poprzednim
-        wstawione++;
+        const obraz = insertImageUrl(ceIns, url, zakres);
+        if(obraz){
+          zakres=document.createRange(); zakres.setStartAfter(obraz); zakres.collapse(true);
+          wstawione++;
+        }
       }catch(err){ console.warn("Nie udało się wczytać zdjęcia", f && f.name, err); }
     }
     if(!wstawione) toast("Nie udało się wczytać zdjęcia");
@@ -13698,6 +13733,52 @@ function poczatekWiersza(wezel, offset, ce){
   return true;
 }
 
+/* Zwykły Enter oznacza następny wiersz, a nie nowy akapit z odstępem.
+   Listy i tabele zachowują natywne zachowanie, bo Enter tworzy tam nowy punkt
+   albo przechodzi wewnątrz komórki. Nagłówki także kończą się natywnie. */
+function moznaWstawicPojedynczyWiersz(ce){
+  const sel=getSelection(); if(!sel||!sel.rangeCount)return false;
+  const r=sel.getRangeAt(0); if(!ce.contains(r.startContainer))return false;
+  const el=r.startContainer.nodeType===1?r.startContainer:r.startContainer.parentElement;
+  return !(el&&el.closest("li,table,h2,h3"));
+}
+function wstawPojedynczyWiersz(ce){
+  const sel=getSelection(); if(!sel||!sel.rangeCount)return false;
+  const r=sel.getRangeAt(0); if(!ce.contains(r.startContainer))return false;
+  if(typeof histZapisz==="function")histZapisz(ce);
+  r.deleteContents();
+  const br=document.createElement("br"); r.insertNode(br);
+  /* Safari potrzebuje końcowego BR jako miejsca na kursor, gdy Enter naciśnięto
+     na samym końcu. Kursor stoi przed tym znacznikiem, więc nie powstaje pusty akapit. */
+  if(!br.nextSibling)br.parentNode.insertBefore(document.createElement("br"),br.nextSibling);
+  const po=document.createRange(); po.setStartAfter(br); po.collapse(true);
+  sel.removeAllRanges(); sel.addRange(po);
+  if(typeof histZapisz==="function")histZapisz(ce);
+  if(typeof commitLiveEdit==="function")commitLiveEdit(ce);
+  if(typeof szkicZaplanuj==="function")szkicZaplanuj(ce);
+  return true;
+}
+function obsluzEnterBezOdstepu(e,ce){
+  const enterKlawiatury=e.type==="keydown"&&e.key==="Enter"&&!e.shiftKey&&!e.metaKey&&!e.ctrlKey&&!e.altKey;
+  const enterSystemu=e.type==="beforeinput"&&e.inputType==="insertParagraph";
+  if((!enterKlawiatury&&!enterSystemu)||e.isComposing||!moznaWstawicPojedynczyWiersz(ce))return false;
+  e.preventDefault(); return wstawPojedynczyWiersz(ce);
+}
+/* Wklejony tekst pozostaje prosty, ale zachowuje wiersze jako BR zamiast
+   tworzonych przez Safari bloków DIV o różnej wysokości. */
+function wstawCzystyTekst(ce,tekst){
+  const sel=getSelection(); if(!sel||!sel.rangeCount)return false;
+  const r=sel.getRangeAt(0); if(!ce.contains(r.startContainer))return false;
+  r.deleteContents(); const frag=document.createDocumentFragment();
+  String(tekst).replace(/\r\n?/g,"\n").split("\n").forEach((wiersz,i)=>{
+    if(i)frag.appendChild(document.createElement("br"));
+    if(wiersz)frag.appendChild(document.createTextNode(wiersz));
+  });
+  const zn=document.createComment("koniec-wklejenia");frag.appendChild(zn);r.insertNode(frag);
+  const po=document.createRange();po.setStartBefore(zn);po.collapse(true);zn.remove();
+  sel.removeAllRanges();sel.addRange(po);return true;
+}
+
 /* =====================================================================
    WŁASNA HISTORIA COFANIA W EDYTORZE
 
@@ -13731,8 +13812,10 @@ function histStart(ce){
        (spacja po „## ", „- " i tak dalej) — te drugie działają BEZ modyfikatora,
        więc kolejność jest tu bez znaczenia, ale czyta się ją w tej. */
     if(skrotFormatowania(e, ce)) return;
+    if(obsluzEnterBezOdstepu(e,ce)) return;
     skrotPisania(e, ce);
   });
+  ce.addEventListener("beforeinput",e=>{ obsluzEnterBezOdstepu(e,ce); });
   const karta = ce.closest(".ncard") || ce;
   karta.addEventListener("keydown", e=>{
     if((e.metaKey||e.ctrlKey) && e.key && e.key.toLowerCase()==="z"){
@@ -14035,6 +14118,12 @@ function openEbPop(kind, btn, bar){
        <div data-ins="przypis">${IE_GORNY}Przypis¹</div>
        <div class="dd-sep"></div>
        <div data-ins="quote">${IE_CYTAT}Blok cytatu wersetu</div>
+       <div class="dd-lbl">Wyróżniony blok</div>
+       <div data-ins="callout:important">❗ Ważne</div>
+       <div data-ins="callout:conclusion">✓ Wniosek</div>
+       <div data-ins="callout:question">? Pytanie</div>
+       <div data-ins="callout:example">→ Przykład</div>
+       <div class="dd-sep"></div>
        <div data-ins="task">${IE_ZADANIA}Lista zadań</div>
        <div data-ins="table">${IE_TABELA}Tabela</div>
        <div data-ins="hr">${IE_LINIA}Linia pozioma</div>
@@ -14062,6 +14151,9 @@ function openEbPop(kind, btn, bar){
        <div data-narz="wielkosc">${IE_WIELKOSC}Zmień wielkość liter</div>
        <div data-narz="data">${IE_DATA}Wstaw dzisiejszą datę</div>
        <div data-narz="licz">${IE_LICZ}Policz słowa i znaki</div>
+       <div class="dd-sep"></div>
+       <div data-narz="akapit-up">↑ Przenieś akapit wyżej</div>
+       <div data-narz="akapit-down">↓ Przenieś akapit niżej</div>
        <div class="dd-sep"></div>
        <div data-ins="replace">${ICO.search}Znajdź i zamień…</div>
        <div data-ins="history">${ICO.undo}Historia wersji…</div>
@@ -14154,6 +14246,7 @@ $("ebPop").addEventListener("pointerdown", ev=>{
     if(k==="tpl"){ insertTemplate(ce); return; }
     if(k==="replace"){ openReplace(ce); return; }
     if(k==="history"){ openHistory(ce); return; }
+    if(k.indexOf("callout:")===0){insertCallout(ce,k.slice(8));return;}
     restoreSel(ce);
     if(k==="quote") document.execCommand("formatBlock",false,"<blockquote>");
     else if(k==="task") insertTaskList(ce);
@@ -14230,6 +14323,9 @@ function ustawOdstepy(ce, lh, pm){
  */
 function narzedzieEdytora(co, ce){
   if(!ce) return;
+  if(co==="akapit-up"||co==="akapit-down"){
+    przesunAkapit(ce,co==="akapit-up"?-1:1); return;
+  }
   if(co==="licz"){
     const txt=(ce.innerText||"").trim();
     const slowa=txt ? txt.split(/\s+/).length : 0;
@@ -14259,6 +14355,80 @@ function narzedzieEdytora(co, ce){
     commitLiveEdit(ce);
   }
 }
+/* ===== WYRÓŻNIONE BLOKI, MALARZ FORMATÓW I RUCH AKAPITÓW ===== */
+const CALLOUT_NAZWY={important:"Ważne",conclusion:"Wniosek",question:"Pytanie",example:"Przykład"};
+function insertCallout(ce,typ){
+  if(!ce||!CALLOUT_NAZWY[typ])return;
+  const r=edSavedRange&&ce.contains(edSavedRange.commonAncestorContainer)?edSavedRange.cloneRange():null;
+  if(typeof histZapisz==="function")histZapisz(ce);
+  const box=document.createElement("div");box.className="callout callout-"+typ;
+  const nag=document.createElement("b");nag.textContent=CALLOUT_NAZWY[typ];box.appendChild(nag);box.appendChild(document.createElement("br"));
+  if(r&&!r.collapsed)box.appendChild(r.extractContents());else box.appendChild(document.createElement("br"));
+  const cel=r||(()=>{const x=document.createRange();x.selectNodeContents(ce);x.collapse(false);return x;})();
+  cel.insertNode(box);
+  const po=document.createRange();po.selectNodeContents(box);po.collapse(false);
+  const sel=getSelection();sel.removeAllRanges();sel.addRange(po);
+  commitLiveEdit(ce);if(typeof histZapisz==="function")histZapisz(ce);toast("Wstawiono blok „"+CALLOUT_NAZWY[typ]+"”");
+}
+let malarzFormat=null;
+function malarzZrodlo(range){
+  let el=range.startContainer.nodeType===1?range.startContainer:range.startContainer.parentElement;
+  const mark=el&&el.closest&&el.closest("mark");
+  let hl="";if(mark){const m=(mark.className||"").match(/hl[1-7]/);hl=m?m[0]:"";}
+  let color="";try{color=document.queryCommandValue("foreColor")||"";}catch(_){}
+  return {bold:document.queryCommandState("bold"),italic:document.queryCommandState("italic"),underline:document.queryCommandState("underline"),strike:document.queryCommandState("strikeThrough"),color,hl,block:biezacyBlok()};
+}
+function malarzFormatKlik(bar){
+  const ce=bar&&bar.parentElement&&bar.parentElement.querySelector(".ncontent"),btn=bar&&bar.querySelector("[data-painter]");
+  const r=edSavedRange;if(!ce||!r||!ce.contains(r.commonAncestorContainer)){toast("Najpierw zaznacz tekst");return;}
+  if(!malarzFormat){malarzFormat=malarzZrodlo(r);if(btn)btn.classList.add("active");toast("Skopiowano format. Zaznacz tekst docelowy i ponownie dotknij pędzla.");return;}
+  if(r.collapsed){toast("Zaznacz tekst, na który nałożyć format");return;}
+  if(typeof histZapisz==="function")histZapisz(ce);restoreSel(ce);
+  [["bold",malarzFormat.bold],["italic",malarzFormat.italic],["underline",malarzFormat.underline],["strikeThrough",malarzFormat.strike]].forEach(([cmd,on])=>{let jest=false;try{jest=document.queryCommandState(cmd);}catch(_){}if(!!jest!==!!on)document.execCommand(cmd,false,null);});
+  if(malarzFormat.color){try{document.execCommand("styleWithCSS",false,true);document.execCommand("foreColor",false,malarzFormat.color);}catch(_){}}
+  if(malarzFormat.block&&malarzFormat.block!=="DIV")document.execCommand("formatBlock",false,"<"+malarzFormat.block.toLowerCase()+">");
+  /* Polecenia przeglądarki potrafią przebudować węzły i unieważnić dawny Range.
+     Pobieramy więc aktualne zaznaczenie dopiero po nałożeniu stylów tekstu. */
+  const sel=getSelection();
+  if(sel&&sel.rangeCount){
+    const rr=sel.getRangeAt(0);
+    if(!rr.collapsed&&ce.contains(rr.commonAncestorContainer)){
+      unwrapMarks(rr,ce);
+      if(malarzFormat.hl){
+        const po=getSelection();
+        if(po&&po.rangeCount&&!po.getRangeAt(0).collapsed)applyMark(po.getRangeAt(0),+malarzFormat.hl.slice(2));
+      }
+    }
+  }
+  malarzFormat=null;if(btn)btn.classList.remove("active");commitLiveEdit(ce);if(typeof histZapisz==="function")histZapisz(ce);toast("Nałożono format");
+}
+function przesunAkapit(ce,kier){
+  const sel=getSelection();if(!sel||!sel.rangeCount){toast("Ustaw kursor w akapicie");return;}
+  const start=sel.getRangeAt(0).startContainer;
+  let el=start.nodeType===3?start.parentNode:start;
+  while(el&&el!==ce&&el.parentNode!==ce)el=el.parentNode;
+  /* Nowe wiersze są rozdzielane znacznikiem BR, żeby Enter nie tworzył dużych
+     odstępów. Taki wiersz również można przesuwać, mimo że nie ma własnego DIV. */
+  if(el===ce||!el){
+    const dzieci=Array.from(ce.childNodes), grupy=[];let grupa=[];
+    dzieci.forEach(n=>{grupa.push(n);if(n.nodeName==="BR"){grupy.push(grupa);grupa=[];}});if(grupa.length)grupy.push(grupa);
+    let top=start;while(top&&top.parentNode!==ce)top=top.parentNode;
+    if(top===ce){const off=sel.getRangeAt(0).startOffset;top=dzieci[Math.min(off,dzieci.length-1)]||dzieci[off-1];}
+    const i=grupy.findIndex(g=>g.includes(top)),j=i+kier;
+    if(i<0||j<0||j>=grupy.length){toast(kier<0?"Wiersz jest już pierwszy":"Wiersz jest już ostatni");return;}
+    if(typeof histZapisz==="function")histZapisz(ce);
+    const porzadek=grupy.slice();[porzadek[i],porzadek[j]]=[porzadek[j],porzadek[i]];
+    const frag=document.createDocumentFragment();porzadek.flat().forEach(n=>frag.appendChild(n));ce.appendChild(frag);
+    ce.focus();commitLiveEdit(ce);if(typeof histZapisz==="function")histZapisz(ce);toast(kier<0?"Przeniesiono wiersz wyżej":"Przeniesiono wiersz niżej");return;
+  }
+  if(el.nodeType!==1){toast("Nie udało się wskazać akapitu");return;}
+  let cel=kier<0?el.previousElementSibling:el.nextElementSibling;
+  if(!cel){toast(kier<0?"Akapit jest już pierwszy":"Akapit jest już ostatni");return;}
+  if(typeof histZapisz==="function")histZapisz(ce);
+  if(kier<0)ce.insertBefore(el,cel);else ce.insertBefore(cel,el);
+  ce.focus();commitLiveEdit(ce);if(typeof histZapisz==="function")histZapisz(ce);toast(kier<0?"Przeniesiono akapit wyżej":"Przeniesiono akapit niżej");
+}
+
 /* ===== WSTAWIANIE: odnośnik do wersetu, link, lista zadań ===== */
 function restoreSel(ce){
   if(!ce) return; ce.focus();
@@ -14643,6 +14813,31 @@ document.addEventListener("click", e=>{
 "use strict";
 /* ===== pasek narzędzi obrazu (rozmiar / oblewanie tekstem — jak w Wordzie) ===== */
 let selImg = null;
+function imgFigure(img){return img&&img.closest?img.closest("figure.note-figure"):null;}
+function imgLayoutTarget(img){return imgFigure(img)||img;}
+function imgMoveNode(img){return imgFigure(img)||img;}
+function imgUstawWyrownanie(img,klasa){
+  const cel=imgLayoutTarget(img);["img-left","img-right","img-center","img-inline"].forEach(c=>cel.classList.remove(c));cel.classList.add(klasa);
+  if(cel!==img)["img-left","img-right","img-center","img-inline"].forEach(c=>img.classList.remove(c));
+}
+function imgObroc(img,kier){
+  const klasy=["","img-rot-90","img-rot-180","img-rot-270"];let i=klasy.findIndex(c=>c&&img.classList.contains(c));if(i<0)i=0;
+  klasy.slice(1).forEach(c=>img.classList.remove(c));i=(i+(kier>0?1:3))%4;if(klasy[i])img.classList.add(klasy[i]);
+  commitLiveEdit(img.closest(".ncontent"));showImgBar(img);
+}
+async function imgPodpis(img){
+  const dotychczas=imgFigure(img)?.querySelector("figcaption")?.textContent||"";
+  const txt=await askText({title:"Podpis ilustracji",value:dotychczas,placeholder:"Krótki opis ilustracji",okLabel:"Zapisz"});if(txt===null)return;
+  let fig=imgFigure(img);
+  if(!fig){
+    fig=document.createElement("figure");fig.className="note-figure";
+    const al=["img-left","img-right","img-center","img-inline"].find(c=>img.classList.contains(c))||"img-center";fig.classList.add(al);
+    fig.style.width=img.style.width||"60%";img.parentNode.insertBefore(fig,img);fig.appendChild(img);
+    ["img-left","img-right","img-center","img-inline"].forEach(c=>img.classList.remove(c));img.style.width="100%";
+  }
+  let cap=fig.querySelector("figcaption");if(!txt){if(cap)cap.remove();}else{if(!cap){cap=document.createElement("figcaption");fig.appendChild(cap);}cap.textContent=txt;img.alt=txt;}
+  commitLiveEdit(img.closest(".ncontent"));showImgBar(img);toast(txt?"Dodano podpis":"Usunięto podpis");
+}
 function showImgBar(img){
   selImg = img;
   document.querySelectorAll(".ncontent img.imgsel").forEach(i=>{ if(i!==img) i.classList.remove("imgsel"); });
@@ -14657,8 +14852,8 @@ function showImgBar(img){
   bar.style.top = Math.max(_ob.gora + 8, Math.min(top, _ob.dol - bh - 8)) + "px";
   const si = document.getElementById("imgSize");
   if(si){
-    let wv = parseInt(img.style.width);
-    if(!wv){ const pw = img.parentElement ? img.parentElement.getBoundingClientRect().width : 1; wv = Math.round(img.getBoundingClientRect().width / (pw||1) * 100); }
+    const cel=imgLayoutTarget(img);let wv = parseInt(cel.style.width);
+    if(!wv){ const pw = cel.parentElement ? cel.parentElement.getBoundingClientRect().width : 1; wv = Math.round(cel.getBoundingClientRect().width / (pw||1) * 100); }
     si.value = Math.max(10, Math.min(100, wv || 60));
   }
   positionHandles(img);
@@ -14682,15 +14877,16 @@ document.querySelectorAll("#imgHandles .h").forEach(handle=>{
     e.preventDefault(); e.stopPropagation();
     const leftSide = handle.classList.contains("tl") || handle.classList.contains("bl");
     const startX = e.clientX;
-    const parentW = (selImg.parentElement ? selImg.parentElement.getBoundingClientRect().width : selImg.getBoundingClientRect().width) || 1;
-    const startW = selImg.getBoundingClientRect().width;
+    const cel=imgLayoutTarget(selImg);
+    const parentW = (cel.parentElement ? cel.parentElement.getBoundingClientRect().width : cel.getBoundingClientRect().width) || 1;
+    const startW = cel.getBoundingClientRect().width;
     try{ handle.setPointerCapture(e.pointerId); }catch(_){}
     const move = ev=>{
       let dx = ev.clientX - startX; if(leftSide) dx = -dx;
       let pct = Math.round((startW + dx) / parentW * 100);
       pct = Math.max(10, Math.min(100, pct));
-      selImg.classList.remove("img-s","img-m","img-l");
-      selImg.style.width = pct + "%";
+      cel.classList.remove("img-s","img-m","img-l");
+      cel.style.width = pct + "%";
       positionHandles(selImg);
       const si = document.getElementById("imgSize"); if(si) si.value = pct;
     };
@@ -14710,15 +14906,17 @@ $("imgBar").addEventListener("pointerdown", e=>{
   e.preventDefault();
   if(!selImg) return;
   if(e.target.closest("[data-imove]")){ startImgMove(); return; }
-  const w = e.target.closest("[data-iw]"), del = e.target.closest("[data-idel]");
-  if(w){ ["img-left","img-right","img-center","img-inline"].forEach(c=>selImg.classList.remove(c)); selImg.classList.add(w.dataset.iw); commitLiveEdit(selImg.closest(".ncontent")); }
-  else if(del){ const im = selImg; const ce = im.closest(".ncontent"); hideImgBar(); im.remove(); commitLiveEdit(ce); return; }
+  const w = e.target.closest("[data-iw]"), del = e.target.closest("[data-idel]"),rot=e.target.closest("[data-irot]"),cap=e.target.closest("[data-icap]");
+  if(w){imgUstawWyrownanie(selImg,w.dataset.iw);commitLiveEdit(selImg.closest(".ncontent"));}
+  else if(rot){imgObroc(selImg,+rot.dataset.irot);return;}
+  else if(cap){const im=selImg;imgPodpis(im);return;}
+  else if(del){ const im = selImg; const ce = im.closest(".ncontent"),node=imgMoveNode(im); hideImgBar(); node.remove(); commitLiveEdit(ce); return; }
   showImgBar(selImg);
 });
 document.getElementById("imgSize").addEventListener("input", e=>{
   if(!selImg) return;
-  selImg.classList.remove("img-s","img-m","img-l");
-  selImg.style.width = e.target.value + "%";
+  const cel=imgLayoutTarget(selImg);cel.classList.remove("img-s","img-m","img-l");
+  cel.style.width = e.target.value + "%";
 });
 document.getElementById("imgSize").addEventListener("change", e=>{
   if(selImg) commitLiveEdit(selImg.closest(".ncontent"));
@@ -14745,7 +14943,7 @@ function startImgMoveFor(img){
   movePending = img;
   document.body.classList.add("img-placing");
   hideImgBar();
-  toast("Dotknij miejsca w tekście, gdzie wstawić zdjęcie");
+  toast("Dotknij dokładnego miejsca w tekście. Możesz też przytrzymać ilustrację i przeciągnąć ją.");
 }
 function startImgMove(){ startImgMoveFor(selImg); }
 function cancelImgMove(){ movePending=null; document.body.classList.remove("img-placing"); }
@@ -14754,21 +14952,31 @@ function cancelImgMove(){ movePending=null; document.body.classList.remove("img-
    w chwili wyjęcia zdjęcia i wstawić je o akapit za daleko. */
 function przeniesObrazDoRange(img,range,ce){
   try{
-    const zn=document.createComment("miejsce-ilustracji");range.insertNode(zn);
-    zn.parentNode.insertBefore(img,zn);zn.remove();return true;
+    const node=imgMoveNode(img),zn=document.createComment("miejsce-ilustracji");range.insertNode(zn);
+    zn.parentNode.insertBefore(node,zn);zn.remove();return true;
   }catch(_){try{ce.appendChild(img);return true;}catch(__){return false;}}
 }
 /* wstawienie zdjęcia (z pliku, wklejenia lub upuszczenia) — jedna wspólna funkcja */
 function insertImageUrl(ce, url, range){
   if(!ce) return null;
-  const img=document.createElement("img"); img.src=url;
-  img.classList.add("img-right"); img.style.width="45%";   // domyślnie pływa, tekst opływa
+  const img=document.createElement("img"); img.src=url; img.alt="Ilustracja";
+  /* Bezpieczny układ startowy: ilustracja jest osobnym, środkowym blokiem.
+     Oblewanie tekstem można włączyć jednym przyciskiem po zaznaczeniu obrazu. */
+  img.classList.add("img-center"); img.style.width="60%";
+  if(typeof histZapisz==="function")histZapisz(ce);
   try{
-    let r=(range && ce.contains(range.startContainer))?range:null;
-    if(!r){ const sel=getSelection(); if(sel && sel.rangeCount && ce.contains(sel.getRangeAt(0).startContainer)) r=sel.getRangeAt(0); }
-    if(r){ r.collapse(false); r.insertNode(img); } else ce.appendChild(img);
+    let r=(range && ce.contains(range.startContainer))?range.cloneRange():null;
+    if(!r){ const sel=getSelection(); if(sel && sel.rangeCount && ce.contains(sel.getRangeAt(0).startContainer)) r=sel.getRangeAt(0).cloneRange(); }
+    if(r){ r.deleteContents(); r.collapse(false); r.insertNode(img); }
+    else ce.appendChild(img);
+    /* Gdy obraz kończy notatkę, końcowy BR daje pewne miejsce do dalszego pisania
+       na iPadzie. Ustawiamy kursor zaraz za ilustracją. */
+    if(!img.nextSibling)img.parentNode.insertBefore(document.createElement("br"),img.nextSibling);
+    const sel=getSelection(),po=document.createRange();po.setStartAfter(img);po.collapse(true);
+    if(sel){sel.removeAllRanges();sel.addRange(po);}
   }catch(_){ try{ ce.appendChild(img); }catch(__){} }
-  commitLiveEdit(ce); showImgBar(img); toast("Wstawiono zdjęcie");
+  if(typeof histZapisz==="function")histZapisz(ce);
+  commitLiveEdit(ce); showImgBar(img); toast("Wstawiono ilustrację — przeciągnij ją albo użyj przycisku przenoszenia");
   return img;
 }
 // umieszczenie: kliknij/dotknij miejsca w tekście, a zdjęcie tam wskoczy
@@ -14809,8 +15017,8 @@ document.addEventListener("paste", async e=>{
   if(items){ for(const it of items){
     if(it.type && it.type.indexOf("image")===0){
       e.preventDefault();
-      const f=it.getAsFile();
-      if(f){ try{ const url=await compressImage(f); if(!(await checkSpaceForImage(url.length))) return; insertImageUrl(ce, url, null); }catch(err){ toast("Nie udało się wkleić obrazu"); } }
+      const f=it.getAsFile(), miejsce=captureRange();
+      if(f){ try{ const url=await compressImage(f); if(!(await checkSpaceForImage(url.length))) return; insertImageUrl(ce, url, miejsce); }catch(err){ toast("Nie udało się wkleić obrazu"); } }
       return;
     }
   } }
@@ -14818,7 +15026,9 @@ document.addEventListener("paste", async e=>{
   const txt = cd.getData("text/plain");
   if(txt!==""){
     e.preventDefault();
-    document.execCommand("insertText", false, txt);
+    if(typeof histZapisz==="function")histZapisz(ce);
+    if(!wstawCzystyTekst(ce,txt)) document.execCommand("insertText", false, txt);
+    if(typeof histZapisz==="function")histZapisz(ce);
     commitLiveEdit(ce);
   }
 });
@@ -14842,12 +15052,12 @@ document.addEventListener("drop", async e=>{
    Mysz/gładzik: chwyć i przesuń. Palec/rysik: krótkie przytrzymanie, potem
    przesuń bez odrywania. Klasa opływania (lewo/prawo/środek/w linii) nie jest
    zmieniana — przenosimy tylko pozycję obrazu w treści. */
-const IMG_DRAG_HOLD=240, IMG_DRAG_PROG=5, IMG_DRAG_EDGE=72;
+const IMG_DRAG_HOLD=340, IMG_DRAG_PROG=6, IMG_DRAG_EDGE=72;
 let imgDrag=null;
 function imgDragRange(x,y,ce){
   let r=caretRangeFromPoint(x,y);
   if(!r || !ce.contains(r.startContainer)) return null;
-  if(imgDrag && (r.startContainer===imgDrag.img || imgDrag.img.contains(r.startContainer))) return null;
+  if(imgDrag){const node=imgMoveNode(imgDrag.img);if(r.startContainer===node||node.contains(r.startContainer))return null;}
   try{r=r.cloneRange();r.collapse(true);return r;}catch(_){return null;}
 }
 function imgDragCaret(r,x,y){
@@ -15160,6 +15370,15 @@ function sanitize(html){
         }
         else if(tag==="H2"||tag==="H3"){ const h=document.createElement(tag.toLowerCase()); walk(node,h); dst.appendChild(h); }
         else if(tag==="BLOCKQUOTE"){ const q=document.createElement("blockquote"); walk(node,q); dst.appendChild(q); }
+        else if(tag==="FIGURE" && /(^|\s)note-figure(\s|$)/.test(node.className||"")){
+          const f=document.createElement("figure");f.className="note-figure";
+          const al=(node.className||"").match(/img-(left|right|center|inline)/);if(al)f.classList.add(al[0]);
+          const fw=node.style&&node.style.width;if(fw&&/^\d{1,3}(\.\d+)?%$/.test(fw))f.style.width=fw;
+          walk(node,f);dst.appendChild(f);
+        }
+        else if(tag==="FIGCAPTION"){
+          const fc=document.createElement("figcaption");walk(node,fc);dst.appendChild(fc);
+        }
         else if(tag==="IMG"){
           const src=(node.getAttribute("src")||"").trim();
           /* TYLKO ZDJĘCIA RASTROWE I ADRESY SIECIOWE.
@@ -15174,12 +15393,15 @@ function sanitize(html){
              Sprawdzane w testy/przegladarka/sito.js. */
           if(/^data:image\/(png|jpe?g|gif|webp|avif)[;,]/i.test(src) || /^https?:\/\//i.test(src)){
             const im=document.createElement("img"); im.src=src;
-            let keep=(node.className||"").split(/\s+/).filter(c=>/^img-(s|m|l|left|right|center|inline)$/.test(c));
-            // jeśli zdjęcie nie ma ustawionego opływu — nadaj domyślny (pływa w prawo), żeby tekst je opływał
-            if(!keep.some(c=>/^img-(left|right|center|inline)$/.test(c))) keep.push("img-right");
+            im.alt=String(node.getAttribute("alt")||"Ilustracja").slice(0,160);
+            let keep=(node.className||"").split(/\s+/).filter(c=>/^img-(s|m|l|left|right|center|inline|rot-(90|180|270))$/.test(c));
+            // W podpisanej figurze układ należy do FIGURE; poza nią zachowujemy zgodność starych notatek.
+            const wFigurze=node.parentElement&&/(^|\s)note-figure(\s|$)/.test(node.parentElement.className||"");
+            if(!wFigurze&&!keep.some(c=>/^img-(left|right|center|inline)$/.test(c))) keep.push("img-right");
             im.className=keep.join(" ");
             let w=node.style && node.style.width;
-            if(!(w && /^\d{1,3}(\.\d+)?%$/.test(w)) && !keep.some(c=>/^img-(s|m|l)$/.test(c))) w="45%";
+            if(wFigurze)w="100%";
+            else if(!(w && /^\d{1,3}(\.\d+)?%$/.test(w)) && !keep.some(c=>/^img-(s|m|l)$/.test(c))) w="45%";
             if(w && /^\d{1,3}(\.\d+)?%$/.test(w)) im.style.width=w;
             dst.appendChild(im);
           }
@@ -15192,6 +15414,10 @@ function sanitize(html){
              a nie w osobnym polu — patrz decyzja 3 w 55-przypisy.js. */
           const kl=node.className||"";
           if(/(^|\s)fnlist(\s|$)/.test(kl)) d2.className="fnlist";
+          else if(/(^|\s)callout(\s|$)/.test(kl)){
+            const rodz=(kl.match(/callout-(important|conclusion|question|example)/)||[])[1]||"important";
+            d2.className="callout callout-"+rodz;
+          }
           else if(/(^|\s)fn(\s|$)/.test(kl)){
             d2.className="fn";
             const id=String(node.getAttribute("data-fn")||"").slice(0,20);
@@ -15591,26 +15817,39 @@ function nnCreateTag(){
 }
 $("nnAddTag").onclick = nnCreateTag;
 $("nnNewTagName").addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); nnCreateTag(); } });
-$("nnSave").onclick = async ()=>{
+async function zapiszNowaNotatke(otworzEdytor){
   const c=$("nnContent").value.trim(), t=$("nnTitle").value.trim();
   if(!c&&!t){ toast("Wpisz tytuł lub treść"); return; }
   const wybor = $("nnZakladka") ? $("nnZakladka").value : "";
   const idZakladki = await ustalZakladkeNowejNotatki(wybor);
-  if(idZakladki===false) return;              // rezygnacja z nazwy zakładki
+  if(idZakladki===false) return;
   const now=new Date().toISOString();
-  const n={ g:crypto.randomUUID().toUpperCase(), t, c, h:null,
+  /* Wiersze z prostego okna od razu zapisujemy jako BR. Po przejściu do pełnego
+     edytora Enter zachowuje dokładnie ten sam, zwarty sposób pisania. */
+  const h=c ? esc(c).replace(/\r?\n/g,"<br>") : null;
+  const n={ g:crypto.randomUUID().toUpperCase(), t, c, h,
     b:+$("nnBook").value||0, ch:+$("nnCh").value||null, v:+$("nnV").value||null,
     pub:"", ks:"", doc:0, itn:0, col:0, cr:now, mo:now,
     tg:[...$("nnTags").querySelectorAll("input:checked")].map(i=>+i.value),
     nw:true, tgd:true };
   if(idZakladki) n.stb = idZakladki;
-  notes.unshift(n); saveNote(n);
+  notes.unshift(n); await saveNote(n);
   pushUndo({type:"newNote", g:n.g, label:"dodanie notatki"});
   closeModal("modalNew"); renderAll();
-  const nazwaZak = n.stb && typeof secTabs!=="undefined"
-    ? (secTabs.find(z=>z.id===n.stb)||{}).name : "";
-  toast(nazwaZak ? "Notatka dodana do zakładki „"+nazwaZak+"”" : "Notatka dodana");
-};
+  if(otworzEdytor){
+    openFs(n);
+    setTimeout(()=>{
+      const karta=document.querySelector('#fsWrap .ncard[data-g="'+CSS.escape(n.g)+'"]');
+      if(karta&&!karta.classList.contains("editing"))toggleEdit(karta,n);
+    },60);
+  }else{
+    const nazwaZak = n.stb && typeof secTabs!=="undefined"
+      ? (secTabs.find(z=>z.id===n.stb)||{}).name : "";
+    toast(nazwaZak ? "Notatka dodana do zakładki „"+nazwaZak+"”" : "Notatka dodana");
+  }
+}
+$("nnSave").onclick=()=>zapiszNowaNotatke(false);
+$("nnSaveEdit").onclick=()=>zapiszNowaNotatke(true);
 
 </script>
 <script>
@@ -16171,7 +16410,7 @@ function smartPodzielNaglowki(html, tytulBazowy){
 const smartAssetUrls=new Map();
 function smartAssetBytes(nazwa){
   const el=document.getElementById("smartAsset-"+nazwa);
-  if(!el)throw new Error("Niekompletna wersja aplikacji: brak biblioteki "+nazwa+". Wgraj index.html wersji 3.48.");
+  if(!el)throw new Error("Niekompletna wersja aplikacji: brak biblioteki "+nazwa+". Wgraj index.html wersji 3.50.");
   const raw=atob(el.textContent.trim()),bytes=new Uint8Array(raw.length);
   for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
   return bytes;
