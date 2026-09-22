@@ -1,16 +1,20 @@
 /* Osobny cache dla każdej instalacji (np. dwóch projektów GitHub Pages).
    Starszych, wspólnych cache nie usuwamy: mogą należeć do innej instalacji. */
 const CACHE_PREFIX = 'jwstudy-' + encodeURIComponent(self.registration.scope) + '-';
-const CACHE = CACHE_PREFIX + 'v354';
-const CORE = ['./', './index.html'];
-const EXTRA = [
-  './search-worker.js',
+const CACHE = CACHE_PREFIX + 'v355';
+/* Instalacja jest uznawana za gotową dopiero po zapisaniu wszystkich plików,
+   których potrzebują podstawowe funkcje. Dzięki temu komunikat „gotowa offline”
+   nie pojawi się po częściowym pobraniu na niestabilnym łączu. */
+const CORE = [
+  './', './index.html', './search-worker.js',
   './lib/jszip.min.js', './lib/sql-wasm.js', './lib/sql-wasm.wasm',
-  './jszip.min.js', './sql-wasm.js', './sql-wasm.wasm',
   './manifest.webmanifest', './onenote.html',
-  './icon-192.png', './icon-512.png', './icon-maskable-512.png',
-  './apple-touch-icon.png', './favicon-32.png'
+  './icon-192.png', './icon-512.png', './icon-1024.png',
+  './icon-maskable-512.png', './apple-touch-icon.png', './favicon-32.png'
 ];
+/* Drugie kopie bibliotek są zapasowe. Ich brak nie blokuje instalacji,
+   ponieważ komplet w katalogu lib/ jest obowiązkowy i sprawdzany powyżej. */
+const EXTRA = ['./jszip.min.js', './sql-wasm.js', './sql-wasm.wasm', './icon.svg'];
 function pobierzSwieze(req){
   return fetch(new Request(req, {cache:'no-store'}));
 }
