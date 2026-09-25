@@ -13,6 +13,13 @@ bezpieczeństwa treści dopuszcza wyłącznie adresy z tego samego miejsca.
 Potrzebne **wyłącznie przy imporcie z JW Library**. Notatki, kopie zapasowe
 i przenoszenie z OneNote działają bez nich.
 
+## Inteligentny import dokumentów
+
+Katalog `smart-import/` zawiera PDF.js do dokumentów PDF, Mammoth do plików
+DOCX oraz Tesseract z polskim modelem OCR do zdjęć i skanów. Ten katalog też
+jest częścią aplikacji: wgrywaj go w całości na GitHub. Rozpoznawane dokumenty
+nie są wysyłane do zewnętrznych usług.
+
 ## Skąd pochodzą
 
 Z oficjalnego rejestru npm, czyli wprost od autorów bibliotek:

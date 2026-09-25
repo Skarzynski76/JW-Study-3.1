@@ -1,20 +1,21 @@
 /* Osobny cache dla każdej instalacji (np. dwóch projektów GitHub Pages).
    Starszych, wspólnych cache nie usuwamy: mogą należeć do innej instalacji. */
 const CACHE_PREFIX = 'jwstudy-' + encodeURIComponent(self.registration.scope) + '-';
-const CACHE = CACHE_PREFIX + 'v356';
+const CACHE = CACHE_PREFIX + 'v358-modern';
 /* Instalacja jest uznawana za gotową dopiero po zapisaniu wszystkich plików,
    których potrzebują podstawowe funkcje. Dzięki temu komunikat „gotowa offline”
    nie pojawi się po częściowym pobraniu na niestabilnym łączu. */
 const CORE = [
-  './', './index.html', './search-worker.js',
+  './index.html', './search-worker.js',
   './lib/jszip.min.js', './lib/sql-wasm.js', './lib/sql-wasm.wasm',
+  './lib/supabase.js',
   './manifest.webmanifest', './onenote.html',
   './icon-192.png', './icon-512.png', './icon-1024.png',
   './icon-maskable-512.png', './apple-touch-icon.png', './favicon-32.png'
 ];
 /* Drugie kopie bibliotek są zapasowe. Ich brak nie blokuje instalacji,
    ponieważ komplet w katalogu lib/ jest obowiązkowy i sprawdzany powyżej. */
-const EXTRA = ['./jszip.min.js', './sql-wasm.js', './sql-wasm.wasm', './icon.svg'];
+const EXTRA = ['./jszip.min.js', './sql-wasm.js', './sql-wasm.wasm', './supabase.js', './icon.svg'];
 function pobierzSwieze(req){
   return fetch(new Request(req, {cache:'no-store'}));
 }
@@ -28,7 +29,9 @@ self.addEventListener('message', e=>{
 });
 self.addEventListener('install', e=>{
   e.waitUntil(caches.open(CACHE).then(async c=>{
-    await Promise.all(CORE.map(async a=>zapiszOdpowiedz(c,a,await pobierzSwieze(a))));
+    const glownaRes = await zapiszOdpowiedz(c, './index.html', await pobierzSwieze('./index.html'));
+    try{ await c.put('./', glownaRes.clone()); }catch(_){}
+    await Promise.all(CORE.filter(a=>a!=='./index.html').map(async a=>zapiszOdpowiedz(c,a,await pobierzSwieze(a))));
     await Promise.allSettled(EXTRA.map(async a=>zapiszOdpowiedz(c,a,await pobierzSwieze(a))));
   }));
 });

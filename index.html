@@ -14,11 +14,11 @@
        • frame-src 'none' — brak ramek.
 
      'unsafe-inline' dla skryptów jest konieczne w wersji jednoplikowej, gdzie
-     cały kod siedzi w znacznikach <script> wewnątrz strony.
+     cały kod siedzi w znacznikach script wewnątrz strony.
      'wasm-unsafe-eval' jest potrzebne bibliotece sql.js, która czyta bazę
      SQLite z kopii JW Library — biblioteka leży w katalogu lib/ obok aplikacji,
      nie na obcym serwerze. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' blob: 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; manifest-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'none'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' blob: 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https:; manifest-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'none'; frame-src 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -28,6 +28,7 @@
 <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
 <link rel="manifest" href="./manifest.webmanifest">
 <title>JW Study</title>
+<script src="lib/supabase.js"></script>
 <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
@@ -53,11 +54,12 @@ html[data-theme="sepia"] main{background:radial-gradient(900px 520px at 12% -5%,
 button,.item,.sbtn,.chip-ch,.pal,a,label,select,summary,#imgBar button,#hlBar .sw,#hlBar button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;margin:0}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans",sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;overflow:hidden}
-header{display:flex;align-items:center;gap:9px;padding:9px 16px;padding-top:calc(9px + env(safe-area-inset-top, 0px));background:#256b52;border-bottom:1px solid rgba(0,0,0,.16);box-shadow:0 2px 10px rgba(20,40,30,.16);flex-wrap:wrap;position:relative;z-index:20;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;isolation:isolate}
+header{display:flex;align-items:center;gap:9px;padding:9px 16px;padding-top:calc(9px + env(safe-area-inset-top, 0px));background:linear-gradient(135deg,#184f3c 0%,#216950 55%,#2a7d60 100%);border-bottom:1px solid rgba(0,0,0,.14);box-shadow:0 4px 18px -2px rgba(10,35,25,.22);flex-wrap:wrap;position:relative;z-index:20;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;isolation:isolate}
 .brand-name{color:#fff!important}
 .brand-name .ver{color:rgba(255,255,255,.6)!important}
 .brand-sub{color:rgba(255,255,255,.72)!important}
-.brand-logo{box-shadow:0 1px 4px rgba(0,0,0,.3),0 0 0 1px rgba(255,255,255,.2)}
+.brand-logo{border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.25),0 0 0 1px rgba(255,255,255,.2);transition:transform .16s ease}
+.brand-logo:hover{transform:scale(1.05)}
 header .btn{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.24);color:#fff}
 header .btn:hover{background:rgba(255,255,255,.24)}
 header .btn.primary{background:#fff;border-color:#fff;color:#1e5b46}
@@ -70,15 +72,15 @@ header #sortSel{background:rgba(255,255,255,.13);color:#fff;border-color:rgba(25
 header #sortSel option{color:#2b2a27}
 .bk-count{background:#fff;color:#1e5b46}
 .brand{display:flex;align-items:center;gap:10px;flex-shrink:0}
-.brand-logo{border-radius:9px;box-shadow:0 1px 3px rgba(0,0,0,.22)}
 .brand-txt{display:flex;flex-direction:column;line-height:1.15}
 .brand-name{font-size:16px;font-weight:700;color:var(--accent);white-space:nowrap;letter-spacing:-.01em}
 .brand-name .ver{font-size:10.5px;font-weight:400;color:var(--muted);opacity:.7;letter-spacing:0}
 .brand-sub{font-size:11px;color:var(--muted);white-space:nowrap}
-.searchwrap{flex:1;min-width:180px;display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:0 13px;transition:border-color .15s ease, box-shadow .15s ease}
-.searchwrap:focus-within{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(140,111,82,.15)}
+.searchwrap{flex:1;min-width:180px;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.94);border:1px solid rgba(255,255,255,.3);border-radius:13px;padding:0 13px;box-shadow:0 2px 6px rgba(0,0,0,.06);transition:border-color .15s ease,box-shadow .15s ease,background .15s ease}
+.searchwrap:focus-within{background:#ffffff;border-color:var(--accent2);box-shadow:0 0 0 3px rgba(39,122,94,.22),0 4px 14px rgba(0,0,0,.10)}
 .searchwrap{position:relative}
-#searchSug{position:absolute;top:calc(100% + 6px);left:0;right:0;display:none;z-index:60;background:var(--panel);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.2);padding:6px;max-height:320px;overflow-y:auto}
+#searchSug,#ebPop{position:absolute;top:calc(100% + 6px);left:0;right:0;display:none;z-index:60;background:var(--panel);border:1px solid var(--border);border-radius:13px;box-shadow:0 14px 34px rgba(0,0,0,.22),0 2px 8px rgba(0,0,0,.08);padding:6px;max-height:320px;overflow-y:auto;animation:popShow .14s cubic-bezier(.16,1,.3,1)}
+@keyframes popShow{from{opacity:0;transform:scale(.97) translateY(-3px)}to{opacity:1;transform:scale(1) translateY(0)}}
 #searchSug .sug{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:9px;cursor:pointer;font-size:13.5px;color:var(--text)}
 #searchSug .sug:hover,#searchSug .sug.on{background:var(--sel)}
 #searchSug .sug .ic{width:16px;height:16px;color:var(--muted);flex-shrink:0}
@@ -7922,6 +7924,272 @@ html[data-theme="sepia"] body.ipad-standalone #modalFs #fsWrap .nhead{background
 html[data-theme="dark"] body.ipad-standalone #modalFs .fsmodal::before,
 html[data-theme="dark"] body.ipad-standalone #modalFs #fsWrap .nhead{background:#151517!important}
 @media (orientation:landscape){body.ipad-standalone{--ipad-reader-clearance:42px}}
+
+/* ==========================================================================
+   JW Study 3.58 — Nowoczesny Interfejs (Modern Emerald & OLED Dark UI)
+   ========================================================================== */
+:root {
+  --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", "Helvetica Neue", sans-serif;
+  --bg-modern: #f5f7f6;
+  --gold-accent: #d97706;
+  --gold-bg: #fef3c7;
+  --gold-border: #fde68a;
+  --gold-text: #92400e;
+  --tag-green-bg: #ecfdf5;
+  --tag-green-text: #065f46;
+  --tag-green-border: #a7f3d0;
+}
+
+body {
+  font-family: var(--font-main) !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Nagłówek aplikacji */
+header {
+  background: linear-gradient(135deg, #184f3c 0%, #216950 55%, #2a7d60 100%) !important;
+  box-shadow: 0 4px 20px rgba(10, 35, 25, 0.18) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+.brand-name {
+  font-weight: 750 !important;
+  letter-spacing: -0.02em !important;
+}
+.searchwrap {
+  border-radius: 14px !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+}
+.searchwrap:focus-within {
+  box-shadow: 0 0 0 3px rgba(39, 122, 94, 0.28), 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Karty notatek — nowoczesny wygląd z delikatnym cieniem i zaokrągleniami */
+.ncard {
+  border-radius: 14px !important;
+  border: 1px solid rgba(0, 0, 0, 0.07) !important;
+  background: var(--panel) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+  margin-bottom: 10px !important;
+  transition: transform 0.16s cubic-bezier(0.2, 0.8, 0.3, 1), box-shadow 0.16s ease, border-color 0.16s ease !important;
+}
+.ncard:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(18, 48, 36, 0.09), 0 2px 4px rgba(0, 0, 0, 0.03) !important;
+  border-color: rgba(37, 107, 82, 0.35) !important;
+}
+.ncard.selected, .ncard.active, .ncard.otwarta {
+  border-left: 4px solid var(--accent) !important;
+  background: color-mix(in srgb, var(--accent) 4%, var(--panel)) !important;
+}
+
+/* Tytuł notatki */
+.ntitle {
+  font-size: 15.5px !important;
+  font-weight: 650 !important;
+  color: var(--text) !important;
+  line-height: 1.34 !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* Etykiety i wersetowe badge */
+.pill.ks {
+  background: var(--gold-bg) !important;
+  color: var(--gold-text) !important;
+  border: 1px solid var(--gold-border) !important;
+  font-weight: 600 !important;
+  border-radius: 7px !important;
+  padding: 2px 8px !important;
+  font-size: 12px !important;
+  letter-spacing: -0.01em;
+}
+.chip {
+  background: var(--tag-green-bg) !important;
+  color: var(--tag-green-text) !important;
+  border: 1px solid var(--tag-green-border) !important;
+  border-radius: 7px !important;
+  font-weight: 500 !important;
+  padding: 2px 8px !important;
+  font-size: 12px !important;
+}
+.pill.date {
+  background: rgba(0, 0, 0, 0.04) !important;
+  color: var(--muted) !important;
+  border-radius: 7px !important;
+  padding: 2px 7px !important;
+  font-size: 11.5px !important;
+}
+
+/* Kolumny nawigacji (Biblia, Etykiety, Publikacje) */
+.col {
+  border-radius: 16px !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+.col h2 {
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+  color: var(--muted) !important;
+}
+.item {
+  border-radius: 10px !important;
+  margin: 2px 4px !important;
+  padding: 7px 11px !important;
+  transition: background 0.14s ease, transform 0.1s ease !important;
+}
+.item.sel, .item.active {
+  background: var(--accent) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 8px rgba(37, 107, 82, 0.25) !important;
+}
+.item.sel .cnt, .item.active .cnt {
+  background: rgba(255, 255, 255, 0.28) !important;
+  color: #ffffff !important;
+}
+
+/* Szybkie filtry */
+#quickFilters .qf {
+  border-radius: 999px !important;
+  padding: 5px 14px !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  border: 1px solid var(--border) !important;
+  background: var(--panel) !important;
+  transition: all 0.14s ease !important;
+}
+#quickFilters .qf:hover {
+  background: var(--sel) !important;
+  border-color: rgba(37, 107, 82, 0.3) !important;
+}
+#quickFilters .qf.on {
+  background: var(--accent) !important;
+  color: #ffffff !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 2px 8px rgba(37, 107, 82, 0.25) !important;
+}
+
+/* Cytaty biblijne i odnośniki w treści studium */
+.ncontent blockquote {
+  border-left: 4px solid var(--gold-accent) !important;
+  background: rgba(217, 119, 6, 0.06) !important;
+  padding: 12px 16px !important;
+  border-radius: 0 10px 10px 0 !important;
+  margin: 14px 0 !important;
+  color: inherit !important;
+  font-style: normal !important;
+}
+.ncontent a.jwl-ref {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 2px 8px !important;
+  border-radius: 6px !important;
+  background: rgba(37, 107, 82, 0.08) !important;
+  border: 1px solid rgba(37, 107, 82, 0.2) !important;
+  color: var(--accent) !important;
+  font-weight: 600 !important;
+  text-decoration: none !important;
+  transition: all 0.14s ease !important;
+}
+.ncontent a.jwl-ref:hover {
+  background: var(--accent) !important;
+  color: #ffffff !important;
+}
+
+/* Pływające paski narzędziowe (Toolbar) */
+#selEditBar, #tableBar, #hlBar {
+  border-radius: 14px !important;
+  border: 1px solid var(--border) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  backdrop-filter: blur(20px) !important;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.18) !important;
+}
+
+/* Wygładzone nowoczesne paski przewijania */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.14);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.28);
+}
+
+/* ═══════════ TRYB CIEMNY OLED DEEP SLATE (3.58) ═══════════ */
+html[data-theme="dark"] {
+  --bg: #101417 !important;
+  --panel: #161c21 !important;
+  --sel: #1f272e !important;
+  --border: rgba(255, 255, 255, 0.09) !important;
+  --text: #f1f5f3 !important;
+  --muted: #8b9a94 !important;
+  --accent: #2e8b68 !important;
+  --accent2: #42ad84 !important;
+}
+html[data-theme="dark"] header {
+  background: linear-gradient(135deg, #0d261d 0%, #15382c 60%, #1d4d3d 100%) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07) !important;
+}
+html[data-theme="dark"] .ncard {
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: #171f25 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+}
+html[data-theme="dark"] .ncard:hover {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(46, 139, 104, 0.4) !important;
+  border-color: rgba(46, 139, 104, 0.45) !important;
+}
+html[data-theme="dark"] .ncard.selected, html[data-theme="dark"] .ncard.active, html[data-theme="dark"] .ncard.otwarta {
+  border-left: 4px solid var(--accent2) !important;
+  background: #1d272f !important;
+}
+html[data-theme="dark"] .pill.ks {
+  background: rgba(245, 158, 11, 0.16) !important;
+  color: #fbbf24 !important;
+  border: 1px solid rgba(245, 158, 11, 0.32) !important;
+}
+html[data-theme="dark"] .chip {
+  background: rgba(16, 185, 129, 0.14) !important;
+  color: #6ee7b7 !important;
+  border: 1px solid rgba(16, 185, 129, 0.28) !important;
+}
+html[data-theme="dark"] .pill.date {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #8b9a94 !important;
+}
+html[data-theme="dark"] .col {
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+  background: #13181c !important;
+}
+html[data-theme="dark"] .ncontent blockquote {
+  border-left: 4px solid #fbbf24 !important;
+  background: rgba(251, 191, 36, 0.08) !important;
+  color: #f1f5f3 !important;
+}
+html[data-theme="dark"] .ncontent a.jwl-ref {
+  background: rgba(46, 139, 104, 0.16) !important;
+  border-color: rgba(46, 139, 104, 0.35) !important;
+  color: #6ee7b7 !important;
+}
+html[data-theme="dark"] .ncontent a.jwl-ref:hover {
+  background: #2e8b68 !important;
+  color: #ffffff !important;
+}
+html[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+}
+html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
 </style>
 </head>
 <body>
@@ -7931,7 +8199,7 @@ html[data-theme="dark"] body.ipad-standalone #modalFs #fsWrap .nhead{background:
   <div class="brand">
     <img class="brand-logo" src="icon-192.png" width="36" height="36" alt="">
     <div class="brand-txt">
-      <h1 class="brand-name">JW Study <span class="ver">v3.56</span></h1>
+      <h1 class="brand-name">JW Study <span class="ver">v3.58</span></h1>
       <div class="brand-sub" id="hCount"></div>
     </div>
   </div>
@@ -8564,7 +8832,7 @@ const BOOKS = ["","Rodzaju","Wyjścia","Kapłańska","Liczb","Powtórzonego Praw
 
 const DBNAME = "jwStudyClean";   // nazwa pamięci tej kopii aplikacji
 const KP = "jws";               // prefiks ustawień
-let notes = [], tags = [];
+let notes = [], tags = [], deletedGuids = [];
 let filt = {tag:"all", book:"all", ch:null, pub:"all"};
 let query = "", sortMode = "new";
 /* Pierwsza porcja mieści kilka ekranów, ale nie tworzy od razu sześćdziesięciu
@@ -8736,7 +9004,7 @@ function idbOpen(){return new Promise((res,rej)=>{
     if(zakonczone) return;
     zakonczone = true;
     rej(new Error("Otwarcie pamięci trwało zbyt długo"));
-  }, 3500);
+  }, 5000);
   const zakoncz = (fn, wartosc)=>{
     if(zakonczone){
       if(wartosc && typeof wartosc.close==="function") try{ wartosc.close(); }catch(_){}
@@ -8917,16 +9185,61 @@ async function sprawdzImport(ileNotatek, ileEtykiet, nazwaKopii, dataKopii){
  * zapisywały się wcale — więc nieudany zapis mógł zostawić notatki z pliku
  * i zakładki sprzed niego, a szablony zostawały cudze nawet przy zapisie
  * udanym. „Wszystko albo nic" musi obejmować wszystko.
- *
+ */
+function saveDeletedGuids(){ if(idb) idbPut("meta", deletedGuids, "deletedGuids").catch(()=>{}); }
+function idbZapiszMeta(klucz, wartosc){ if(idb) return idbPut("meta", wartosc, klucz); return Promise.resolve(); }
+function idbWczytajMeta(klucz){ if(idb) return idbGet("meta", klucz); return Promise.resolve(null); }
+
+/**
+ * Wczytuje komplet danych z bazy IndexedDB:
+ * notatki, etykiety oraz metadane (sekcje, zakładki, szablony, autotematy, tombstones).
+ * @returns {Promise<{notes:Array, tags:Array, sections:Array, pubTabs:Array, secTabs:Array, szablony:Array, autoTopics:Object, deletedTags:Array, deletedGuids:Array}|null>}
+ */
+async function idbWczytajWszystko(){
+  if(!idb) return null;
+  try{
+    const [wNotes, wTags, wSections, wPubTabs, wSecTabs, wSzablony, wAutoTopics, wDelTags, wDelGuids] = await Promise.all([
+      idbAll("notes"),
+      idbAll("tags"),
+      idbGet("meta", "sections"),
+      idbGet("meta", "pubTabs"),
+      idbGet("meta", "secTabs"),
+      idbGet("meta", "szablony"),
+      idbGet("meta", "autoTopics"),
+      idbGet("meta", "deletedTags"),
+      idbGet("meta", "deletedGuids")
+    ]);
+    return {
+      notes: wNotes || [],
+      tags: wTags || [],
+      sections: wSections || [],
+      pubTabs: wPubTabs || [],
+      secTabs: wSecTabs || [],
+      szablony: wSzablony || [],
+      autoTopics: wAutoTopics || null,
+      deletedTags: wDelTags || [],
+      deletedGuids: wDelGuids || []
+    };
+  }catch(e){
+    console.warn("Błąd w idbWczytajWszystko:", e);
+    return null;
+  }
+}
+
+/**
+ * Zastępuje zawartość całej bazy nowymi danymi w JEDNEJ transakcji.
  * @param {Note[]} noweNotes
  * @param {Tag[]} noweTags
  * @param {Object[]} noweSekcje
  * @param {Object[]} noweZakladki       zakładki publikacji
  * @param {Object[]} [noweZakladkiSekcji]
  * @param {Object[]} [noweSzablony]
+ * @param {Object} [noweAutoTematy]
+ * @param {string[]} [noweDeletedTags]
+ * @param {string[]} [noweDeletedGuids]
  * @returns {Promise<boolean>}
  */
-function idbZastapWszystko(noweNotes, noweTags, noweSekcje, noweZakladki, noweZakladkiSekcji, noweSzablony, noweAutoTematy){
+function idbZastapWszystko(noweNotes, noweTags, noweSekcje, noweZakladki, noweZakladkiSekcji, noweSzablony, noweAutoTematy, noweDeletedTags, noweDeletedGuids){
   return new Promise((res, rej)=>{
     if(!idb) return res(false);
     let tx;
@@ -8947,6 +9260,8 @@ function idbZastapWszystko(noweNotes, noweTags, noweSekcje, noweZakladki, noweZa
       sm.put(Array.isArray(noweZakladkiSekcji) ? noweZakladkiSekcji : [], "secTabs");
       sm.put(Array.isArray(noweSzablony)       ? noweSzablony       : [], "szablony");
       sm.put(autoTematySanity(noweAutoTematy), "autoTopics");
+      sm.put(Array.isArray(noweDeletedTags)    ? noweDeletedTags    : [], "deletedTags");
+      sm.put(Array.isArray(noweDeletedGuids)   ? noweDeletedGuids   : [], "deletedGuids");
     }catch(e){
       try{ tx.abort(); }catch(_){}
       rej(e);
@@ -9320,6 +9635,11 @@ async function boot(){
     idb = await idbOpen();
     idb.onversionchange=()=>{idb.close();idb=null;pokazBrakPamieci();};
     idb.onclose=()=>{idb=null;pokazBrakPamieci();};
+    if(navigator.storage && navigator.storage.persist){
+      navigator.storage.persist().then(trwaly=>{
+        if(trwaly) console.info("Pamięć trwała IndexedDB aktywna.");
+      }).catch(()=>{});
+    }
   }catch(e){ console.warn("IndexedDB niedostępne", e); pokazBrakPamieci(); }
   // 1. wczytaj to, co zapisane w przeglądarce (Twoje zmiany mają pierwszeństwo)
   let stored = [], storedTags = [];
@@ -9389,6 +9709,7 @@ async function boot(){
   if(!filt.pub) filt.pub="all";
   if(typeof filt.book==="number" && filt.book>0) expandedBook = filt.book;
   if(idb){ try{ deletedTagNames = (await idbGet("meta","deletedTags")) || []; }catch(e){} }
+  if(idb){ try{ deletedGuids = (await idbGet("meta","deletedGuids")) || []; }catch(e){} }
   if(idb){ try{ sections = (await idbGet("meta","sections")) || []; }catch(e){ sections=[]; } }
   if(typeof autoTematyWczytaj==="function") await autoTematyWczytaj();
   if(typeof loadPubTabs==="function") await loadPubTabs();
@@ -11433,8 +11754,9 @@ function saveDeletedTags(){ if(idb) idbPut("meta", deletedTagNames, "deletedTags
 async function deleteTag(t){
   const cnt = notes.filter(n=>!n.del && n.tg.includes(t.id)).length;
   if(!(await askConfirm("Usunąć zakładkę?", "Zakładka „"+esc(t.name)+"”."+(cnt?"<br><br>Notatki ("+cnt+") NIE zostaną usunięte — stracą tylko tę zakładkę.":""), {okLabel:"Usuń", danger:true}))) return;
-  pushUndo({type:"delTag", label:"usunięcie zakładki „"+t.name+"”", name:(t.orig||t.name), tags:cloneTags(), notes:notes.filter(n=>n.tg.includes(t.id)).map(cloneNote)});
-  deletedTagNames.push(t.orig || t.name);
+  pushUndo({type:"delTag", label:"usunięcie zakładki „"+t.name+"”", name:t.name, orig:t.orig, tags:cloneTags(), notes:notes.filter(n=>n.tg.includes(t.id)).map(cloneNote)});
+  if(t.name && !deletedTagNames.includes(t.name)) deletedTagNames.push(t.name);
+  if(t.orig && !deletedTagNames.includes(t.orig)) deletedTagNames.push(t.orig);
   saveDeletedTags();
   tags = tags.filter(x=>x.id!==t.id);
   const affected = [];
@@ -11452,6 +11774,8 @@ async function renameTag(id){
   pushUndo({type:"tags", label:"zmianę nazwy zakładki", tags:cloneTags()});
   if(!t.orig) t.orig = t.name;   // zapamiętaj oryginalną nazwę do eksportu
   t.name = name.trim();
+  deletedTagNames = deletedTagNames.filter(nm=>nm!==t.name);
+  saveDeletedTags();
   sortTags();
   saveTags(); renderAll(); toast("Zmieniono nazwę zakładki");
 }
@@ -13349,15 +13673,21 @@ function applyHistory(u){
     const odw=teraz ? {type:"note", before:cloneNote(teraz), label:u.label} : null;
     const i = notes.findIndex(x=>x.g===u.before.g);
     if(i>=0) notes[i]=cloneNote(u.before); else notes.push(cloneNote(u.before));
+    if(deletedGuids.includes(u.before.g)){ deletedGuids = deletedGuids.filter(x=>x!==u.before.g); saveDeletedGuids(); }
     saveNote(u.before);
     return odw;
   } else if(u.type==="newNote"){
     const i = notes.findIndex(x=>x.g===u.g);
     const n=i>=0?cloneNote(notes[i]):null;
-    if(i>=0){ notes.splice(i,1); if(idb) idbDelKey("notes", u.g).catch(()=>{}); }
+    if(i>=0){ notes.splice(i,1); zapomnijNotatke(u.g); }
     return n ? {type:"restoreNewNote", note:n, label:u.label} : null;
   } else if(u.type==="restoreNewNote"){
-    if(u.note){ const i=notes.findIndex(x=>x.g===u.note.g); if(i>=0) notes[i]=cloneNote(u.note); else notes.push(cloneNote(u.note)); saveNote(u.note); }
+    if(u.note){
+      const i=notes.findIndex(x=>x.g===u.note.g);
+      if(i>=0) notes[i]=cloneNote(u.note); else notes.push(cloneNote(u.note));
+      if(deletedGuids.includes(u.note.g)){ deletedGuids = deletedGuids.filter(x=>x!==u.note.g); saveDeletedGuids(); }
+      saveNote(u.note);
+    }
     return {type:"newNote", g:u.note&&u.note.g, label:u.label};
   } else if(u.type==="tags"){
     const odw={type:"tags", tags:cloneTags(), label:u.label};
@@ -13366,7 +13696,7 @@ function applyHistory(u){
     const odw=historiaPakiet((u.notes||[]).map(n=>n.g)); odw.label=u.label;
     tags = deepCopy(u.tags); saveTags();
     u.notes.forEach(b=>{ const i=notes.findIndex(x=>x.g===b.g); if(i>=0){ notes[i]=cloneNote(b); saveNote(b); } });
-    deletedTagNames = deletedTagNames.filter(nm=>nm!==u.name);
+    deletedTagNames = deletedTagNames.filter(nm=>nm!==u.name && (!u.orig || nm!==u.orig));
     saveDeletedTags();
     return odw;
   } else if(u.type==="tagBundle"){
@@ -13440,6 +13770,7 @@ const TRASH_DAYS = 30;
    więc kasowanie jest tu w jednym pomocniku, a nie powtórzone trzy razy. */
 function zapomnijNotatke(g){
   if(!g) return;
+  if(!deletedGuids.includes(g)){ deletedGuids.push(g); saveDeletedGuids(); }
   if(idb) idbDelKey("notes", g).catch(()=>{});
   if(typeof workerUsunNotatke==="function") workerUsunNotatke(g);
   if(typeof wersjeUsun === "function") wersjeUsun(g);
@@ -13456,10 +13787,12 @@ function purgeOldTrash(){
     }
     keep.push(n);
   });
-  if(removed){ notes=keep; }
+  if(removed){ notes=keep; bumpDirty(); }
 }
 function restoreNote(n){
-  n.del=false; delete n.delAt; markDirty(n); renderAll(); renderTrash(); toast("Notatka przywrócona");
+  n.del=false; delete n.delAt;
+  if(deletedGuids.includes(n.g)){ deletedGuids = deletedGuids.filter(x=>x!==n.g); saveDeletedGuids(); }
+  markDirty(n); renderAll(); renderTrash(); toast("Notatka przywrócona");
 }
 function purgeNote(n){
   const i=notes.indexOf(n);
@@ -13637,6 +13970,82 @@ const TEXT_COLORS = [
   ["#2b5f9e","Niebieski"], ["#7a4fa3","Fioletowy"], ["#a15c1b","Pomarańczowy"], ["#6d7178","Szary"]
 ];
 
+let optAutoWielkieLitery = (()=>{
+  try{ return localStorage.getItem("jw_autocap") !== "0"; }
+  catch(e){ return true; }
+})();
+
+const POL_SKROTY_RE = /(?:^|\s|\()(?:np|tzn|itd|itp|m\.in|tzw|r|w|str|godz|art|ust|par|pkt|poz|tab|rys|kol|wg|jw|por|zob|ok|doc|prof|hab|dr|inż|mgr|ul|al|pl|os|woj|pow|gm|tel|fax|tys|mln|mld|vs|ks|św|bp|abp|kard|ojc|nr|rozdz|wers)\.$/i;
+
+function czyKoniecZdania(tekst){
+  if(!tekst) return false;
+  if(/[\r\n][\s]*$/.test(tekst)) return true;
+  const m = tekst.match(/([.!?…])([)"'”»\]\s]*)$/);
+  if(!m) return false;
+  const punc = m[1];
+  const post = m[2];
+  if(!/\s/.test(post) && post.length === 0) return false;
+  if(punc === "!" || punc === "?" || punc === "…") return true;
+  if(punc === "."){
+    const przedKropka = tekst.slice(0, m.index + 1);
+    if(POL_SKROTY_RE.test(przedKropka)) return false;
+    if(/(?:^|\s)(?:[a-ząćęłńóśźż]\.){2,}$/i.test(przedKropka)) return false;
+    return true;
+  }
+  return false;
+}
+
+function czyWymagaWielkiejLitery(node, pos, ce){
+  if(!node || node.nodeType !== 3 || !ce) return false;
+  const curTxt = node.nodeValue || "";
+  const przed = curTxt.slice(0, pos - 1);
+
+  if(/\S/.test(przed)){
+    return czyKoniecZdania(przed);
+  }
+
+  let blokStart = false;
+  let zebranyTekst = przed;
+  let curr = node;
+
+  function poprzedniWezel(n){
+    if(n.previousSibling){
+      let p = n.previousSibling;
+      while(p.lastChild) p = p.lastChild;
+      return p;
+    }
+    return n.parentNode;
+  }
+
+  while(curr && curr !== ce){
+    const prev = poprzedniWezel(curr);
+    if(!prev || prev === ce){
+      blokStart = true;
+      break;
+    }
+    if(prev.nodeType === 1){
+      const tag = prev.tagName ? prev.tagName.toUpperCase() : "";
+      if(tag === "BR" || tag === "DIV" || tag === "P" || tag === "LI" || tag === "H1" || tag === "H2" || tag === "H3" || tag === "H4" || tag === "H5" || tag === "H6" || tag === "BLOCKQUOTE" || tag === "TR" || tag === "HR"){
+        blokStart = true;
+        break;
+      }
+    } else if(prev.nodeType === 3){
+      const val = prev.nodeValue || "";
+      zebranyTekst = val + zebranyTekst;
+      if(/\S/.test(val)){
+        break;
+      }
+    }
+    curr = prev;
+  }
+
+  if(blokStart || !/\S/.test(zebranyTekst)){
+    return true;
+  }
+
+  return czyKoniecZdania(zebranyTekst);
+}
+
 
 function buildEditbar(n){
   const bar = document.createElement("div");
@@ -13802,12 +14211,12 @@ function poczatekWiersza(wezel, offset, ce){
 
 /* Zwykły Enter oznacza następny wiersz, a nie nowy akapit z odstępem.
    Listy i tabele zachowują natywne zachowanie, bo Enter tworzy tam nowy punkt
-   albo przechodzi wewnątrz komórki. Nagłówki także kończą się natywnie. */
+   albo przechodzi wewnątrz komórki. */
 function moznaWstawicPojedynczyWiersz(ce){
   const sel=getSelection(); if(!sel||!sel.rangeCount)return false;
   const r=sel.getRangeAt(0); if(!ce.contains(r.startContainer))return false;
   const el=r.startContainer.nodeType===1?r.startContainer:r.startContainer.parentElement;
-  return !(el&&el.closest("li,table,h2,h3"));
+  return !(el&&el.closest("li,table"));
 }
 /* Wyprowadza punkt podziału poza znaczniki stylu. Bez tego Safari zostawiało
    kursor wewnątrz <b>, <i>, <u>, <mark> lub kolorowego <span> i pierwszy tekst
@@ -13832,12 +14241,50 @@ function wstawPojedynczyWiersz(ce){
   r.deleteContents();
   const marker=document.createComment("enter-bez-stylu");r.insertNode(marker);
   wyprowadzEnterPozaStyl(marker,ce);
+
+  /* Obsługa wyjścia z cytatu (BLOCKQUOTE), wyróżnień (callout) oraz nagłówków (H2, H3):
+     nowy wiersz po Enter nie dziedziczy formatu bloku, lecz powstaje jako zwykły tekst. */
+  if(marker.parentNode && marker.parentNode !== ce){
+    const specBlok = marker.parentNode.closest("blockquote, .callout, h1, h2, h3, h4, h5, h6");
+    if(specBlok && ce.contains(specBlok)){
+      const rodzicBloku = specBlok.parentNode;
+      let nast = marker.nextSibling;
+      let maPrawa = false;
+      while(nast){
+        if((nast.nodeType === 3 && nast.nodeValue.trim()) || (nast.nodeType === 1 && nast.nodeName !== "BR")){
+          maPrawa = true; break;
+        }
+        nast = nast.nextSibling;
+      }
+      if(!maPrawa){
+        /* Kursor na końcu cytatu/nagłówka/bloku — wyprowadź za ten blok */
+        rodzicBloku.insertBefore(marker, specBlok.nextSibling);
+        if(!specBlok.textContent.trim() && !specBlok.querySelector("img")) specBlok.remove();
+      } else {
+        /* Podział bloku w środku — prawa część w kopii, nowy wiersz pomiędzy */
+        const kopia = specBlok.cloneNode(false);
+        while(marker.nextSibling) kopia.appendChild(marker.nextSibling);
+        rodzicBloku.insertBefore(kopia, specBlok.nextSibling);
+        rodzicBloku.insertBefore(marker, kopia);
+      }
+    }
+  }
+
   const br=document.createElement("br");marker.replaceWith(br);
   /* Safari potrzebuje końcowego BR jako miejsca na kursor, gdy Enter naciśnięto
      na samym końcu. Kursor stoi przed tym znacznikiem, więc nie powstaje pusty akapit. */
   if(!br.nextSibling)br.parentNode.insertBefore(document.createElement("br"),br.nextSibling);
   const po=document.createRange(); po.setStartAfter(br); po.collapse(true);
   sel.removeAllRanges(); sel.addRange(po);
+
+  /* Reset stanów formatowania w przeglądarce, aby nowy wiersz pisał się zwykłym tekstem */
+  try{
+    if(document.queryCommandState("bold")) document.execCommand("bold", false, null);
+    if(document.queryCommandState("italic")) document.execCommand("italic", false, null);
+    if(document.queryCommandState("underline")) document.execCommand("underline", false, null);
+    if(document.queryCommandState("strikeThrough")) document.execCommand("strikeThrough", false, null);
+  }catch(_){}
+
   if(typeof histZapisz==="function")histZapisz(ce);
   if(typeof commitLiveEdit==="function")commitLiveEdit(ce);
   if(typeof szkicZaplanuj==="function")szkicZaplanuj(ce);
@@ -14236,6 +14683,7 @@ function openEbPop(kind, btn, bar){
        <div data-cmd="subscript">${IE_DOLNY}Indeks dolny</div>
        <div class="dd-sep"></div>
        <div data-narz="wielkosc">${IE_WIELKOSC}Zmień wielkość liter</div>
+       <div data-narz="toggle-autocap">${optAutoWielkieLitery?IE_PTASZEK:IE_PUSTO}Wielka litera po kropce i nowej linii</div>
        <div data-narz="data">${IE_DATA}Wstaw dzisiejszą datę</div>
        <div data-narz="licz">${IE_LICZ}Policz słowa i znaki</div>
        <div data-narz="cleanup">✨ Uporządkuj polski tekst</div>
@@ -14426,6 +14874,12 @@ function ustawOdstepy(ce, lh, pm){
  */
 function narzedzieEdytora(co, ce){
   if(!ce) return;
+  if(co==="toggle-autocap"){
+    optAutoWielkieLitery = !optAutoWielkieLitery;
+    try{ localStorage.setItem("jw_autocap", optAutoWielkieLitery ? "1" : "0"); }catch(e){}
+    toast(optAutoWielkieLitery ? "Włączono automatyczną wielką literę" : "Wyłączono automatyczną wielką literę");
+    return;
+  }
   if(co==="akapit-up"||co==="akapit-down"){
     przesunAkapit(ce,co==="akapit-up"?-1:1); return;
   }
@@ -14472,7 +14926,23 @@ function porzadkujPolskiTekst(ce,tylkoWiersze){
   if(!ce)return;if(typeof histZapisz==="function")histZapisz(ce);let zmiany=0;
   if(!tylkoWiersze){
     const walker=document.createTreeWalker(ce,NodeFilter.SHOW_TEXT),nodes=[];let n;while(n=walker.nextNode())nodes.push(n);
-    nodes.forEach(node=>{const st=node.nodeValue;let nowy=st.replace(/"([^"\n]+)"/g,"„$1”").replace(/[ \t]{2,}/g," ").replace(/[ \t]+([,.;:!?])/g,"$1").replace(/([,;:!?])(?=[A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż])/g,"$1 ");if(nowy!==st){node.nodeValue=nowy;zmiany++;}});
+    nodes.forEach(node=>{
+      const st=node.nodeValue;
+      let nowy=st.replace(/"([^"\n]+)"/g,"„$1”").replace(/[ \t]{2,}/g," ").replace(/[ \t]+([,.;:!?])/g,"$1").replace(/([,;:!?])(?=[A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż])/g,"$1 ");
+      if(optAutoWielkieLitery){
+        nowy=nowy.replace(/([.!?…]\s+)([\p{Ll}])/gu,(m,punc,litera,offset,fullStr)=>{
+          const przed=fullStr.slice(0,offset+1);
+          if(POL_SKROTY_RE.test(przed)||/(?:^|\s)(?:[a-ząćęłńóśźż]\.){2,}$/i.test(przed))return m;
+          return punc+litera.toUpperCase();
+        });
+        nowy=nowy.replace(/(^|[\n\r])(\s*)([\p{Ll}])/gu,(m,nl,sp,litera)=>nl+sp+litera.toUpperCase());
+        nowy=nowy.replace(/^(\s*)([\p{Ll}])/u,(m,sp,litera)=>{
+          if(czyWymagaWielkiejLitery(node,sp.length+1,ce)) return sp+litera.toUpperCase();
+          return m;
+        });
+      }
+      if(nowy!==st){node.nodeValue=nowy;zmiany++;}
+    });
   }
   /* Zachowujemy najwyżej jeden pusty wiersz, czyli dwa kolejne BR. */
   Array.from(ce.querySelectorAll("br")).forEach(br=>{let p=br.previousSibling,ile=0;while(p&&p.nodeName==="BR"){ile++;p=p.previousSibling;}if(ile>=2){br.remove();zmiany++;}});
@@ -14487,6 +14957,10 @@ function polskaAutokorektaNaWejsciu(e){
   if(e.data==='"'&&pos>0){const przed=txt[pos-2]||"";nowy=txt.slice(0,pos-1)+(!przed||/[\s([{—–-]/.test(przed)?"„":"”")+txt.slice(pos);}
   else if(e.data===" "&&pos>1&&txt[pos-2]===" "){nowy=txt.slice(0,pos-1)+txt.slice(pos);pos--;}
   else if(/^[,.;:!?]$/.test(e.data)&&pos>1&&/[ \t]/.test(txt[pos-2])){nowy=txt.slice(0,pos-2)+e.data+txt.slice(pos);pos--;}
+  else if(optAutoWielkieLitery && /^\p{Ll}$/u.test(e.data) && pos > 0 && czyWymagaWielkiejLitery(node, pos, ce)){
+    const up = e.data.toUpperCase();
+    nowy = txt.slice(0, pos - 1) + up + txt.slice(pos);
+  }
   if(nowy!==txt){node.nodeValue=nowy;const r=document.createRange();r.setStart(node,Math.max(0,pos));r.collapse(true);sel.removeAllRanges();sel.addRange(r);}
 }
 document.addEventListener("input",polskaAutokorektaNaWejsciu,true);
@@ -17274,7 +17748,10 @@ function importFromDb(db, opcje){
       par:(!book && bid) ? bid : 0,
       col:col||0, cr:created, mo:mo, tg:(ntags[nid]||[]).sort() };
     const ex=byG[g];
-    if(!ex){ docNotes.push(inc); changed.push(inc); added++; }
+    if(!ex){
+      if(deletedGuids.includes(g)){ skipped++; }
+      else { docNotes.push(inc); changed.push(inc); added++; }
+    }
     else if(ex.del){ skipped++; }
     else {
       /* POŁOŻENIE ODŚWIEŻAMY ZAWSZE.
@@ -18004,7 +18481,9 @@ function daneKopii(){
           searchSaved: (typeof savedSearches==="function" ? savedSearches() : []),
           searchMode: (typeof searchMode!=="undefined" ? searchMode : "smart"),
           searchOpts: (typeof searchOpts!=="undefined" ? searchOpts : null),
-          autoTopics: (typeof autoTematyEksport==="function" ? autoTematyEksport() : {custom:[]})};
+          autoTopics: (typeof autoTematyEksport==="function" ? autoTematyEksport() : {custom:[]}),
+          deletedTags: (Array.isArray(deletedTagNames) ? deletedTagNames : []),
+          deletedGuids: (Array.isArray(deletedGuids) ? deletedGuids : [])};
 }
 
 function bezpieczneWyszukiwania(data){
@@ -18226,6 +18705,11 @@ function mergeBackup(data, takeLayout, nadpisuj){
   (data.tags||[]).forEach(t=>{
     let mine=tags.find(x=>norm(x.name)===norm(t.name));
     if(!mine){
+      if(!nadpisuj && deletedTagNames.includes(t.name)){ return; }
+      if(nadpisuj && deletedTagNames.includes(t.name)){
+        deletedTagNames = deletedTagNames.filter(x=>x!==t.name);
+        saveDeletedTags();
+      }
       mine={id: nastepnyNumer(tags), name:t.name, color:t.color, nw:true};
       if(t.sec!==undefined && secMap[t.sec]!==undefined) mine.sec=secMap[t.sec];
       if(t.ord!==undefined) mine.ord=t.ord;
